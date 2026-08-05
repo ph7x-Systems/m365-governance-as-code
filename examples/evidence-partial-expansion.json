@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-05T14:02:11Z",
+    "collector": "spo-collector",
+    "collector_version": "0.1.0",
+    "source_system": "SharePoint Online",
+    "source_api": "Microsoft Graph v1.0",
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "identity_kind": "application",
+    "scopes": [
+      "Sites.Read.All"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "owners"
+    ],
+    "completed": [
+      "owners"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,hr",
+    "type": "site",
+    "display_name": "HR",
+    "url": "https://contoso.sharepoint.com/sites/HR"
+  },
+  "facts": {
+    "owners": {
+      "state": "observed",
+      "direct": [
+        {
+          "principal_id": "user-1",
+          "principal_type": "user"
+        },
+        {
+          "principal_id": "user-2",
+          "principal_type": "user"
+        },
+        {
+          "principal_id": "user-3",
+          "principal_type": "user"
+        }
+      ],
+      "groups": [
+        {
+          "principal_id": "group-1",
+          "principal_type": "group",
+          "expansion": {
+            "status": "not-attempted"
+          }
+        }
+      ],
+      "expansion_complete": false,
+      "minimum_count": 3
+    }
+  }
+}

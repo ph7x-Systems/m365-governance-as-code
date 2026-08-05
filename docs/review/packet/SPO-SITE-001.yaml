@@ -1,0 +1,87 @@
+# A convention. Microsoft requires nothing here. The rationale carries the
+# whole weight of the rule, which is why it is longer than the condition.
+
+id: SPO-SITE-001
+version: 1.0
+title: A site should have at least two owners
+description: >
+  A site with a single owner has a single point of failure for every decision
+  that only an owner can take: granting access, changing sharing, responding
+  to a retention or legal request, and deciding what happens to the content.
+  When that person leaves, changes role or is unavailable, those decisions
+  stop rather than pass to someone else.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources: []
+  rationale: >
+    Microsoft does not require a minimum number of owners, does not warn about
+    a single owner, and does not prevent a site from having one. This is our
+    recommendation, and an organisation may reasonably decline it: a small
+    tenant where the same administrator owns everything has a single point of
+    failure that no per-site rule can fix, and adding a second nominal owner
+    there would be paperwork rather than governance.
+
+severity:
+  default: medium
+  rationale: >
+    The consequence is delay, not exposure. Access decisions queue behind a
+    person who is not there, which is disruptive and recoverable through
+    administrative escalation. It is not rated high because no data is at
+    risk, and not low because the escalation path is usually discovered during
+    the incident rather than before it.
+  configurable: true
+
+evidence_requirements:
+  - path: owners.count
+    type: integer
+    required: true
+
+condition:
+  operator: less-than
+  evidence: owners.count
+  value: 2
+
+outcomes:
+  pass:
+    message: >
+      The site has {owners.count} owners.
+  fail:
+    message: >
+      The site has {owners.count} owner. Ownership decisions on this site
+      depend on one person being available.
+  unknown:
+    message: >
+      The owners of this site were not collected, so the number is not known.
+      This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The owner count was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Assign a second accountable owner, and review ownership when people change
+  role. A second owner who does not know they are one is not a second owner:
+  the point is that somebody else can act, not that a field has two values.
+
+limitations:
+  passes_without_resolving: >
+    Two owners who are dormant, who have left, or who do not know they own the
+    site satisfy this rule completely. The count is two and nobody is able to
+    act. The rule measures the field, not the availability of a person.
+  other:
+    - >
+      Where ownership is held by a group, the count depends on whether the
+      collector expanded that group. If it did not, a site with one group
+      owner reads as one owner. See the evidence schema for how expansion is
+      recorded.
+    - >
+      This is a convention, not a Microsoft requirement. A tenant may have a
+      documented reason to run single-owner sites, and this rule cannot see
+      that reason.

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "m365-governance-as-code"
+version = "0.1.0"
+description = "Microsoft 365 governance checks that show their work."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "pH7x Systems", email = "support@ph7x.com" }]
+keywords = ["microsoft-365", "sharepoint", "governance", "policy-as-code"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: System Administrators",
+  "Programming Language :: Python :: 3",
+]
+dependencies = ["PyYAML>=6.0", "jsonschema>=4.20"]
+
+[project.scripts]
+m365-governance = "m365_governance.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"

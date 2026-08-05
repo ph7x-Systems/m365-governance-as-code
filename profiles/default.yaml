@@ -1,0 +1,21 @@
+# The only profile. A second one is created when a concrete rule needs to
+# differ, not before: two profiles that are almost identical are two files
+# nobody maintains, and the moment a rule is copied to give one profile a
+# different weight, results stop being comparable and the basis gets reviewed
+# twice in two places.
+#
+# A profile selects and parameterises. It never restates the meaning of a rule.
+
+name: default
+description: >
+  Every rule in the repository, at its authored severity. This profile makes
+  no judgement of its own.
+
+rules:
+  - SPO-LIST-001
+  - SPO-SITE-001
+
+# Threshold and severity overrides are an open decision. See the open
+# decisions in docs/ARCHITECTURE.md: a profile must be able to say "high, not
+# medium, here" without restating the rule, and the syntax for that is not
+# settled. Until it is, this file only selects.

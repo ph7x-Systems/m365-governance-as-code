@@ -1,0 +1,67 @@
+{
+  "provenance": {
+    "collected_at": "2026-08-05T14:02:11Z",
+    "collector": "spo-collector",
+    "collector_version": "0.1.0",
+    "source_system": "SharePoint Online",
+    "source_api": "Microsoft Graph v1.0",
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "identity_kind": "application",
+    "scopes": [
+      "Sites.Read.All"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "owners"
+    ],
+    "completed": [
+      "owners"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,hr",
+    "type": "site",
+    "display_name": "HR",
+    "url": "https://contoso.sharepoint.com/sites/HR"
+  },
+  "counts": {
+    "pass": 1,
+    "fail": 0,
+    "unknown": 0,
+    "not-applicable": 0,
+    "invalid-evidence": 0,
+    "error": 0
+  },
+  "results": [
+    {
+      "rule_id": "SPO-SITE-001",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "pass",
+      "message": "The site has at least 3 owners.",
+      "basis": "convention",
+      "severity": "medium",
+      "evidence_used": [
+        {
+          "path": "owners.count",
+          "state": "partial",
+          "value": null,
+          "lower_bound": 3,
+          "upper_bound": null,
+          "detail": "expansion incomplete: the count is a lower bound"
+        }
+      ],
+      "passes_without_resolving": "Two owners who are dormant, who have left, or who do not know they own the site satisfy this rule completely. The count is two and nobody is able to act. The rule measures the field, not the availability of a person.",
+      "sources": [],
+      "remediation": "Assign a second accountable owner, and review ownership when people change role. A second owner who does not know they are one is not a second owner: the point is that somebody else can act, not that a field has two values.",
+      "message_degraded": false,
+      "engine_detail": ""
+    }
+  ]
+}

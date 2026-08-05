@@ -1,0 +1,34 @@
+# Governance report: Archive
+
+- Resource: `contoso,list,archive` (list)
+- Collected: 2026-08-05T14:02:11Z by `spo-collector` 0.1.0
+- Source: SharePoint Online via Microsoft Graph v1.0
+- Identity: application, scopes: Sites.Read.All
+
+## Summary
+
+1 rule evaluated. **1 produced an answer.**
+
+| Outcome | Count |
+|---|---|
+| Fail | 1 |
+| Invalid evidence | 0 |
+| Unknown | 0 |
+| Error | 0 |
+| Not applicable | 0 |
+| Pass | 0 |
+
+
+## Fail
+
+### SPO-LIST-001 v2.0
+
+The list holds 148000 items, above Microsoft's documented limit of 100,000, and still inherits its permissions. Inheritance can no longer be broken on this list, so it cannot be given unique permissions later.
+
+- Basis: **documented-limit** — a boundary the product imposes
+- Severity: medium
+- Evidence: `items.count` = 148000, `permissions.inheritance_broken` = false
+- Source: [SharePoint limits, Items in lists and libraries](https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits) — checked 2026-08-05
+- Source: [Manage Permission Scopes in SharePoint](https://learn.microsoft.com/sharepoint/manage-permission-scope) — checked 2026-08-05
+
+**What to do:** Microsoft's guidance is preventive, not corrective: "share large folders before they hit 100,000 items". For a container already past the limit, reducing the count does not restore the ability in every case, and the supported route is to restructure the content across containers that stay below it. Decide whether this container will ever need unique permissions before restructuring, because if the answer is no, no action is required.

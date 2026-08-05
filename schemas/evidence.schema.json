@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/evidence/1.0.0",
+  "title": "Evidence document",
+  "description": "What a collector is allowed to hand to the engine. Structure only. See docs/EVIDENCE-SCHEMA.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "provenance", "coverage", "resource", "facts"],
+  "properties": {
+    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "coverage": { "$ref": "#/$defs/coverage" },
+    "resource": { "$ref": "#/$defs/resource" },
+    "facts": { "$ref": "#/$defs/factsMap" }
+  },
+
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collected_at",
+        "collector",
+        "collector_version",
+        "source_system",
+        "source_api",
+        "tenant_id",
+        "identity_kind",
+        "scopes"
+      ],
+      "properties": {
+        "collected_at": { "type": "string", "format": "date-time" },
+        "collector": { "type": "string", "minLength": 3 },
+        "collector_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+        "source_system": { "type": "string", "minLength": 3 },
+        "source_api": { "type": "string", "minLength": 3 },
+        "tenant_id": { "type": "string", "minLength": 1 },
+        "identity_kind": {
+          "enum": ["application", "delegated"],
+          "$comment": "A delegated run sees what one person sees. This field is the difference between a partial audit and a misleading one."
+        },
+        "scopes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requested", "completed", "unavailable"],
+      "properties": {
+        "requested": { "type": "array", "items": { "type": "string" } },
+        "completed": { "type": "array", "items": { "type": "string" } },
+        "unavailable": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["state", "detail"],
+            "properties": {
+              "state": { "$ref": "#/$defs/absentState" },
+              "detail": { "type": "string", "minLength": 5 }
+            }
+          }
+        }
+      }
+    },
+
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "type": "string", "minLength": 2 },
+        "display_name": { "type": "string" },
+        "url": { "type": "string" }
+      }
+    },
+
+    "collectionState": {
+      "enum": [
+        "observed",
+        "missing",
+        "not-supported",
+        "permission-denied",
+        "partial",
+        "invalid"
+      ]
+    },
+
+    "absentState": {
+      "enum": ["missing", "not-supported", "permission-denied", "partial"]
+    },
+
+    "factsMap": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "$ref": "#/$defs/factsNode" }
+    },
+
+    "factsNode": {
+      "anyOf": [
+        { "$ref": "#/$defs/scalarFact" },
+        { "$ref": "#/$defs/aggregateFact" },
+        { "$ref": "#/$defs/factsMap" }
+      ]
+    },
+
+    "scalarFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": { "$ref": "#/$defs/collectionState" },
+        "value": {},
+        "detail": { "type": "string" },
+        "raw": { "$ref": "#/$defs/raw" }
+      },
+      "allOf": [
+        {
+          "$comment": "An observed fact has a value. Absence has a reason, never a bare null.",
+          "if": {
+            "properties": { "state": { "const": "observed" } },
+            "required": ["state"]
+          },
+          "then": { "required": ["value"] }
+        },
+        {
+          "$comment": "Anything not observed says why.",
+          "if": {
+            "properties": {
+              "state": {
+                "enum": ["missing", "not-supported", "permission-denied", "invalid"]
+              }
+            },
+            "required": ["state"]
+          },
+          "then": { "required": ["detail"] }
+        }
+      ]
+    },
+
+    "raw": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["field", "value"],
+      "properties": {
+        "field": { "type": "string", "minLength": 1 },
+        "value": {}
+      }
+    },
+
+    "aggregateFact": {
+      "$comment": "A counted collection whose members may be groups. See docs/EVIDENCE-SCHEMA.md section 8.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "expansion_complete"],
+      "properties": {
+        "state": { "$ref": "#/$defs/collectionState" },
+        "detail": { "type": "string" },
+        "direct": { "type": "array", "items": { "$ref": "#/$defs/principal" } },
+        "groups": { "type": "array", "items": { "$ref": "#/$defs/groupPrincipal" } },
+        "expansion_complete": { "type": "boolean" },
+        "effective_count": { "type": "integer", "minimum": 0 },
+        "minimum_count": { "type": "integer", "minimum": 0 }
+      },
+      "allOf": [
+        {
+          "$comment": "Complete expansion produces an exact count and no lower bound.",
+          "if": {
+            "properties": { "expansion_complete": { "const": true } },
+            "required": ["expansion_complete"]
+          },
+          "then": {
+            "required": ["effective_count"],
+            "not": { "required": ["minimum_count"] }
+          }
+        },
+        {
+          "$comment": "Incomplete expansion produces a lower bound and never an exact count.",
+          "if": {
+            "properties": { "expansion_complete": { "const": false } },
+            "required": ["expansion_complete"]
+          },
+          "then": {
+            "required": ["minimum_count"],
+            "not": { "required": ["effective_count"] }
+          }
+        }
+      ]
+    },
+
+    "principal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["principal_id", "principal_type"],
+      "properties": {
+        "principal_id": { "type": "string", "minLength": 1 },
+        "principal_type": { "enum": ["user", "group", "service-principal"] }
+      }
+    },
+
+    "groupPrincipal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["principal_id", "principal_type", "expansion"],
+      "properties": {
+        "principal_id": { "type": "string", "minLength": 1 },
+        "principal_type": { "const": "group" },
+        "expansion": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": {
+            "status": { "enum": ["complete", "incomplete", "not-attempted"] },
+            "member_count": { "type": "integer", "minimum": 0 },
+            "detail": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

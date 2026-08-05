@@ -1,0 +1,126 @@
+# A documented limit. The number is Microsoft's, the consequence is Microsoft's,
+# and both are stated here next to the observed value.
+#
+# Version 2.0 changed the applicability. See CHANGE-POLICY.md: the rule now
+# speaks only about containers that still inherit permissions, which is the
+# only population where crossing the limit costs anything. Version 1.0 is kept
+# verbatim in docs/review/packet/ and is the text the reviewers received.
+
+schema_version: "1.0"
+id: SPO-LIST-001
+version: "2.0"
+title: A list or library past 100,000 items can no longer have its permission inheritance broken
+description: >
+  SharePoint stops allowing permission inheritance to be broken or reinherited
+  on a list, library or folder once it holds more than 100,000 items. A
+  container that was never uniquely shared before crossing that line cannot be
+  uniquely shared afterwards. This rule reports containers that have crossed
+  the boundary while still inheriting permissions, because that is the case
+  where a future access decision has already been foreclosed.
+
+service: sharepoint
+resource_type: list
+
+basis:
+  type: documented-limit
+  limit:
+    value: 100000
+    unit: items
+    statement: >
+      "When a list, library, or folder contains more than 100,000 items, you
+      can't break permissions inheritance on the list, library, or folder. You
+      also can't reinherit permissions on it."
+  sources:
+    - url: https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits
+      title: SharePoint limits, Items in lists and libraries
+      publisher: Microsoft
+      checked_at: "2026-08-05"
+    - url: https://learn.microsoft.com/sharepoint/manage-permission-scope
+      title: Manage Permission Scopes in SharePoint
+      publisher: Microsoft
+      checked_at: "2026-08-05"
+  rationale: >
+    The limit is enforced by the product, not recommended by it. The second
+    source states the consequence that makes it worth reporting: a container
+    that exceeds the limit and is not already uniquely shared "can't be
+    uniquely shared later".
+
+severity:
+  default: medium
+  rationale: >
+    Nothing is exposed and nothing is broken today. What is lost is an option:
+    the ability to scope access on that container, at a moment nobody chooses
+    in advance. It is rated medium rather than high because the loss is
+    potential, and low would understate that it cannot be undone.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: permissions.inheritance_broken
+  value: false
+
+evidence_requirements:
+  - path: items.count
+    type: integer
+    required: true
+  - path: permissions.inheritance_broken
+    type: boolean
+    required: true
+
+condition:
+  operator: greater-than
+  evidence: items.count
+  value: 100000
+
+outcomes:
+  pass:
+    message: >
+      The list holds {items.count} items and inherits its permissions, within
+      the 100,000 boundary at which inheritance can no longer be broken.
+  fail:
+    message: >
+      The list holds {items.count} items, above Microsoft's documented limit of
+      100,000, and still inherits its permissions. Inheritance can no longer be
+      broken on this list, so it cannot be given unique permissions later.
+  unknown:
+    message: >
+      The item count for this list was not collected, so its position relative
+      to the 100,000 limit is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This list already has unique permissions. The limit does not remove an
+      option it has already exercised.
+  invalid_evidence:
+    message: >
+      The item count was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Microsoft's guidance is preventive, not corrective: "share large folders
+  before they hit 100,000 items". For a container already past the limit,
+  reducing the count does not restore the ability in every case, and the
+  supported route is to restructure the content across containers that stay
+  below it. Decide whether this container will ever need unique permissions
+  before restructuring, because if the answer is no, no action is required.
+
+limitations:
+  passes_without_resolving: >
+    A list holding 99,000 items and growing passes this rule today and loses
+    the ability permanently within weeks, without anything in the report
+    changing to warn about it. The rule measures a position, not a trajectory,
+    and the boundary it describes is the one place where being close to a limit
+    matters more than being past it: once crossed, the option does not come
+    back. Every pass here means "not yet", never "safe".
+  other:
+    - >
+      The rule does not establish whether unique permissions will ever be
+      wanted on this list, which is a business question and the only one that
+      decides whether the finding matters.
+    - >
+      Individual items inside the container can still have inheritance broken,
+      up to the separate limit on unique permissions. This rule says nothing
+      about that limit.
+    - >
+      A container reported as not-applicable is only outside this rule. It may
+      have crossed the same limit for reinheritance, which this rule does not
+      check.

@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Evidence from a real tenant never enters this repository. Fixtures are
+# fabricated on purpose: they carry the shape of the data, not the data.
+evidence/
+*.tenant.json
+
+CLAUDE.md
+AGENTS.md
+.claude
+.claude/
