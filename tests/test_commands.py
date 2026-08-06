@@ -578,3 +578,88 @@ def test_the_default_profile_runs_every_rule():
         if loaded.data["resource_type"] == "list"
     }
     assert ran == lists_only, f"rules on disk: {on_disk}, evaluated: {ran}"
+
+
+# ---------------------------------------------------------------------------
+# the support link, and where it may not appear
+# ---------------------------------------------------------------------------
+
+SUPPORT = ("buymeacoffee", "buy me a coffee", "sponsor", "donate", "support the")
+
+
+def test_no_command_asks_for_support(capsys):
+    """A person running a governance check is reading a finding. Nothing in
+    that moment should be asking them for anything.
+
+    The link lives in the README, in CONTRIBUTING, and in the Sponsor button
+    GitHub renders from .github/FUNDING.yml. Those are places somebody goes
+    looking. Command output is not.
+    """
+    invocations = [
+        ["list-rules", "--rules", str(RULES)],
+        ["show-rule", "SPO-SITE-001", "--rules", str(RULES)],
+        ["explain", "all"],
+        ["doctor", "--root", str(ROOT)],
+        ["stats", str(FIXTURES / "site-two-owners.json")],
+        ["validate", "--rules", str(RULES)],
+        [
+            "evaluate",
+            "--rules",
+            str(RULES),
+            "--evidence",
+            str(FIXTURES / "list-over-limit.json"),
+        ],
+        [
+            "evaluate",
+            "--rules",
+            str(RULES),
+            "--evidence",
+            str(FIXTURES / "list-over-limit.json"),
+            "--format",
+            "html",
+        ],
+        [
+            "diff",
+            str(FIXTURES / "site-two-owners.json"),
+            str(FIXTURES / "site-one-owner.json"),
+            "--rules",
+            str(RULES),
+        ],
+    ]
+    for argv in invocations:
+        _, out, err = run(capsys, *argv)
+        haystack = (out + err).lower()
+        for word in SUPPORT:
+            assert word not in haystack, f"{argv[0]} mentions {word!r}"
+
+
+def test_no_report_asks_for_support():
+    """Including the HTML one, which is the format most likely to be sent on
+    to somebody who did not run the tool."""
+    for fixture in ("list-over-limit", "site-owners-not-collected", "pass"):
+        try:
+            run_result = _run_for(fixture)
+        except FileNotFoundError:
+            continue
+        for rendered in (to_markdown(run_result), to_html(run_result)):
+            for word in SUPPORT:
+                assert word not in rendered.lower()
+
+
+def test_the_link_is_where_somebody_would_look_for_it():
+    for name in ("README.md", "CONTRIBUTING.md"):
+        assert "buymeacoffee.com/jtlivio" in (ROOT / name).read_text()
+
+    funding = ROOT / ".github" / "FUNDING.yml"
+    assert funding.exists(), "the Sponsor button comes from .github/FUNDING.yml"
+    assert "jtlivio" in funding.read_text()
+
+
+def test_no_rule_or_schema_mentions_support():
+    """A rule is a claim about a tenant. Nothing else belongs in one."""
+    from m365_governance.loader import load_rules
+
+    for loaded in load_rules(ROOT / "rules"):
+        text = loaded.path.read_text().lower()
+        for word in SUPPORT:
+            assert word not in text, f"{loaded.path.name} mentions {word!r}"

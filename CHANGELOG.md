@@ -8,6 +8,24 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.4.1-alpha
+
+A support link, and a boundary around it.
+
+**Breaking changes:** none.
+
+The link lives in three places somebody would go looking for one: a badge at
+the top of the README, a Support section at the bottom, and the Sponsor button
+GitHub renders from `.github/FUNDING.yml`.
+
+It appears nowhere else, and a test enforces that. Nothing in the CLI output,
+nothing in a Markdown or HTML report, nothing in a rule. A person running a
+governance check is reading a finding, and that is not the moment to ask them
+for anything. The HTML report is the one that matters most here: it is the
+format most likely to be forwarded to somebody who never ran the tool.
+
+---
+
 ## 0.4.0-alpha
 
 Collector modes, and the first rules written against facts the collector did
@@ -75,7 +93,7 @@ first time a rule was added: two new rules were written, validated, tested,
 and silently filtered out of every evaluation. A profile that means everything
 now says so by not choosing.
 
-183 tests.
+187 tests.
 
 ---
 

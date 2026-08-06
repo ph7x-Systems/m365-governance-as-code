@@ -1,0 +1,8 @@
+# GitHub renders this as a single "Sponsor" button on the repository page.
+# It is the least intrusive place a support link can live: it is where people
+# already look for one, and it appears nowhere else.
+#
+# Nothing about funding goes into the CLI output, the reports, or the
+# documentation of how the tool works. A person running a governance check
+# should not be asked for anything while they are reading a finding.
+buy_me_a_coffee: jtlivio
