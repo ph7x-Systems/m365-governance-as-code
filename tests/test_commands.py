@@ -380,3 +380,107 @@ def test_inspect_and_doctor_import_no_engine():
         source = py_inspect.getsource(module)
         assert "from .engine" not in source
         assert "import engine" not in source
+
+
+# ---------------------------------------------------------------------------
+# explain
+# ---------------------------------------------------------------------------
+
+
+def test_every_outcome_has_an_explanation():
+    """An outcome the engine can produce and nobody can look up is a word the
+    reader has to guess at."""
+    from m365_governance import explaining
+
+    assert set(explaining.EXPLANATIONS) == set(Outcome)
+    assert set(explaining.ORDER) == set(Outcome)
+
+
+@pytest.mark.parametrize("name", [o.value for o in Outcome])
+def test_explain_covers_every_section(capsys, name):
+    code, out, _ = run(capsys, "explain", name)
+    assert code == 0
+    assert name.upper() in out
+    for section in ("This is not", "How it aggregates", "In a pipeline", "Example"):
+        assert section in out, f"{name} is missing the {section!r} section"
+
+
+def _flat(text: str) -> str:
+    """Assertions here are about content. The output is wrapped to a terminal
+    width, so a sentence that reads correctly may still carry a line break in
+    the middle of it."""
+    return " ".join(text.split())
+
+
+def test_explain_unknown_says_it_is_not_compliance(capsys):
+    _, out, _ = run(capsys, "explain", "unknown")
+    assert "This is not" in out
+    assert "compliance" in _flat(out)
+    assert "fact about the collection" in _flat(out)
+
+
+def test_explain_separates_unknown_from_invalid_evidence(capsys):
+    """The two are told apart by the fix, which is the useful distinction."""
+    _, out, _ = run(capsys, "explain", "invalid-evidence")
+    assert "collecting again" in _flat(out)
+    assert "repairing the collector" in _flat(out)
+
+
+def test_explain_says_error_is_about_the_engine(capsys):
+    _, out, _ = run(capsys, "explain", "error")
+    assert "describes the engine" in _flat(out)
+    assert "may not write a message" in _flat(out)
+
+
+def test_explain_all_covers_the_six(capsys):
+    code, out, _ = run(capsys, "explain", "all")
+    assert code == 0
+    for outcome in Outcome:
+        assert outcome.value.upper() in out
+    assert "Nothing here aggregates as a pass except a pass." in out
+
+
+def test_explain_rejects_a_name_that_is_not_an_outcome(capsys):
+    with pytest.raises(SystemExit):
+        run(capsys, "explain", "compliant")
+
+
+def test_explain_does_not_break_a_flag_across_lines(capsys):
+    """A flag split at a hyphen is a flag nobody can copy."""
+    _, out, _ = run(capsys, "explain", "all")
+    assert "--fail-\non" not in out
+    assert "--fail-on-regression" in out
+
+
+def test_explain_matches_what_the_pipeline_actually_does(capsys):
+    """The text claims exit codes. This checks the claims against the code."""
+    _, out, _ = run(capsys, "explain", "unknown")
+    assert "--fail-on unresolved` exits non-zero" in _flat(out)
+
+    code, _, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--evidence",
+        str(FIXTURES / "site-owners-not-collected.json"),
+        "--fail-on",
+        "unresolved",
+        "--format",
+        "json",
+    )
+    assert code == 1
+
+    code, _, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--evidence",
+        str(FIXTURES / "site-owners-not-collected.json"),
+        "--fail-on",
+        "fail",
+        "--format",
+        "json",
+    )
+    assert code == 0, "explain says --fail-on fail ignores unknown; it does not"

@@ -17,8 +17,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.2.0-alpha`. Two rules, one collector, a working engine, eight
-commands and 138 tests. Alpha because the rule set is small, not because the model is
+**Status:** `0.2.1-alpha`. Two rules, one collector, a working engine, nine
+commands and 152 tests. Alpha because the rule set is small, not because the model is
 unsettled.
 
 ---
@@ -137,6 +137,10 @@ m365-governance evaluate \
   --rules rules --evidence fixtures/sharepoint/list-over-limit.json
 ```
 
+`explain unknown` is the one to run second. The project rests on six words
+being different from each other, and the difference between "we could not read
+this" and "this is fine" is the whole of it.
+
 `show-rule` is the one to run first. It prints the whole claim: the basis, the
 rationale behind the severity, the evidence the rule cannot decide without,
 the source, and how the rule can pass while the problem survives.
@@ -147,6 +151,7 @@ the source, and how the rule can pass while the problem survives.
 
 | | |
 |---|---|
+| `explain OUTCOME` | What `pass`, `fail`, `unknown`, `not-applicable`, `invalid-evidence` and `error` mean, and what each is not. `explain all` for the six |
 | `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around. Says what it found, not only whether it liked it |
 | `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
 | `show-rule ID` | One rule in full, including what it does not establish |

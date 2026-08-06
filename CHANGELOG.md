@@ -8,6 +8,42 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.2.1-alpha
+
+`explain`, which was the largest gap in using the tool.
+
+**Breaking changes:** none.
+
+```bash
+m365-governance explain unknown
+m365-governance explain all
+```
+
+Each outcome states what it means, what it is not, how it aggregates, what a
+pipeline does with it, and shows a line from a real report.
+
+The "what it is not" section carries the weight. Every outcome here has a
+wrong reading that is more comfortable than the right one, and `unknown` has
+the most comfortable of all: that nothing was found, so nothing is wrong.
+
+Three of the entries say something the README did not:
+
+- an `unknown` is not the same as incomplete evidence. Incomplete evidence
+  often still decides, and `unknown` is returned only when the missing part
+  could change the answer;
+- `invalid-evidence` differs from `unknown` by the fix. One is fixed by
+  collecting again, the other by repairing the collector;
+- moving from `pass` to `not-applicable` is flagged as a regression, and that
+  is deliberate. It is often legitimate, and it always means an answer you had
+  yesterday is gone today.
+
+One test evaluates a fixture and compares the exit code with what `explain`
+claims about it, so the text cannot drift from the behaviour it describes.
+
+152 tests.
+
+---
+
 ## 0.2.0-alpha
 
 Commands, so the project can be used and not only validated. No change to the

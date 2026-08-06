@@ -21,7 +21,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import __version__, diffing
+from . import __version__, diffing, explaining
 from . import doctor as doctor_module
 from . import inspect as inspect_module
 from .engine import evaluate
@@ -52,6 +52,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     showing.add_argument("rule_id", metavar="ID")
     showing.add_argument("--rules", type=Path, default=DEFAULT_RULES)
+
+    explain = sub.add_parser(
+        "explain",
+        help="what an outcome means, and what it does not",
+    )
+    explain.add_argument(
+        "outcome",
+        metavar="OUTCOME",
+        choices=[*explaining.NAMES, "all"],
+        help="one of: " + ", ".join(explaining.NAMES) + ", or all",
+    )
 
     doc = sub.add_parser(
         "doctor", help="what is wrong with this installation, before you ask"
@@ -125,6 +136,11 @@ def _cmd_show_rule(args) -> int:
     except KeyError as exc:
         print(str(exc).strip('"'), file=sys.stderr)
         return 2
+    return 0
+
+
+def _cmd_explain(args) -> int:
+    sys.stdout.write(explaining.explain(args.outcome))
     return 0
 
 
@@ -268,6 +284,7 @@ def _cmd_diff(args) -> int:
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
+    "explain": _cmd_explain,
     "doctor": _cmd_doctor,
     "stats": _cmd_stats,
     "validate": _cmd_validate,
