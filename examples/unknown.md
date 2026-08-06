@@ -11,20 +11,46 @@
 
 ## Summary
 
-5 rules evaluated. **0 produced an answer.**
+8 rules evaluated. **0 produced an answer.**
 
 | Outcome | Count |
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 5 |
+| Unknown | 8 |
 | Error | 0 |
 | Not applicable | 0 |
 | Pass | 0 |
 
-5 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
+8 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 
 ## Unknown
+
+### SPO-MODERN-001 v1.0
+
+The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.
+
+- Basis: **documented-guidance** — Microsoft recommends this; the product permits the alternative
+- Severity: low
+- Evidence: `web.web_feature_ids` = <missing>
+- Source: [Moving from publishing sites to communication sites](https://learn.microsoft.com/sharepoint/publishing-sites-classic-to-modern-experience) — checked 2026-08-06
+- Source: [SPMT supported SharePoint site features, feature identifiers](https://learn.microsoft.com/sharepointmigration/spmt-supported-site-features) — checked 2026-08-06
+
+### SPO-MODERN-003 v1.0
+
+The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: low
+- Evidence: `web.custom_master_page_file` = <missing>
+
+### SPO-MODERN-004 v1.0
+
+The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: low
+- Evidence: `web.alternate_css_url` = <missing>
 
 ### SPO-SHARE-001 v1.0
 

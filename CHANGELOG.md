@@ -8,6 +8,68 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.7.0-alpha
+
+Modernity, in the order that keeps working: fact, schema, tenant, rule.
+
+**Breaking changes:** none.
+
+### The facts, first
+
+A `Modernity` collector mode reads what the product says about how a site is
+built: template and configuration, master page, alternate stylesheet, the
+feature identifiers enabled at web and site scope, and two page counts.
+
+It reads nothing as "modern" or "classic". That reading is a rule's job, next
+to a source.
+
+### Then the tenant, and two rules it stopped from being wrong
+
+**`CustomMasterUrl` is set on every site, to the default.** The tenant returned
+`/_catalogs/masterpage/seattle.master` for both `MasterUrl` and
+`CustomMasterUrl`. A rule checking that a custom master page is "set" would
+have fired on every site in every tenant, forever, and looked plausible doing
+it.
+
+**The path carries the site.** On the root site the default master page reads
+`/_catalogs/masterpage/seattle.master`; on a subsite the same default reads
+`/sites/x/_catalogs/masterpage/seattle.master`. Comparing paths against a
+known default would report every site that is not the root. The collector now
+derives the file name, and a test pins the subsite case.
+
+### Then the rules
+
+| id | basis | Reads |
+|---|---|---|
+| `SPO-MODERN-001` | `documented-guidance` | The classic publishing feature, by the identifier Microsoft publishes |
+| `SPO-MODERN-003` | `convention` | A master page that is not one of the two SharePoint provides |
+| `SPO-MODERN-004` | `convention` | An alternate stylesheet loaded into every page |
+
+The publishing identifier is quoted from Microsoft's own feature table with
+the date it was checked, and lives in the rule rather than in the collector: a
+GUID meaning something is a documented claim, and documented claims belong
+next to their source.
+
+### The rule that was not written
+
+There is no rule counting classic pages. The collector reports
+`in_library_not_returned_as_modern`, and the name is the point: a page can be
+absent from the modern API's list for reasons other than being classic, and
+this collector does not know which. Naming that count "classic pages" would be
+the inference this project exists to refuse.
+
+A test rejects any rule that reads a path called `classic_pages`.
+
+### Also
+
+The `list-rules` count in the tests is derived rather than pinned. It was a
+literal, it broke on every rule added, and it taught nobody anything each
+time.
+
+258 tests.
+
+---
+
 ## 0.6.1-alpha
 
 The classification, run against 23 real lists, and corrected twice by them.

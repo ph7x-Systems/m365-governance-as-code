@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T15:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "web",
+      "pages"
+    ],
+    "completed": [
+      "web",
+      "pages"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,locked",
+    "type": "site",
+    "display_name": "Unreadable",
+    "url": "https://contoso.sharepoint.com/sites/locked"
+  },
+  "facts": {
+    "web": {
+      "template": {
+        "state": "permission-denied",
+        "detail": "The identity lacks the scope required to read the web."
+      },
+      "custom_master_page_file": {
+        "state": "permission-denied",
+        "detail": "Derived from custom_master_url, which was not read."
+      },
+      "alternate_css_url": {
+        "state": "permission-denied",
+        "detail": "The identity lacks the scope required to read the web."
+      },
+      "web_feature_ids": {
+        "state": "permission-denied",
+        "detail": "The identity lacks the scope required to read features."
+      },
+      "site_feature_ids": {
+        "state": "permission-denied",
+        "detail": "The identity lacks the scope required to read features."
+      }
+    },
+    "pages": {
+      "modern_observed": {
+        "state": "permission-denied",
+        "detail": "The identity lacks the scope required to read pages."
+      },
+      "in_library_not_returned_as_modern": {
+        "state": "missing",
+        "detail": "Derived from two counts, and one was not read."
+      }
+    }
+  }
+}

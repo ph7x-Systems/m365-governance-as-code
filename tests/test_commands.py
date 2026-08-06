@@ -46,7 +46,11 @@ def test_list_rules_names_the_kind_of_claim(capsys):
     assert code == 0
     assert "SPO-LIST-001" in out and "SPO-SITE-001" in out
     assert "documented-limit" in out and "convention" in out
-    assert "8 rules" in out
+    # Derived, not pinned. This assertion was a literal count and broke every
+    # time a rule was added, which taught nobody anything each time.
+    from m365_governance.loader import load_rules
+
+    assert f"{len(load_rules(RULES))} rules" in out
 
 
 def test_list_rules_orders_the_strongest_claim_first(capsys):

@@ -1,0 +1,22 @@
+# Pairs with `collect modernity`.
+#
+# Three rules, three different reasons a site is still built the classic way,
+# and one basis that differs from the other two. Microsoft documents moving
+# away from the publishing infrastructure, so that rule is guidance. Nobody
+# documents anything against a custom master page or an alternate stylesheet,
+# so those are ours and say so.
+#
+# There is no fourth rule counting classic pages. The collector reports pages
+# in the library that the modern API did not return, and a page can be absent
+# from that list for reasons other than being classic. Naming that count
+# "classic pages" would be the inference this project exists to refuse.
+
+name: modernisation
+description: >
+  How a site is built, from facts the product reports about it. No score, no
+  percentage, and no page counted as classic without something saying it is.
+
+rules:
+  - SPO-MODERN-001
+  - SPO-MODERN-003
+  - SPO-MODERN-004

@@ -1,0 +1,142 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T15:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "web",
+      "pages"
+    ],
+    "completed": [
+      "web",
+      "pages"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,branded",
+    "type": "site",
+    "display_name": "Branded Intranet",
+    "url": "https://contoso.sharepoint.com/sites/branded"
+  },
+  "facts": {
+    "web": {
+      "template": {
+        "state": "observed",
+        "value": "SITEPAGEPUBLISHING",
+        "raw": {
+          "field": "WebTemplate",
+          "value": "SITEPAGEPUBLISHING"
+        }
+      },
+      "configuration": {
+        "state": "observed",
+        "value": "0",
+        "raw": {
+          "field": "Configuration",
+          "value": "0"
+        }
+      },
+      "master_url": {
+        "state": "observed",
+        "value": "/_catalogs/masterpage/contoso-custom.master",
+        "raw": {
+          "field": "MasterUrl",
+          "value": "/_catalogs/masterpage/contoso-custom.master"
+        }
+      },
+      "custom_master_url": {
+        "state": "observed",
+        "value": "/_catalogs/masterpage/contoso-custom.master",
+        "raw": {
+          "field": "CustomMasterUrl",
+          "value": "/_catalogs/masterpage/contoso-custom.master"
+        }
+      },
+      "alternate_css_url": {
+        "state": "observed",
+        "value": "/Style Library/contoso.css",
+        "raw": {
+          "field": "AlternateCssUrl",
+          "value": "/Style Library/contoso.css"
+        }
+      },
+      "master_page_file": {
+        "state": "observed",
+        "value": "contoso-custom.master",
+        "raw": {
+          "field": "MasterUrl (file)",
+          "value": "contoso-custom.master"
+        }
+      },
+      "custom_master_page_file": {
+        "state": "observed",
+        "value": "contoso-custom.master",
+        "raw": {
+          "field": "CustomMasterUrl (file)",
+          "value": "contoso-custom.master"
+        }
+      },
+      "web_feature_ids": {
+        "state": "observed",
+        "value": [
+          "B77B6484-364E-4356-8C72-1BB55B81C6B3"
+        ],
+        "raw": {
+          "field": "Feature.DefinitionId (Web)",
+          "value": [
+            "B77B6484-364E-4356-8C72-1BB55B81C6B3"
+          ]
+        }
+      },
+      "site_feature_ids": {
+        "state": "observed",
+        "value": [
+          "B77B6484-364E-4356-8C72-1BB55B81C6B3"
+        ],
+        "raw": {
+          "field": "Feature.DefinitionId (Site)",
+          "value": [
+            "B77B6484-364E-4356-8C72-1BB55B81C6B3"
+          ]
+        }
+      }
+    },
+    "pages": {
+      "modern_observed": {
+        "state": "observed",
+        "value": 5,
+        "raw": {
+          "field": "Get-PnPPage",
+          "value": 5
+        }
+      },
+      "in_library": {
+        "state": "observed",
+        "value": 5,
+        "raw": {
+          "field": "SitePages.ItemCount",
+          "value": 5
+        }
+      },
+      "in_library_not_returned_as_modern": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "SitePages.ItemCount - Get-PnPPage",
+          "value": 0
+        }
+      }
+    }
+  }
+}

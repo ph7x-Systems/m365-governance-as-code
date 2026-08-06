@@ -1,0 +1,88 @@
+# A convention. Microsoft ships the default master pages and does not forbid
+# replacing them; our position is that a replacement is worth knowing about.
+
+schema_version: "1.0"
+id: SPO-MODERN-003
+version: "1.0"
+title: The site uses a master page other than the ones SharePoint provides
+description: >
+  A custom master page is the strongest form of classic branding. It changes
+  the page frame for everything the site renders through it, it is invisible
+  in a site inventory, and it is the item most likely to break quietly when
+  anything underneath it changes.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources: []
+  rationale: >
+    Microsoft provides seattle.master and oslo.master, permits replacing them
+    on sites that allow custom script, and documents the Design Manager for
+    doing exactly that. There is no rule against it. Our position is that a
+    replaced master page is a fact somebody should know before planning any
+    change to the site, and an organisation with a maintained custom master
+    page can reasonably decline this rule.
+
+severity:
+  default: low
+  rationale: >
+    Nothing is broken and nothing is exposed. It is a note about where effort
+    is buried, and it earns a low rating for the same reason it earns any: it
+    is discovered late, by the person who did not expect it.
+  configurable: true
+
+evidence_requirements:
+  - path: web.custom_master_page_file
+    type: string
+    required: true
+
+condition:
+  operator: not-in
+  evidence: web.custom_master_page_file
+  value:
+    - seattle.master
+    - oslo.master
+
+outcomes:
+  pass:
+    message: >
+      The site uses {web.custom_master_page_file}, which SharePoint provides.
+  fail:
+    message: >
+      The site uses {web.custom_master_page_file} as its master page, which is
+      not one of the two SharePoint provides. Anything rendered through it
+      depends on a file somebody in this organisation wrote.
+  unknown:
+    message: >
+      The master page of this site was not read, so whether it is a provided
+      one is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The master page was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Find out what it does before deciding anything. A custom master page is
+  sometimes a logo and sometimes a navigation system, and the two are
+  different projects.
+
+limitations:
+  passes_without_resolving: >
+    A site on seattle.master can be as classic as any other: classic pages,
+    classic web parts, alternate CSS and script editor web parts all survive a
+    default master page. This rule reads one file name.
+  other:
+    - >
+      The comparison is on the file name rather than the path, and
+      deliberately so. On the root site the default reads
+      `/_catalogs/masterpage/seattle.master`, and on a subsite the same
+      default reads `/sites/x/_catalogs/masterpage/seattle.master`. Comparing
+      paths would report every site that is not the root.
+    - >
+      A file named seattle.master that somebody edited in place passes this
+      rule. The name is not a checksum.

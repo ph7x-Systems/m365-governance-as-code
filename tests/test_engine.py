@@ -294,3 +294,69 @@ def test_the_capability_rule_uses_values_the_product_returns(value):
         "ExistingExternalUserSharingOnly",
     }
     assert value  # the four the enum defines
+
+
+# ---------------------------------------------------------------------------
+# Modernity: three facts, three rules, and one trap the tenant showed
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,publishing,master,css",
+    [
+        ("site-modern-clean", Outcome.PASS, Outcome.PASS, Outcome.PASS),
+        ("site-modern-publishing-on", Outcome.FAIL, Outcome.PASS, Outcome.PASS),
+        ("site-modern-custom-master", Outcome.PASS, Outcome.FAIL, Outcome.FAIL),
+        ("site-modern-not-read", Outcome.UNKNOWN, Outcome.UNKNOWN, Outcome.UNKNOWN),
+    ],
+)
+def test_modernity_rules(fixture, publishing, master, css):
+    from conftest import rule
+
+    assert (
+        evaluate_rule(rule("SPO-MODERN-001"), evidence(fixture)).outcome is publishing
+    )
+    assert evaluate_rule(rule("SPO-MODERN-003"), evidence(fixture)).outcome is master
+    assert evaluate_rule(rule("SPO-MODERN-004"), evidence(fixture)).outcome is css
+
+
+def test_a_subsite_on_the_default_master_page_passes():
+    """The trap the tenant showed. On the root site the default master page
+    reads `/_catalogs/masterpage/seattle.master`; on a subsite the same
+    default reads `/sites/x/_catalogs/masterpage/seattle.master`. A rule
+    comparing paths would have reported every site that is not the root."""
+    from conftest import rule
+
+    document = evidence("site-modern-subsite-default-master")
+    assert (
+        document["facts"]["web"]["custom_master_url"]["value"]
+        == "/sites/finance/_catalogs/masterpage/seattle.master"
+    )
+    assert (
+        document["facts"]["web"]["custom_master_page_file"]["value"] == "seattle.master"
+    )
+    assert evaluate_rule(rule("SPO-MODERN-003"), document).outcome is Outcome.PASS
+
+
+def test_the_publishing_rule_quotes_the_identifier_from_a_source():
+    """The GUID is a documented claim, so it sits next to the document it came
+    from rather than in a collector nobody reviews for that."""
+    from conftest import rule
+
+    data = rule("SPO-MODERN-001")
+    assert data["condition"]["value"] == "94C94CA6-B32F-4DA9-A9E3-1F3D343D7ECB"
+    urls = [s["url"] for s in data["basis"]["sources"]]
+    assert any("spmt-supported-site-features" in u for u in urls)
+
+
+def test_no_rule_calls_a_page_classic():
+    """The collector reports pages in the library that the modern API did not
+    return. A page can be absent from that list for reasons other than being
+    classic, and naming the count would be the inference this refuses."""
+    from conftest import ROOT
+    from m365_governance.loader import load_rules
+
+    for loaded in load_rules(ROOT / "rules"):
+        text = loaded.path.read_text().lower()
+        for path in ("classic_pages", "classic_page_count"):
+            assert path not in text, f"{loaded.path.name} reads {path}"

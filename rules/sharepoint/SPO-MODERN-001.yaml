@@ -1,0 +1,102 @@
+# Documented guidance. Microsoft documents the move away from this and says
+# plainly what the modern experience does not support.
+
+schema_version: "1.0"
+id: SPO-MODERN-001
+version: "1.0"
+title: The classic publishing infrastructure is enabled on this site
+description: >
+  The SharePoint Server Publishing Infrastructure brings page layouts, master
+  pages, approval workflows and the Pages library. It is the classic model,
+  and it is what a modern communication site does without. A site that still
+  has it is not broken; it is on a path Microsoft has documented moving away
+  from, and the work of leaving grows with the number of pages that depend on
+  it.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/sharepoint/publishing-sites-classic-to-modern-experience
+      title: Moving from publishing sites to communication sites
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+    - url: https://learn.microsoft.com/sharepointmigration/spmt-supported-site-features
+      title: SPMT supported SharePoint site features, feature identifiers
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+  rationale: >
+    Microsoft states that "turning on the classic publishing feature for a
+    modern communication site is not supported", and publishes a guide for
+    moving from publishing sites to communication sites. It does not remove
+    the feature or require anybody to stop using it, and an organisation with
+    a working publishing portal may reasonably keep it.
+
+    The second source is where the feature identifiers come from. They are
+    quoted rather than remembered: `PublishingSite` is
+    F6924D36-2FA8-4F0B-B16D-06B7250180FA at site scope and `PublishingWeb` is
+    94C94CA6-B32F-4DA9-A9E3-1F3D343D7ECB at web scope.
+
+severity:
+  default: low
+  rationale: >
+    Nothing is at risk and nothing is failing. What this measures is future
+    work: the cost of leaving grows with what was built on top. Rating it
+    higher would put a modernisation note beside findings about access.
+  configurable: true
+
+evidence_requirements:
+  - path: web.web_feature_ids
+    type: array
+    required: true
+
+condition:
+  operator: contains
+  evidence: web.web_feature_ids
+  value: 94C94CA6-B32F-4DA9-A9E3-1F3D343D7ECB
+
+outcomes:
+  pass:
+    message: >
+      The classic publishing feature is not among the features enabled on this
+      web.
+  fail:
+    message: >
+      The classic publishing feature is enabled on this web. The modern
+      experience does not support it, so anything built on page layouts and
+      master pages here is work that a move would have to carry or leave.
+  unknown:
+    message: >
+      The enabled features of this web were not read, so whether the classic
+      publishing infrastructure is on is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The feature list was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Read Microsoft's guide before turning anything off. The feature is not the
+  work: the page layouts, the master pages and the content that depends on
+  them are, and disabling the feature without moving them first breaks pages
+  rather than modernising them.
+
+limitations:
+  passes_without_resolving: >
+    A site that never had the publishing feature can still be entirely
+    classic: classic pages, classic web parts, and a custom master page all
+    exist without it. This rule reads one feature identifier and says nothing
+    about how the site is actually built.
+  other:
+    - >
+      Only the web-scoped feature is read. The site-collection feature
+      `PublishingSite` is collected as evidence and not evaluated here,
+      because a site collection with it enabled and this web without it is a
+      different situation that deserves its own rule rather than a footnote.
+    - >
+      A feature identifier is not a measure of dependence. A publishing site
+      with two pages and one with two thousand fail this rule identically.

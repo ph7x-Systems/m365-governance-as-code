@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T15:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "web",
+      "pages"
+    ],
+    "completed": [
+      "web",
+      "pages"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,portal",
+    "type": "site",
+    "display_name": "Classic Portal",
+    "url": "https://contoso.sharepoint.com/sites/portal"
+  },
+  "facts": {
+    "web": {
+      "template": {
+        "state": "observed",
+        "value": "SITEPAGEPUBLISHING",
+        "raw": {
+          "field": "WebTemplate",
+          "value": "SITEPAGEPUBLISHING"
+        }
+      },
+      "configuration": {
+        "state": "observed",
+        "value": "0",
+        "raw": {
+          "field": "Configuration",
+          "value": "0"
+        }
+      },
+      "master_url": {
+        "state": "observed",
+        "value": "/_catalogs/masterpage/seattle.master",
+        "raw": {
+          "field": "MasterUrl",
+          "value": "/_catalogs/masterpage/seattle.master"
+        }
+      },
+      "custom_master_url": {
+        "state": "observed",
+        "value": "/_catalogs/masterpage/seattle.master",
+        "raw": {
+          "field": "CustomMasterUrl",
+          "value": "/_catalogs/masterpage/seattle.master"
+        }
+      },
+      "alternate_css_url": {
+        "state": "observed",
+        "value": "",
+        "raw": {
+          "field": "AlternateCssUrl",
+          "value": ""
+        }
+      },
+      "master_page_file": {
+        "state": "observed",
+        "value": "seattle.master",
+        "raw": {
+          "field": "MasterUrl (file)",
+          "value": "seattle.master"
+        }
+      },
+      "custom_master_page_file": {
+        "state": "observed",
+        "value": "seattle.master",
+        "raw": {
+          "field": "CustomMasterUrl (file)",
+          "value": "seattle.master"
+        }
+      },
+      "web_feature_ids": {
+        "state": "observed",
+        "value": [
+          "B77B6484-364E-4356-8C72-1BB55B81C6B3",
+          "94C94CA6-B32F-4DA9-A9E3-1F3D343D7ECB"
+        ],
+        "raw": {
+          "field": "Feature.DefinitionId (Web)",
+          "value": [
+            "B77B6484-364E-4356-8C72-1BB55B81C6B3",
+            "94C94CA6-B32F-4DA9-A9E3-1F3D343D7ECB"
+          ]
+        }
+      },
+      "site_feature_ids": {
+        "state": "observed",
+        "value": [
+          "B77B6484-364E-4356-8C72-1BB55B81C6B3",
+          "F6924D36-2FA8-4F0B-B16D-06B7250180FA"
+        ],
+        "raw": {
+          "field": "Feature.DefinitionId (Site)",
+          "value": [
+            "B77B6484-364E-4356-8C72-1BB55B81C6B3",
+            "F6924D36-2FA8-4F0B-B16D-06B7250180FA"
+          ]
+        }
+      }
+    },
+    "pages": {
+      "modern_observed": {
+        "state": "observed",
+        "value": 2,
+        "raw": {
+          "field": "Get-PnPPage",
+          "value": 2
+        }
+      },
+      "in_library": {
+        "state": "observed",
+        "value": 40,
+        "raw": {
+          "field": "SitePages.ItemCount",
+          "value": 40
+        }
+      },
+      "in_library_not_returned_as_modern": {
+        "state": "observed",
+        "value": 38,
+        "raw": {
+          "field": "SitePages.ItemCount - Get-PnPPage",
+          "value": 38
+        }
+      }
+    }
+  }
+}

@@ -32,12 +32,109 @@
   "counts": {
     "pass": 1,
     "fail": 0,
-    "unknown": 4,
+    "unknown": 7,
     "not-applicable": 0,
     "invalid-evidence": 0,
     "error": 0
   },
   "results": [
+    {
+      "rule_id": "SPO-MODERN-001",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.",
+      "basis": "documented-guidance",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "web.web_feature_ids",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "A site that never had the publishing feature can still be entirely classic: classic pages, classic web parts, and a custom master page all exist without it. This rule reads one feature identifier and says nothing about how the site is actually built.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/sharepoint/publishing-sites-classic-to-modern-experience",
+          "title": "Moving from publishing sites to communication sites",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        },
+        {
+          "url": "https://learn.microsoft.com/sharepointmigration/spmt-supported-site-features",
+          "title": "SPMT supported SharePoint site features, feature identifiers",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        }
+      ],
+      "remediation": "Read Microsoft's guide before turning anything off. The feature is not the work: the page layouts, the master pages and the content that depends on them are, and disabling the feature without moving them first breaks pages rather than modernising them.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-MODERN-003",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.",
+      "basis": "convention",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "web.custom_master_page_file",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "A site on seattle.master can be as classic as any other: classic pages, classic web parts, alternate CSS and script editor web parts all survive a default master page. This rule reads one file name.",
+      "sources": [],
+      "remediation": "Find out what it does before deciding anything. A custom master page is sometimes a logo and sometimes a navigation system, and the two are different projects.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-MODERN-004",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.",
+      "basis": "convention",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "web.alternate_css_url",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "An empty setting says nothing about how the site is styled. Themes, custom page layouts, web part properties and script editor web parts all change appearance without this setting being used, and this rule reads only this setting.",
+      "sources": [],
+      "remediation": "Find the file and read it before removing the setting. A stylesheet that hides an element somebody relies on is a support call, not a cleanup.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
     {
       "rule_id": "SPO-SHARE-001",
       "rule_version": "1.0",

@@ -1,0 +1,79 @@
+# A convention. Alternate CSS is a supported setting; loading a stylesheet
+# into every page of a site is a fact worth surfacing before a change.
+
+schema_version: "1.0"
+id: SPO-MODERN-004
+version: "1.0"
+title: The site loads an alternate stylesheet into every page
+description: >
+  Alternate CSS injects a stylesheet into the pages a site renders. It is a
+  supported way to brand a classic site, it applies everywhere at once, and
+  nothing in a page tells a reader that it is there.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources: []
+  rationale: >
+    Microsoft provides the setting and does not discourage it. This is our
+    position: a stylesheet loaded into every page is the kind of thing that
+    explains a rendering problem six months later, and it belongs on a list
+    somebody reads before making changes. A site with a deliberate, maintained
+    stylesheet can reasonably decline the rule.
+
+severity:
+  default: low
+  rationale: >
+    It affects presentation, not access, and it is reversible in one setting.
+    The reason it is here at all is discoverability rather than risk.
+  configurable: true
+
+evidence_requirements:
+  - path: web.alternate_css_url
+    type: string
+    required: true
+
+condition:
+  operator: not-equals
+  evidence: web.alternate_css_url
+  value: ""
+
+outcomes:
+  pass:
+    message: >
+      No alternate stylesheet is set on this site.
+  fail:
+    message: >
+      The site loads {web.alternate_css_url} into every page it renders. Any
+      rendering behaviour that depends on it is invisible from the pages
+      themselves.
+  unknown:
+    message: >
+      The alternate stylesheet setting was not read, so whether one is loaded
+      is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The alternate stylesheet setting was returned in a form this rule cannot
+      evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Find the file and read it before removing the setting. A stylesheet that
+  hides an element somebody relies on is a support call, not a cleanup.
+
+limitations:
+  passes_without_resolving: >
+    An empty setting says nothing about how the site is styled. Themes, custom
+    page layouts, web part properties and script editor web parts all change
+    appearance without this setting being used, and this rule reads only this
+    setting.
+  other:
+    - >
+      The rule reads whether a stylesheet is set, never what it contains. A
+      file that has been deleted from the library still leaves the setting
+      pointing at it, and this rule reports that as an alternate stylesheet
+      because that is what the site says it has.
