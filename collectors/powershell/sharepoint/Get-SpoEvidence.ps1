@@ -222,11 +222,11 @@ else {
     Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId $ClientId
 }
 
-# Get-PnPWeb, e nao $context.Web. O contexto devolve um objecto CSOM cujas
-# propriedades nao estao carregadas: $context.Web.Title vem $null sem erro
-# nenhum, e o titulo saia como null no ficheiro de evidencia. Apanhado a correr
-# contra um tenant a serio; o schema recusou o null, que e o que ele existe
-# para fazer.
+# Get-PnPWeb, not $context.Web. The context hands back a CSOM object whose
+# properties are not loaded, so $context.Web.Title returns $null without
+# raising anything, and the title went into the evidence as null. Found by
+# running this against a real tenant; the schema rejected the null, which is
+# what it is there for.
 $web = Get-PnPWeb
 
 $requested = @()
@@ -292,9 +292,10 @@ $evidence = [ordered]@{
     facts          = $facts
 }
 
-# Um campo opcional que nao se conseguiu ler nao se escreve a null. O schema
-# recusa o null, e com razao: "nao sei" tem estado proprio nos factos, e num
-# campo descritivo a ausencia da chave diz o mesmo sem inventar um valor.
+# An optional field that could not be read is not written as null. The schema
+# rejects null, and it is right to: "not known" has its own state on a fact,
+# and on a descriptive field the absence of the key says the same thing
+# without inventing a value.
 foreach ($k in @('display_name', 'url')) {
     if ($resource.Contains($k) -and [string]::IsNullOrWhiteSpace($resource[$k])) {
         $resource.Remove($k)
