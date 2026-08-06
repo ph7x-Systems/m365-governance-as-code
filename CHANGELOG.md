@@ -8,6 +8,60 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.6.1-alpha
+
+The classification, run against 23 real lists, and corrected twice by them.
+
+**Breaking changes:** none. `SPO-*` rules are untouched.
+
+### What the tenant said
+
+23 lists, 19.7 seconds, all valid against the schema. The previous run
+returned 8: the collector used to skip hidden lists, and dropping that filter
+found 15 more.
+
+Every list classified. None came back `unknown`, and every `content` verdict
+rests on three observed `false` values rather than on absence.
+
+| | |
+|---|---|
+| `system` | 18 |
+| `content` | 3 |
+| `application` | 2 |
+
+### Two corrections the data forced
+
+**`is_application` now outranks `is_system`.** `Site Pages` and `Site Assets`
+come back with both flags true. They were provisioned by the platform and they
+hold the pages of the site. The original order called them plumbing and moved
+a site's own pages down the report.
+
+**A stated justification was false.** The precedence comment claimed that
+"Style Library and Form Templates are catalogs that are not marked as system
+lists". Style Library is `is_catalog` **and** `is_system`; Form Templates is
+`is_system` and not a catalog. The order still produced the right answer for
+both, which is exactly why a wrong reason written next to a right answer
+survives review. It is corrected, and the real values are quoted.
+
+### A limitation, stated rather than patched
+
+These flags answer "who provisioned this", not "is this worth reading".
+`App Packages`, the site collection app catalog, comes back as none of the
+three and is therefore `content`. That is wrong in every sense except the one
+that matters here: it is what the product says. The alternative is matching on
+a title, and matching on a title is how a classifier starts lying in a
+language it was never tested in.
+
+### Verified on real data
+
+A catalog carrying a scope count above the hard limit still counts in the
+`Fail` total at the top of the report and prints under its own heading at the
+bottom. The profile moved 18 lists down the page and removed none.
+
+243 tests.
+
+---
+
 ## 0.6.0-alpha
 
 Lists get a class, profiles get to use it, and `evaluate` reads a directory.

@@ -64,20 +64,38 @@ def _observed(facts: dict, block: str, name: str):
 def classify_list(facts: dict) -> Classification:
     """Precedence, and the reason for it.
 
-    A catalog is checked first because a catalog is always plumbing, whatever
-    else it also is: Style Library and Form Templates are catalogs that are
-    not marked as system lists, and reading them as content is how three of
-    eight lists in a real tenant became noise.
+    The order below was written from the documentation and then corrected
+    against a real tenant, where 23 lists disagreed with it twice. Both
+    corrections are recorded here rather than quietly applied.
 
-    `IsSystemList` comes next because it is the product saying so outright.
+    **A catalog is plumbing, whatever else it is.** A catalog is a store the
+    platform reads from: master pages, themes, web parts, list templates.
+    Nobody puts a document in one on purpose.
 
-    `IsApplicationList` is last of the three because a list can be created by
-    an app and still hold content somebody cares about. Calling it
-    `application` says where it came from, not that it can be ignored.
+    **`is_application` outranks `is_system`, and the tenant is why.** Site
+    Pages and Site Assets come back with both flags set. They were provisioned
+    by the platform and they hold the pages of the site, which is content
+    somebody wrote. Reading `is_system` first labelled them plumbing and moved
+    a site's own pages down the report. `is_application` says where a list
+    came from without saying it can be ignored, which is the more useful of
+    the two answers when both are true.
+
+    **`is_system` is last of the three**, and it still catches twenty lists in
+    an ordinary site: galleries, hidden taxonomy lists, app data.
 
     Absence of all three is `unknown`, never `content`. A list nobody
-    classified is a list nobody looked at, and the difference matters for the
-    same reason it matters everywhere else here.
+    classified is a list nobody looked at.
+
+    ### What this cannot do
+
+    These flags answer "who provisioned this", not "is this worth reading".
+    Usually the two coincide. `App Packages`, the site collection app catalog,
+    comes back as none of the three and is therefore `content`, which is
+    wrong in every sense except the one that matters here: it is what the
+    product says, and the alternative is matching on a title.
+
+    Matching on a title is how a classifier starts lying in a language it was
+    never tested in.
     """
     catalog = _observed(facts, "list", "is_catalog")
     system = _observed(facts, "list", "is_system")
@@ -90,10 +108,19 @@ def classify_list(facts: dict) -> Classification:
         )
     if catalog is True:
         return Classification(ListClass.SYSTEM, "is_catalog is true")
+    if application is True:
+        return Classification(
+            ListClass.APPLICATION,
+            "is_application is true"
+            + (
+                ", and is_system is too: provisioned by the platform, and holding "
+                "content somebody wrote"
+                if system is True
+                else ""
+            ),
+        )
     if system is True:
         return Classification(ListClass.SYSTEM, "is_system is true")
-    if application is True:
-        return Classification(ListClass.APPLICATION, "is_application is true")
     return Classification(
         ListClass.CONTENT,
         "the product marks it as none of catalog, system or application",

@@ -991,3 +991,42 @@ def test_no_profile_excludes_anything():
                 f"{path.name} carries {forbidden!r}. A profile moves a "
                 f"resource down the page; it never removes one."
             )
+
+
+def test_a_list_that_is_both_system_and_application_is_application():
+    """Site Pages and Site Assets come back with both flags set on a real
+    tenant. They were provisioned by the platform and they hold the pages of
+    the site. Reading `is_system` first labelled them plumbing and moved a
+    site's own pages down the report."""
+    from m365_governance.classifying import classify
+
+    result = classify(evidence("list-class-system-and-application"))
+    assert result.kind.value == "application"
+    assert "is_system is too" in result.because
+
+
+def test_a_catalog_stays_system_even_when_it_is_also_a_system_list():
+    """Style Library comes back as both on a real tenant. Catalog wins, and
+    the answer is the same either way, which is why the order was safe to
+    change for the other pair."""
+    from m365_governance.classifying import classify
+
+    facts = evidence("list-class-catalog")["facts"]["list"]
+    assert facts["is_catalog"]["value"] is True
+    assert facts["is_system"]["value"] is True
+    assert classify(evidence("list-class-catalog")).kind.value == "system"
+
+
+def test_content_is_never_assigned_by_absence():
+    """Every `content` verdict must rest on three observed `false` values."""
+    from m365_governance.classifying import classify
+
+    for fixture in ("list-class-content", "list-class-unknown"):
+        document = evidence(fixture)
+        result = classify(document)
+        if result.kind.value == "content":
+            block = document["facts"]["list"]
+            for name in ("is_catalog", "is_system", "is_application"):
+                assert block[name]["state"] == "observed", (
+                    f"{fixture} was called content while {name} was not observed"
+                )

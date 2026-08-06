@@ -24,9 +24,9 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "contoso,list,style-library",
+    "id": "contoso,list,site-pages",
     "type": "list",
-    "display_name": "Style Library",
+    "display_name": "Site Pages",
     "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
   },
   "facts": {
@@ -53,10 +53,10 @@
     "list": {
       "is_catalog": {
         "state": "observed",
-        "value": true,
+        "value": false,
         "raw": {
           "field": "IsCatalog",
-          "value": true
+          "value": false
         }
       },
       "is_system": {
@@ -69,10 +69,10 @@
       },
       "is_application": {
         "state": "observed",
-        "value": false,
+        "value": true,
         "raw": {
           "field": "IsApplicationList",
-          "value": false
+          "value": true
         }
       },
       "hidden": {
@@ -85,10 +85,10 @@
       },
       "base_template": {
         "state": "observed",
-        "value": 121,
+        "value": 119,
         "raw": {
           "field": "BaseTemplate",
-          "value": 121
+          "value": 119
         }
       }
     }

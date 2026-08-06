@@ -371,10 +371,23 @@ dropped system lists would be deciding what matters, and a library holding
 60,000 unique permission scopes matters whoever created it.
 
 The classification is a derivation, and it is exactly one thing: an order of
-precedence over those facts. `is_catalog` first, because a catalog is always
-plumbing whatever else it is; then `is_system`, because that is the product
-saying so outright; then `is_application`, last of the three because a list
-created by an app can still hold content somebody cares about.
+precedence over those facts. `is_catalog` first, because a catalog is a store
+the platform reads from and nobody puts a document in one on purpose. Then
+`is_application`, then `is_system`.
+
+**That order was corrected against a real tenant.** Written from the
+documentation, `is_system` came second, and 23 real lists showed why that was
+wrong: `Site Pages` and `Site Assets` come back with `is_system` and
+`is_application` both true. They were provisioned by the platform and they
+hold the pages of the site. Reading `is_system` first labelled them plumbing
+and moved a site's own pages down the report.
+
+**What these flags cannot do.** They answer "who provisioned this", not "is
+this worth reading". Usually the two coincide. `App Packages`, the site
+collection app catalog, comes back as none of the three and is therefore
+`content`, which is wrong in every sense except the one that matters: it is
+what the product says. The alternative is matching on a title, and matching on
+a title is how a classifier starts lying in a language it was never tested in.
 
 **Absence of all three is `unknown`, never `content`.** A list nobody
 classified is a list nobody looked at.
