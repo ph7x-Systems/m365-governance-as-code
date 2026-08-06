@@ -8,6 +8,57 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.5.1-alpha
+
+Validated against a live tenant, read-only. Four defects, all of them
+invisible offline.
+
+**Breaking changes:** `collect sharing` now needs `--tenant-url` as well as
+`--site-url`. `SPO-SHARE-002` moves to v2.0.
+
+### What the run found
+
+**`SharingCapability` is not a property of a site.** `Get-PnPSite -Includes
+SharingCapability` fails at the parameter set: it is a tenant property *about*
+a site, read through `Get-PnPTenantSite`, which needs an administrative
+connection. The mode had never worked and could not have.
+
+**`DefaultSharingLinkType` returns `None` on a site that sets no default of
+its own**, meaning it follows the tenant. The rule compared it against
+`AnonymousAccess` and would have returned **pass** while knowing nothing: the
+inherited default could be exactly that. There is now an
+`effective_default_link_type` fact, missing when the site inherits, and the
+rule returns `unknown`.
+
+Every one of the 53 sites in the tenant reported `None`.
+
+**The slice-to-profile pairing was wrong.** `collect sites` gathers inventory,
+not owners, and against the `ownership` profile it produced 106 `unknown`
+results across 53 sites. Every one honest, none useful. A test now evaluates a
+slice-shaped document with the profile the slice names and fails if nothing
+but `unknown` comes back.
+
+**Nothing proved that `AnonymousLinkExpirationInDays = 0` means no expiry.**
+The tenant returned 0 on a site with sharing disabled entirely, where 0 may
+simply mean not applicable. The expiry rule stays unwritten.
+
+### Confirmed against the tenant
+
+| | |
+|---|---|
+| `SharingCapabilities` | `Disabled`, and the enum is the one the rule compares against |
+| `SharingLinkType` | `None`, `Direct`, `Internal`, `AnonymousAccess` |
+| `StorageUsageCurrent` / `StorageQuota` | both MB, `Int64`. A 25 TB quota reads as 26214400 |
+| `LockState` | a string, `Unlock` |
+| `GroupId` | all zeros when not group-connected, so the derivation holds |
+| `PrincipalType` | `User` for a direct administrator |
+
+63 evidence documents, all valid against the schema. None entered Git.
+
+223 tests.
+
+---
+
 ## 0.5.0-alpha
 
 Four more rules, four profiles, and a `collect` command that judges nothing.

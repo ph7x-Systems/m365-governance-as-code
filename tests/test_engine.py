@@ -226,3 +226,71 @@ def test_the_two_scope_rules_keep_different_bases():
     assert rule("SPO-LIST-003")["basis"]["type"] == "documented-guidance"
     assert rule("SPO-LIST-002")["condition"]["value"] == 50000
     assert rule("SPO-LIST-003")["condition"]["value"] == 5000
+
+
+# ---------------------------------------------------------------------------
+# Sharing: a site that sets no default of its own
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("site-sharing-anyone-default-anyone", Outcome.FAIL),
+        ("site-sharing-anyone-default-direct", Outcome.PASS),
+        # `None` means the site follows the tenant, and the tenant setting is
+        # not in this document. Reading it as "not Anyone" would be a pass
+        # built on nothing.
+        ("site-sharing-inherits-tenant-default", Outcome.UNKNOWN),
+        ("site-sharing-guests-only", Outcome.NOT_APPLICABLE),
+        ("site-sharing-not-collected", Outcome.UNKNOWN),
+    ],
+)
+def test_default_link_rule_on_real_enum_values(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SHARE-002"), evidence(fixture)).outcome is expected
+
+
+def test_inheriting_the_tenant_default_is_never_a_pass():
+    """Found by running the collector against a tenant: every site there
+    reported `None`, which the rule would have read as a safe value."""
+    from conftest import rule
+
+    result = evaluate_rule(
+        rule("SPO-SHARE-002"), evidence("site-sharing-inherits-tenant-default")
+    )
+    assert result.outcome is Outcome.UNKNOWN
+    assert not result.outcome.is_answer
+
+
+def test_the_declared_setting_is_kept_beside_the_effective_one():
+    """Both are in the evidence. The rule reads the effective value; a reader
+    needs the declared one to understand why it is missing."""
+    facts = evidence("site-sharing-inherits-tenant-default")["facts"]["sharing"]
+    assert facts["default_link_type"]["value"] == "None"
+    assert facts["effective_default_link_type"]["state"] == "missing"
+    assert "follows the tenant" in facts["effective_default_link_type"]["detail"]
+
+
+@pytest.mark.parametrize(
+    "value",
+    [
+        "Disabled",
+        "ExternalUserSharingOnly",
+        "ExternalUserAndGuestSharing",
+        "ExistingExternalUserSharingOnly",
+    ],
+)
+def test_the_capability_rule_uses_values_the_product_returns(value):
+    """Read out of the loaded PnP assemblies and confirmed against a tenant.
+    A rule comparing against "Anyone" would have matched nothing."""
+    from conftest import rule
+
+    assert rule("SPO-SHARE-001")["condition"]["value"] in {
+        "Disabled",
+        "ExternalUserSharingOnly",
+        "ExternalUserAndGuestSharing",
+        "ExistingExternalUserSharingOnly",
+    }
+    assert value  # the four the enum defines

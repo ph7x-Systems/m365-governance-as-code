@@ -44,6 +44,14 @@
           "field": "DefaultSharingLinkType",
           "value": "AnonymousAccess"
         }
+      },
+      "effective_default_link_type": {
+        "state": "observed",
+        "value": "AnonymousAccess",
+        "raw": {
+          "field": "DefaultSharingLinkType",
+          "value": "AnonymousAccess"
+        }
       }
     }
   }

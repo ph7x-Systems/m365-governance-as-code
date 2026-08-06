@@ -1,7 +1,7 @@
 # Documented guidance. Microsoft writes the recommendation in plain words and
 # permits the alternative, which is exactly what this basis is for.
 
-schema_version: "1.0"
+schema_version: "2.0"
 id: SPO-SHARE-002
 version: "1.0"
 title: The default sharing link should not be Anyone
@@ -48,29 +48,31 @@ evidence_requirements:
   - path: sharing.capability
     type: string
     required: true
-  - path: sharing.default_link_type
+  - path: sharing.effective_default_link_type
     type: string
     required: true
 
 condition:
   operator: equals
-  evidence: sharing.default_link_type
+  evidence: sharing.effective_default_link_type
   value: AnonymousAccess
 
 outcomes:
   pass:
     message: >
-      The default sharing link on this site is {sharing.default_link_type},
+      The default sharing link on this site is {sharing.effective_default_link_type},
       which is not the Anyone link.
   fail:
     message: >
       The default sharing link on this site is the Anyone link
-      ({sharing.default_link_type}). A person who presses Share and changes
+      ({sharing.effective_default_link_type}). A person who presses Share and changes
       nothing produces a link that works without signing in.
   unknown:
     message: >
-      The default sharing link on this site was not read, so what a person
-      gets when they change nothing is not known. This is not a pass.
+      What a person gets when they press Share and change nothing is not
+      settled here: either the setting was not read, or the site sets no
+      default of its own and follows a tenant setting this collection did not
+      read. The evidence beside this finding says which. This is not a pass.
   not_applicable:
     message: >
       This site does not permit Anyone links at all, so the Anyone link cannot
@@ -92,6 +94,10 @@ limitations:
     result on a site that passes this rule as on one that fails it, and the
     rule reads only the default.
   other:
+    - >
+      A site that sets no default of its own follows the tenant, and this rule
+      returns unknown rather than reading the absence as a safe value. The
+      tenant setting is a separate fact this collection does not gather.
     - >
       The default applies to libraries using the modern experience. Microsoft
       states it does not affect Outlook on the web, Outlook 2016, or Office

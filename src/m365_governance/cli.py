@@ -181,8 +181,12 @@ def _cmd_collect(args) -> int:
     if chosen.needs_site and not args.site_url:
         print(f"collect {args.slice} needs --site-url", file=sys.stderr)
         return 2
-    if not chosen.needs_site and not args.tenant_url:
-        print(f"collect {args.slice} needs --tenant-url", file=sys.stderr)
+    if chosen.needs_tenant and not args.tenant_url:
+        print(
+            f"collect {args.slice} needs --tenant-url, the admin centre. "
+            f"Sharing settings are a tenant property about a site.",
+            file=sys.stderr,
+        )
         return 2
 
     outcome = collecting.run_slice(

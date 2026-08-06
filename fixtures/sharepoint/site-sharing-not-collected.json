@@ -39,6 +39,10 @@
       "default_link_type": {
         "state": "permission-denied",
         "detail": "The identity lacks the scope required to read sharing settings."
+      },
+      "effective_default_link_type": {
+        "state": "permission-denied",
+        "detail": "Derived from the site setting, which was not read."
       }
     }
   }

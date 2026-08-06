@@ -710,6 +710,8 @@ def test_a_dry_run_reaches_no_tenant(capsys, tmp_path):
         "00000000-0000-0000-0000-000000000000",
         "--site-url",
         "https://contoso.sharepoint.com",
+        "--tenant-url",
+        "https://contoso-admin.sharepoint.com",
         "--output",
         str(tmp_path / "e.json"),
         "--dry-run",
@@ -720,20 +722,28 @@ def test_a_dry_run_reaches_no_tenant(capsys, tmp_path):
 
 
 @pytest.mark.parametrize(
-    "slice_name,missing", [("sites", "--tenant-url"), ("sharing", "--site-url")]
+    "slice_name,missing",
+    [
+        ("sites", "--tenant-url"),
+        ("permissions", "--site-url"),
+        # Sharing needs both: the settings are a tenant property about a site.
+        ("sharing", "--tenant-url"),
+    ],
 )
 def test_collect_refuses_without_the_url_it_needs(
     capsys, tmp_path, slice_name, missing
 ):
-    code, _, err = run(
-        capsys,
+    argv = [
         "collect",
         slice_name,
         "--client-id",
         "00000000-0000-0000-0000-000000000000",
         "--output",
         str(tmp_path / "out"),
-    )
+    ]
+    if missing != "--site-url":
+        argv += ["--site-url", "https://contoso.sharepoint.com"]
+    code, _, err = run(capsys, *argv)
     assert code == 2
     assert missing in err
 
@@ -808,3 +818,37 @@ def test_a_profile_cuts_the_noise_without_hiding_a_finding(capsys):
     kept = {r["rule_id"] for r in selected["results"] if r["outcome"] == "fail"}
     assert kept == fails
     assert selected["counts"]["unknown"] == 0
+
+
+def test_each_slice_is_paired_with_a_profile_that_can_answer_it():
+    """A slice pointing at the wrong profile produces a wall of `unknown`.
+
+    The first pairing written was wrong: `sites` gathers inventory, not
+    owners, and against the ownership profile it produced 106 `unknown`
+    results across 53 real sites. Every one of them was honest and none of
+    them was useful.
+    """
+    import yaml
+
+    from m365_governance import collecting
+    from m365_governance.loader import load_rules
+
+    on_disk = {loaded.data["id"]: loaded.data for loaded in load_rules(RULES)}
+
+    for chosen in collecting.SLICES.values():
+        profile = yaml.safe_load(
+            (ROOT / "profiles" / f"{chosen.profile}.yaml").read_text()
+        )
+        selected = [on_disk[r] for r in profile["rules"]]
+        outcomes = [
+            result.outcome
+            for result in evaluate(selected, evidence(chosen.shaped_like)).results
+        ]
+        assert outcomes, (
+            f"slice {chosen.name} with profile {chosen.profile}: no rule even "
+            f"applies to a {chosen.shaped_like} document"
+        )
+        assert any(o is not Outcome.UNKNOWN for o in outcomes), (
+            f"slice {chosen.name} paired with profile {chosen.profile} answers "
+            f"nothing about its own evidence: {[o.value for o in outcomes]}"
+        )

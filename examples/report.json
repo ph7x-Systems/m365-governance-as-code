@@ -79,13 +79,13 @@
     {
       "rule_id": "SPO-SHARE-002",
       "rule_version": "1.0",
-      "schema_version": "1.0",
+      "schema_version": "2.0",
       "resource": {
         "id": "contoso,site,hr",
         "type": "site"
       },
       "outcome": "unknown",
-      "message": "The default sharing link on this site was not read, so what a person gets when they change nothing is not known. This is not a pass.",
+      "message": "What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.",
       "basis": "documented-guidance",
       "severity": "medium",
       "evidence_used": [
@@ -98,7 +98,7 @@
           "detail": "not present in the evidence"
         },
         {
-          "path": "sharing.default_link_type",
+          "path": "sharing.effective_default_link_type",
           "state": "missing",
           "value": null,
           "lower_bound": null,

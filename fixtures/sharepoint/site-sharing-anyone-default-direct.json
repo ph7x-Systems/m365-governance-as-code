@@ -44,6 +44,14 @@
           "field": "DefaultSharingLinkType",
           "value": "Direct"
         }
+      },
+      "effective_default_link_type": {
+        "state": "observed",
+        "value": "Direct",
+        "raw": {
+          "field": "DefaultSharingLinkType",
+          "value": "Direct"
+        }
       }
     }
   }

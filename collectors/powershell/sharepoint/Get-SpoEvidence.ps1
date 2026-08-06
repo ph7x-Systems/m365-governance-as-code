@@ -24,7 +24,9 @@
     that reads many resources writes many files into -OutputPath.
 
       SiteOwners         the owners of one site
-      SiteSharing        the sharing configuration of one site
+      SiteSharing        the sharing configuration of one site. Needs -TenantUrl
+                         as well as -SiteUrl: sharing settings are a tenant
+                         property about a site, not a site property
       List               one list: item count and permission inheritance
       UniquePermissions  every visible list on a site
       TenantSites        every site this identity can enumerate
@@ -382,6 +384,29 @@ function Get-SharingFacts {
                 -State (Resolve-FailureState $_) -Detail $_.Exception.Message
         }
     }
+
+    # `None` is not a link type. It is how a site says it sets no default of
+    # its own and follows the tenant, and the tenant setting is not in this
+    # document. Reported as observed, a rule comparing it against
+    # AnonymousAccess would return `pass` while knowing nothing: the tenant
+    # default it inherits could be exactly that.
+    #
+    # So the effective default is a separate fact, and it is missing when the
+    # site inherits. The rule then answers `unknown`, which is the truth.
+    $declared = $facts.sharing['default_link_type']
+    if ($declared.state -eq 'observed' -and $declared.value -ne 'None') {
+        $facts.sharing['effective_default_link_type'] =
+        New-ScalarFact -Value $declared.value -RawField 'DefaultSharingLinkType'
+    }
+    elseif ($declared.state -eq 'observed') {
+        $facts.sharing['effective_default_link_type'] = New-AbsentFact -State 'missing' `
+            -Detail ('The site sets no default of its own and follows the tenant. ' +
+                     'The tenant setting was not read by this collection.')
+    }
+    else {
+        $facts.sharing['effective_default_link_type'] = New-AbsentFact `
+            -State $declared.state -Detail 'Derived from the site setting, which was not read.'
+    }
     return $facts
 }
 
@@ -452,10 +477,16 @@ function Get-SiteInventoryFacts {
 
 # --- connect (read-only) -----------------------------------------------------
 
-$connectUrl = if ($Mode -eq 'TenantSites') { $TenantUrl } else { $SiteUrl }
+# Sharing settings live on the tenant's record of a site, so that mode
+# connects to the admin centre like TenantSites does.
+$adminModes = @('TenantSites', 'SiteSharing')
+$connectUrl = if ($adminModes -contains $Mode) { $TenantUrl } else { $SiteUrl }
 if (-not $connectUrl) {
-    $needed = if ($Mode -eq 'TenantSites') { '-TenantUrl' } else { '-SiteUrl' }
+    $needed = if ($adminModes -contains $Mode) { '-TenantUrl' } else { '-SiteUrl' }
     throw "Mode $Mode needs $needed."
+}
+if ($Mode -eq 'SiteSharing' -and -not $SiteUrl) {
+    throw 'Mode SiteSharing needs -SiteUrl as well as -TenantUrl.'
 }
 
 if ($DeviceLogin) {
@@ -494,16 +525,25 @@ switch ($Mode) {
     }
 
     'SiteSharing' {
-        $web = Get-PnPWeb
-        $site = Get-PnPSite -Includes SharingCapability, DefaultSharingLinkType, `
-            DefaultLinkPermission, AnonymousLinkExpirationInDays
+        # Get-PnPTenantSite, not Get-PnPSite. SharingCapability is not a
+        # property of the site: it is a tenant property about the site, and
+        # -Includes on Get-PnPSite rejects it outright. Found by running this
+        # against a real tenant, which is the only way it could have been
+        # found: the name existed, the type existed, and the call failed at
+        # the parameter set.
+        #
+        # The consequence is that this slice needs an administrative
+        # connection. It is not a site-level read and pretending otherwise
+        # would have produced a mode that only ever failed.
+        $site = Get-PnPTenantSite -Identity $SiteUrl
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    display_name = [string] $web.Title; url = $SiteUrl
+                    display_name = [string] $site.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SharingFacts -Site $site) -Requested @('sharing') `
-                -Completed @('sharing') -Unavailable ([ordered]@{}))
+                -Completed @('sharing') -Unavailable ([ordered]@{}) `
+                -SourceApi 'PnP.PowerShell / SharePoint Admin')
     }
 
     'List' {

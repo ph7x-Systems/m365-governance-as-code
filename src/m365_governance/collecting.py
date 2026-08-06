@@ -35,8 +35,17 @@ class Slice:
     mode: str
     #: The site is the unit for most of these; TenantSites walks the tenant.
     needs_site: bool
+    #: Sharing settings are a tenant property about a site, so that slice
+    #: needs the admin centre as well as the site. Discovered by running it.
+    needs_tenant: bool
     profile: str
     describes: str
+    #: A fixture shaped like what this slice produces. The pairing between a
+    #: slice and its profile is tested against it, because the first pairing
+    #: written here was wrong and only a real run showed it: `sites` gathers
+    #: inventory, not owners, and pointing it at the ownership profile
+    #: produced 106 `unknown` results across 53 sites.
+    shaped_like: str
 
 
 SLICES = {
@@ -46,29 +55,37 @@ SLICES = {
             "sites",
             "TenantSites",
             needs_site=False,
-            profile="ownership",
+            needs_tenant=True,
+            profile="capacity",
             describes="every site this identity can enumerate",
+            shaped_like="site-storage-comfortable",
         ),
         Slice(
             "owners",
             "SiteOwners",
             needs_site=True,
+            needs_tenant=False,
             profile="ownership",
             describes="who administers one site",
+            shaped_like="site-named-and-group-admins",
         ),
         Slice(
             "sharing",
             "SiteSharing",
             needs_site=True,
+            needs_tenant=True,
             profile="sharing",
             describes="what one site permits, and its default link",
+            shaped_like="site-sharing-anyone-default-anyone",
         ),
         Slice(
             "permissions",
             "UniquePermissions",
             needs_site=True,
+            needs_tenant=False,
             profile="capacity",
             describes="every visible list on a site, and its inheritance",
+            shaped_like="list-within-limit",
         ),
     ]
 }
@@ -128,7 +145,7 @@ def run_slice(
     ]
     if chosen.needs_site:
         argv += ["-SiteUrl", site_url or ""]
-    else:
+    if chosen.needs_tenant:
         argv += ["-TenantUrl", tenant_url or ""]
     if device_login:
         argv.append("-DeviceLogin")

@@ -36,11 +36,11 @@ The sharing capability of this site was not read, so whether it permits Anyone l
 
 ### SPO-SHARE-002 v1.0
 
-The default sharing link on this site was not read, so what a person gets when they change nothing is not known. This is not a pass.
+What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.
 
 - Basis: **documented-guidance** — Microsoft recommends this; the product permits the alternative
 - Severity: medium
-- Evidence: `sharing.capability` = <missing>, `sharing.default_link_type` = <missing>
+- Evidence: `sharing.capability` = <missing>, `sharing.effective_default_link_type` = <missing>
 - Source: [Change the default sharing link type for a site](https://learn.microsoft.com/sharepoint/change-default-sharing-link) — checked 2026-08-06
 
 ### SPO-SITE-002 v1.0
