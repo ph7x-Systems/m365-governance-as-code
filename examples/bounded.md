@@ -9,17 +9,55 @@
 
 ## Summary
 
-1 rule evaluated. **1 produced an answer.**
+5 rules evaluated. **1 produced an answer.**
 
 | Outcome | Count |
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 0 |
+| Unknown | 4 |
 | Error | 0 |
 | Not applicable | 0 |
 | Pass | 1 |
 
+4 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
+
+## Unknown
+
+### SPO-SHARE-001 v1.0
+
+The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: medium
+- Evidence: `sharing.capability` = <missing>
+- Source: [Manage sharing settings for SharePoint and OneDrive, external sharing options](https://learn.microsoft.com/sharepoint/turn-external-sharing-on-or-off) — checked 2026-08-06
+- Source: [Share within Microsoft OneDrive and SharePoint, sharable links overview](https://learn.microsoft.com/microsoft-365/education/guide/2-baseline/applications/baseline-apps-odsp-sharing) — checked 2026-08-06
+
+### SPO-SHARE-002 v1.0
+
+The default sharing link on this site was not read, so what a person gets when they change nothing is not known. This is not a pass.
+
+- Basis: **documented-guidance** — Microsoft recommends this; the product permits the alternative
+- Severity: medium
+- Evidence: `sharing.capability` = <missing>, `sharing.default_link_type` = <missing>
+- Source: [Change the default sharing link type for a site](https://learn.microsoft.com/sharepoint/change-default-sharing-link) — checked 2026-08-06
+
+### SPO-SITE-002 v1.0
+
+The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: low
+- Evidence: `owners.direct_count` = <missing>
+
+### SPO-SITE-003 v1.0
+
+The storage figures for this site were not read, so how full it is remains unknown. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: medium
+- Evidence: `site.storage_quota_mb` = <missing>, `site.storage_used_mb` = <missing>, `site.storage_used_percent` = <missing>
 
 ## Pass
 

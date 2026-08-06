@@ -36,7 +36,17 @@ def check(document: dict) -> list:
 
 
 @pytest.mark.parametrize(
-    "rule_id", ["SPO-LIST-001", "SPO-LIST-002", "SPO-LIST-003", "SPO-SITE-001"]
+    "rule_id",
+    [
+        "SPO-LIST-001",
+        "SPO-LIST-002",
+        "SPO-LIST-003",
+        "SPO-SHARE-001",
+        "SPO-SHARE-002",
+        "SPO-SITE-001",
+        "SPO-SITE-002",
+        "SPO-SITE-003",
+    ],
 )
 def test_authored_rules_pass_every_layer(rule_id):
     assert check(rule(rule_id)) == []
@@ -49,7 +59,11 @@ def test_every_rule_file_is_covered_by_a_test():
         "SPO-LIST-001",
         "SPO-LIST-002",
         "SPO-LIST-003",
+        "SPO-SHARE-001",
+        "SPO-SHARE-002",
         "SPO-SITE-001",
+        "SPO-SITE-002",
+        "SPO-SITE-003",
     }, (
         "a rule was added or renamed. Add its cases to tests/test_engine.py "
         "and list it here."

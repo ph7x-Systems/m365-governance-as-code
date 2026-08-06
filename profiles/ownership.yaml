@@ -1,0 +1,18 @@
+# Pairs with `collect sites`.
+#
+# A profile exists to ask one question of evidence gathered to answer it.
+# Running every rule against a sharing snapshot is not wrong, and it produces
+# four `unknown` results per site for rules whose facts were never requested.
+# That is honest and it is noise, and noise in a governance report is how the
+# one line that mattered gets skimmed past.
+#
+# Selection only. No severity override, no basis override, no rule restated.
+
+name: ownership
+description: >
+  Who can act on a site, and whether anybody is named. Evaluate against
+  evidence collected with `collect sites`.
+
+rules:
+  - SPO-SITE-001
+  - SPO-SITE-002

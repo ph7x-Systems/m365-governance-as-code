@@ -275,6 +275,11 @@ function Get-OwnerFacts {
     }
 
     $owners = [ordered]@{ state = 'observed'; direct = $direct; groups = $groups }
+    # Counted separately from the total because they answer different
+    # questions. The total asks how many administrators there are; this asks
+    # whether any of them is a person somebody could ring.
+    $owners['direct_count'] = New-ScalarFact -Value $direct.Count -RawField 'PrincipalType'
+    $owners['group_count'] = New-ScalarFact -Value $groups.Count -RawField 'PrincipalType'
     if ($groups.Count -eq 0) {
         $owners['expansion_complete'] = $true
         $owners['effective_count'] = $direct.Count
@@ -402,6 +407,9 @@ function Get-SiteInventoryFacts {
                 $facts.site[$name] = New-AbsentFact -State 'missing' `
                     -Detail "$property was not returned for this site."
             }
+            elseif ($name -in @('storage_used_mb', 'storage_quota_mb')) {
+                $facts.site[$name] = New-ScalarFact -Value ([int] $value) -RawField $property
+            }
             else {
                 $facts.site[$name] = New-ScalarFact -Value ("$value") -RawField $property
             }
@@ -410,6 +418,22 @@ function Get-SiteInventoryFacts {
             $facts.site[$name] = New-AbsentFact `
                 -State (Resolve-FailureState $_) -Detail $_.Exception.Message
         }
+    }
+
+    # Derived from the two figures beside it, and only when both were read. A
+    # percentage of a quota nobody returned would be a number with no
+    # denominator, which is worse than not having it.
+    $used = $facts.site['storage_used_mb']
+    $quota = $facts.site['storage_quota_mb']
+    if ($used.state -eq 'observed' -and $quota.state -eq 'observed' -and
+        [double] $quota.value -gt 0) {
+        $percent = [int] [math]::Round(([double] $used.value / [double] $quota.value) * 100)
+        $facts.site['storage_used_percent'] =
+        New-ScalarFact -Value $percent -RawField 'StorageUsageCurrent/StorageQuota'
+    }
+    else {
+        $facts.site['storage_used_percent'] = New-AbsentFact -State 'missing' `
+            -Detail 'Derived from used and quota, and one of them was not read.'
     }
 
     # Derived, and derived from something observed: an empty GroupId is how a

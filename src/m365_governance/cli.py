@@ -21,7 +21,7 @@ import json
 import sys
 from pathlib import Path
 
-from . import __version__, diffing, explaining
+from . import __version__, collecting, diffing, explaining
 from . import doctor as doctor_module
 from . import inspect as inspect_module
 from .engine import evaluate
@@ -52,6 +52,38 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     showing.add_argument("rule_id", metavar="ID")
     showing.add_argument("--rules", type=Path, default=DEFAULT_RULES)
+
+    collect = sub.add_parser(
+        "collect",
+        help="run a collector against a tenant and write evidence. Evaluates nothing",
+    )
+    collect.add_argument(
+        "slice",
+        metavar="SLICE",
+        choices=sorted(collecting.SLICES),
+        help="; ".join(f"{s.name}: {s.describes}" for s in collecting.SLICES.values()),
+    )
+    collect.add_argument(
+        "--client-id",
+        required=True,
+        help="an Entra ID app registration. Mandatory since PnP 2.99",
+    )
+    collect.add_argument("--output", type=Path, required=True)
+    collect.add_argument("--site-url")
+    collect.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
+    collect.add_argument(
+        "--device-login",
+        action="store_true",
+        help="authenticate with a device code, for hosts with no browser",
+    )
+    collect.add_argument(
+        "--count-unique-scopes",
+        action="store_true",
+        help="permissions only: walk every item of every list",
+    )
+    collect.add_argument(
+        "--dry-run", action="store_true", help="print the command and reach no tenant"
+    )
 
     explain = sub.add_parser(
         "explain",
@@ -136,6 +168,57 @@ def _cmd_show_rule(args) -> int:
     except KeyError as exc:
         print(str(exc).strip('"'), file=sys.stderr)
         return 2
+    return 0
+
+
+def _cmd_collect(args) -> int:
+    chosen = collecting.SLICES[args.slice]
+
+    for problem in collecting.preflight():
+        print(problem, file=sys.stderr)
+        return 2
+
+    if chosen.needs_site and not args.site_url:
+        print(f"collect {args.slice} needs --site-url", file=sys.stderr)
+        return 2
+    if not chosen.needs_site and not args.tenant_url:
+        print(f"collect {args.slice} needs --tenant-url", file=sys.stderr)
+        return 2
+
+    outcome = collecting.run_slice(
+        args.slice,
+        client_id=args.client_id,
+        output=args.output,
+        site_url=args.site_url,
+        tenant_url=args.tenant_url,
+        device_login=args.device_login,
+        count_unique_scopes=args.count_unique_scopes,
+        dry_run=args.dry_run,
+    )
+
+    if args.dry_run:
+        print(outcome.stdout)
+        return 0
+
+    if outcome.stdout.strip():
+        print(outcome.stdout.rstrip())
+    if not outcome.ok:
+        print(outcome.stderr.rstrip(), file=sys.stderr)
+        print(
+            f"\ncollection failed after {outcome.seconds:.1f}s. Nothing was "
+            f"written to the tenant; a collector has no write path.",
+            file=sys.stderr,
+        )
+        return 1
+
+    print(f"\n{len(outcome.written)} evidence documents in {outcome.seconds:.1f}s.")
+    # Named rather than assumed: the pairing between a collection and the
+    # rules that read it is the difference between a report and a wall of
+    # `unknown` for facts nobody requested.
+    print(
+        f"Evaluate with:  m365-governance evaluate --profile "
+        f"profiles/{chosen.profile}.yaml --evidence {args.output}"
+    )
     return 0
 
 
@@ -284,6 +367,7 @@ def _cmd_diff(args) -> int:
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
+    "collect": _cmd_collect,
     "explain": _cmd_explain,
     "doctor": _cmd_doctor,
     "stats": _cmd_stats,

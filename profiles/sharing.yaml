@@ -1,0 +1,18 @@
+# Pairs with `collect sharing`.
+#
+# The two rules here have different bases on purpose. Allowing Anyone links is
+# a convention: Microsoft permits it, documents it, and an organisation may
+# want it. Making the Anyone link the default is documented guidance, because
+# Microsoft writes the recommendation in plain words on its own page.
+#
+# A profile that averaged them would destroy that distinction, so a profile
+# never averages anything.
+
+name: sharing
+description: >
+  What this site permits, and what a person gets when they press Share and
+  change nothing. Evaluate against evidence collected with `collect sharing`.
+
+rules:
+  - SPO-SHARE-001
+  - SPO-SHARE-002

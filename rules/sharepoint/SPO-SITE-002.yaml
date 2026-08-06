@@ -1,0 +1,88 @@
+# A convention, and a narrower one than SPO-SITE-001. That rule counts; this
+# one asks whether any of the count is a person.
+
+schema_version: "1.0"
+id: SPO-SITE-002
+version: "1.0"
+title: A site should have at least one administrator who is a person
+description: >
+  A site administered only through groups has administrators on paper. Whether
+  anybody in those groups knows they can act, or would act, is a different
+  question, and it is the one that matters when a decision has to be taken
+  today. Group-only administration is a reasonable design in a mature tenant
+  with a staffed operations team, and a common accident everywhere else.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources: []
+  rationale: >
+    Microsoft neither requires an individual administrator nor warns about
+    their absence, and group-based administration is the pattern its own
+    group-connected sites use. This is our position: a group in an
+    administrator field is an arrangement, and an arrangement needs somebody
+    who knows they are part of it. An organisation running a staffed rota can
+    reasonably decline this rule, and should record that it did.
+
+severity:
+  default: low
+  rationale: >
+    Rated below the owner count because the failure mode is slower rather than
+    harder: somebody in the group can act, once the right person is found. It
+    is not zero because finding them is the part that happens during an
+    incident.
+  configurable: true
+
+evidence_requirements:
+  - path: owners.direct_count
+    type: integer
+    required: true
+
+condition:
+  operator: less-than
+  evidence: owners.direct_count
+  value: 1
+
+outcomes:
+  pass:
+    message: >
+      The site has {owners.direct_count} administrators who are individual
+      accounts.
+  fail:
+    message: >
+      Every administrator of this site is a group. Nobody is named
+      individually, so who can act is a question that has to be answered
+      before it can be acted on.
+  unknown:
+    message: >
+      The administrators of this site were not read, so whether any of them is
+      an individual account is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The administrator list was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Name at least one person alongside the groups, and tell them. The point is
+  not the field: it is that somebody knows the site is theirs to decide about.
+
+limitations:
+  passes_without_resolving: >
+    One named administrator who has left the organisation, changed role, or
+    never knew they were named satisfies this rule completely. It reads a
+    field; it cannot read whether the account is active or the person
+    reachable.
+  other:
+    - >
+      A group with a well-run rota behind it is better administration than a
+      single named person who is on leave. This rule cannot see the rota, and
+      a fail here may be the correct design recorded honestly.
+    - >
+      The count is of direct administrators only. It says nothing about how
+      many people the groups contain, which is a separate question the
+      collector declares it did not expand.

@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T09:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / SharePoint Admin",
+    "tenant_id": "contoso-admin.sharepoint.com",
+    "identity_kind": "application",
+    "scopes": [
+      "Sites.Read.All"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "sharing"
+    ],
+    "completed": [
+      "sharing"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,partners",
+    "type": "site",
+    "display_name": "Partners",
+    "url": "https://contoso.sharepoint.com/sites/partners"
+  },
+  "facts": {
+    "sharing": {
+      "capability": {
+        "state": "observed",
+        "value": "ExternalUserAndGuestSharing",
+        "raw": {
+          "field": "SharingCapability",
+          "value": "ExternalUserAndGuestSharing"
+        }
+      },
+      "default_link_type": {
+        "state": "observed",
+        "value": "Direct",
+        "raw": {
+          "field": "DefaultSharingLinkType",
+          "value": "Direct"
+        }
+      }
+    }
+  }
+}

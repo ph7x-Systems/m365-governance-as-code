@@ -26,8 +26,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.4.1-alpha`. Four rules, a five-mode collector, a working
-engine, nine commands and 187 tests. Alpha because the rule set is small, not because the model is
+**Status:** `0.5.0-alpha`. Eight rules, a five-mode collector, four
+profiles, ten commands and 209 tests. Alpha because the rule set is small, not because the model is
 unsettled.
 
 ---
@@ -161,6 +161,7 @@ the source, and how the rule can pass while the problem survives.
 | | |
 |---|---|
 | `explain OUTCOME` | What `pass`, `fail`, `unknown`, `not-applicable`, `invalid-evidence` and `error` mean, and what each is not. `explain all` for the six |
+| `collect SLICE` | Run a collector against a tenant and write evidence. Evaluates nothing |
 | `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around. Says what it found, not only whether it liked it |
 | `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
 | `show-rule ID` | One rule in full, including what it does not establish |

@@ -1,0 +1,99 @@
+# Documented guidance. Microsoft writes the recommendation in plain words and
+# permits the alternative, which is exactly what this basis is for.
+
+schema_version: "1.0"
+id: SPO-SHARE-002
+version: "1.0"
+title: The default sharing link should not be Anyone
+description: >
+  The default link type is what a person gets when they press Share and change
+  nothing. Every other link type remains available, so this is not about what
+  can be shared: it is about what happens when nobody is thinking about it.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/sharepoint/change-default-sharing-link
+      title: Change the default sharing link type for a site
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+  rationale: >
+    Microsoft's recommendation is explicit and is the reason that page exists:
+    "you might want to enable users to send 'Anyone' links, but you might not
+    want this type of link to be the default when users select to share files
+    and folders. Set the default type of link to something more restrictive,
+    while still allowing users to select other types of links as needed."
+
+    It is guidance rather than a requirement: the product permits the
+    alternative, the setting exists to be chosen, and an organisation whose
+    work is genuinely public may reasonably choose it.
+
+severity:
+  default: medium
+  rationale: >
+    Rated for how often it applies rather than how bad one instance is. A
+    default is exercised by everybody who shares anything without thinking
+    about it, which over a year is most sharing.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: sharing.capability
+  value: ExternalUserAndGuestSharing
+
+evidence_requirements:
+  - path: sharing.capability
+    type: string
+    required: true
+  - path: sharing.default_link_type
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: sharing.default_link_type
+  value: AnonymousAccess
+
+outcomes:
+  pass:
+    message: >
+      The default sharing link on this site is {sharing.default_link_type},
+      which is not the Anyone link.
+  fail:
+    message: >
+      The default sharing link on this site is the Anyone link
+      ({sharing.default_link_type}). A person who presses Share and changes
+      nothing produces a link that works without signing in.
+  unknown:
+    message: >
+      The default sharing link on this site was not read, so what a person
+      gets when they change nothing is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This site does not permit Anyone links at all, so the Anyone link cannot
+      be its default. The rule has nothing to say about it.
+  invalid_evidence:
+    message: >
+      The default link type was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Set the default to something more restrictive, per site, and leave the
+  Anyone link available for the people who need it. Microsoft's own page
+  describes exactly this arrangement.
+
+limitations:
+  passes_without_resolving: >
+    A default of Specific people means nothing about what people actually
+    choose. Somebody who selects the Anyone link every time produces the same
+    result on a site that passes this rule as on one that fails it, and the
+    rule reads only the default.
+  other:
+    - >
+      The default applies to libraries using the modern experience. Microsoft
+      states it does not affect Outlook on the web, Outlook 2016, or Office
+      clients before 2016, so sharing done through those paths is outside what
+      this rule describes.

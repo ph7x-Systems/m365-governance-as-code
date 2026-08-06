@@ -11,7 +11,7 @@ import json
 
 import pytest
 
-from conftest import FIXTURES, ROOT, evidence, rule
+from conftest import FIXTURES, ROOT, evidence
 from m365_governance import diffing, doctor, inspect
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
@@ -28,7 +28,12 @@ def run(capsys, *argv) -> tuple[int, str, str]:
 
 
 def _run_for(fixture: str) -> Run:
-    return evaluate([rule("SPO-SITE-001"), rule("SPO-LIST-001")], evidence(fixture))
+    """Every rule on disk, not a hand-picked pair. The pair went stale the
+    first time a rule was added, which is the same way the default profile
+    went stale."""
+    from m365_governance.loader import load_rules
+
+    return evaluate([loaded.data for loaded in load_rules(RULES)], evidence(fixture))
 
 
 # ---------------------------------------------------------------------------
@@ -41,7 +46,7 @@ def test_list_rules_names_the_kind_of_claim(capsys):
     assert code == 0
     assert "SPO-LIST-001" in out and "SPO-SITE-001" in out
     assert "documented-limit" in out and "convention" in out
-    assert "4 rules" in out
+    assert "8 rules" in out
 
 
 def test_list_rules_orders_the_strongest_claim_first(capsys):
@@ -663,3 +668,143 @@ def test_no_rule_or_schema_mentions_support():
         text = loaded.path.read_text().lower()
         for word in SUPPORT:
             assert word not in text, f"{loaded.path.name} mentions {word!r}"
+
+
+# ---------------------------------------------------------------------------
+# collect: reads a tenant, judges nothing
+# ---------------------------------------------------------------------------
+
+
+def test_collect_never_evaluates_a_rule():
+    """The separation is the point. A command that collected and judged in one
+    step would produce a conclusion nobody could reproduce without the tenant
+    in front of them."""
+    import inspect as py_inspect
+
+    from m365_governance import collecting
+
+    source = py_inspect.getsource(collecting)
+    for forbidden in ("from .engine", "from .validator", "import engine"):
+        assert forbidden not in source, f"collecting imports {forbidden}"
+
+
+def test_every_slice_names_the_profile_that_reads_it(capsys):
+    """A collection paired with the wrong rules produces a wall of `unknown`
+    for facts nobody requested."""
+    from m365_governance import collecting
+
+    profiles = {p.stem for p in (ROOT / "profiles").glob("*.yaml")}
+    for chosen in collecting.SLICES.values():
+        assert chosen.profile in profiles, (
+            f"slice {chosen.name} points at profile {chosen.profile}, "
+            f"which does not exist. Profiles: {sorted(profiles)}"
+        )
+
+
+def test_a_dry_run_reaches_no_tenant(capsys, tmp_path):
+    code, out, _ = run(
+        capsys,
+        "collect",
+        "sharing",
+        "--client-id",
+        "00000000-0000-0000-0000-000000000000",
+        "--site-url",
+        "https://contoso.sharepoint.com",
+        "--output",
+        str(tmp_path / "e.json"),
+        "--dry-run",
+    )
+    assert code == 0
+    assert "-Mode SiteSharing" in out
+    assert not (tmp_path / "e.json").exists()
+
+
+@pytest.mark.parametrize(
+    "slice_name,missing", [("sites", "--tenant-url"), ("sharing", "--site-url")]
+)
+def test_collect_refuses_without_the_url_it_needs(
+    capsys, tmp_path, slice_name, missing
+):
+    code, _, err = run(
+        capsys,
+        "collect",
+        slice_name,
+        "--client-id",
+        "00000000-0000-0000-0000-000000000000",
+        "--output",
+        str(tmp_path / "out"),
+    )
+    assert code == 2
+    assert missing in err
+
+
+def test_the_collector_command_line_never_carries_a_write_flag(tmp_path):
+    from m365_governance import collecting
+
+    for name in collecting.SLICES:
+        outcome = collecting.run_slice(
+            name,
+            client_id="00000000-0000-0000-0000-000000000000",
+            output=tmp_path / "out",
+            site_url="https://contoso.sharepoint.com",
+            tenant_url="https://contoso-admin.sharepoint.com",
+            dry_run=True,
+        )
+        for flag in ("-Force", "-Confirm:$false", "-WhatIf:$false", "-Set", "-Remove"):
+            assert flag not in outcome.stdout, f"{name} passes {flag}"
+
+
+# ---------------------------------------------------------------------------
+# profiles select, and never judge
+# ---------------------------------------------------------------------------
+
+
+def test_no_profile_overrides_a_basis_or_a_severity():
+    """A profile selects. The moment one restates a rule, results stop being
+    comparable across profiles and the basis gets reviewed twice."""
+    import yaml
+
+    for path in sorted((ROOT / "profiles").glob("*.yaml")):
+        profile = yaml.safe_load(path.read_text()) or {}
+        assert set(profile) <= {"name", "description", "rules"}, (
+            f"{path.name} carries more than a selection: "
+            f"{sorted(set(profile) - {'name', 'description', 'rules'})}"
+        )
+
+
+def test_every_profile_selects_rules_that_exist():
+    import yaml
+
+    from m365_governance.loader import load_rules
+
+    known = {loaded.data["id"] for loaded in load_rules(ROOT / "rules")}
+    for path in sorted((ROOT / "profiles").glob("*.yaml")):
+        profile = yaml.safe_load(path.read_text()) or {}
+        for rule_id in profile.get("rules") or []:
+            assert rule_id in known, (
+                f"{path.name} selects {rule_id}, which does not exist"
+            )
+
+
+def test_a_profile_cuts_the_noise_without_hiding_a_finding(capsys):
+    """Selecting fewer rules must remove `unknown`, never a `fail`."""
+    everything = _run_for("site-sharing-anyone-default-anyone")
+    fails = {r.rule_id for r in everything.results if r.outcome is Outcome.FAIL}
+
+    code, out, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--profile",
+        str(ROOT / "profiles" / "sharing.yaml"),
+        "--evidence",
+        str(FIXTURES / "site-sharing-anyone-default-anyone.json"),
+        "--format",
+        "json",
+    )
+    assert code == 0
+    selected = json.loads(out)
+    kept = {r["rule_id"] for r in selected["results"] if r["outcome"] == "fail"}
+    assert kept == fails
+    assert selected["counts"]["unknown"] == 0

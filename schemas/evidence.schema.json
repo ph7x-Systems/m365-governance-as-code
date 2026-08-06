@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/evidence/1.1.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/evidence/1.2.0",
   "title": "Evidence document",
   "description": "What a collector is allowed to hand to the engine. Structure only. See docs/EVIDENCE-SCHEMA.md.",
   "type": "object",
@@ -357,6 +357,13 @@
         "minimum_count": {
           "type": "integer",
           "minimum": 0
+        },
+        "direct_count": {
+          "$ref": "#/$defs/scalarFact",
+          "$comment": "How many members are individual principals. Separate from the total because it answers a different question: the total asks how many there are, this asks whether any of them is a person."
+        },
+        "group_count": {
+          "$ref": "#/$defs/scalarFact"
         }
       },
       "allOf": [

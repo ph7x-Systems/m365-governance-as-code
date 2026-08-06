@@ -29,12 +29,96 @@
   "counts": {
     "pass": 1,
     "fail": 0,
-    "unknown": 0,
+    "unknown": 4,
     "not-applicable": 0,
     "invalid-evidence": 0,
     "error": 0
   },
   "results": [
+    {
+      "rule_id": "SPO-SHARE-001",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.",
+      "basis": "convention",
+      "severity": "medium",
+      "evidence_used": [
+        {
+          "path": "sharing.capability",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "A site with Anyone links turned off today may hold documents shared that way last year, and those links keep working. Turning the setting off does not revoke what it produced, and this rule reads only the setting.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/sharepoint/turn-external-sharing-on-or-off",
+          "title": "Manage sharing settings for SharePoint and OneDrive, external sharing options",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        },
+        {
+          "url": "https://learn.microsoft.com/microsoft-365/education/guide/2-baseline/applications/baseline-apps-odsp-sharing",
+          "title": "Share within Microsoft OneDrive and SharePoint, sharable links overview",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        }
+      ],
+      "remediation": "Decide whether this site needs it. Where it does, the controls Microsoft provides are expiry and view-only permission on Anyone links, and both are set per site. Where it does not, a more restrictive capability removes the option without removing external sharing.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-SHARE-002",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The default sharing link on this site was not read, so what a person gets when they change nothing is not known. This is not a pass.",
+      "basis": "documented-guidance",
+      "severity": "medium",
+      "evidence_used": [
+        {
+          "path": "sharing.capability",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        },
+        {
+          "path": "sharing.default_link_type",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "A default of Specific people means nothing about what people actually choose. Somebody who selects the Anyone link every time produces the same result on a site that passes this rule as on one that fails it, and the rule reads only the default.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/sharepoint/change-default-sharing-link",
+          "title": "Change the default sharing link type for a site",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        }
+      ],
+      "remediation": "Set the default to something more restrictive, per site, and leave the Anyone link available for the people who need it. Microsoft's own page describes exactly this arrangement.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
     {
       "rule_id": "SPO-SITE-001",
       "rule_version": "1.1",
@@ -60,6 +144,78 @@
       "passes_without_resolving": "Two owners who are dormant, who have left, or who do not know they own the site satisfy this rule completely. The count is two and nobody is able to act. The rule measures the field, not the availability of a person.",
       "sources": [],
       "remediation": "Assign a second accountable owner, and review ownership when people change role. A second owner who does not know they are one is not a second owner: the point is that somebody else can act, not that a field has two values.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-SITE-002",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.",
+      "basis": "convention",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "owners.direct_count",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "One named administrator who has left the organisation, changed role, or never knew they were named satisfies this rule completely. It reads a field; it cannot read whether the account is active or the person reachable.",
+      "sources": [],
+      "remediation": "Name at least one person alongside the groups, and tell them. The point is not the field: it is that somebody knows the site is theirs to decide about.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-SITE-003",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The storage figures for this site were not read, so how full it is remains unknown. This is not a pass.",
+      "basis": "convention",
+      "severity": "medium",
+      "evidence_used": [
+        {
+          "path": "site.storage_quota_mb",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        },
+        {
+          "path": "site.storage_used_mb",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        },
+        {
+          "path": "site.storage_used_percent",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "A site at 40 per cent that doubles every month passes this rule twice before it fails it. The rule reads one number on one day: it measures a level and says nothing about a rate, and the rate is what decides when anybody needs to act.",
+      "sources": [],
+      "remediation": "Raise the quota, or move content out. Which one is right depends on whether the site is growing because it is being used or because nothing has ever been removed from it, and that is a question the numbers here do not answer.",
       "message_degraded": false,
       "engine_detail": ""
     }

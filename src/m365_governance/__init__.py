@@ -1,3 +1,3 @@
 """Microsoft 365 governance checks that show their work."""
 
-__version__ = "0.4.1"
+__version__ = "0.5.0"

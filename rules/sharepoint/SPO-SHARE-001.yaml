@@ -1,0 +1,96 @@
+# A convention. Microsoft permits this, defaults to it in places, and
+# documents how to restrict it. Our position is that it belongs on a list.
+
+schema_version: "1.0"
+id: SPO-SHARE-001
+version: "1.0"
+title: A site that allows Anyone links permits access that cannot be attributed
+description: >
+  With Anyone links enabled, a person can create a link that works without
+  signing in, for anybody who receives it. The link is the credential. That is
+  a legitimate way to work with people who have no account, and it is the one
+  sharing mode where the record of who opened a document does not exist.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources:
+    - url: https://learn.microsoft.com/sharepoint/turn-external-sharing-on-or-off
+      title: Manage sharing settings for SharePoint and OneDrive, external sharing options
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+    - url: https://learn.microsoft.com/microsoft-365/education/guide/2-baseline/applications/baseline-apps-odsp-sharing
+      title: Share within Microsoft OneDrive and SharePoint, sharable links overview
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+  rationale: >
+    Microsoft permits this setting, offers it as one of four, and describes it
+    as "best for friction-free sharing if most files and folders in SharePoint
+    and OneDrive aren't sensitive". It also states plainly that "people using
+    an Anyone link don't have to authenticate, and their access can't be
+    audited". Both sentences are Microsoft's; the judgement that a site in
+    this state belongs on a list somebody reads is ours. The sources explain
+    the claim and do not make it a requirement.
+
+severity:
+  default: medium
+  rationale: >
+    The consequence is a gap in attribution rather than an exposure: the
+    setting alone shares nothing. It is not low because the gap is permanent
+    for anything shared while it was on, and not high because the setting may
+    be exactly what the site is for.
+  configurable: true
+
+evidence_requirements:
+  - path: sharing.capability
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: sharing.capability
+  value: ExternalUserAndGuestSharing
+
+outcomes:
+  pass:
+    message: >
+      The site's sharing capability is {sharing.capability}, which does not
+      permit links that work without signing in.
+  fail:
+    message: >
+      The site permits Anyone links ({sharing.capability}). Anything shared
+      that way can be opened without signing in, and who opened it is not
+      recorded.
+  unknown:
+    message: >
+      The sharing capability of this site was not read, so whether it permits
+      Anyone links is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The sharing capability was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Decide whether this site needs it. Where it does, the controls Microsoft
+  provides are expiry and view-only permission on Anyone links, and both are
+  set per site. Where it does not, a more restrictive capability removes the
+  option without removing external sharing.
+
+limitations:
+  passes_without_resolving: >
+    A site with Anyone links turned off today may hold documents shared that
+    way last year, and those links keep working. Turning the setting off does
+    not revoke what it produced, and this rule reads only the setting.
+  other:
+    - >
+      The rule does not count links. A site permitting Anyone links and using
+      none is indistinguishable here from one where every document has one.
+    - >
+      SharePoint enforces that a site cannot be more permissive than the
+      tenant, so a site in this state is a tenant that permits it. Whether
+      that was decided or inherited is not visible from here.

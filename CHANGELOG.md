@@ -8,6 +8,66 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.5.0-alpha
+
+Four more rules, four profiles, and a `collect` command that judges nothing.
+
+**Breaking changes:** none.
+
+### Rules
+
+| id | basis | Reads |
+|---|---|---|
+| `SPO-SITE-002` | `convention` | Whether any administrator is a person rather than a group |
+| `SPO-SITE-003` | `convention` | Storage above 90 per cent of quota. The number is ours and says so |
+| `SPO-SHARE-001` | `convention` | A site that permits Anyone links |
+| `SPO-SHARE-002` | `documented-guidance` | The Anyone link as the site default |
+
+The two sharing rules have different bases on purpose. Microsoft permits
+Anyone links, documents them, and offers them as one of four options: judging
+a site for allowing them is our position. Microsoft's own page on the default
+link type says "set the default type of link to something more restrictive":
+that is guidance, quoted, with the date it was checked.
+
+The enum values were read out of the loaded PnP assemblies rather than
+guessed. `ExternalUserAndGuestSharing` and `AnonymousAccess` are what the
+product uses, and a rule that had guessed `Anyone` would have matched nothing
+while looking correct.
+
+### Profiles
+
+`ownership`, `sharing` and `capacity`, each paired with the collection that
+answers it. Running every rule against a sharing snapshot is not wrong and
+produces four `unknown` results per site for facts nobody requested. That is
+honest, and it is noise, and noise is how the one line that mattered gets
+skimmed past.
+
+A test asserts that selecting fewer rules removes `unknown` and never a
+`fail`, and another that no profile carries anything beyond a selection.
+
+### `collect`
+
+```bash
+m365-governance collect sharing --site-url ... --client-id ... --output ...
+```
+
+Four slices: `sites`, `owners`, `sharing`, `permissions`. It runs the
+PowerShell collector, reports how long it took and how many documents it
+wrote, and names the profile that reads them. It evaluates nothing, and a test
+asserts the module cannot: it does not import the engine.
+
+`--dry-run` prints the command and reaches no tenant.
+
+### Evidence schema 1.2.0
+
+An aggregate fact may carry `direct_count` and `group_count`. They answer a
+different question from the total: the total asks how many administrators
+there are, these ask whether any of them is a person somebody could ring.
+
+209 tests.
+
+---
+
 ## 0.4.1-alpha
 
 A support link, and a boundary around it.

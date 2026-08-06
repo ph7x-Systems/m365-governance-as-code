@@ -1,0 +1,16 @@
+# Pairs with `collect permissions` and `collect capacity`.
+#
+# Two documented limits, one documented recommendation and one threshold of
+# ours, kept together because they answer the same question: what is close to
+# stopping working, and what has already stopped being possible.
+
+name: capacity
+description: >
+  Limits reached, limits approaching, and the one number that is ours rather
+  than Microsoft's. Evaluate against list and site evidence.
+
+rules:
+  - SPO-LIST-001
+  - SPO-LIST-002
+  - SPO-LIST-003
+  - SPO-SITE-003

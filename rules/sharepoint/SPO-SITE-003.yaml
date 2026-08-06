@@ -1,0 +1,99 @@
+# A convention with a threshold we chose. The number is ours and is stated as
+# ours: Microsoft publishes a storage limit, not a fill level worth watching.
+
+schema_version: "1.0"
+id: SPO-SITE-003
+version: "1.0"
+title: A site above 90 per cent of its storage quota is close to stopping
+description: >
+  A site that reaches its quota stops accepting uploads. The failure is abrupt
+  and lands on whoever is trying to save a file, not on whoever manages
+  storage. Ninety per cent is a place to look, not a threshold the product
+  knows about.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources: []
+  rationale: >
+    Microsoft documents the storage limits and does not publish a fill level
+    at which anybody should be told. Ninety per cent is our number, chosen so
+    that a site growing at an ordinary rate is noticed with weeks rather than
+    days of room. A tenant that manages quota centrally, or one that grants
+    storage on request within a day, can reasonably ignore this rule.
+
+severity:
+  default: medium
+  rationale: >
+    The consequence is work stopping, which is disruptive and immediately
+    reversible by granting storage. It is not high because the fix is quick
+    and well understood, and not low because nobody discovers it before the
+    moment it blocks them.
+  configurable: true
+
+applicability:
+  operator: greater-than
+  evidence: site.storage_quota_mb
+  value: 0
+
+evidence_requirements:
+  - path: site.storage_used_mb
+    type: integer
+    required: true
+  - path: site.storage_quota_mb
+    type: integer
+    required: true
+  - path: site.storage_used_percent
+    type: integer
+    required: true
+
+condition:
+  operator: greater-than-or-equal
+  evidence: site.storage_used_percent
+  value: 90
+
+outcomes:
+  pass:
+    message: >
+      The site uses {site.storage_used_mb} MB of {site.storage_quota_mb} MB,
+      which is {site.storage_used_percent} per cent of its quota, at the time
+      of collection.
+  fail:
+    message: >
+      The site uses {site.storage_used_mb} MB of {site.storage_quota_mb} MB,
+      which is {site.storage_used_percent} per cent of its quota. At this rate
+      the next upload to fail will be somebody else's.
+  unknown:
+    message: >
+      The storage figures for this site were not read, so how full it is
+      remains unknown. This is not a pass.
+  not_applicable:
+    message: >
+      This site has no quota recorded, so a percentage of it cannot be
+      calculated. That is not the same as having room.
+  invalid_evidence:
+    message: >
+      The storage figures were returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Raise the quota, or move content out. Which one is right depends on whether
+  the site is growing because it is being used or because nothing has ever
+  been removed from it, and that is a question the numbers here do not answer.
+
+limitations:
+  passes_without_resolving: >
+    A site at 40 per cent that doubles every month passes this rule twice
+    before it fails it. The rule reads one number on one day: it measures a
+    level and says nothing about a rate, and the rate is what decides when
+    anybody needs to act.
+  other:
+    - >
+      A pass means "below the threshold at the moment of collection", never
+      "has room". Storage moves between collections and this figure does not.
+    - >
+      The percentage is derived from the two figures beside it. Where the
+      quota is unlimited or not recorded, the rule reports not-applicable
+      rather than assuming a denominator.
