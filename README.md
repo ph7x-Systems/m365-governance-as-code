@@ -26,8 +26,9 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.8.0-alpha`. Twelve rules, an eight-mode collector validated
-against a live tenant, six profiles, ten commands and 270 tests. Alpha because the rule set is small, not because the model is
+**Status:** `0.9.0-alpha`. Thirteen rules, a nine-mode collector validated
+against a live tenant, seven profiles, ten commands and 316 tests at 91 per
+cent coverage. Alpha because the rule set is small, not because the model is
 unsettled.
 
 ---

@@ -15,7 +15,12 @@ pip install -e . && pip install -r requirements-dev.txt
 m365-governance validate     # every rule, every layer
 pytest                       # the suite
 python tools/examples.py --check
+coverage run -m pytest && coverage report
 ```
+
+Coverage has a floor rather than a target. It moves up when something real
+gets covered, and never down to accommodate a change that stopped testing
+something.
 
 All of it runs offline. No tenant is needed to contribute a rule.
 

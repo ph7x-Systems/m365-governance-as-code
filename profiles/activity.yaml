@@ -1,0 +1,17 @@
+# Pairs with `collect activity`.
+#
+# One rule, and the reason it reads the date it reads. On a real tenant all
+# three sites reported LastItemModifiedDate as the day of collection: a system
+# process had touched every one of them. A rule on that field reports nothing,
+# confidently, for ever.
+#
+# LastItemUserModifiedDate on the same three sites: 10 days, 440 days, 573.
+
+name: activity
+description: >
+  Which sites no person has changed in a long time, separated from the ones
+  nobody could change. Evaluate against evidence collected with
+  `collect activity`.
+
+rules:
+  - SPO-ACTIVITY-001

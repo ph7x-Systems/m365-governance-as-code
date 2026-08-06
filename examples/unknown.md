@@ -11,20 +11,28 @@
 
 ## Summary
 
-9 rules evaluated. **0 produced an answer.**
+10 rules evaluated. **0 produced an answer.**
 
 | Outcome | Count |
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 9 |
+| Unknown | 10 |
 | Error | 0 |
 | Not applicable | 0 |
 | Pass | 0 |
 
-9 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
+10 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 
 ## Unknown
+
+### SPO-ACTIVITY-001 v1.0
+
+When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: low
+- Evidence: `activity.changeable` = <missing>, `activity.days_since_user_change` = <missing>
 
 ### SPO-MODERN-001 v1.0
 

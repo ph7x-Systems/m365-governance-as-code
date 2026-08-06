@@ -32,12 +32,48 @@
   "counts": {
     "pass": 1,
     "fail": 0,
-    "unknown": 8,
+    "unknown": 9,
     "not-applicable": 0,
     "invalid-evidence": 0,
     "error": 0
   },
   "results": [
+    {
+      "rule_id": "SPO-ACTIVITY-001",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.",
+      "basis": "convention",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "activity.changeable",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        },
+        {
+          "path": "activity.days_since_user_change",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "Somebody correcting one typo resets this to zero. A single edit satisfies the rule completely and says nothing about whether the site is used, read, or worth keeping, and the sites most worth reviewing are often the ones with one dutiful edit a year.",
+      "sources": [],
+      "remediation": "Find out what it was for before deciding anything. The cheapest outcome is usually to archive it, which keeps the content and takes it out of every list somebody has to read; deleting is a decision that needs an owner, and a site in this state often no longer has one.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
     {
       "rule_id": "SPO-MODERN-001",
       "rule_version": "1.0",

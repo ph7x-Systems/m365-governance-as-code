@@ -38,6 +38,7 @@ def check(document: dict) -> list:
 @pytest.mark.parametrize(
     "rule_id",
     [
+        "SPO-ACTIVITY-001",
         "SPO-LIST-001",
         "SPO-LIST-002",
         "SPO-LIST-003",
@@ -60,6 +61,7 @@ def test_every_rule_file_is_covered_by_a_test():
     """A rule added without a test would otherwise pass silently."""
     on_disk = {p.stem for p in RULES.rglob("*.yaml")}
     assert on_disk == {
+        "SPO-ACTIVITY-001",
         "SPO-LIST-001",
         "SPO-LIST-002",
         "SPO-LIST-003",

@@ -8,6 +8,68 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.9.0-alpha
+
+Activity, and the date that decides whether the rule means anything.
+
+**Breaking changes:** none.
+
+### Three dates, and only one of them is about people
+
+| Property | Moves when |
+|---|---|
+| `LastItemModifiedDate` | anything changes an item, including a system process |
+| `LastItemUserModifiedDate` | a person changes something |
+| `Created` | for a site that never had a first change |
+
+On the tenant, all three sites reported `LastItemModifiedDate` as **the day of
+collection**. A search crawl, a sync or a retention job had touched every one
+of them. The same three on `LastItemUserModifiedDate`:
+
+```
+home       10 days
+training  440 days
+root      573 days
+```
+
+A rule reading the first field reports nothing, confidently, for ever. This
+one reads the second.
+
+### Locked and archived are decisions, not accidents
+
+`activity.changeable` is derived from `LockState` and `ArchiveStatus`, and it
+is the rule's applicability. A site nobody may write to and a site nobody
+wants are different findings, and reporting them together buries the decision
+among the accidents. Both produce `not-applicable`, which is not a pass.
+
+### `SPO-ACTIVITY-001`
+
+`convention`, 365 days. Microsoft publishes no such period and provides site
+lifecycle policies precisely so each organisation picks its own; the year is
+ours and says so.
+
+It reads writes and never reads, and the limitation says that too: a reference
+site hundreds of people open and nobody edits fails this rule, and failing it
+is the correct answer to the question asked.
+
+### Coverage
+
+Measured for the first time, and it found something. The bounded comparison
+sat at 86 per cent with nearly the whole table from `ARCHITECTURE.md` never
+executed. `tests/test_bounded.py` is that table, one case per cell. The engine
+is now at 97 per cent and the project at 91, with a floor in CI.
+
+### The read-only check is a step
+
+It was a job, which meant a second runner and a second `actions/checkout` to
+resolve. GitHub failed to resolve it twice in a row while the other job
+resolved the same action in the same run. Three seconds of checking was not
+worth a whole job's exposure.
+
+316 tests.
+
+---
+
 ## 0.8.0-alpha
 
 SPFx, in two modes, and three rules that turned out to be unwritable.

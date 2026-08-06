@@ -1,0 +1,109 @@
+# A convention with a threshold we chose, reading the one date that moves for
+# a person rather than for a process.
+
+schema_version: "1.0"
+id: SPO-ACTIVITY-001
+version: "1.0"
+title: No person has changed anything on this site for over a year
+description: >
+  A site nobody edits still costs storage, still appears in search, still
+  holds whatever was left in it, and still has to be included in every
+  migration, every audit and every permission review. Nothing about it fails.
+  It accumulates.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources: []
+  rationale: >
+    Microsoft publishes no period after which a site should be reviewed, and
+    provides site lifecycle policies precisely so that each organisation can
+    choose its own. A year is ours: long enough that annual work has happened
+    at least once, short enough that the people who know what the site was for
+    are usually still reachable.
+
+    An archive, a reference library or a site kept for a legal obligation can
+    reasonably fail this rule for ever, and the organisation that decided that
+    should record the decision rather than the rule.
+
+severity:
+  default: low
+  rationale: >
+    Nothing is at risk and nothing is broken. What this measures is the cost
+    of carrying something nobody uses, which is real, cumulative and never
+    urgent. Rating it higher would put a housekeeping note beside findings
+    about access.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: activity.changeable
+  value: true
+
+evidence_requirements:
+  - path: activity.changeable
+    type: boolean
+    required: true
+  - path: activity.days_since_user_change
+    type: integer
+    required: true
+
+condition:
+  operator: greater-than
+  evidence: activity.days_since_user_change
+  value: 365
+
+outcomes:
+  pass:
+    message: >
+      A person last changed something on this site
+      {activity.days_since_user_change} days before this evidence was
+      collected.
+  fail:
+    message: >
+      No person has changed anything on this site for
+      {activity.days_since_user_change} days. System processes have touched it
+      since; a person has not.
+  unknown:
+    message: >
+      When a person last changed something on this site was not established,
+      so how long it has been is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This site is locked or archived, so nobody could have changed it. A site
+      somebody decided about is not a site nobody wants, and this rule has
+      nothing to say about it.
+  invalid_evidence:
+    message: >
+      The activity dates were returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Find out what it was for before deciding anything. The cheapest outcome is
+  usually to archive it, which keeps the content and takes it out of every
+  list somebody has to read; deleting is a decision that needs an owner, and a
+  site in this state often no longer has one.
+
+limitations:
+  passes_without_resolving: >
+    Somebody correcting one typo resets this to zero. A single edit satisfies
+    the rule completely and says nothing about whether the site is used, read,
+    or worth keeping, and the sites most worth reviewing are often the ones
+    with one dutiful edit a year.
+  other:
+    - >
+      It reads writes, never reads. A reference site that hundreds of people
+      open every week and nobody edits fails this rule, and failing it is the
+      correct answer to the question asked: nobody has changed it. Whether
+      that matters is not a question this evidence can answer.
+    - >
+      The number of days is counted against the moment the evidence was
+      collected, which is in the provenance beside it. The same document read
+      a year later describes a gap that was true on the day, not today.
+    - >
+      The rule reads `LastItemUserModifiedDate` rather than
+      `LastItemModifiedDate`, and the difference is the whole rule. On a real
+      tenant every site had been touched by a system process on the day of
+      collection, while two of three had gone over a year without a person.

@@ -70,6 +70,15 @@ SLICES = {
             shaped_like="site-named-and-group-admins",
         ),
         Slice(
+            "modernity",
+            "Modernity",
+            needs_site=True,
+            needs_tenant=False,
+            profile="modernisation",
+            describes="how one site is built: template, branding, publishing",
+            shaped_like="site-modern-publishing-on",
+        ),
+        Slice(
             "sharing",
             "SiteSharing",
             needs_site=True,
@@ -77,6 +86,15 @@ SLICES = {
             profile="sharing",
             describes="what one site permits, and its default link",
             shaped_like="site-sharing-anyone-default-anyone",
+        ),
+        Slice(
+            "activity",
+            "Activity",
+            needs_site=True,
+            needs_tenant=True,
+            profile="activity",
+            describes="when a person last changed something on one site",
+            shaped_like="site-activity-stale",
         ),
         Slice(
             "permissions",

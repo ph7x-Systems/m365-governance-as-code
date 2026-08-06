@@ -422,3 +422,67 @@ def test_an_unreconciled_count_is_invalid_evidence_not_a_pass():
         evidence("site-spfx-pages-unreconciled")["facts"], "pages.inspected"
     )
     assert resolved.kind == "invalid"
+
+
+# ---------------------------------------------------------------------------
+# Activity: the date that moves for a person, not for a process
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("site-activity-recent", Outcome.PASS),
+        ("site-activity-stale", Outcome.FAIL),
+        ("site-activity-locked", Outcome.NOT_APPLICABLE),
+        ("site-activity-archived", Outcome.NOT_APPLICABLE),
+        ("site-activity-not-read", Outcome.UNKNOWN),
+    ],
+)
+def test_activity_rule(fixture, expected):
+    from conftest import rule
+
+    assert (
+        evaluate_rule(rule("SPO-ACTIVITY-001"), evidence(fixture)).outcome is expected
+    )
+
+
+def test_the_rule_reads_the_user_date_and_not_the_item_date():
+    """The whole rule. On a real tenant every site reported
+    LastItemModifiedDate as the day of collection, because a system process
+    had touched all of them. Two of the three had gone over a year without a
+    person."""
+    from conftest import rule
+
+    data = rule("SPO-ACTIVITY-001")
+    assert data["condition"]["evidence"] == "activity.days_since_user_change"
+
+    stale = evidence("site-activity-stale")["facts"]["activity"]
+    assert stale["last_item_modified"]["raw"]["field"] == "LastItemModifiedDate"
+    assert stale["last_user_modified"]["raw"]["field"] == "LastItemUserModifiedDate"
+    # Touched today by something, untouched for 440 days by anybody.
+    assert stale["last_item_modified"]["value"].startswith("2026-08-06")
+    assert stale["days_since_user_change"]["value"] == 440
+
+
+def test_a_site_nobody_may_change_is_not_a_site_nobody_wants():
+    """Locked and archived are decisions. Reporting them beside the accidents
+    buries the decision."""
+    from conftest import rule
+
+    for fixture in ("site-activity-locked", "site-activity-archived"):
+        result = evaluate_rule(rule("SPO-ACTIVITY-001"), evidence(fixture))
+        assert result.outcome is Outcome.NOT_APPLICABLE
+        assert not result.outcome.is_answer
+        assert "somebody decided about" in result.message
+
+
+def test_the_day_count_is_tied_to_when_the_evidence_was_collected():
+    """A gap in days is only true relative to a moment, and the moment is in
+    the provenance beside it."""
+    document = evidence("site-activity-stale")
+    assert document["provenance"]["collected_at"].startswith("2026-08-06")
+    assert (
+        document["facts"]["activity"]["days_since_user_change"]["raw"]["field"]
+        == "LastItemUserModifiedDate vs collected_at"
+    )

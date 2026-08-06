@@ -36,6 +36,8 @@
       SpfxPages          which components are on which pages. Expensive: it
                          opens every page, so it is opt-in and declares what
                          it managed to inspect
+      Activity           when a person last changed something on a site, and
+                         whether the site is in a state where nobody could
 
 .PARAMETER SiteUrl
     The site to inspect. Required by every mode except TenantSites.
@@ -126,7 +128,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('SiteOwners', 'SiteSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages')]
+    [ValidateSet('SiteOwners', 'SiteSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity')]
     [string] $Mode,
 
     [Parameter(Mandatory = $true)]
@@ -441,6 +443,115 @@ function Get-SharingFacts {
     else {
         $facts.sharing['effective_default_link_type'] = New-AbsentFact `
             -State $declared.state -Detail 'Derived from the site setting, which was not read.'
+    }
+    return $facts
+}
+
+function Get-ActivityFacts {
+    param($Web, $TenantSite)
+
+    $facts = [ordered]@{ activity = [ordered]@{} }
+
+    # Three dates, and the difference between them is the rule.
+    #
+    #   LastItemModifiedDate      moves when anything changes an item,
+    #                             including a system process. A search crawl,
+    #                             a retention job or a sync can keep it recent
+    #                             on a site nobody has opened in two years.
+    #   LastItemUserModifiedDate  moves when a person changes something.
+    #   Created                   for the case of a site that never had a
+    #                             first change to be older than.
+    #
+    # A rule about abandonment that reads the first one reports almost nothing,
+    # and reports it confidently.
+    $map = [ordered]@{
+        last_item_modified      = 'LastItemModifiedDate'
+        last_user_modified      = 'LastItemUserModifiedDate'
+        created                 = 'Created'
+    }
+    foreach ($name in $map.Keys) {
+        $property = $map[$name]
+        try {
+            $value = $Web.$property
+            if ($null -eq $value) {
+                $facts.activity[$name] = New-AbsentFact -State 'missing' `
+                    -Detail "$property was not returned for this web."
+            }
+            else {
+                $facts.activity[$name] = New-ScalarFact `
+                    -Value ([datetime] $value).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ') `
+                    -RawField $property
+            }
+        }
+        catch {
+            $facts.activity[$name] = New-AbsentFact `
+                -State (Resolve-FailureState $_) -Detail $_.Exception.Message
+        }
+    }
+
+    # A number, because the condition grammar compares numbers and not dates.
+    # It is a function of when this collection ran, and the run time is in the
+    # provenance beside it: the same evidence read a year later describes a
+    # gap that was true on the day, not today.
+    $userModified = $facts.activity['last_user_modified']
+    if ($userModified.state -eq 'observed') {
+        $days = [int] ([datetime]::UtcNow - [datetime] $userModified.value).TotalDays
+        if ($days -lt 0) { $days = 0 }
+        $facts.activity['days_since_user_change'] =
+        New-ScalarFact -Value $days -RawField 'LastItemUserModifiedDate vs collected_at'
+    }
+    else {
+        $facts.activity['days_since_user_change'] = New-AbsentFact `
+            -State $userModified.state `
+            -Detail 'Derived from LastItemUserModifiedDate, which was not read.'
+    }
+
+    # Whether anybody could have changed anything. A locked or archived site
+    # with no recent change is not an abandoned site: it is a site somebody
+    # decided about, and reporting the two together would bury the decision
+    # among the accidents.
+    foreach ($pair in @(@{ name = 'lock_state'; property = 'LockState' },
+                        @{ name = 'archive_status'; property = 'ArchiveStatus' })) {
+        if ($null -eq $TenantSite) {
+            # The real reason, not a guess at it. On one site of three this
+            # call failed while succeeding on the other two, and a message
+            # saying "no administrative connection" would have described a
+            # cause nobody had observed.
+            $facts.activity[$pair.name] = New-AbsentFact -State 'missing' `
+                -Detail ('The tenant record for this site was not read. ' +
+                         $script:TenantSiteError)
+            continue
+        }
+        try {
+            $value = $TenantSite.($pair.property)
+            if ($null -eq $value -or "$value" -eq '') {
+                $facts.activity[$pair.name] = New-AbsentFact -State 'missing' `
+                    -Detail "$($pair.property) was not returned for this site."
+            }
+            else {
+                $facts.activity[$pair.name] =
+                New-ScalarFact -Value ("$value") -RawField $pair.property
+            }
+        }
+        catch {
+            $facts.activity[$pair.name] = New-AbsentFact `
+                -State (Resolve-FailureState $_) -Detail $_.Exception.Message
+        }
+    }
+    # Whether a person could have changed anything, from the two facts above.
+    # A site nobody may write to and a site nobody wants are different
+    # findings, and reporting them together buries the decision among the
+    # accidents.
+    $lock = $facts.activity['lock_state']
+    $archive = $facts.activity['archive_status']
+    if ($lock.state -eq 'observed' -and $archive.state -eq 'observed') {
+        $open = ($lock.value -eq 'Unlock' -and $archive.value -eq 'NotArchived')
+        $facts.activity['changeable'] =
+        New-ScalarFact -Value $open -RawField 'LockState + ArchiveStatus'
+    }
+    else {
+        $facts.activity['changeable'] = New-AbsentFact -State 'missing' `
+            -Detail 'Derived from LockState and ArchiveStatus, and one was not read.'
     }
     return $facts
 }
@@ -907,6 +1018,27 @@ switch ($Mode) {
                 }) `
                 -Facts (Get-ModernityFacts -Web $web) `
                 -Requested @('web', 'pages') -Completed @('web', 'pages') `
+                -Unavailable ([ordered]@{}))
+    }
+
+    'Activity' {
+        $web = Get-PnPWeb -Includes LastItemModifiedDate, LastItemUserModifiedDate, Created
+        $tenantSite = $null
+        $script:TenantSiteError = 'It was not requested: -TenantUrl was not given.'
+        if ($TenantUrl) {
+            try { $tenantSite = Get-PnPTenantSite -Identity $SiteUrl }
+            catch {
+                $tenantSite = $null
+                $script:TenantSiteError = $_.Exception.Message
+            }
+        }
+        Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
+                -Resource ([ordered]@{
+                    id = $SiteUrl; type = 'site'
+                    display_name = [string] $web.Title; url = $SiteUrl
+                }) `
+                -Facts (Get-ActivityFacts -Web $web -TenantSite $tenantSite) `
+                -Requested @('activity') -Completed @('activity') `
                 -Unavailable ([ordered]@{}))
     }
 

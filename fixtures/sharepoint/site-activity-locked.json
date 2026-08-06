@@ -1,0 +1,90 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T15:30:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "activity"
+    ],
+    "completed": [
+      "activity"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,locked",
+    "type": "site",
+    "display_name": "Retired Portal",
+    "url": "https://contoso.sharepoint.com/sites/locked"
+  },
+  "facts": {
+    "activity": {
+      "last_user_modified": {
+        "state": "observed",
+        "value": "2024-03-02T10:00:00Z",
+        "raw": {
+          "field": "LastItemUserModifiedDate",
+          "value": "2024-03-02T10:00:00Z"
+        }
+      },
+      "last_item_modified": {
+        "state": "observed",
+        "value": "2026-08-06T15:30:33Z",
+        "raw": {
+          "field": "LastItemModifiedDate",
+          "value": "2026-08-06T15:30:33Z"
+        }
+      },
+      "created": {
+        "state": "observed",
+        "value": "2024-02-01T09:00:00Z",
+        "raw": {
+          "field": "Created",
+          "value": "2024-02-01T09:00:00Z"
+        }
+      },
+      "days_since_user_change": {
+        "state": "observed",
+        "value": 887,
+        "raw": {
+          "field": "LastItemUserModifiedDate vs collected_at",
+          "value": 887
+        }
+      },
+      "lock_state": {
+        "state": "observed",
+        "value": "ReadOnly",
+        "raw": {
+          "field": "LockState",
+          "value": "ReadOnly"
+        }
+      },
+      "archive_status": {
+        "state": "observed",
+        "value": "NotArchived",
+        "raw": {
+          "field": "ArchiveStatus",
+          "value": "NotArchived"
+        }
+      },
+      "changeable": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "LockState + ArchiveStatus",
+          "value": false
+        }
+      }
+    }
+  }
+}
