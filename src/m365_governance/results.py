@@ -112,6 +112,44 @@ class Result:
             "engine_detail": self.engine_detail,
         }
 
+    @classmethod
+    def from_dict(cls, data: dict) -> Result:
+        """Rebuild a result from its JSON form.
+
+        The round trip has to be lossless, because `report` re-renders a stored
+        run without re-evaluating it. A field dropped here would be a field
+        that silently disappears from a report the second time somebody looks
+        at it, which is worse than not storing it at all.
+        """
+        resource = data.get("resource", {})
+        return cls(
+            rule_id=data["rule_id"],
+            rule_version=data.get("rule_version", ""),
+            schema_version=data.get("schema_version", ""),
+            resource_id=resource.get("id", "<unknown>"),
+            resource_type=resource.get("type", "<unknown>"),
+            outcome=Outcome(data["outcome"]),
+            message=data.get("message", ""),
+            basis_type=data.get("basis", "<unknown>"),
+            severity=data.get("severity", "<unknown>"),
+            evidence_used=[
+                EvidenceUsed(
+                    path=e["path"],
+                    state=e.get("state", ""),
+                    exact=e.get("value"),
+                    lower_bound=e.get("lower_bound"),
+                    upper_bound=e.get("upper_bound"),
+                    detail=e.get("detail"),
+                )
+                for e in data.get("evidence_used", [])
+            ],
+            limitation=data.get("passes_without_resolving", ""),
+            sources=data.get("sources", []),
+            remediation=data.get("remediation", ""),
+            message_degraded=data.get("message_degraded", False),
+            engine_detail=data.get("engine_detail", ""),
+        )
+
 
 @dataclass
 class Run:
@@ -127,6 +165,15 @@ class Run:
         for result in self.results:
             tally[result.outcome.value] += 1
         return tally
+
+    @classmethod
+    def from_dict(cls, data: dict) -> Run:
+        return cls(
+            results=[Result.from_dict(r) for r in data.get("results", [])],
+            provenance=data.get("provenance", {}),
+            coverage=data.get("coverage", {}),
+            resource=data.get("resource", {}),
+        )
 
     def to_dict(self) -> dict:
         return {

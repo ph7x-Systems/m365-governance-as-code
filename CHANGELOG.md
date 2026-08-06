@@ -8,6 +8,51 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.2.0-alpha
+
+Commands, so the project can be used and not only validated. No change to the
+trust model, the rules, the schemas or the engine's semantics.
+
+**Breaking changes:** none.
+
+### New commands
+
+| | |
+|---|---|
+| `doctor` | Python, dependencies, schemas, rules, profiles, PowerShell. Reports what it found, not only whether it liked it, so a bug report carries versions |
+| `list-rules` | Every rule with its basis and severity, strongest claim first |
+| `show-rule ID` | One rule in full: basis, rationale, evidence, condition, all five messages, sources, and how it can pass while the problem survives |
+| `stats EVIDENCE` | What a collector managed to see, before anything is evaluated. Shows a bound as a bound |
+| `report RUN.json` | Re-render a stored run without evaluating it again |
+| `diff BEFORE AFTER` | What moved between two runs |
+
+`evaluate` and `report` gained `--format html`: one self-contained page, no
+external requests, and no colour doing work that a word is not also doing.
+
+### On `diff`
+
+It reports the rule version alongside the outcome. A result that moved because
+somebody edited the rule is not a result that moved because somebody removed an
+owner, and a comparison that cannot tell them apart is worse than none.
+
+`--fail-on-regression` exits non-zero when a rule leaves `pass`, and that
+includes leaving it for `unknown`. Losing the answer is a regression.
+
+It accepts a stored report or an evidence document on either side, because an
+audit usually has one of each: last quarter archived, this morning collected.
+
+### Also
+
+- `Run.from_dict` and `Result.from_dict`, with a test that the round trip is
+  lossless. A field dropped there would disappear the second time somebody
+  opened the report;
+- a test that the reading commands never print a verdict, and that neither
+  `inspect` nor `doctor` imports the engine. A reading command that could
+  evaluate is one refactor away from doing it;
+- 138 tests.
+
+---
+
 ## 0.1.0-alpha
 
 First public release. Alpha because the rule set is two rules, not because the

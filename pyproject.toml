@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "m365-governance-as-code"
-version = "0.1.0"
+version = "0.2.0"
 description = "Microsoft 365 governance checks that show their work."
 readme = "README.md"
 requires-python = ">=3.11"

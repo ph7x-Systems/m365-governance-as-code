@@ -17,8 +17,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.1.0-alpha`. Two rules, one collector, a working engine, and 100
-tests. Alpha because the rule set is small, not because the model is
+**Status:** `0.2.0-alpha`. Two rules, one collector, a working engine, eight
+commands and 138 tests. Alpha because the rule set is small, not because the model is
 unsettled.
 
 ---
@@ -129,21 +129,51 @@ PowerShell 7 and PnP.PowerShell, and is not needed to run anything below.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pip install -e .                                    # 1. install
-m365-governance validate                            # 2. check every rule
+pip install -e .                     # 1. install
+m365-governance doctor               # 2. is anything broken here
+m365-governance list-rules           # 3. what is in this repository
+m365-governance show-rule SPO-LIST-001
 m365-governance evaluate \
   --rules rules --evidence fixtures/sharepoint/list-over-limit.json
-m365-governance evaluate \
-  --rules rules --evidence fixtures/sharepoint/site-owners-not-collected.json
-pytest                                              # 5. 100 tests
 ```
 
-The third command reports a finding. The fourth reports that it could not
-reach one, which is the more important of the two.
+`show-rule` is the one to run first. It prints the whole claim: the basis, the
+rationale behind the severity, the evidence the rule cannot decide without,
+the source, and how the rule can pass while the problem survives.
 
-`--fail-on unresolved` exits non-zero on `fail`, `unknown`, `invalid-evidence`
-and `error`. That is the setting for a pipeline: it refuses to treat "we could
-not read this" as success.
+---
+
+## The commands
+
+| | |
+|---|---|
+| `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around. Says what it found, not only whether it liked it |
+| `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
+| `show-rule ID` | One rule in full, including what it does not establish |
+| `stats EVIDENCE` | What a collector managed to see, before anything is evaluated |
+| `validate` | Every rule against the schemas and the invariants |
+| `evaluate` | Rules against evidence. Markdown, JSON or self-contained HTML |
+| `report RUN.json` | Re-render a stored run in another format, without evaluating again |
+| `diff BEFORE AFTER` | What moved between two runs, and whether the rule moved too |
+
+`diff` is the one a periodic audit needs:
+
+```
+## SPO-SITE-001
+
+**pass → fail**
+
+Evidence that moved:
+
+| Path | Before | After |
+|---|---|---|
+| `owners.count` | 2 | 1 |
+```
+
+It reports the rule version alongside the outcome, because a result that moved
+because somebody edited the rule is not a result that moved because somebody
+removed an owner. `--fail-on-regression` exits non-zero when any rule left
+`pass`, including for `unknown`: losing the answer is a regression too.
 
 ---
 
