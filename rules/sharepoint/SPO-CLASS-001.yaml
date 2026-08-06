@@ -1,0 +1,118 @@
+# Microsoft's own deployment model treats unlabelled sites as something to
+# find and fix, which is what makes this documented-guidance rather than ours.
+
+schema_version: "1.0"
+id: SPO-CLASS-001
+version: "1.0"
+title: This site carries no sensitivity label and no classification
+description: >
+  Nothing recorded on this site says what kind of content it holds. Not the
+  sensitivity label, which is where Microsoft 365 keeps that answer today, and
+  not the older classification string, which is where it kept it before.
+
+  A site with no label is not a site with nothing to protect. It is a site
+  where the question was never asked, and every control that reads a label,
+  from privacy to guest access to the default sharing link, has nothing to
+  read.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/purview/deploymentmodels/depmod-secure-by-default-step3
+      title: "Secure by default with Microsoft Purview, Step 3: expand to your entire Microsoft 365 data estate"
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+    - url: https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites
+      title: Use sensitivity labels to protect collaborative workspaces (groups and sites)
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+  rationale: >
+    Microsoft's published deployment model names the unlabelled site as the
+    thing to go and find. It describes stopping "the proliferation of
+    unlabeled sites", and lists identifying the remaining ones and applying a
+    container label to them as the work of the final step.
+
+    That is guidance and not a requirement, and the distinction is the whole
+    reason for the type. Nothing in Microsoft 365 refuses to create a site
+    without a label, no licence depends on it, and a tenant that has not
+    enabled container labels at all cannot comply. What the documentation
+    supports is that an organisation deploying labels should be able to see
+    which sites still have none. It does not support calling those sites
+    misconfigured.
+
+severity:
+  default: low
+  rationale: >
+    An absent label is a gap in knowledge, not an exposure. The sharing rules
+    in this rule set read the actual sharing configuration, and they are the
+    ones that report access; this one reports that nobody has recorded what
+    the site is for. Rating it higher would put every site in a tenant that
+    has not adopted labels above findings about who can reach the content.
+  configurable: true
+
+evidence_requirements:
+  - path: classification.classified
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: classification.classified
+  value: false
+
+outcomes:
+  pass:
+    message: >
+      This site records what kind of content it holds, through a sensitivity
+      label, a classification string, or both.
+  fail:
+    message: >
+      This site carries neither a sensitivity label nor a classification
+      string. Nothing recorded on it says what kind of content it holds.
+  unknown:
+    message: >
+      Whether this site carries a label or a classification was not
+      established. Neither property could be read, so the site may well be
+      labelled. This is not a pass.
+  not_applicable:
+    message: >
+      This rule applies to every site and does not report this outcome.
+  invalid_evidence:
+    message: >
+      The label and classification facts were returned in a form this rule
+      cannot evaluate. The collector output does not match the evidence
+      schema.
+
+remediation: >
+  Decide first whether the tenant is using container labels at all. If it is
+  not, every site will fail this rule and the finding to act on is the tenant
+  decision, not the site. If it is, the deployment model Microsoft publishes
+  works outward from the sites that matter most rather than through the list
+  in order, and this rule set can produce that list but cannot rank it.
+
+limitations:
+  passes_without_resolving: >
+    Any label passes. A site labelled Public and a site labelled Highly
+    Confidential are indistinguishable to this rule, and so is a site
+    labelled with whatever came first in the dropdown. It reports that the
+    question was answered, never that the answer was right.
+  other:
+    - >
+      A classification string is enough to pass, and it is the older
+      mechanism. A site carrying a classification set years ago and no
+      sensitivity label passes this rule while having none of the protection
+      a container label brings, because the string is a word and the label is
+      a configuration.
+    - >
+      Where the tenant has not enabled sensitivity labels for containers, no
+      site can carry one, and every site fails. The rule cannot see that
+      setting: it is a tenant fact and this evidence describes a site. Run
+      against a tenant of 53 sites, all 53 failed for exactly this reason,
+      which is a true answer to the question asked and a misleading one to
+      the question a reader will have in mind.
+    - >
+      It says nothing about the documents inside. Container labels do not
+      flow to items, and a labelled site can hold entirely unlabelled files.

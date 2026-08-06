@@ -32,7 +32,7 @@
   "counts": {
     "pass": 1,
     "fail": 0,
-    "unknown": 9,
+    "unknown": 12,
     "not-applicable": 0,
     "invalid-evidence": 0,
     "error": 0
@@ -71,6 +71,139 @@
       "passes_without_resolving": "Somebody correcting one typo resets this to zero. A single edit satisfies the rule completely and says nothing about whether the site is used, read, or worth keeping, and the sites most worth reviewing are often the ones with one dutiful edit a year.",
       "sources": [],
       "remediation": "Find out what it was for before deciding anything. The cheapest outcome is usually to archive it, which keeps the content and takes it out of every list somebody has to read; deleting is a decision that needs an owner, and a site in this state often no longer has one.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-CLASS-001",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.",
+      "basis": "documented-guidance",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "classification.classified",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "Any label passes. A site labelled Public and a site labelled Highly Confidential are indistinguishable to this rule, and so is a site labelled with whatever came first in the dropdown. It reports that the question was answered, never that the answer was right.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/purview/deploymentmodels/depmod-secure-by-default-step3",
+          "title": "Secure by default with Microsoft Purview, Step 3: expand to your entire Microsoft 365 data estate",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        },
+        {
+          "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+          "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        }
+      ],
+      "remediation": "Decide first whether the tenant is using container labels at all. If it is not, every site will fail this rule and the finding to act on is the tenant decision, not the site. If it is, the deployment model Microsoft publishes works outward from the sites that matter most rather than through the list in order, and this rule set can produce that list but cannot rank it.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-CLASS-002",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.",
+      "basis": "convention",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "classification.label_applied",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        },
+        {
+          "path": "classification.label_resolved",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "A resolved name passes, and a name is a word. It says nothing about what the label is configured to do: privacy, guest access, the default sharing link and conditional access are all label settings this rule never reads. A site labelled Confidential by a label that enforces nothing passes.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+          "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        }
+      ],
+      "remediation": "Nothing on the site needs changing. Either the identity that collected the evidence cannot read label definitions, in which case collect again with one that can, or the label was deleted in Purview and the sites still carry its id, in which case the label is the thing to fix and it will be carrying more sites than this one.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-CLASS-003",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "Whether this group-connected site carries a sensitivity label was not established. This is not a pass.",
+      "basis": "convention",
+      "severity": "medium",
+      "evidence_used": [
+        {
+          "path": "classification.group_connected",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        },
+        {
+          "path": "classification.label_applied",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "Any label passes, including one configured to set nothing. A label whose protection settings were left empty leaves privacy and guest access exactly where this rule found them and satisfies it completely.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+          "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        },
+        {
+          "url": "https://learn.microsoft.com/entra/architecture/8-secure-access-sensitivity-labels",
+          "title": "Control external access to resources in Microsoft Entra ID with sensitivity labels",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-06"
+        }
+      ],
+      "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
       "message_degraded": false,
       "engine_detail": ""
     },

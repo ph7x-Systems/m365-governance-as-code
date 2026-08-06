@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T16:55:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.10.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "classification"
+    ],
+    "completed": [
+      "classification"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,labelled",
+    "type": "site",
+    "display_name": "Deals",
+    "url": "https://contoso.sharepoint.com/sites/CORP-Deals"
+  },
+  "facts": {
+    "classification": {
+      "label_applied": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "SensitivityLabelInfo.Id",
+          "value": true
+        }
+      },
+      "label_id": {
+        "state": "observed",
+        "value": "e48058ea-98e8-4940-8db0-ba1310fd955e",
+        "raw": {
+          "field": "SensitivityLabelInfo.Id",
+          "value": "e48058ea-98e8-4940-8db0-ba1310fd955e"
+        }
+      },
+      "label_name": {
+        "state": "observed",
+        "value": "Confidential",
+        "raw": {
+          "field": "SensitivityLabelInfo.DisplayName",
+          "value": "Confidential"
+        }
+      },
+      "label_resolved": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "SensitivityLabelInfo.DisplayName",
+          "value": true
+        }
+      },
+      "classification_set": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "Classification",
+          "value": false
+        }
+      },
+      "site_classification": {
+        "state": "missing",
+        "detail": "No classification string is set on this site."
+      },
+      "group_connected": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "GroupId",
+          "value": true
+        }
+      },
+      "group_id": {
+        "state": "observed",
+        "value": "2f61b0c4-88ad-4e19-b3d7-51c9e4a02f88",
+        "raw": {
+          "field": "GroupId",
+          "value": "2f61b0c4-88ad-4e19-b3d7-51c9e4a02f88"
+        }
+      },
+      "teams_connected": {
+        "state": "not-supported",
+        "detail": "IsTeamsConnected is a property of the tenant record, and this mode reads the site. See group_connected, which is observable without administrative rights."
+      },
+      "classified": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "SensitivityLabelInfo.Id or Classification",
+          "value": true
+        }
+      }
+    }
+  }
+}

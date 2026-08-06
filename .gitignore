@@ -14,3 +14,7 @@ CLAUDE.md
 AGENTS.md
 .claude
 .claude/
+
+# A binary that changes on every run and tells a reader nothing.
+.coverage
+htmlcov/

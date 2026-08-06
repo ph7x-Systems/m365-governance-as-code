@@ -8,6 +8,63 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 1.0.0-beta.1
+
+Classification, and the end of Epic A.
+
+The eighth and last vertical slice of the SharePoint milestone, and the first
+release the model is not expected to move under. See
+[docs/MILESTONE-A.md](docs/MILESTONE-A.md) for what closing a service end to
+end actually cost: eight slices, sixteen rules, and nine defects that only a
+real tenant found.
+
+### Added
+
+- **`Classification` collector mode.** Reads the sensitivity label, the older
+  classification string and the group connection from the site itself, with no
+  administrative right required. Ten modes now.
+- **`collect classification`.** No new command and no new profile: the three
+  rules that read this evidence are the only ones that read it, so a profile
+  naming them would repeat what the evidence already says.
+- **SPO-CLASS-001** (`documented-guidance`), a site with neither a sensitivity
+  label nor a classification string. Microsoft's own deployment model names the
+  unlabelled site as the thing to go and find, which is what makes the basis
+  documented rather than ours.
+- **SPO-CLASS-002** (`convention`), a site carrying a label whose name could
+  not be resolved. Classified, and no report can say as what.
+- **SPO-CLASS-003** (`convention`), a group-connected site with no label, where
+  privacy and external user access rest on settings nothing pins.
+- Eight fixtures and the outcome matrix for all three rules, including the
+  `invalid-evidence` path for each.
+
+### Changed
+
+- **An empty label is an observation, not a gap.** The first version of the
+  collector reported an empty `SensitivityLabelId` as `missing` and then
+  derived `classified: false` from it — an answer built out of three
+  admissions of ignorance. A property that loaded and came back empty is
+  SharePoint saying there is no label; only a property that could not be read
+  is a gap. Run against 47 sites, the difference is between "none of these
+  sites is classified" and "nothing here is known".
+- A profile with no `rules` key selects everything, and the slice-pairing test
+  now reads it that way. It previously required the key, which would have let
+  a slice paired with `default` pass by evaluating nothing at all.
+
+### Not done, on purpose
+
+- **No fourth classification rule.** One of type `opinion` was allowed on
+  condition that a real case existed. The validating tenant has no labels and
+  no classification strings, so there was nothing to have an opinion about.
+- **No `IsTeamsConnected`.** It is a property of the tenant record and PnP
+  refuses to switch to the administration context after a device login.
+  `GroupId` answers the weaker question with no administrative right at all.
+- **No site privacy.** `PrivacySetting` is not a property of `SPOSite`. It was
+  specified and it is not in the product.
+- **Classification is never inferred from a site name.** A test asserts that no
+  classification rule reads a title, a url or a template.
+
+---
+
 ## 0.9.0-alpha
 
 Activity, and the date that decides whether the rule means anything.

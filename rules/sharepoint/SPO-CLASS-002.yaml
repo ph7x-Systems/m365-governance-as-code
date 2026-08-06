@@ -1,0 +1,110 @@
+# The label id lives on the site; the name lives somewhere else. This is the
+# rule for when the second one cannot be reached.
+
+schema_version: "1.0"
+id: SPO-CLASS-002
+version: "1.0"
+title: This site carries a sensitivity label that could not be resolved to a name
+description: >
+  A label is applied and this collection could not obtain what it is called.
+  The site is classified, and no report built from this evidence can say as
+  what.
+
+  This is not the same as an unlabelled site, and treating it as one would be
+  wrong in both directions: the site has been through the decision, and the
+  reader still has no idea what the decision was.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources:
+    - url: https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites
+      title: Use sensitivity labels to protect collaborative workspaces (groups and sites)
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+  rationale: >
+    Microsoft documents that the label applied to a container is identified by
+    a GUID and that its name and settings live in Microsoft Purview, which is
+    why applying one by script takes the GUID and applying one in the browser
+    shows the name. Nothing in the documentation says a site whose label
+    cannot be named is misconfigured, and nothing is: the configuration is
+    correct and the reader is the one missing something.
+
+    What this reports is a property of the evidence rather than of the tenant,
+    and it is reported as a finding rather than as an `unknown` on purpose. A
+    label that nobody can name is a governance answer nobody can use, and
+    burying that inside "not established" would hide it among the sites where
+    nothing was found at all.
+
+severity:
+  default: low
+  rationale: >
+    Nothing is exposed. Somebody classified the site and the classification is
+    doing whatever it was configured to do; the failure is in reading it back.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: classification.label_applied
+  value: true
+
+evidence_requirements:
+  - path: classification.label_applied
+    type: boolean
+    required: true
+  - path: classification.label_resolved
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: classification.label_resolved
+  value: false
+
+outcomes:
+  pass:
+    message: >
+      This site carries a sensitivity label and it resolves to a name.
+  fail:
+    message: >
+      This site carries a sensitivity label whose name could not be resolved.
+      The site is classified and this evidence cannot say as what.
+  unknown:
+    message: >
+      Whether the label on this site resolves to a name was not established,
+      because the label itself was not read. This is not a pass.
+  not_applicable:
+    message: >
+      No sensitivity label is applied to this site, so there is nothing to
+      resolve. Whether it should carry one is SPO-CLASS-001.
+  invalid_evidence:
+    message: >
+      The label facts were returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Nothing on the site needs changing. Either the identity that collected the
+  evidence cannot read label definitions, in which case collect again with one
+  that can, or the label was deleted in Purview and the sites still carry its
+  id, in which case the label is the thing to fix and it will be carrying more
+  sites than this one.
+
+limitations:
+  passes_without_resolving: >
+    A resolved name passes, and a name is a word. It says nothing about what
+    the label is configured to do: privacy, guest access, the default sharing
+    link and conditional access are all label settings this rule never reads.
+    A site labelled Confidential by a label that enforces nothing passes.
+  other:
+    - >
+      It cannot distinguish a label that no longer exists from a label this
+      identity cannot see. Both produce an id with no name, and the fix for
+      one is a different fix from the other. The collection state beside the
+      finding is where that difference would show, if the product reported it.
+    - >
+      Never observed to fail. Against the tenant this rule set was validated
+      on, 47 sites returned no label at all, so every one of them was
+      not-applicable and the failing path has been exercised only against
+      fixtures.

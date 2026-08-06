@@ -97,6 +97,19 @@ SLICES = {
             shaped_like="site-activity-stale",
         ),
         Slice(
+            "classification",
+            "Classification",
+            needs_site=True,
+            needs_tenant=False,
+            # No profile of its own, and that is a decision rather than an
+            # omission. A profile selects rules, and the three classification
+            # rules are the only ones that read this evidence, so a profile
+            # naming them would repeat what the evidence already says.
+            profile="default",
+            describes="what a site records about the kind of content it holds",
+            shaped_like="site-class-group-unlabelled",
+        ),
+        Slice(
             "permissions",
             "UniquePermissions",
             needs_site=True,

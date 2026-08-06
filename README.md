@@ -26,10 +26,13 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.9.0-alpha`. Thirteen rules, a nine-mode collector validated
-against a live tenant, seven profiles, ten commands and 316 tests at 91 per
-cent coverage. Alpha because the rule set is small, not because the model is
-unsettled.
+**Status:** `1.0.0-beta.1`. Sixteen rules, a ten-mode collector validated
+against a live tenant, seven profiles, ten commands and 350 tests at 91 per
+cent coverage. Beta because the model has stopped moving: the outcomes, the
+resolution order, the basis types and the evidence schema are frozen, and
+[docs/MILESTONE-A.md](docs/MILESTONE-A.md) records what closing SharePoint
+end to end actually cost. The rule set is still small, and that is the next
+milestone rather than a caveat on this one.
 
 ---
 
@@ -365,9 +368,10 @@ what is most interesting to build.
 
 | | |
 |---|---|
-| **More SharePoint rules** | Sharing, external access, retention, site lifecycle. The engine is done; the work is authoring claims honestly. |
+| **More SharePoint rules** | Retention, site lifecycle, and the classification rules a tenant that uses labels would need. The engine is done; the work is authoring claims honestly. |
+| **Coverage across a run** | Six of 53 sites refused the collector, and a report over the other 47 says 47 without saying "of 53". The envelope records coverage per document; nothing records it per run. |
 | **Group expansion** | A group owner is one principal and may be forty people. The collector declares the expansion `not-attempted` and emits a lower bound; expanding it turns bounds into counts. |
-| **Application authentication** | Delegated runs see what one person sees. A tenant-wide inventory needs an app identity with `Sites.Read.All` and admin consent. |
+| **Application authentication** | Delegated runs see what one person sees, and every count in this repository carries that clause. A tenant-wide inventory needs an app identity with `Sites.Read.All` and admin consent. |
 | **Exchange, Teams and Entra collectors** | The evidence schema is service-agnostic. Each collector is new code and no new model. |
 | **HTML reporting** | Markdown and JSON exist. HTML is for the reader who is not in a terminal. |
 | **SARIF output** | So findings appear where code findings already appear, in a pipeline's own UI. |

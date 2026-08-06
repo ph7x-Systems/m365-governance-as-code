@@ -9,18 +9,18 @@
 
 ## Summary
 
-10 rules evaluated. **1 produced an answer.**
+13 rules evaluated. **1 produced an answer.**
 
 | Outcome | Count |
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 9 |
+| Unknown | 12 |
 | Error | 0 |
 | Not applicable | 0 |
 | Pass | 1 |
 
-9 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
+12 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 
 ## Unknown
 
@@ -31,6 +31,35 @@ When a person last changed something on this site was not established, so how lo
 - Basis: **convention** — widely held practice, not documented as a rule
 - Severity: low
 - Evidence: `activity.changeable` = <missing>, `activity.days_since_user_change` = <missing>
+
+### SPO-CLASS-001 v1.0
+
+Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.
+
+- Basis: **documented-guidance** — Microsoft recommends this; the product permits the alternative
+- Severity: low
+- Evidence: `classification.classified` = <missing>
+- Source: [Secure by default with Microsoft Purview, Step 3: expand to your entire Microsoft 365 data estate](https://learn.microsoft.com/purview/deploymentmodels/depmod-secure-by-default-step3) — checked 2026-08-06
+- Source: [Use sensitivity labels to protect collaborative workspaces (groups and sites)](https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites) — checked 2026-08-06
+
+### SPO-CLASS-002 v1.0
+
+Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: low
+- Evidence: `classification.label_applied` = <missing>, `classification.label_resolved` = <missing>
+- Source: [Use sensitivity labels to protect collaborative workspaces (groups and sites)](https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites) — checked 2026-08-06
+
+### SPO-CLASS-003 v1.0
+
+Whether this group-connected site carries a sensitivity label was not established. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: medium
+- Evidence: `classification.group_connected` = <missing>, `classification.label_applied` = <missing>
+- Source: [Use sensitivity labels to protect collaborative workspaces (groups and sites)](https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites) — checked 2026-08-06
+- Source: [Control external access to resources in Microsoft Entra ID with sensitivity labels](https://learn.microsoft.com/entra/architecture/8-secure-access-sensitivity-labels) — checked 2026-08-06
 
 ### SPO-MODERN-001 v1.0
 

@@ -1,0 +1,129 @@
+# A group-connected site is a container with controls that only a label can
+# set. This is the rule for the ones that have none.
+
+schema_version: "1.0"
+id: SPO-CLASS-003
+version: "1.0"
+title: This group-connected site carries no sensitivity label
+description: >
+  This site is connected to a Microsoft 365 group, and no sensitivity label is
+  applied to it. Privacy, whether owners may add guests, and how the group
+  behaves toward people outside the organisation are all settings a container
+  label sets and locks. Without one they are whatever somebody chose when the
+  group was made, and whatever anybody has changed them to since.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources:
+    - url: https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites
+      title: Use sensitivity labels to protect collaborative workspaces (groups and sites)
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+    - url: https://learn.microsoft.com/entra/architecture/8-secure-access-sensitivity-labels
+      title: Control external access to resources in Microsoft Entra ID with sensitivity labels
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+  rationale: >
+    Microsoft documents what a container label controls on a group-connected
+    site, and the list is specific: privacy, external user access, external
+    sharing, access from unmanaged devices, conditional access, and
+    discoverability of private teams. It also documents that setting privacy
+    through a label locks it, so that it can only be changed by removing the
+    label.
+
+    That the controls exist is documented. That every group-connected site
+    should use them is not, and it is ours. An organisation can reasonably
+    manage all of it through group settings and conditional access instead and
+    never apply a container label, and this rule will report every one of its
+    sites.
+
+    Separated from SPO-CLASS-001 rather than folded into it because the
+    consequence differs. An unlabelled site with no group has no group
+    controls to leave unset.
+
+severity:
+  default: medium
+  rationale: >
+    Higher than SPO-CLASS-001, and for one reason: there are settings here
+    that a label would hold in place and that are currently held by nothing.
+    Not high, because the settings may well be correct. Nothing here says
+    anybody is reaching content they should not; it says the configuration
+    rests on a choice made once and is not pinned.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: classification.group_connected
+  value: true
+
+evidence_requirements:
+  - path: classification.group_connected
+    type: boolean
+    required: true
+  - path: classification.label_applied
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: classification.label_applied
+  value: false
+
+outcomes:
+  pass:
+    message: >
+      This group-connected site carries a sensitivity label, so the container
+      controls that label configures are applied to it.
+  fail:
+    message: >
+      This site is connected to a Microsoft 365 group and carries no
+      sensitivity label. Privacy and external user access rest on the settings
+      of the group itself, and nothing pins them.
+  unknown:
+    message: >
+      Whether this group-connected site carries a sensitivity label was not
+      established. This is not a pass.
+  not_applicable:
+    message: >
+      This site is not connected to a Microsoft 365 group, so there are no
+      group container controls for a label to set. Whether it should carry a
+      label at all is SPO-CLASS-001.
+  invalid_evidence:
+    message: >
+      The group and label facts were returned in a form this rule cannot
+      evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Read the group settings before applying anything. A label sets privacy and
+  external access and locks them, so applying one to a group that is currently
+  configured differently changes the group. That is the point of it and it is
+  also how a labelling exercise removes somebody's access on a Tuesday
+  afternoon.
+
+limitations:
+  passes_without_resolving: >
+    Any label passes, including one configured to set nothing. A label whose
+    protection settings were left empty leaves privacy and guest access
+    exactly where this rule found them and satisfies it completely.
+  other:
+    - >
+      Group connection is read from `GroupId` on the site, which answers
+      whether a group exists and not whether Teams is on top of it.
+      `IsTeamsConnected` is a property of the tenant record, and PnP refuses
+      to reach the administration context after a device login, so this
+      evidence does not carry it. A Teams-connected site is group-connected,
+      so nothing escapes the rule; the report simply cannot say which of the
+      two it is looking at.
+    - >
+      It overlaps SPO-CLASS-001 by construction. Every site that fails this
+      rule also fails that one, because a site with no label and no
+      classification is unclassified whether or not it has a group. Against
+      the validating tenant, 22 of 47 sites failed both.
+    - >
+      It says nothing about the group's own settings. Whether the group is
+      public or private, and whether guests are on it, are Microsoft 365 group
+      facts and this evidence describes a SharePoint site. The rule reports
+      that nothing pins them, never what they currently are.

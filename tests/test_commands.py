@@ -847,7 +847,11 @@ def test_each_slice_is_paired_with_a_profile_that_can_answer_it():
         profile = yaml.safe_load(
             (ROOT / "profiles" / f"{chosen.profile}.yaml").read_text()
         )
-        selected = [on_disk[r] for r in profile["rules"]]
+        # A profile with no `rules` key selects everything, which is what
+        # `default` is for. Reading that as an empty selection would let a
+        # slice paired with it pass this test by evaluating nothing at all.
+        chosen_ids = profile.get("rules") or sorted(on_disk)
+        selected = [on_disk[r] for r in chosen_ids]
         outcomes = [
             result.outcome
             for result in evaluate(selected, evidence(chosen.shaped_like)).results

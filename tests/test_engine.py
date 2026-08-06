@@ -486,3 +486,119 @@ def test_the_day_count_is_tied_to_when_the_evidence_was_collected():
         document["facts"]["activity"]["days_since_user_change"]["raw"]["field"]
         == "LastItemUserModifiedDate vs collected_at"
     )
+
+
+# ---------------------------------------------------------------------------
+# Classification
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("site-class-unlabelled", Outcome.FAIL),
+        ("site-class-group-unlabelled", Outcome.FAIL),
+        ("site-class-labelled", Outcome.PASS),
+        ("site-class-label-unresolved", Outcome.PASS),
+        ("site-class-legacy-string", Outcome.PASS),
+        ("site-class-not-read", Outcome.UNKNOWN),
+        ("site-class-invalid", Outcome.INVALID_EVIDENCE),
+    ],
+)
+def test_class_001_unclassified_site(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-CLASS-001"), evidence(fixture)).outcome is expected
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("site-class-label-unresolved", Outcome.FAIL),
+        ("site-class-labelled", Outcome.PASS),
+        ("site-class-unlabelled", Outcome.NOT_APPLICABLE),
+        ("site-class-legacy-string", Outcome.NOT_APPLICABLE),
+        ("site-class-not-read", Outcome.UNKNOWN),
+        ("site-class-label-invalid", Outcome.INVALID_EVIDENCE),
+    ],
+)
+def test_class_002_label_without_a_name(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-CLASS-002"), evidence(fixture)).outcome is expected
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("site-class-group-unlabelled", Outcome.FAIL),
+        ("site-class-labelled", Outcome.PASS),
+        ("site-class-unlabelled", Outcome.NOT_APPLICABLE),
+        ("site-class-label-unresolved", Outcome.NOT_APPLICABLE),
+        ("site-class-not-read", Outcome.UNKNOWN),
+        ("site-class-label-invalid", Outcome.INVALID_EVIDENCE),
+    ],
+)
+def test_class_003_group_site_without_a_label(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-CLASS-003"), evidence(fixture)).outcome is expected
+
+
+def test_an_empty_label_is_an_observation_and_not_a_gap():
+    """The correction the tenant forced.
+
+    The first version of the collector reported an empty SensitivityLabelId as
+    `missing`, and then derived `classified: false` from it: an answer built
+    out of an admission of ignorance. A property that loaded and came back
+    empty is SharePoint saying there is no label, and only a property that
+    could not be read is a gap.
+    """
+    unlabelled = evidence("site-class-unlabelled")["facts"]["classification"]
+    assert unlabelled["label_applied"]["state"] == "observed"
+    assert unlabelled["label_applied"]["value"] is False
+    assert unlabelled["classified"]["state"] == "observed"
+
+    denied = evidence("site-class-not-read")["facts"]["classification"]
+    assert denied["label_applied"]["state"] == "permission-denied"
+    assert denied["classified"]["state"] == "permission-denied"
+
+
+def test_a_site_nobody_could_read_is_never_reported_as_unclassified():
+    """Six of 53 sites refused this identity outright. Reporting them beside
+    the sites that genuinely carry no label would have been the whole project
+    failing at its own premise."""
+    from conftest import rule
+
+    for rule_id in ("SPO-CLASS-001", "SPO-CLASS-002", "SPO-CLASS-003"):
+        result = evaluate_rule(rule(rule_id), evidence("site-class-not-read"))
+        assert result.outcome is Outcome.UNKNOWN
+        assert not result.outcome.is_answer
+        assert "not a pass" in result.message
+
+
+def test_classification_is_never_inferred_from_the_site_name():
+    """No rule reads a title, a url or a template. The evidence a
+    classification rule may consume is the label and the classification
+    string, and nothing else carries a name."""
+    from conftest import rule
+
+    named = {"display_name", "url", "title", "name", "template"}
+    for rule_id in ("SPO-CLASS-001", "SPO-CLASS-002", "SPO-CLASS-003"):
+        for requirement in rule(rule_id)["evidence_requirements"]:
+            path = requirement["path"]
+            assert path.startswith("classification.")
+            assert not named & set(path.split("."))
+
+
+def test_the_label_id_and_the_label_name_are_separate_facts():
+    """A site can carry a label whose definition this identity cannot resolve.
+    Collapsing the two would report it as unlabelled, which is the one answer
+    that is certainly wrong."""
+    unresolved = evidence("site-class-label-unresolved")["facts"]["classification"]
+    assert unresolved["label_applied"]["value"] is True
+    assert unresolved["label_id"]["state"] == "observed"
+    assert unresolved["label_name"]["state"] == "missing"
+    assert unresolved["label_resolved"]["value"] is False
+    # Still classified: SPO-CLASS-001 must pass on it.
+    assert unresolved["classified"]["value"] is True

@@ -39,6 +39,9 @@ def check(document: dict) -> list:
     "rule_id",
     [
         "SPO-ACTIVITY-001",
+        "SPO-CLASS-001",
+        "SPO-CLASS-002",
+        "SPO-CLASS-003",
         "SPO-LIST-001",
         "SPO-LIST-002",
         "SPO-LIST-003",
@@ -62,6 +65,9 @@ def test_every_rule_file_is_covered_by_a_test():
     on_disk = {p.stem for p in RULES.rglob("*.yaml")}
     assert on_disk == {
         "SPO-ACTIVITY-001",
+        "SPO-CLASS-001",
+        "SPO-CLASS-002",
+        "SPO-CLASS-003",
         "SPO-LIST-001",
         "SPO-LIST-002",
         "SPO-LIST-003",
