@@ -14,10 +14,8 @@
     with a reason. It never returns an empty list in place of an error, and it
     never presents a truncated response as a complete one.
 
-    STATUS: written against the documented PnP.PowerShell surface and NOT yet
-    run against a tenant. The cmdlets it depends on are listed under
-    .NOTES so that a first run can be verified deliberately rather than
-    discovered. The engine, schemas, CLI and test suite do not depend on this
+    STATUS: validated against PnP.PowerShell 3.3.0 and run read-only against a
+    real tenant. The engine, schemas, CLI and test suite do not depend on this
     script: they run offline against fixtures.
 
 .PARAMETER SiteUrl
@@ -26,18 +24,53 @@
 .PARAMETER OutputPath
     Where the evidence JSON is written.
 
+.PARAMETER ClientId
+    The application (client) id of an Entra ID app registration.
+
+    Mandatory, and it is the thing that breaks a first run. Since
+    PnP.PowerShell 2.99 the module ships with no multi-tenant application of
+    its own, so a connection without a client id fails before it reaches the
+    network: "Please specify a valid client id for an Entra ID App
+    Registration". Verified against 3.3.0.
+
+.PARAMETER DeviceLogin
+    Authenticate with a device code instead of opening a browser. For hosts
+    with no browser, and for automation that a person completes once.
+
 .PARAMETER ListTitle
     Optional. Collect one list instead of the site.
 
 .EXAMPLE
     ./Get-SpoEvidence.ps1 -SiteUrl https://contoso.sharepoint.com/sites/Finance `
+        -ClientId 00000000-0000-0000-0000-000000000000 `
         -OutputPath ./evidence/finance-site.json
 
 .NOTES
-    Depends on PnP.PowerShell:
-      Connect-PnPOnline
-      Get-PnPSiteCollectionAdmin   (site owners)
-      Get-PnPList                  (ItemCount, HasUniqueRoleAssignments)
+    Depends on PnP.PowerShell 3.x. Verified against 3.3.0, and what was
+    verified is stated so that a later break is legible:
+
+      Connect-PnPOnline            -Url, -Interactive, -DeviceLogin, -ClientId
+      Get-PnPContext
+      Get-PnPSiteCollectionAdmin   returns Microsoft.SharePoint.Client.User
+                                   LoginName (String), PrincipalType (enum)
+      Get-PnPList                  returns Microsoft.SharePoint.Client.List
+                                   ItemCount (Int32),
+                                   HasUniqueRoleAssignments (Boolean)
+
+    HasUniqueRoleAssignments is not loaded by default and is requested through
+    -Includes. ItemCount comes back without asking.
+
+    IDENTITY. Both -Interactive and -DeviceLogin are delegated: the run sees
+    what the signed-in person sees, and the evidence records that so no report
+    built from it reads as a statement about the whole tenant. For a
+    tenant-wide inventory the identity has to be an application with
+    Sites.Read.All and admin consent, and that is a deliberate decision about
+    access rather than a flag on this script. It is not implemented here.
+
+    The token is not persisted between runs, so each run authenticates again.
+    -PersistLogin exists on Connect-PnPOnline and is not used: a collector that
+    leaves a reusable token on disk has widened the blast radius of the machine
+    it runs on, and that is a decision for whoever operates it, not a default.
 
     Group expansion is NOT attempted in this version. A group owner is one
     principal and may be forty people, so the script emits expansion_complete
@@ -53,6 +86,12 @@ param(
 
     [Parameter(Mandatory = $true)]
     [string] $OutputPath,
+
+    [Parameter(Mandatory = $true)]
+    [string] $ClientId,
+
+    [Parameter()]
+    [switch] $DeviceLogin,
 
     [Parameter()]
     [string] $ListTitle
@@ -176,8 +215,19 @@ function Get-ListFacts {
 
 # --- connect (read-only) -----------------------------------------------------
 
-Connect-PnPOnline -Url $SiteUrl -Interactive
-$context = Get-PnPContext
+if ($DeviceLogin) {
+    Connect-PnPOnline -Url $SiteUrl -DeviceLogin -ClientId $ClientId
+}
+else {
+    Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId $ClientId
+}
+
+# Get-PnPWeb, e nao $context.Web. O contexto devolve um objecto CSOM cujas
+# propriedades nao estao carregadas: $context.Web.Title vem $null sem erro
+# nenhum, e o titulo saia como null no ficheiro de evidencia. Apanhado a correr
+# contra um tenant a serio; o schema recusou o null, que e o que ele existe
+# para fazer.
+$web = Get-PnPWeb
 
 $requested = @()
 $completed = @()
@@ -214,7 +264,7 @@ else {
     $resource = [ordered]@{
         id           = $SiteUrl
         type         = 'site'
-        display_name = $context.Web.Title
+        display_name = [string] $web.Title
         url          = $SiteUrl
     }
 }
@@ -240,6 +290,15 @@ $evidence = [ordered]@{
     }
     resource       = $resource
     facts          = $facts
+}
+
+# Um campo opcional que nao se conseguiu ler nao se escreve a null. O schema
+# recusa o null, e com razao: "nao sei" tem estado proprio nos factos, e num
+# campo descritivo a ausencia da chave diz o mesmo sem inventar um valor.
+foreach ($k in @('display_name', 'url')) {
+    if ($resource.Contains($k) -and [string]::IsNullOrWhiteSpace($resource[$k])) {
+        $resource.Remove($k)
+    }
 }
 
 $evidence | ConvertTo-Json -Depth 12 | Set-Content -Path $OutputPath -Encoding utf8
