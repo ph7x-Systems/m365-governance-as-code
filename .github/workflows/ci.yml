@@ -56,6 +56,17 @@ jobs:
         # step refuses them.
         run: pytest -q -ra --strict-markers | tee /tmp/pytest.out
 
+      - name: Coverage
+        # A floor rather than a number in a report nobody reads. It was
+        # measured for the first time at 0.8.0 and found the bounded
+        # comparison at 86 per cent: nearly the whole table published in
+        # ARCHITECTURE.md had never executed. A documented claim that nothing
+        # runs is a claim that drifts.
+        if: matrix.python-version == '3.13'
+        run: |
+          coverage run -m pytest -q
+          coverage report
+
       - name: No skipped tests
         run: |
           if grep -qE '[0-9]+ skipped' /tmp/pytest.out; then

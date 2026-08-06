@@ -42,3 +42,20 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM"]
 # The tests import fixtures from conftest by name, which ruff reads as a
 # shadowed builtin in a couple of places, and they use bare asserts by design.
 "tests/*" = ["S101"]
+
+[tool.coverage.run]
+source = ["src/m365_governance"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+# The floor is where the project actually is, not where it would be flattering.
+# It moves up when something real is covered, never down to accommodate a
+# change that stopped testing something.
+fail_under = 90
+exclude_also = [
+  # The subprocess call into PowerShell. Exercised against a tenant, never in
+  # CI: a test that mocked it would be testing the mock.
+  "raise SystemExit",
+  "if __name__ == .__main__.:",
+]
