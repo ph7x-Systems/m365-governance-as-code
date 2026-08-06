@@ -8,6 +8,76 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.6.0-alpha
+
+Lists get a class, profiles get to use it, and `evaluate` reads a directory.
+
+**Breaking changes:** none.
+
+### Classification
+
+A collector now records what SharePoint says about a list: `IsCatalog`,
+`IsSystemList`, `IsApplicationList`, `Hidden`, `BaseTemplate`. All five exist
+on the CSOM type and all five are the product's own answer.
+
+**The collector does not classify and no longer filters.** It used to skip
+hidden lists, which was the collector deciding what mattered, and it decided
+wrong: three of the eight it returned from a real tenant were catalogs anyway.
+
+The classification is a derivation with one job, an order of precedence, and
+it lives in one reviewable function: catalog, then system, then application,
+then content. Absence of all three is `unknown` and never `content`, because a
+list nobody classified is a list nobody looked at.
+
+### Profiles set aside, they do not exclude
+
+```yaml
+set_aside_classes:
+  - system
+```
+
+A set-aside resource is still collected, still evaluated, still counted in the
+summary, and still printed under its own heading at the end.
+
+The key is not called `exclude`, and a test enforces that no profile carries
+one. The reason is in the test: a catalog holding 61,400 unique permission
+scopes is over a hard product limit whoever created it. Under exclusion that
+finding disappears. Under set-aside it appears at the bottom, counted in the
+`Fail` total at the top.
+
+### `evaluate` reads a directory
+
+```bash
+m365-governance evaluate --profile profiles/capacity.yaml --evidence evidence/
+```
+
+The report opens with what was observed, by class, and how many the profile
+moved down the page:
+
+```
+5 resources observed
+  application     1
+  content         1
+  system          3
+  set aside by profile: 3, carrying 5 answers. Reported below, not removed.
+```
+
+The shape follows what was asked for rather than how many files happened to be
+there: a path to a file renders one report, a path to a directory renders a
+collection, and a directory with one document in it today and three tomorrow
+does not change what a pipeline parses.
+
+### Still not written
+
+The anonymous-link expiry rule. `AnonymousLinkExpirationInDays = 0` remains
+ambiguous: the tenant returned 0 on a site with sharing disabled entirely,
+where 0 may simply mean not applicable. Recorded as unknown semantics until
+documentation or a tenant with the setting active proves the meaning.
+
+239 tests.
+
+---
+
 ## 0.5.1-alpha
 
 Validated against a live tenant, read-only. Four defects, all of them

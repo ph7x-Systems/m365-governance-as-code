@@ -348,3 +348,49 @@ and wrong, and no rule downstream can detect either.
 
 Any collector that cannot complete a fact says so, with a state and a reason,
 and hands the problem to a place where a human can see it.
+
+---
+
+## 14. What kind of list this is
+
+A collector records what the product says about a list, and stops there:
+
+```yaml
+facts:
+  list:
+    is_catalog:     { state: observed, value: true,  raw: { field: IsCatalog, value: true } }
+    is_system:      { state: observed, value: false, raw: { field: IsSystemList, value: false } }
+    is_application: { state: observed, value: false, raw: { field: IsApplicationList, value: false } }
+    hidden:         { state: observed, value: false, raw: { field: Hidden, value: false } }
+    base_template:  { state: observed, value: 121,   raw: { field: BaseTemplate, value: 121 } }
+```
+
+Every one of those is SharePoint's own answer, verified against the CSOM type.
+**The collector does not classify**, and it does not filter: a collector that
+dropped system lists would be deciding what matters, and a library holding
+60,000 unique permission scopes matters whoever created it.
+
+The classification is a derivation, and it is exactly one thing: an order of
+precedence over those facts. `is_catalog` first, because a catalog is always
+plumbing whatever else it is; then `is_system`, because that is the product
+saying so outright; then `is_application`, last of the three because a list
+created by an app can still hold content somebody cares about.
+
+**Absence of all three is `unknown`, never `content`.** A list nobody
+classified is a list nobody looked at.
+
+### What a profile may do with the label
+
+Move it down the page. Nothing else.
+
+```yaml
+set_aside_classes:
+  - system
+```
+
+A set-aside resource is still collected, still evaluated, still counted in the
+summary, and still printed, under its own heading at the end. The key is not
+called `exclude` because excluding is the dangerous version: a document
+library over a hard product limit is over it whoever created it, and
+SharePoint calling it a catalog is not a reason for a governance report to
+stay silent about it.

@@ -14,3 +14,14 @@ rules:
   - SPO-LIST-002
   - SPO-LIST-003
   - SPO-SITE-003
+
+# What the profile does with a class, and the word matters: it sets aside, it
+# never excludes. A set-aside resource is still collected, still evaluated,
+# still counted, and still printed, under its own heading at the end.
+#
+# The alternative was to drop them, and the alternative is dangerous. A
+# document library holding 60,000 unique permission scopes is over a hard
+# product limit whoever created it, and SharePoint calling it a catalog is not
+# a reason for a governance report to stay silent about it.
+set_aside_classes:
+  - system

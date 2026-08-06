@@ -331,6 +331,15 @@ def _render(template: str, resolutions: dict[str, Resolved]) -> tuple[str, bool]
 
 
 def evaluate(rules: list[dict], evidence: dict) -> Run:
+    """Every applicable rule, plus the label the report groups by.
+
+    The class never changes an outcome. It is carried so a reader can move
+    plumbing down the page without anybody deciding, upstream, that plumbing
+    is not worth evaluating.
+    """
+    from .classifying import classify
+
+    classification = classify(evidence)
     applicable = [
         r
         for r in rules
@@ -341,4 +350,6 @@ def evaluate(rules: list[dict], evidence: dict) -> Run:
         provenance=evidence.get("provenance", {}),
         coverage=evidence.get("coverage", {}),
         resource=evidence.get("resource", {}),
+        resource_class=classification.kind.value,
+        class_reason=classification.because,
     )

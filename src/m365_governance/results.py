@@ -159,6 +159,15 @@ class Run:
     provenance: dict
     coverage: dict
     resource: dict
+    #: What kind of resource this is, when the evidence says. Used to group a
+    #: report, never to drop anything from one.
+    resource_class: str = ""
+    #: Why it was classified that way, so a reader argues with the precedence
+    #: rather than with the label.
+    class_reason: str = ""
+    #: Set when a profile put this resource below the fold. The findings are
+    #: still here, still counted, still printed.
+    set_aside: bool = False
 
     def counts(self) -> dict[str, int]:
         tally = {o.value: 0 for o in Outcome}
@@ -173,6 +182,9 @@ class Run:
             provenance=data.get("provenance", {}),
             coverage=data.get("coverage", {}),
             resource=data.get("resource", {}),
+            resource_class=data.get("resource_class", ""),
+            class_reason=data.get("class_reason", ""),
+            set_aside=data.get("set_aside", False),
         )
 
     def to_dict(self) -> dict:
@@ -180,6 +192,9 @@ class Run:
             "provenance": self.provenance,
             "coverage": self.coverage,
             "resource": self.resource,
+            "resource_class": self.resource_class,
+            "class_reason": self.class_reason,
+            "set_aside": self.set_aside,
             "counts": self.counts(),
             "results": [r.to_dict() for r in self.results],
         }

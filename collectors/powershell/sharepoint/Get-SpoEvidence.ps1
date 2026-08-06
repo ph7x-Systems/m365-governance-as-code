@@ -28,7 +28,7 @@
                          as well as -SiteUrl: sharing settings are a tenant
                          property about a site, not a site property
       List               one list: item count and permission inheritance
-      UniquePermissions  every visible list on a site
+      UniquePermissions  every list on a site, hidden ones included
       TenantSites        every site this identity can enumerate
 
 .PARAMETER SiteUrl
@@ -297,6 +297,20 @@ function Get-ListPermissionFacts {
     param($List)
 
     $facts = [ordered]@{
+        # What kind of list SharePoint says this is. Collected, not judged:
+        # the engine turns these into a class, and the order of precedence it
+        # uses lives in one reviewable function rather than here.
+        #
+        # Nothing is filtered on them. A collector that dropped system lists
+        # would be deciding what matters, and a library holding 60,000 unique
+        # scopes matters whoever created it.
+        list        = [ordered]@{
+            is_catalog     = New-ScalarFact -Value ([bool] $List.IsCatalog) -RawField 'IsCatalog'
+            is_system      = New-ScalarFact -Value ([bool] $List.IsSystemList) -RawField 'IsSystemList'
+            is_application = New-ScalarFact -Value ([bool] $List.IsApplicationList) -RawField 'IsApplicationList'
+            hidden         = New-ScalarFact -Value ([bool] $List.Hidden) -RawField 'Hidden'
+            base_template  = New-ScalarFact -Value ([int] $List.BaseTemplate) -RawField 'BaseTemplate'
+        }
         items       = [ordered]@{
             count = New-ScalarFact -Value ([int] $List.ItemCount) -RawField 'ItemCount'
         }
@@ -547,7 +561,8 @@ switch ($Mode) {
     }
 
     'List' {
-        $list = Get-PnPList -Identity $ListTitle -Includes HasUniqueRoleAssignments
+        $list = Get-PnPList -Identity $ListTitle -Includes HasUniqueRoleAssignments, `
+            IsSystemList, IsCatalog, IsApplicationList, BaseTemplate, Hidden
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = "$SiteUrl::$ListTitle"; type = 'list'
@@ -559,8 +574,13 @@ switch ($Mode) {
     }
 
     'UniquePermissions' {
-        $lists = @(Get-PnPList -Includes HasUniqueRoleAssignments |
-                Where-Object { -not $_.Hidden })
+        # Every list, including hidden ones. The filter that used to be here
+        # was the collector deciding what mattered, and it decided wrong: a
+        # hidden library is still a library, and three of the eight it did
+        # return were catalogs anyway. Relevance is the profile's job, and it
+        # separates rather than drops.
+        $lists = @(Get-PnPList -Includes HasUniqueRoleAssignments, IsSystemList, `
+                IsCatalog, IsApplicationList, BaseTemplate, Hidden)
         Write-Host "$($lists.Count) lists"
         foreach ($list in $lists) {
             $file = Join-Path $OutputPath ((Get-SafeName "$($script:TenantHost)-$($list.Title)") + '.json')

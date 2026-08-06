@@ -26,8 +26,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.5.1-alpha`. Eight rules, a five-mode collector validated
-against a live tenant, four profiles, ten commands and 223 tests. Alpha because the rule set is small, not because the model is
+**Status:** `0.6.0-alpha`. Eight rules, a five-mode collector validated
+against a live tenant, four profiles, ten commands and 239 tests. Alpha because the rule set is small, not because the model is
 unsettled.
 
 ---
@@ -167,7 +167,7 @@ the source, and how the rule can pass while the problem survives.
 | `show-rule ID` | One rule in full, including what it does not establish |
 | `stats EVIDENCE` | What a collector managed to see, before anything is evaluated |
 | `validate` | Every rule against the schemas and the invariants |
-| `evaluate` | Rules against evidence. Markdown, JSON or self-contained HTML |
+| `evaluate` | Rules against evidence: one document or a directory of them. Markdown, JSON or self-contained HTML |
 | `report RUN.json` | Re-render a stored run in another format, without evaluating again |
 | `diff BEFORE AFTER` | What moved between two runs, and whether the rule moved too |
 

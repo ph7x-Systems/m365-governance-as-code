@@ -776,9 +776,13 @@ def test_no_profile_overrides_a_basis_or_a_severity():
 
     for path in sorted((ROOT / "profiles").glob("*.yaml")):
         profile = yaml.safe_load(path.read_text()) or {}
-        assert set(profile) <= {"name", "description", "rules"}, (
+        # `set_aside_classes` is presentation: it moves a resource down the
+        # page and changes no outcome. Anything beyond this set would be a
+        # profile restating a rule.
+        allowed = {"name", "description", "rules", "set_aside_classes"}
+        assert set(profile) <= allowed, (
             f"{path.name} carries more than a selection: "
-            f"{sorted(set(profile) - {'name', 'description', 'rules'})}"
+            f"{sorted(set(profile) - allowed)}"
         )
 
 
@@ -852,3 +856,138 @@ def test_each_slice_is_paired_with_a_profile_that_can_answer_it():
             f"slice {chosen.name} paired with profile {chosen.profile} answers "
             f"nothing about its own evidence: {[o.value for o in outcomes]}"
         )
+
+
+# ---------------------------------------------------------------------------
+# classification: a label, never a filter
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("list-class-content", "content"),
+        ("list-class-catalog", "system"),
+        ("list-class-system", "system"),
+        ("list-class-application", "application"),
+        # Never `content`. A list nobody classified is a list nobody looked at.
+        ("list-class-unknown", "unknown"),
+    ],
+)
+def test_a_list_is_classified_from_facts_the_product_reports(fixture, expected):
+    from m365_governance.classifying import classify
+
+    result = classify(evidence(fixture))
+    assert result.kind.value == expected
+    assert result.because, "a classification with no stated reason is a label to trust"
+
+
+def test_classification_never_changes_an_outcome():
+    """The label groups a report. It decides nothing."""
+    from m365_governance.loader import load_rules
+
+    rules = [loaded.data for loaded in load_rules(RULES)]
+    plain = evaluate(rules, evidence("list-scopes-over-hard-limit"))
+    labelled = evaluate(rules, evidence("list-catalog-over-hard-limit"))
+
+    def outcomes(run):
+        return {r.rule_id: r.outcome for r in run.results}
+
+    assert outcomes(plain) == outcomes(labelled)
+    assert labelled.resource_class == "system"
+
+
+def test_setting_aside_cannot_hide_a_failure(capsys, tmp_path):
+    """The reason this is `set_aside` and not `exclude`.
+
+    A document library holding 61,400 unique permission scopes is over a hard
+    product limit whoever created it, and SharePoint calling it a catalog is
+    not a reason for a governance report to stay silent.
+    """
+    import shutil
+
+    for name in ("list-catalog-over-hard-limit", "list-class-content"):
+        shutil.copy(FIXTURES / f"{name}.json", tmp_path / f"{name}.json")
+
+    code, out, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--profile",
+        str(ROOT / "profiles" / "capacity.yaml"),
+        "--evidence",
+        str(tmp_path),
+        "--format",
+        "markdown",
+    )
+    assert code == 0
+    assert "Set aside by profile" in out
+    # Counted in the summary, not only printed at the bottom.
+    assert "| Fail | 2 |" in out
+    assert "61400 unique permission scopes" in out
+    assert "Nothing was removed" in out
+
+
+def test_a_set_aside_resource_is_still_evaluated(capsys, tmp_path):
+    import json as _json
+    import shutil
+
+    shutil.copy(FIXTURES / "list-catalog-over-hard-limit.json", tmp_path / "one.json")
+    code, out, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--profile",
+        str(ROOT / "profiles" / "capacity.yaml"),
+        "--evidence",
+        str(tmp_path),
+        "--format",
+        "json",
+    )
+    assert code == 0
+    payload = _json.loads(out)
+    assert payload["set_aside"] == 1
+    assert payload["counts"]["fail"] == 2
+    assert payload["by_class"]["system"] == 1
+
+
+def test_the_report_counts_resources_by_class(capsys, tmp_path):
+    import shutil
+
+    for name in (
+        "list-class-content",
+        "list-class-catalog",
+        "list-class-system",
+        "list-class-application",
+    ):
+        shutil.copy(FIXTURES / f"{name}.json", tmp_path / f"{name}.json")
+
+    _, out, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--profile",
+        str(ROOT / "profiles" / "capacity.yaml"),
+        "--evidence",
+        str(tmp_path),
+    )
+    assert "4 resources observed" in out
+    assert "content         1" in out
+    assert "system          2" in out
+    assert "application     1" in out
+
+
+def test_no_profile_excludes_anything():
+    """`set_aside_classes` is the only class key, and it is not `exclude`."""
+    import yaml
+
+    for path in sorted((ROOT / "profiles").glob("*.yaml")):
+        profile = yaml.safe_load(path.read_text()) or {}
+        for forbidden in ("exclude_classes", "exclude", "skip", "ignore"):
+            assert forbidden not in profile, (
+                f"{path.name} carries {forbidden!r}. A profile moves a "
+                f"resource down the page; it never removes one."
+            )

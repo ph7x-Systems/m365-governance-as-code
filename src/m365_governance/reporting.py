@@ -439,3 +439,148 @@ def _html_card(result, outcome: Outcome) -> str:
         f'<p class="msg">{_esc(result.message)}</p>'
         f"<dl>{''.join(rows)}</dl>{extra}</div>"
     )
+
+
+# ---------------------------------------------------------------------------
+# Many documents at once
+# ---------------------------------------------------------------------------
+
+
+def _class_lines(runs: list[Run]) -> list[str]:
+    """What was observed, by kind, and what a profile moved down the page.
+
+    Set aside is not excluded. Every finding on a set-aside resource is still
+    evaluated, still counted here, and still printed below. A profile that
+    could drop a resource could hide a library holding 60,000 unique scopes
+    because SharePoint happens to call it plumbing.
+    """
+    by_class: dict[str, int] = {}
+    for run in runs:
+        by_class[run.resource_class or "unclassified"] = (
+            by_class.get(run.resource_class or "unclassified", 0) + 1
+        )
+    aside = [r for r in runs if r.set_aside]
+
+    lines = [f"{len(runs)} resources observed"]
+    for name in sorted(by_class):
+        lines.append(f"  {name:<16}{by_class[name]}")
+    if aside:
+        answered = sum(
+            1 for r in aside for result in r.results if result.outcome.is_answer
+        )
+        lines.append(
+            f"  set aside by profile: {len(aside)}, carrying {answered} answers. "
+            f"Reported below, not removed."
+        )
+    return lines
+
+
+def many_to_markdown(runs: list[Run]) -> str:
+    """One report over many documents, with the set-aside ones at the end."""
+    if not runs:
+        return "No evidence documents.\n"
+
+    total = {o.value: 0 for o in Outcome}
+    for run in runs:
+        for key, value in run.counts().items():
+            total[key] += value
+    answered = total[Outcome.PASS.value] + total[Outcome.FAIL.value]
+    evaluated = sum(len(run.results) for run in runs)
+
+    lines = ["# Governance report", ""]
+    lines.extend(
+        f"- {line}" if i == 0 else f"  {line.strip()}"
+        for i, line in enumerate(_class_lines(runs))
+    )
+    lines.append("")
+
+    delegated = any(
+        (run.provenance or {}).get("identity_kind") == "delegated" for run in runs
+    )
+    if delegated:
+        lines.append(
+            "> **Identity: delegated.** These runs saw what one person sees. "
+            "Nothing here may be read as a tenant-wide statement."
+        )
+        lines.append("")
+
+    lines.append("## Summary")
+    lines.append("")
+    lines.append(
+        f"{evaluated} rule evaluations across {len(runs)} resources. "
+        f"**{answered} produced an answer.**"
+    )
+    lines.append("")
+    lines.append("| Outcome | Count |")
+    lines.append("|---|---|")
+    for outcome in _ORDER:
+        lines.append(f"| {_LABEL[outcome]} | {total[outcome.value]} |")
+    lines.append("")
+
+    unresolved = total[Outcome.UNKNOWN.value] + total[Outcome.INVALID_EVIDENCE.value]
+    if unresolved:
+        lines.append(
+            f"{unresolved} could not be decided. That is not compliance: missing "
+            f"evidence is a fact about collection, not about the resource."
+        )
+        lines.append("")
+
+    for heading, selected in (
+        ("Findings", [r for r in runs if not r.set_aside]),
+        ("Set aside by profile", [r for r in runs if r.set_aside]),
+    ):
+        interesting = [
+            run
+            for run in selected
+            if any(r.outcome is not Outcome.PASS for r in run.results)
+        ]
+        if not selected:
+            continue
+        lines.append(f"## {heading}")
+        lines.append("")
+        if heading.startswith("Set aside"):
+            lines.append(
+                "The profile moved these down the page. Nothing was removed, "
+                "and a finding here counts the same as one above it."
+            )
+            lines.append("")
+        if not interesting:
+            lines.append(f"{len(selected)} resources, nothing but passes.")
+            lines.append("")
+            continue
+        for run in interesting:
+            name = run.resource.get("display_name") or run.resource.get("id", "?")
+            klass = f" · {run.resource_class}" if run.resource_class else ""
+            lines.append(f"### {_esc_md(name)}{klass}")
+            lines.append("")
+            for result in run.results:
+                if result.outcome is Outcome.PASS:
+                    continue
+                lines.append(
+                    f"- **{_LABEL[result.outcome]}** · {result.rule_id} "
+                    f"v{result.rule_version} · {result.basis_type}"
+                )
+                lines.append(f"  {result.message}")
+            lines.append("")
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _esc_md(text: str) -> str:
+    return str(text).replace("|", "\\|")
+
+
+def many_to_json(runs: list[Run]) -> str:
+    payload = {
+        "resources": len(runs),
+        "by_class": {},
+        "set_aside": sum(1 for r in runs if r.set_aside),
+        "counts": {o.value: 0 for o in Outcome},
+        "runs": [run.to_dict() for run in runs],
+    }
+    for run in runs:
+        key = run.resource_class or "unclassified"
+        payload["by_class"][key] = payload["by_class"].get(key, 0) + 1
+        for name, value in run.counts().items():
+            payload["counts"][name] += value
+    return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"

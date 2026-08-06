@@ -26,7 +26,7 @@ from . import doctor as doctor_module
 from . import inspect as inspect_module
 from .engine import evaluate
 from .loader import DocumentError, load_evidence, load_profile, load_rules
-from .reporting import to_html, to_json, to_markdown
+from .reporting import many_to_json, many_to_markdown, to_html, to_json, to_markdown
 from .results import Outcome, Run
 from .validator import validate_evidence_document, validate_rules
 
@@ -277,6 +277,25 @@ def _load_rules_for(args) -> list[dict]:
     return rules
 
 
+def _evidence_documents(path: Path) -> list[Path]:
+    if path.is_dir():
+        return sorted(path.rglob("*.json"))
+    return [path]
+
+
+def _set_aside_classes(profile_path: Path) -> set[str]:
+    """Which classes a profile moves down the page.
+
+    Never which it removes. A profile that could drop a resource could hide a
+    library holding 60,000 unique scopes because SharePoint calls it plumbing,
+    and the whole point of classifying was to reduce noise without losing
+    facts.
+    """
+    if not profile_path.exists():
+        return set()
+    return set(load_profile(profile_path).get("set_aside_classes") or [])
+
+
 def _cmd_evaluate(args) -> int:
     problems = validate_rules(args.rules)
     if problems:
@@ -287,22 +306,42 @@ def _cmd_evaluate(args) -> int:
         )
         return 2
 
-    evidence = load_evidence(args.evidence)
-    evidence_problems = validate_evidence_document(evidence.data, str(evidence.path))
-    if evidence_problems:
-        for problem in evidence_problems:
-            print(problem, file=sys.stderr)
-        print(
-            "\nrefusing to evaluate: the evidence does not match the schema. "
-            "This is a defect in the collector, not a finding about the resource.",
-            file=sys.stderr,
-        )
-        return 2
+    rules = _load_rules_for(args)
+    aside = _set_aside_classes(args.profile) if args.profile else set()
 
-    run = evaluate(_load_rules_for(args), evidence.data)
-    sys.stdout.write(_render(run, args.format))
+    documents = _evidence_documents(args.evidence)
+    runs = []
+    for path in documents:
+        data = load_evidence(path).data
+        problems = validate_evidence_document(data, str(path))
+        if problems:
+            for problem in problems:
+                print(problem, file=sys.stderr)
+            print(
+                f"\nrefusing to evaluate {path}: the evidence does not match "
+                f"the schema. This is a defect in the collector, not a finding "
+                f"about the resource.",
+                file=sys.stderr,
+            )
+            return 2
+        run = evaluate(rules, data)
+        run.set_aside = run.resource_class in aside
+        runs.append(run)
 
-    counts = run.counts()
+    # The shape follows what was asked for, not how many files happened to be
+    # there. A directory with one document in it today and three tomorrow must
+    # not change the shape of what a pipeline parses.
+    if not args.evidence.is_dir():
+        sys.stdout.write(_render(runs[0], args.format))
+    elif args.format == "json":
+        sys.stdout.write(many_to_json(runs))
+    else:
+        sys.stdout.write(many_to_markdown(runs))
+
+    counts = {o.value: 0 for o in Outcome}
+    for run in runs:
+        for key, value in run.counts().items():
+            counts[key] += value
     if args.fail_on == "fail" and counts[Outcome.FAIL.value]:
         return 1
     if args.fail_on == "unresolved":
