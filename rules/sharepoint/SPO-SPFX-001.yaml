@@ -1,0 +1,85 @@
+# A convention about a version, from two version numbers the catalog reports.
+
+schema_version: "1.0"
+id: SPO-SPFX-001
+version: "1.0"
+title: A solution is installed at an older version than the catalog holds
+description: >
+  An app catalog can hold a newer package than the one a site is running.
+  Somebody uploaded an update and the sites were never told to take it. The
+  gap is invisible from the site: the component keeps working, at the version
+  it has, until the day a difference between the two matters.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources: []
+  rationale: >
+    Microsoft neither requires an upgrade nor warns about the gap: the product
+    reports both versions and offers the action, and leaving a site on an
+    older package is a supported state. Our position is that an unclaimed
+    update is a decision somebody made once and then stopped making, and that
+    it belongs on a list. An organisation that pins versions on purpose can
+    reasonably decline this rule, and should record that it does.
+
+severity:
+  default: low
+  rationale: >
+    Nothing is failing. What this measures is drift between what was published
+    and what is running, which matters when somebody has to explain why two
+    sites behave differently. Rating it higher would put a version note beside
+    findings about access.
+  configurable: true
+
+evidence_requirements:
+  - path: spfx.upgradable_count
+    type: integer
+    required: true
+
+condition:
+  operator: greater-than
+  evidence: spfx.upgradable_count
+  value: 0
+
+outcomes:
+  pass:
+    message: >
+      Every solution in this catalog is installed at the version the catalog
+      holds.
+  fail:
+    message: >
+      {spfx.upgradable_count} solutions are installed at an older version than
+      the catalog holds. The sites keep running what they have until somebody
+      claims the update.
+  unknown:
+    message: >
+      The catalog was not read, so whether any solution is behind the version
+      it holds is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The catalog was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Find out why before upgrading anything. A package that was uploaded and
+  never claimed is sometimes an oversight and sometimes a rollback that
+  nobody wrote down.
+
+limitations:
+  passes_without_resolving: >
+    A catalog where every solution is current says nothing about whether any
+    of them still works, is maintained by anybody, or should be there at all.
+    This rule compares two version numbers.
+  other:
+    - >
+      It reads one catalog, the one the collector was pointed at. A tenant
+      catalog and a site collection catalog are separate, and a solution
+      current in one can be behind in the other.
+    - >
+      There is no rule here about an unused solution, and there cannot be one
+      from this evidence. See the note in the profile.

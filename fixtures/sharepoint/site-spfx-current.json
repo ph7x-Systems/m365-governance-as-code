@@ -1,0 +1,86 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T16:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "spfx"
+    ],
+    "completed": [
+      "spfx"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,spfx-ok",
+    "type": "site",
+    "display_name": "Training",
+    "url": "https://contoso.sharepoint.com/sites/spfx-ok"
+  },
+  "facts": {
+    "spfx": {
+      "catalog_scope": {
+        "state": "observed",
+        "value": "Site",
+        "raw": {
+          "field": "Get-PnPApp -Scope",
+          "value": "Site"
+        }
+      },
+      "solutions": {
+        "state": "observed",
+        "value": [
+          {
+            "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+            "title": "rater-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "1.0.0.0",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          }
+        ],
+        "raw": {
+          "field": "AppMetadata",
+          "value": [
+            {
+              "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+              "title": "rater-client-side-solution",
+              "catalog_version": "1.0.0.0",
+              "installed_version": "1.0.0.0",
+              "deployed": true,
+              "can_upgrade": false,
+              "client_side": true
+            }
+          ]
+        }
+      },
+      "solution_count": {
+        "state": "observed",
+        "value": 1,
+        "raw": {
+          "field": "AppMetadata",
+          "value": 1
+        }
+      },
+      "upgradable_count": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "AppCatalogVersion vs InstalledVersion",
+          "value": 0
+        }
+      }
+    }
+  }
+}

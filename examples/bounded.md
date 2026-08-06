@@ -9,18 +9,18 @@
 
 ## Summary
 
-8 rules evaluated. **1 produced an answer.**
+9 rules evaluated. **1 produced an answer.**
 
 | Outcome | Count |
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 7 |
+| Unknown | 8 |
 | Error | 0 |
 | Not applicable | 0 |
 | Pass | 1 |
 
-7 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
+8 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 
 ## Unknown
 
@@ -84,6 +84,14 @@ The storage figures for this site were not read, so how full it is remains unkno
 - Basis: **convention** — widely held practice, not documented as a rule
 - Severity: medium
 - Evidence: `site.storage_quota_mb` = <missing>, `site.storage_used_mb` = <missing>, `site.storage_used_percent` = <missing>
+
+### SPO-SPFX-001 v1.0
+
+The catalog was not read, so whether any solution is behind the version it holds is not known. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: low
+- Evidence: `spfx.upgradable_count` = <missing>
 
 ## Pass
 

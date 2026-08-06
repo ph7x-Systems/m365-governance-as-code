@@ -1,0 +1,78 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T16:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "spfx",
+      "pages"
+    ],
+    "completed": [
+      "spfx",
+      "pages"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,spfx-bad",
+    "type": "site",
+    "display_name": "Root",
+    "url": "https://contoso.sharepoint.com/sites/spfx-bad"
+  },
+  "facts": {
+    "spfx": {
+      "components": {
+        "state": "observed",
+        "value": [],
+        "raw": {
+          "field": "Get-PnPPageComponent",
+          "value": []
+        }
+      },
+      "component_count": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "Get-PnPPageComponent",
+          "value": 0
+        }
+      },
+      "reconciled": {
+        "state": "invalid",
+        "detail": "Counted 8 inspected, 7 unreadable and 0 skipped, which is 15 outcomes for 9 pages. These cannot all be true."
+      },
+      "upgradable_count": {
+        "state": "missing",
+        "detail": "The catalog was not read."
+      }
+    },
+    "pages": {
+      "total": {
+        "state": "observed",
+        "value": 9,
+        "raw": {
+          "field": "Get-PnPPage",
+          "value": 9
+        }
+      },
+      "inspected": {
+        "state": "invalid",
+        "detail": "Counted 8 inspected, 7 unreadable and 0 skipped, which is 15 outcomes for 9 pages. These cannot all be true."
+      },
+      "not_inspected": {
+        "state": "invalid",
+        "detail": "Counted 8 inspected, 7 unreadable and 0 skipped, which is 15 outcomes for 9 pages. These cannot all be true."
+      }
+    }
+  }
+}

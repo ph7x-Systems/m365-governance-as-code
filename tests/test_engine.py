@@ -360,3 +360,65 @@ def test_no_rule_calls_a_page_classic():
         text = loaded.path.read_text().lower()
         for path in ("classic_pages", "classic_page_count"):
             assert path not in text, f"{loaded.path.name} reads {path}"
+
+
+# ---------------------------------------------------------------------------
+# SPFx: one rule, and three that the evidence cannot support
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("site-spfx-current", Outcome.PASS),
+        ("site-spfx-behind", Outcome.FAIL),
+        ("site-spfx-no-catalog", Outcome.UNKNOWN),
+        ("site-spfx-pages-unreconciled", Outcome.UNKNOWN),
+    ],
+)
+def test_spfx_version_rule(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SPFX-001"), evidence(fixture)).outcome is expected
+
+
+def test_a_package_id_is_not_a_component_id():
+    """The reason there is no rule about an unused solution.
+
+    On a real tenant the same web part appears as `24cc778a-…` on a page and
+    `9a131334-…` in the catalog. AppMetadata does not list the components a
+    package contains, so the two cannot be joined without matching on titles.
+    """
+    catalog = evidence("site-spfx-behind")["facts"]["spfx"]["solutions"]["value"]
+    package_ids = {s["id"] for s in catalog}
+    assert package_ids == {"9a131334-3761-4a3c-a892-e9213a74cb7e"}
+
+    from conftest import ROOT
+    from m365_governance.loader import load_rules
+
+    for loaded in load_rules(ROOT / "rules"):
+        text = loaded.path.read_text().lower()
+        for forbidden in ("unused", "orphan", "not in use", "web_part_id"):
+            assert forbidden not in text or "no rule" in text, (
+                f"{loaded.path.name} mentions {forbidden!r}"
+            )
+
+
+def test_a_collector_that_cannot_count_says_so():
+    """A run reported 9 pages, 8 inspected and 7 unreadable. Fifteen outcomes
+    for nine pages, every number believable on its own."""
+    facts = evidence("site-spfx-pages-unreconciled")["facts"]
+    assert facts["pages"]["inspected"]["state"] == "invalid"
+    assert facts["spfx"]["reconciled"]["state"] == "invalid"
+    assert "cannot all be true" in facts["pages"]["inspected"]["detail"]
+
+
+def test_an_unreconciled_count_is_invalid_evidence_not_a_pass():
+    """The fix is in the collector, not in another collection, which is what
+    separates invalid-evidence from unknown."""
+    from m365_governance.engine import resolve
+
+    resolved = resolve(
+        evidence("site-spfx-pages-unreconciled")["facts"], "pages.inspected"
+    )
+    assert resolved.kind == "invalid"

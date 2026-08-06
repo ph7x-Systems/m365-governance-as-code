@@ -32,7 +32,7 @@
   "counts": {
     "pass": 1,
     "fail": 0,
-    "unknown": 7,
+    "unknown": 8,
     "not-applicable": 0,
     "invalid-evidence": 0,
     "error": 0
@@ -316,6 +316,34 @@
       "passes_without_resolving": "A site at 40 per cent that doubles every month passes this rule twice before it fails it. The rule reads one number on one day: it measures a level and says nothing about a rate, and the rate is what decides when anybody needs to act.",
       "sources": [],
       "remediation": "Raise the quota, or move content out. Which one is right depends on whether the site is growing because it is being used or because nothing has ever been removed from it, and that is a question the numbers here do not answer.",
+      "message_degraded": false,
+      "engine_detail": ""
+    },
+    {
+      "rule_id": "SPO-SPFX-001",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "id": "contoso,site,hr",
+        "type": "site"
+      },
+      "outcome": "unknown",
+      "message": "The catalog was not read, so whether any solution is behind the version it holds is not known. This is not a pass.",
+      "basis": "convention",
+      "severity": "low",
+      "evidence_used": [
+        {
+          "path": "spfx.upgradable_count",
+          "state": "missing",
+          "value": null,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": "not present in the evidence"
+        }
+      ],
+      "passes_without_resolving": "A catalog where every solution is current says nothing about whether any of them still works, is maintained by anybody, or should be there at all. This rule compares two version numbers.",
+      "sources": [],
+      "remediation": "Find out why before upgrading anything. A package that was uploaded and never claimed is sometimes an oversight and sometimes a rollback that nobody wrote down.",
       "message_degraded": false,
       "engine_detail": ""
     }

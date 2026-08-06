@@ -8,6 +8,64 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.8.0-alpha
+
+SPFx, in two modes, and three rules that turned out to be unwritable.
+
+**Breaking changes:** none.
+
+### Two levels, because one of them is expensive
+
+`SpfxCatalog` reads an app catalog in one call. `SpfxPages` opens every page
+on a site and is opt-in, with `-MaxPages` and `-ModifiedSince` to bound it.
+Against a real tenant: 18.0 seconds for the catalog, 5.7 seconds for two
+pages.
+
+A page that was skipped, capped or unreadable is never a page without
+components. The evidence states which of the three it was, and the component
+count is `partial` unless every page was opened.
+
+### Three rules that cannot be written, and why
+
+**No rule about an unused solution.** A component on a page reports a
+`web_part_id`; a solution in the catalog reports the package id. On the tenant
+those are `24cc778a-…` and `9a131334-…` for the same web part, and
+`AppMetadata` does not list the components a package contains. The two cannot
+be joined without matching on titles, and matching on titles is a guess in
+whatever language somebody named the package in.
+
+**No rule about a component without a package**, for the same reason. Every
+component would look unidentified and the rule would fire on all of them for
+ever.
+
+**No rule about tenant-wide deployment.** `AppMetadata` has exactly seven
+properties and none is that flag. It lives in the Tenant Wide Extensions list,
+which this collector does not read.
+
+All three are recorded in `profiles/spfx.yaml`, where somebody looking for
+them will be.
+
+### The one that could be written
+
+`SPO-SPFX-001`, `convention`: a solution installed at an older version than
+the catalog holds. Two version numbers the catalog reports side by side, and a
+reader can check the finding against the numbers printed beside it.
+
+### A collector that could not count
+
+The first run reported 9 pages, 8 inspected and 7 that could not be opened.
+Fifteen outcomes for nine pages. Every one of those numbers was believable on
+its own, and a report built on them would have been believable too.
+
+The collector now reconciles its own counting, and when the total does not
+add up it marks the affected facts `invalid` with the arithmetic in the
+detail. `invalid` rather than `unknown`, because the fix is in the collector
+and not in another collection.
+
+270 tests.
+
+---
+
 ## 0.7.0-alpha
 
 Modernity, in the order that keeps working: fact, schema, tenant, rule.

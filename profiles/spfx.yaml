@@ -1,0 +1,33 @@
+# Pairs with `collect spfx`.
+#
+# One rule, and three that were asked for and cannot be written from this
+# evidence. Each is recorded here rather than approximated, because an
+# approximate rule about SPFx would be indistinguishable from a good one until
+# somebody acted on it.
+#
+# NO RULE ABOUT AN UNUSED SOLUTION. A component on a page reports a
+# `web_part_id`; a solution in the catalog reports the package id. On a real
+# tenant those are 24cc778a-… and 9a131334-… for the same thing, and
+# AppMetadata does not list the components a package contains. The two cannot
+# be joined without matching on titles, and matching on titles is a guess in
+# whatever language the package was named in.
+#
+# NO RULE ABOUT A COMPONENT WITHOUT A PACKAGE, for the same reason: every
+# component would look unidentified, and the rule would fire on all of them
+# for ever.
+#
+# NO RULE ABOUT TENANT-WIDE DEPLOYMENT. AppMetadata has seven properties and
+# none of them is that flag. It lives in the Tenant Wide Extensions list,
+# which this collector does not read.
+#
+# A MISSING OR MALFORMED VERSION IS NOT A RULE. It is `invalid-evidence`,
+# which the engine already produces, and a rule restating it would be a
+# finding about the collector wearing a finding about a tenant.
+
+name: spfx
+description: >
+  What is in the catalog, and what is on the pages. The two cannot be joined
+  from this evidence, and this profile does not pretend otherwise.
+
+rules:
+  - SPO-SPFX-001
