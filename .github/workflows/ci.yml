@@ -69,20 +69,17 @@ jobs:
         # moves underneath it.
         run: python tools/examples.py --check
 
-      - name: Every fixture evaluates
-        run: |
-          for f in fixtures/sharepoint/*.json; do
-            m365-governance evaluate --rules rules --evidence "$f" --format json > /dev/null
-          done
-          echo "all fixtures evaluated"
-
-  collector:
-    name: Collector is read-only
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Parse the collector and prove it cannot write
+      - name: Collector is read-only
+        # A step rather than a job, and the reason is exposure rather than
+        # tidiness. It ran as its own job, which meant a second runner and a
+        # second `actions/checkout` to resolve. On 2026-08-06 the first job
+        # resolved its actions and this one could not, in the same run, in the
+        # same minute, for the same action. The check itself takes three
+        # seconds; a whole job's worth of dependency on GitHub resolving a
+        # download was the wrong price for it.
+        #
+        # One matrix entry, because the answer does not depend on Python.
+        if: matrix.python-version == '3.13'
         shell: pwsh
         run: |
           $path = 'collectors/powershell/sharepoint/Get-SpoEvidence.ps1'
@@ -95,3 +92,10 @@ jobs:
           $writes = $names | Where-Object { $_ -match '^(Set|New|Remove|Add|Update|Grant|Revoke)-(PnP|Mg|SPO)' }
           if ($writes) { Write-Error "write path in a read-only collector: $writes"; exit 1 }
           Write-Host "no write path"
+
+      - name: Every fixture evaluates
+        run: |
+          for f in fixtures/sharepoint/*.json; do
+            m365-governance evaluate --rules rules --evidence "$f" --format json > /dev/null
+          done
+          echo "all fixtures evaluated"
