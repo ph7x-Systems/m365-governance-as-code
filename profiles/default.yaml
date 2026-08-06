@@ -11,11 +11,16 @@ description: >
   Every rule in the repository, at its authored severity. This profile makes
   no judgement of its own.
 
-rules:
-  - SPO-LIST-001
-  - SPO-SITE-001
+# NO `rules:` KEY, AND THAT IS THE POINT. An absent selection means every rule.
+#
+# This file used to enumerate them, and the enumeration went stale the first
+# time a rule was added: two new rules were written, validated, tested, and
+# then silently filtered out of every evaluation because nobody remembered to
+# list them here. The description said "every rule" while the file said two.
+#
+# A profile that means "everything" says it by not choosing.
 
 # Threshold and severity overrides are an open decision. See the open
 # decisions in docs/ARCHITECTURE.md: a profile must be able to say "high, not
 # medium, here" without restating the rule, and the syntax for that is not
-# settled. Until it is, this file only selects.
+# settled. Until it is, this file only selects, and selects everything.

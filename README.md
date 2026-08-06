@@ -24,8 +24,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.3.0-alpha`. Two rules, one collector, a working engine, nine
-commands and 166 tests. Alpha because the rule set is small, not because the model is
+**Status:** `0.4.0-alpha`. Four rules, a five-mode collector, a working
+engine, nine commands and 183 tests. Alpha because the rule set is small, not because the model is
 unsettled.
 
 ---

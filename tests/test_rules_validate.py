@@ -35,7 +35,9 @@ def check(document: dict) -> list:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("rule_id", ["SPO-LIST-001", "SPO-SITE-001"])
+@pytest.mark.parametrize(
+    "rule_id", ["SPO-LIST-001", "SPO-LIST-002", "SPO-LIST-003", "SPO-SITE-001"]
+)
 def test_authored_rules_pass_every_layer(rule_id):
     assert check(rule(rule_id)) == []
 
@@ -43,7 +45,12 @@ def test_authored_rules_pass_every_layer(rule_id):
 def test_every_rule_file_is_covered_by_a_test():
     """A rule added without a test would otherwise pass silently."""
     on_disk = {p.stem for p in RULES.rglob("*.yaml")}
-    assert on_disk == {"SPO-LIST-001", "SPO-SITE-001"}, (
+    assert on_disk == {
+        "SPO-LIST-001",
+        "SPO-LIST-002",
+        "SPO-LIST-003",
+        "SPO-SITE-001",
+    }, (
         "a rule was added or renamed. Add its cases to tests/test_engine.py "
         "and list it here."
     )

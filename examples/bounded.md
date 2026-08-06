@@ -23,7 +23,7 @@
 
 ## Pass
 
-### SPO-SITE-001 v1.0
+### SPO-SITE-001 v1.1
 
 The site has at least 3 owners.
 

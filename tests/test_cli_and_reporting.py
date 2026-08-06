@@ -127,6 +127,8 @@ def test_uncollected_blocks_are_disclosed():
 
 def test_json_report_carries_rule_and_schema_versions():
     payload = json.loads(to_json(_run_one("site-two-owners")))
+    # Read the version from the rule rather than pinning it: the assertion is
+    # that the report carries it, not that it never moves.
     result = payload["results"][0]
-    assert result["rule_version"] == "1.0"
-    assert result["schema_version"] == "1.0"
+    assert result["rule_version"] == rule("SPO-SITE-001")["version"]
+    assert result["schema_version"] == rule("SPO-SITE-001")["schema_version"]

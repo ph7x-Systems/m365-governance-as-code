@@ -9,17 +9,40 @@
 
 ## Summary
 
-1 rule evaluated. **1 produced an answer.**
+3 rules evaluated. **1 produced an answer.**
 
 | Outcome | Count |
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 0 |
+| Unknown | 2 |
 | Error | 0 |
 | Not applicable | 0 |
 | Pass | 1 |
 
+2 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
+
+## Unknown
+
+### SPO-LIST-002 v1.0
+
+The scope count does not settle this list's position relative to the 50,000 limit: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.
+
+- Basis: **documented-limit** — a boundary the product imposes
+- Severity: high
+- Evidence: `permissions.unique_scope_count` = <missing>
+- Source: [SharePoint limits, Unique security scopes per list or library](https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits) — checked 2026-08-06
+- Source: [Manage Permission Scopes in SharePoint](https://learn.microsoft.com/sharepoint/manage-permission-scope) — checked 2026-08-06
+
+### SPO-LIST-003 v1.0
+
+The scope count does not settle this list's position relative to the recommended 5,000: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.
+
+- Basis: **documented-guidance** — Microsoft recommends this; the product permits the alternative
+- Severity: low
+- Evidence: `permissions.unique_scope_count` = <missing>
+- Source: [SharePoint limits, Unique security scopes per list or library](https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits) — checked 2026-08-06
+- Source: [Manage Permission Scopes in SharePoint](https://learn.microsoft.com/sharepoint/manage-permission-scope) — checked 2026-08-06
 
 ## Pass
 

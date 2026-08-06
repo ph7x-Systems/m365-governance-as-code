@@ -8,6 +8,77 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.4.0-alpha
+
+Collector modes, and the first rules written against facts the collector did
+not previously gather.
+
+**Breaking changes:** the collector's `-Mode` parameter is mandatory. A script
+calling it without one now fails instead of guessing.
+
+### Collector
+
+Five modes, each writing one evidence document per resource:
+
+| Mode | Reads |
+|---|---|
+| `SiteOwners` | the owners of one site |
+| `SiteSharing` | sharing capability, default link type and permission, anonymous link expiry |
+| `List` | one list: item count and permission inheritance |
+| `UniquePermissions` | every visible list on a site |
+| `TenantSites` | every site the identity can enumerate |
+
+`TenantSites` writes the enumeration caveat into every document it produces. A
+delegated run does not enumerate a tenant, it enumerates what one person can
+see, and the number it could not see is not knowable from inside the run.
+
+Counting unique permission scopes is behind `-CountUniqueScopes` because it
+walks every item of every list. Without it the count is reported as
+`not-supported`, which is the truth about that run. A zero would have been an
+invention, and every rule that needs the number returns `unknown` instead.
+
+### Rules
+
+| id | basis | Threshold |
+|---|---|---|
+| `SPO-LIST-002` | `documented-limit` | 50,000 unique permission scopes |
+| `SPO-LIST-003` | `documented-guidance` | 5,000, the recommended figure |
+
+Both read the same number and are deliberately separate. One is a ceiling the
+product enforces, the other a recommendation it permits exceeding, and
+collapsing them would put a performance note and a hard limit under the same
+heading.
+
+A sharing rule was **not** written. The facts are collected; classifying them
+needs the enum values confirmed against a tenant that has them, and guessing
+at `AnonymousAccess` versus `Anyone` would be inventing a fact to put in a
+`basis`.
+
+### A partial count is a lower bound
+
+Evidence is monotonic: a collector that stopped at 20,000 items saw at least
+what it counted. A scalar fact in `partial` state now resolves to a bound
+rather than to an absence, so a list counted in part to 6,100 scopes **fails**
+the 5,000 recommendation and returns **unknown** against the 50,000 ceiling.
+One is proven by the bound, the other is not.
+
+### Fixed
+
+Three `unknown` messages claimed the evidence had not been collected. With a
+partial count, or an unexpanded group, it had been: the message said "were not
+collected" while the evidence line beside it read "at least 6,100". They now
+say that the count does not settle the question and point at the evidence for
+which case it is. `SPO-SITE-001` moves to v1.1 for it.
+
+The `default` profile enumerated its rules, and the enumeration went stale the
+first time a rule was added: two new rules were written, validated, tested,
+and silently filtered out of every evaluation. A profile that means everything
+now says so by not choosing.
+
+183 tests.
+
+---
+
 ## 0.3.0-alpha
 
 Scope, written down, and the first change to the evidence model since it was

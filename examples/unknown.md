@@ -26,9 +26,9 @@
 
 ## Unknown
 
-### SPO-SITE-001 v1.0
+### SPO-SITE-001 v1.1
 
-The owners of this site were not collected, so the number is not known. This is not a pass.
+The owner count does not settle whether this site has two: either the owners were not collected, or a group among them was not expanded. The evidence beside this finding says which. This is not a pass.
 
 - Basis: **convention** — widely held practice, not documented as a rule
 - Severity: medium

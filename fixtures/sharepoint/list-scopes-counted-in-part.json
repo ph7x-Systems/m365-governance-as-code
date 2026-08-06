@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-05T14:02:11Z",
+    "collector": "spo-collector",
+    "collector_version": "0.1.0",
+    "source_system": "SharePoint Online",
+    "source_api": "Microsoft Graph v1.0",
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "identity_kind": "application",
+    "scopes": [
+      "Sites.Read.All"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "items",
+      "permissions"
+    ],
+    "completed": [
+      "items",
+      "permissions"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,list,archive-scopes",
+    "type": "list",
+    "display_name": "Archive",
+    "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
+  },
+  "facts": {
+    "items": {
+      "count": {
+        "state": "observed",
+        "value": 4200,
+        "raw": {
+          "field": "ItemCount",
+          "value": 4200
+        }
+      }
+    },
+    "permissions": {
+      "inheritance_broken": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "hasUniqueRoleAssignments",
+          "value": false
+        }
+      },
+      "unique_scope_count": {
+        "state": "partial",
+        "value": 6100,
+        "detail": "Stopped at 20000 items. The real count is at least this.",
+        "raw": {
+          "field": "HasUniqueRoleAssignments",
+          "value": 6100
+        }
+      }
+    }
+  }
+}

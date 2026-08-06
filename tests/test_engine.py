@@ -158,3 +158,71 @@ def test_an_empty_list_is_observed_and_not_absence():
     resolved = resolve(facts, "sharing.links")
     assert resolved.kind == "exact"
     assert resolved.value == []
+
+
+# ---------------------------------------------------------------------------
+# Unique permission scopes: a documented limit and a documented recommendation
+# reading the same number
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,hard_limit,recommended",
+    [
+        ("list-scopes-within-recommended", Outcome.PASS, Outcome.PASS),
+        ("list-scopes-over-recommended", Outcome.PASS, Outcome.FAIL),
+        ("list-scopes-over-hard-limit", Outcome.FAIL, Outcome.FAIL),
+        ("list-scopes-not-counted", Outcome.UNKNOWN, Outcome.UNKNOWN),
+        # The bound proves one and not the other, which is the whole point.
+        ("list-scopes-counted-in-part", Outcome.UNKNOWN, Outcome.FAIL),
+    ],
+)
+def test_scope_rules_on_the_same_number(fixture, hard_limit, recommended):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-LIST-002"), evidence(fixture)).outcome is hard_limit
+    assert evaluate_rule(rule("SPO-LIST-003"), evidence(fixture)).outcome is recommended
+
+
+def test_a_partial_count_is_a_lower_bound_not_an_absence():
+    """Evidence is monotonic: a collector that stopped at 20,000 items saw at
+    least what it counted. Treating that as absent throws away an answer."""
+    from conftest import rule
+
+    result = evaluate_rule(
+        rule("SPO-LIST-003"), evidence("list-scopes-counted-in-part")
+    )
+    assert result.outcome is Outcome.FAIL
+    used = {e.path: e for e in result.evidence_used}["permissions.unique_scope_count"]
+    assert used.lower_bound == 6100
+    assert used.exact is None
+
+
+def test_a_partial_count_cannot_prove_the_higher_threshold():
+    from conftest import rule
+
+    result = evaluate_rule(
+        rule("SPO-LIST-002"), evidence("list-scopes-counted-in-part")
+    )
+    assert result.outcome is Outcome.UNKNOWN
+
+
+def test_not_counted_is_never_a_pass():
+    """The collector did not look. A zero here would be an invention."""
+    from conftest import rule
+
+    for rule_id in ("SPO-LIST-002", "SPO-LIST-003"):
+        result = evaluate_rule(rule(rule_id), evidence("list-scopes-not-counted"))
+        assert result.outcome is Outcome.UNKNOWN
+        assert not result.outcome.is_answer
+
+
+def test_the_two_scope_rules_keep_different_bases():
+    """Same number, different kind of claim. Collapsing them would put a
+    performance recommendation under the same heading as a hard ceiling."""
+    from conftest import rule
+
+    assert rule("SPO-LIST-002")["basis"]["type"] == "documented-limit"
+    assert rule("SPO-LIST-003")["basis"]["type"] == "documented-guidance"
+    assert rule("SPO-LIST-002")["condition"]["value"] == 50000
+    assert rule("SPO-LIST-003")["condition"]["value"] == 5000

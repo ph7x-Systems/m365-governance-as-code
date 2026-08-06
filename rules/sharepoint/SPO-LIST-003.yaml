@@ -1,0 +1,97 @@
+# Documented guidance. Microsoft recommends the number and permits exceeding
+# it, and the wording here does not turn the recommendation into an obligation.
+
+schema_version: "1.0"
+id: SPO-LIST-003
+version: "1.0"
+title: A list or library above 5,000 unique permission scopes is past the recommended limit
+description: >
+  Microsoft supports 50,000 unique permission scopes per list and recommends
+  staying under 5,000. The gap between the two numbers is not caution: past
+  the recommended figure the list view makes additional round trips to the
+  database, and the people who notice are the ones opening the library rather
+  than the ones administering it.
+
+service: sharepoint
+resource_type: list
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits
+      title: SharePoint limits, Unique security scopes per list or library
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+    - url: https://learn.microsoft.com/sharepoint/manage-permission-scope
+      title: Manage Permission Scopes in SharePoint
+      publisher: Microsoft
+      checked_at: "2026-08-06"
+  rationale: >
+    Microsoft writes "the recommended general limit is 5,000" and supports up
+    to ten times that. Exceeding it is permitted, and the second source is
+    explicit that the effect depends on the size of the access control lists:
+    with small ones a list can pass 5,000 without trouble, and with large ones
+    it can struggle before reaching it. A tenant may reasonably decide to
+    exceed the recommendation with that in mind.
+
+severity:
+  default: low
+  rationale: >
+    The consequence is slower list views, felt by readers rather than measured
+    by anyone. It is real and it is not an incident, and rating it higher
+    would put a performance recommendation next to findings that remove
+    options permanently.
+  configurable: true
+
+evidence_requirements:
+  - path: permissions.unique_scope_count
+    type: integer
+    required: true
+
+condition:
+  operator: greater-than
+  evidence: permissions.unique_scope_count
+  value: 5000
+
+outcomes:
+  pass:
+    message: >
+      The list holds {permissions.unique_scope_count} unique permission scopes,
+      within the 5,000 Microsoft recommends.
+  fail:
+    message: >
+      The list holds {permissions.unique_scope_count} unique permission scopes,
+      above the 5,000 Microsoft recommends. This is permitted and supported up
+      to 50,000; what it costs is list view performance.
+  unknown:
+    message: >
+      The scope count does not settle this list's position relative to the
+      recommended 5,000: either it was not counted, or counting stopped before
+      it could. The evidence beside this finding says which. This is not a
+      pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The scope count was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Treat it as a design question rather than a cleanup task. Microsoft's own
+  advice is to design lists to have as few unique permissions as possible, and
+  the cheapest version of that is usually to grant access at a folder rather
+  than at each file inside it.
+
+limitations:
+  passes_without_resolving: >
+    A list at 4,999 scopes passes, and if its access control lists are large
+    it may already be slower than a list at 8,000 with small ones. Microsoft
+    says so explicitly. The count is a proxy for a cost this rule cannot
+    measure, and a pass here is not a statement that the list performs well.
+  other:
+    - >
+      This rule and SPO-LIST-002 read the same number and are deliberately
+      separate. One reports a recommendation, the other a supported ceiling,
+      and collapsing them would put a performance note and a hard limit under
+      the same basis.

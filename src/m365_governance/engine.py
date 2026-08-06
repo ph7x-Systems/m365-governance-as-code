@@ -100,6 +100,19 @@ def resolve(facts: dict, path: str) -> Resolved:
         )
     if state == "observed":
         return Resolved(path=path, kind="exact", value=node.get("value"), state=state)
+    if state == "partial" and isinstance(node.get("value"), (int, float)):
+        # A partial count is a lower bound, and the model already says why:
+        # evidence is monotonic, so collecting more can add and never remove.
+        # A collector that stopped at 20,000 items saw at least what it counted.
+        # Treating it as absent would throw away an answer the evidence gives.
+        return Resolved(
+            path=path,
+            kind="bounded",
+            lower=node["value"],
+            upper=None,
+            state=state,
+            detail=node.get("detail") or "counted in part: the value is a lower bound",
+        )
     return _absent(path, state, node.get("detail"))
 
 

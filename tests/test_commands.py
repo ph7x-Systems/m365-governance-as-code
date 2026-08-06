@@ -41,7 +41,7 @@ def test_list_rules_names_the_kind_of_claim(capsys):
     assert code == 0
     assert "SPO-LIST-001" in out and "SPO-SITE-001" in out
     assert "documented-limit" in out and "convention" in out
-    assert "2 rules" in out
+    assert "4 rules" in out
 
 
 def test_list_rules_orders_the_strongest_claim_first(capsys):
@@ -547,3 +547,34 @@ def test_stats_says_an_import_cannot_be_verified_here(capsys):
     _, out, _ = run(capsys, "stats", str(FIXTURES / "site-imported-inventory.json"))
     assert "imported" in out
     assert "cannot be verified by this engine" in _flat(out)
+
+
+def test_the_default_profile_runs_every_rule():
+    """It once enumerated them, and the enumeration went stale the first time a
+    rule was added: two rules were written, validated, tested, and silently
+    filtered out of every evaluation."""
+    import yaml
+
+    from m365_governance.loader import load_rules
+
+    profile = yaml.safe_load((ROOT / "profiles" / "default.yaml").read_text())
+    assert "rules" not in profile, (
+        "the default profile selects rules by name again. An absent selection "
+        "means every rule; a list means the next rule added is excluded in "
+        "silence."
+    )
+
+    on_disk = {loaded.data["id"] for loaded in load_rules(ROOT / "rules")}
+    ran = {
+        result.rule_id
+        for result in evaluate(
+            [loaded.data for loaded in load_rules(ROOT / "rules")],
+            evidence("list-within-limit"),
+        ).results
+    }
+    lists_only = {
+        loaded.data["id"]
+        for loaded in load_rules(ROOT / "rules")
+        if loaded.data["resource_type"] == "list"
+    }
+    assert ran == lists_only, f"rules on disk: {on_disk}, evaluated: {ran}"
