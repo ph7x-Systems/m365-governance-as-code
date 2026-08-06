@@ -6,9 +6,8 @@ import json
 
 import pytest
 
-from m365_governance.validator import validate_evidence_document
-
 from conftest import FIXTURES, evidence, sabotage
+from m365_governance.validator import validate_evidence_document
 
 
 def problems(document: dict) -> list:

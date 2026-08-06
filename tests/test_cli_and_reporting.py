@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import json
 
+from conftest import ROOT, evidence, rule
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
 from m365_governance.reporting import to_json, to_markdown
-
-from conftest import ROOT, evidence, rule
 
 
 def run(capsys, *argv) -> tuple[int, str, str]:
@@ -27,9 +26,12 @@ def test_evaluate_produces_markdown(capsys):
     code, out, _ = run(
         capsys,
         "evaluate",
-        "--rules", str(ROOT / "rules"),
-        "--evidence", str(ROOT / "fixtures/sharepoint/list-over-limit.json"),
-        "--format", "markdown",
+        "--rules",
+        str(ROOT / "rules"),
+        "--evidence",
+        str(ROOT / "fixtures/sharepoint/list-over-limit.json"),
+        "--format",
+        "markdown",
     )
     assert code == 0
     assert "# Governance report" in out
@@ -40,9 +42,12 @@ def test_evaluate_produces_json(capsys):
     code, out, _ = run(
         capsys,
         "evaluate",
-        "--rules", str(ROOT / "rules"),
-        "--evidence", str(ROOT / "fixtures/sharepoint/list-over-limit.json"),
-        "--format", "json",
+        "--rules",
+        str(ROOT / "rules"),
+        "--evidence",
+        str(ROOT / "fixtures/sharepoint/list-over-limit.json"),
+        "--format",
+        "json",
     )
     assert code == 0
     payload = json.loads(out)
@@ -55,9 +60,12 @@ def test_fail_on_unresolved_counts_unknown_as_unresolved(capsys):
     code, _, _ = run(
         capsys,
         "evaluate",
-        "--rules", str(ROOT / "rules"),
-        "--evidence", str(ROOT / "fixtures/sharepoint/list-count-not-collected.json"),
-        "--fail-on", "unresolved",
+        "--rules",
+        str(ROOT / "rules"),
+        "--evidence",
+        str(ROOT / "fixtures/sharepoint/list-count-not-collected.json"),
+        "--fail-on",
+        "unresolved",
     )
     assert code == 1
 
@@ -68,8 +76,10 @@ def test_evaluate_refuses_malformed_evidence(capsys, tmp_path):
     code, _, err = run(
         capsys,
         "evaluate",
-        "--rules", str(ROOT / "rules"),
-        "--evidence", str(bad),
+        "--rules",
+        str(ROOT / "rules"),
+        "--evidence",
+        str(bad),
     )
     assert code == 2
     assert "defect in the collector" in err

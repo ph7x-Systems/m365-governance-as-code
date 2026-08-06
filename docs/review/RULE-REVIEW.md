@@ -7,9 +7,14 @@ as the checklist for every pull request that adds or changes a rule.
 
 ## The test of the model
 
-Two reviewers, given **only** the rule file and
-[BASIS.md](BASIS.md). Nothing else. No architecture, no engine, no
+Two reviewers, given **only** the two rule files and
+[BASIS.md](BASIS.md). Nothing else: no architecture, no engine, no
 explanation of the project.
+
+Two rules, not one, and of deliberately different natures: one
+`documented-limit`, one `convention`. Half of what this measures is whether a
+reader notices they are different kinds of claim without being told that
+categories exist. With a single rule that half disappears.
 
 - one who works with Microsoft 365 day to day;
 - one from governance, risk or audit who does not write code.
@@ -33,6 +38,15 @@ Answered in writing, by each reviewer, separately.
    `passes_without_resolving`. Is it the same one? Is it weaker than yours?
 6. Which limitation is missing, or badly worded?
 7. Would you change the rule, the profile, or the collector? Why?
+8. For each factual claim in each outcome message, name the condition and the
+   evidence fields that make it necessarily true. If no such path exists, the
+   message is invalid.
+
+Question 8 has a narrow target, and knowing that makes it quick. Interpolated
+values such as `{items.count}` come from the evidence by construction, and the
+validator already proves that every declared field is consumed. What needs a
+person is the **prose claims that are not interpolations**, normally one or two
+sentences per rule. Read those, and only those, against the condition.
 
 Question 5 is asked in two halves on purpose. The rule now carries a written
 answer, so a reviewer who reads it first cannot help agreeing with it. Answer

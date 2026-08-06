@@ -1,0 +1,9 @@
+Copyright (c) 2026 pH7x Systems
+
+Released under the MIT License. See LICENSE for the full text.
+
+The rules in rules/ quote Microsoft documentation where a rule's basis is a
+requirement, a documented limit or documented guidance. Those quotations are
+attributed at the point of use, with the URL and the date the source was
+checked, and remain the property of their publisher. Everything else in this
+repository is our own work.

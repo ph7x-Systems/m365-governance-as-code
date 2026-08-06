@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+  rules:
     name: Rules and tests
     runs-on: ubuntu-latest
     strategy:
@@ -30,29 +30,51 @@ jobs:
           pip install -e .
           pip install -r requirements-dev.txt
 
+      - name: Lint
+        run: ruff check src tools tests
+
+      - name: Format
+        run: ruff format --check src tools tests
+
       - name: Validate every rule
+        # Layers 1 to 4: the file is a document, one field, one file with its
+        # references followed, every file together.
         run: m365-governance validate --rules rules
 
+      - name: Schemas are valid JSON Schema
+        run: |
+          python - <<'PY'
+          import json, pathlib
+          from jsonschema import Draft202012Validator
+          for p in sorted(pathlib.Path("schemas").glob("*.json")):
+              Draft202012Validator.check_schema(json.loads(p.read_text()))
+              print(f"{p}: valid")
+          PY
+
       - name: Tests
-        # A skipped test is a test nobody ran. The suite must not contain one.
-        run: pytest -q -rs --strict-markers
+        # A skipped test is a test nobody ran. -ra surfaces any, and the next
+        # step refuses them.
+        run: pytest -q -ra --strict-markers | tee /tmp/pytest.out
 
       - name: No skipped tests
         run: |
-          skipped=$(pytest -q --collect-only 2>/dev/null | tail -1)
-          echo "collected: $skipped"
-          pytest -q 2>&1 | tee /tmp/pytest.out
           if grep -qE '[0-9]+ skipped' /tmp/pytest.out; then
             echo "::error::the suite contains skipped tests"
             exit 1
           fi
 
+      - name: Examples are current
+        # An example in a README is read as a promise. A hand-edited one is a
+        # promise nobody is keeping: it stays plausible while the behaviour
+        # moves underneath it.
+        run: python tools/examples.py --check
+
       - name: Every fixture evaluates
         run: |
           for f in fixtures/sharepoint/*.json; do
-            echo "--- $f"
             m365-governance evaluate --rules rules --evidence "$f" --format json > /dev/null
           done
+          echo "all fixtures evaluated"
 
   collector:
     name: Collector is read-only

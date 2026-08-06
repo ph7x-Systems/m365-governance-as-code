@@ -66,7 +66,9 @@ def resolve(facts: dict, path: str) -> Resolved:
     node: Any = facts
     for index, segment in enumerate(segments):
         if not isinstance(node, dict):
-            return _absent(path, "missing", f"{'.'.join(segments[:index])} is not a mapping")
+            return _absent(
+                path, "missing", f"{'.'.join(segments[:index])} is not a mapping"
+            )
         is_last = index == len(segments) - 1
         if "expansion_complete" in node and is_last and segment == "count":
             return _derive_count(path, node)
@@ -97,9 +99,7 @@ def resolve(facts: dict, path: str) -> Resolved:
             path=path, kind="invalid", state=state, detail=node.get("detail")
         )
     if state == "observed":
-        return Resolved(
-            path=path, kind="exact", value=node.get("value"), state=state
-        )
+        return Resolved(path=path, kind="exact", value=node.get("value"), state=state)
     return _absent(path, state, node.get("detail"))
 
 
@@ -318,7 +318,11 @@ def _render(template: str, resolutions: dict[str, Resolved]) -> tuple[str, bool]
 
 
 def evaluate(rules: list[dict], evidence: dict) -> Run:
-    applicable = [r for r in rules if r.get("resource_type") == evidence.get("resource", {}).get("type")]
+    applicable = [
+        r
+        for r in rules
+        if r.get("resource_type") == evidence.get("resource", {}).get("type")
+    ]
     return Run(
         results=[evaluate_rule(rule, evidence) for rule in applicable],
         provenance=evidence.get("provenance", {}),

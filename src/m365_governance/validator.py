@@ -59,9 +59,7 @@ def validate_structure(data: dict, schema_name: str, location: str) -> list[Prob
     problems: list[Problem] = []
     for error in sorted(_validator(schema_name).iter_errors(data), key=str):
         pointer = "/".join(str(p) for p in error.absolute_path) or "<root>"
-        problems.append(
-            Problem(2, "schema", f"{location}#{pointer}", error.message)
-        )
+        problems.append(Problem(2, "schema", f"{location}#{pointer}", error.message))
     return problems
 
 

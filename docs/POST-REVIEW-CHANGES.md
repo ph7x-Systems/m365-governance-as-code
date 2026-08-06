@@ -1,16 +1,15 @@
-# Changes waiting on the review
+# Why these constraints exist
 
-Decided, not applied. Every item here is blocked on the same thing: two
-independent reviews of the two rules, described in
-[review/RULE-REVIEW.md](review/RULE-REVIEW.md).
+**All six are implemented.** This document is the reasoning behind them, kept
+because the reasoning is the part that does not survive in a schema file.
 
-Nothing on this list may be applied before those reviews exist. Some items
-would change what the reviewers see; the rest would change the checklist they
-answer. Either way, applying them first turns the test into a rehearsal.
+Each was argued through before it was written, while the project was waiting on
+a review exercise that has since been dropped in favour of feedback from people
+using the tool. The argument outlived the exercise.
 
 ---
 
-## 1. `RULE-REVIEW.md` says "the rule file", singular
+## 1. `RULE-REVIEW.md` said "the rule file", singular
 
 Reviewers receive two rules, of deliberately different natures: one
 `documented-limit`, one `convention`. Part of what the test measures is
@@ -18,21 +17,19 @@ whether a reviewer notices they are different kinds of claim without being
 told that categories exist. With a single rule that half of the test
 disappears.
 
-Wording only. The protocol was always two.
+Wording only. The protocol was always two, and it now says so.
 
 ---
 
 ## 2. Question 8: entailment
 
-To be added to the seven, after the test and not before:
+Added to the seven. It was held back while the review exercise was live,
+because a reviewer told in advance to look for entailment defects is no longer
+evidence that the rule leads them there:
 
 > For each factual claim in each outcome message, name the condition and the
 > evidence fields that make it necessarily true. If no such path exists, the
 > message is invalid.
-
-It is held back because a reviewer told in advance to look for entailment
-defects is no longer evidence that the rule leads them there. What the test
-measures is whether the model produces the question on its own.
 
 Its scope narrows once item 3 exists: interpolated values (`{items.count}`)
 come from the evidence by construction. What needs a human is **prose claims
@@ -42,9 +39,10 @@ that are not interpolations** — normally one or two sentences per rule.
 
 ## 3. `required` equals the dependency set
 
-Today the schema constrains one direction only: a condition may reference
-only declared evidence. The inverse is missing, and it is the more useful
-one.
+The schema constrained one direction only: a condition may reference only
+declared evidence. The inverse was missing, and it is the more useful one.
+It now lives in the semantic validator, as `unused-required-evidence` and
+`undeclared-dependency`.
 
 ```
 dependencies = condition ∪ applicability ∪ interp(pass) ∪ interp(fail)
@@ -76,7 +74,7 @@ not get one as a generic escape hatch.
 
 ---
 
-## 4. No interpolation in the three failure messages
+## 4. No interpolation in the three failure messages, enforced by the schema
 
 ```
 interp(unknown | not_applicable | invalid_evidence) = ∅
@@ -93,7 +91,7 @@ writes the tenth rule.
 
 ---
 
-## 5. `required: true` stays in the YAML
+## 5. `required: true` stays in the YAML, and the schema pins it
 
 Item 3 makes it derivable. Remove it anyway and the engine starts deciding
 what a rule depends on.
@@ -111,26 +109,25 @@ The second is what the trust model exists to prevent.
 
 ---
 
-## 6. One finding recorded outside this repository
+## 6. Done: the entailment defect is fixed and kept
 
-There is a decision about the two rules that depends on how the reviewers
-reach it, or whether they reach it at all. It is deliberately not written
-here, because this repository is what gets handed over.
+`SPO-LIST-001` carried a defect where the `fail` message asserted a conjunction
+the condition never established. It was left in deliberately, as an exercise
+for a review that has since been dropped.
 
-It is recorded out of band and will be brought back when the reviews are in.
-If you are running the test and this paragraph is the first you hear of it,
-that is the intended state: proceed with the seven questions as written.
+The rule in `rules/` is version 2.0 and correct. Version 1.0 is kept, with the
+defect intact and explained, in [review/packet/](review/packet/), because it is
+the clearest example in the repository of the failure this project exists to
+prevent.
+
+Item 3 above is what now catches it mechanically, and `m365-governance
+validate` rejects version 1.0 on those grounds.
 
 ---
 
 ## Order
 
-1. two independent reviews;
-2. compare the answers — questions both asked, fields read differently;
-3. fix the ambiguities that both reviewers hit;
-4. apply items 1 to 5;
-5. resolve item 6;
-6. only then write the formal JSON Schema.
-
-Item 6 last on purpose. What it decides is not only *what* was found, but
-**how** it was reached, and that is only visible once the answers exist.
+All six are implemented. The formal JSON Schema mentioned when this document was written now exists, in
+[../schemas/](../schemas/), together with the validator that enforces the
+constraints JSON Schema cannot express. See
+[JSON-SCHEMA-PLAN.md](JSON-SCHEMA-PLAN.md) for which layer owns what.

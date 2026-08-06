@@ -9,14 +9,13 @@ from __future__ import annotations
 
 import pytest
 
+from conftest import RULES, rule, sabotage
+from m365_governance.loader import LoadedRule
 from m365_governance.validator import (
+    validate_repository,
     validate_semantics,
     validate_structure,
-    validate_repository,
 )
-from m365_governance.loader import LoadedRule
-
-from conftest import RULES, rule, sabotage
 
 
 def codes(problems) -> set[str]:
@@ -141,7 +140,9 @@ def test_unknown_operator_is_rejected(site_rule):
 
 
 def test_condition_reading_undeclared_evidence_is_rejected(site_rule):
-    broken = sabotage(site_rule, lambda r: r["condition"].update(evidence="owners.total"))
+    broken = sabotage(
+        site_rule, lambda r: r["condition"].update(evidence="owners.total")
+    )
     assert codes(check(broken)) >= {"undeclared-evidence", "undeclared-dependency"}
 
 
@@ -150,7 +151,11 @@ def test_required_evidence_nobody_consumes_is_rejected(site_rule):
     broken = sabotage(
         site_rule,
         lambda r: r["evidence_requirements"].append(
-            {"path": "permissions.inheritance_broken", "type": "boolean", "required": True}
+            {
+                "path": "permissions.inheritance_broken",
+                "type": "boolean",
+                "required": True,
+            }
         ),
     )
     assert "unused-required-evidence" in codes(check(broken))
@@ -159,6 +164,7 @@ def test_required_evidence_nobody_consumes_is_rejected(site_rule):
 def test_the_reviewer_packet_still_carries_the_defect():
     """The packet is frozen. If this goes green, someone regenerated it."""
     import yaml
+
     from conftest import ROOT
 
     packet = ROOT / "docs" / "review" / "packet" / "SPO-LIST-001.yaml"

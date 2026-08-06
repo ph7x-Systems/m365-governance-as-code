@@ -35,7 +35,9 @@ _LABEL = {
 _BASIS_GLOSS = {
     "requirement": "the product enforces this",
     "documented-limit": "a boundary the product imposes",
-    "documented-guidance": "Microsoft recommends this; the product permits the alternative",
+    "documented-guidance": (
+        "Microsoft recommends this; the product permits the alternative"
+    ),
     "convention": "widely held practice, not documented as a rule",
     "opinion": "our position, stated as ours",
 }
@@ -52,7 +54,9 @@ def to_markdown(run: Run) -> str:
 
     lines.append(f"# Governance report: {name}")
     lines.append("")
-    lines.append(f"- Resource: `{resource.get('id', '<unknown>')}` ({resource.get('type', '?')})")
+    lines.append(
+        f"- Resource: `{resource.get('id', '<unknown>')}` ({resource.get('type', '?')})"
+    )
     lines.extend(_provenance_lines(run))
     lines.extend(_coverage_lines(run))
     lines.append("")
@@ -76,7 +80,8 @@ def _provenance_lines(run: Run) -> list[str]:
         return []
     lines = [
         f"- Collected: {prov.get('collected_at', '?')} "
-        f"by `{prov.get('collector', '?')}` {prov.get('collector_version', '')}".rstrip(),
+        f"by `{prov.get('collector', '?')}` "
+        f"{prov.get('collector_version', '')}".rstrip(),
         f"- Source: {prov.get('source_system', '?')} via {prov.get('source_api', '?')}",
     ]
     identity = prov.get("identity_kind")
@@ -86,7 +91,8 @@ def _provenance_lines(run: Run) -> list[str]:
             "Nothing here may be read as a tenant-wide statement."
         )
     else:
-        lines.append(f"- Identity: {identity or '?'}, scopes: {', '.join(prov.get('scopes', [])) or 'none recorded'}")
+        scopes = ", ".join(prov.get("scopes", [])) or "none recorded"
+        lines.append(f"- Identity: {identity or '?'}, scopes: {scopes}")
     return lines
 
 
@@ -96,7 +102,9 @@ def _coverage_lines(run: Run) -> list[str]:
         return []
     lines = ["- **Not collected:**"]
     for block, info in sorted(unavailable.items()):
-        lines.append(f"  - `{block}` — {info.get('state', '?')}: {info.get('detail', '')}")
+        lines.append(
+            f"  - `{block}` — {info.get('state', '?')}: {info.get('detail', '')}"
+        )
     return lines
 
 
@@ -133,11 +141,15 @@ def _result_lines(result) -> list[str]:
         "",
         result.message,
         "",
-        f"- Basis: **{result.basis_type}** — {gloss}" if gloss else f"- Basis: **{result.basis_type}**",
+        f"- Basis: **{result.basis_type}** — {gloss}"
+        if gloss
+        else f"- Basis: **{result.basis_type}**",
         f"- Severity: {result.severity}",
     ]
     if result.evidence_used:
-        rendered = ", ".join(f"`{e.path}` = {e.describe()}" for e in result.evidence_used)
+        rendered = ", ".join(
+            f"`{e.path}` = {e.describe()}" for e in result.evidence_used
+        )
         lines.append(f"- Evidence: {rendered}")
     if result.message_degraded:
         lines.append(
@@ -147,7 +159,10 @@ def _result_lines(result) -> list[str]:
     if result.outcome is Outcome.ERROR and result.engine_detail:
         lines.append(f"- Engine: {result.engine_detail}")
     for source in result.sources:
-        lines.append(f"- Source: [{source['title']}]({source['url']}) — checked {source['checked_at']}")
+        lines.append(
+            f"- Source: [{source['title']}]({source['url']}) "
+            f"— checked {source['checked_at']}"
+        )
     if result.outcome is Outcome.FAIL and result.remediation:
         lines.append("")
         lines.append(f"**What to do:** {result.remediation}")

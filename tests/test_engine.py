@@ -4,11 +4,9 @@ from __future__ import annotations
 
 import pytest
 
+from conftest import evidence, sabotage
 from m365_governance.engine import evaluate_rule, resolve
 from m365_governance.results import Outcome
-
-from conftest import evidence, sabotage
-
 
 # ---------------------------------------------------------------------------
 # SPO-SITE-001, a convention over a counted collection

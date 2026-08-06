@@ -10,16 +10,11 @@ from __future__ import annotations
 import copy
 import json
 
-import pytest
-
-from m365_governance.engine import evaluate_rule
+from conftest import evidence, rule, sabotage
+from m365_governance.engine import evaluate, evaluate_rule
 from m365_governance.reporting import to_markdown
-from m365_governance.engine import evaluate
 from m365_governance.results import Outcome
 from m365_governance.validator import validate_structure
-
-from conftest import evidence, rule, sabotage
-
 
 # ---------------------------------------------------------------------------
 # 1. A true condition is a failure
@@ -57,8 +52,7 @@ def test_a_documented_limit_states_the_limit_next_to_the_observed_value():
     limit = data["basis"]["limit"]["value"]
     fail_message = data["outcomes"]["fail"]["message"]
     assert f"{limit:,}" in fail_message, (
-        f"the fail message must state the limit ({limit:,}) beside the "
-        f"observed value"
+        f"the fail message must state the limit ({limit:,}) beside the observed value"
     )
     assert "{" + data["condition"]["evidence"] + "}" in fail_message
 
