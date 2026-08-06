@@ -90,6 +90,15 @@ jobs:
         # download was the wrong price for it.
         #
         # One matrix entry, because the answer does not depend on Python.
+        #
+        # What this proves is narrower than its name. It establishes that the
+        # file is analysable and that no command in it begins with a mutating
+        # verb. It runs nothing: a function can parse cleanly, pass this walk,
+        # and throw on its first line against a tenant, which is exactly what
+        # the first version of Get-ClassificationFacts did. It would also miss
+        # a write reached through a variable or a REST call. A floor under
+        # review, not a substitute for it. See docs/ARCHITECTURE.md, "What the
+        # gates prove, and what they do not".
         if: matrix.python-version == '3.13'
         shell: pwsh
         run: |

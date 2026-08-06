@@ -183,6 +183,61 @@ produced it.
 
 ---
 
+## What the gates prove, and what they do not
+
+Every check in CI is narrower than the sentence people will summarise it as.
+Both notes below were learned by watching a gate pass and the thing it was
+guarding fail anyway.
+
+### Parsing and an AST walk do not prove execution
+
+The collector check parses `Get-SpoEvidence.ps1` and walks the syntax tree
+looking for mutating verbs. It establishes exactly two things: the file is
+analysable, and no command in it begins with a verb on the list.
+
+It runs nothing. A function can parse cleanly, satisfy the walk, and throw on
+its first line against a tenant. That is not hypothetical: the first version
+of `Get-ClassificationFacts` passed both and failed immediately, because
+`(if ... {} else {})` is a statement in PowerShell and not an expression, and
+PowerShell only discovers that when it tries to invoke `if` as a command.
+
+Nor does the verb list prove read-only in general. It catches `Set-`, `New-`,
+`Remove-`, `Add-`, `Update-`, `Grant-` and `Revoke-` against PnP, Graph and
+SPO. It would not catch a write reached through a variable, through
+`Invoke-Expression`, or through a REST call. It is a floor under review, not a
+substitute for it.
+
+**The gate is worth having and it is not evidence of correctness.** Only a run
+against a tenant is, and every slice in this repository was closed with one.
+
+### Fixtures preserve the shape, not the data
+
+No evidence from a real tenant enters this repository. `.gitignore` refuses
+`evidence/` and `*.tenant.json`, and every fixture is written by hand.
+
+Kept from a real run, deliberately:
+
+- **collection states** — `observed`, `missing`, `not-supported`,
+  `permission-denied`, `partial`, `invalid`, in the combinations a tenant
+  actually produced;
+- **the product's own error text**, such as *Attempted to perform an
+  unauthorized operation*, because a message nobody has seen is a message
+  nobody has tested a report against;
+- **the structure of the facts block**, field for field.
+
+Fabricated, always:
+
+- URLs and tenant names — `contoso.sharepoint.com`, never a real host;
+- GUIDs, including group and label ids;
+- dates, display names, titles, and anything a person or an organisation could
+  be recognised from.
+
+The rule is one sentence: **a fixture must be able to reproduce a defect
+without being able to identify anybody.** A fixture that needs real data to be
+meaningful is describing a gap in the schema, not a limitation of the fixture.
+
+---
+
 ## Open decisions
 
 Recorded here so they are decided deliberately rather than by the first
