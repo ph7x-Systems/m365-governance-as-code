@@ -15,7 +15,7 @@ from conftest import FIXTURES, ROOT, evidence, rule
 from m365_governance import diffing, doctor, inspect
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
-from m365_governance.reporting import to_html
+from m365_governance.reporting import to_html, to_markdown
 from m365_governance.results import Outcome, Run
 
 RULES = ROOT / "rules"
@@ -484,3 +484,66 @@ def test_explain_matches_what_the_pipeline_actually_does(capsys):
         "json",
     )
     assert code == 0, "explain says --fail-on fail ignores unknown; it does not"
+
+
+# ---------------------------------------------------------------------------
+# imported evidence, in the report
+# ---------------------------------------------------------------------------
+
+
+def test_an_imported_report_says_completeness_cannot_be_verified(capsys):
+    code, out, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--evidence",
+        str(FIXTURES / "site-imported-inventory.json"),
+    )
+    assert code == 0
+    assert "Collection completeness cannot be verified" in _flat(out)
+    assert "ShareGate Desktop" in out
+
+
+def test_the_import_warning_comes_before_the_first_finding(capsys):
+    """As prominent as the delegated one, and for a stronger reason: we did
+    not choose the scope of that export and cannot reproduce it."""
+    _, out, _ = run(
+        capsys,
+        "evaluate",
+        "--rules",
+        str(RULES),
+        "--evidence",
+        str(FIXTURES / "site-imported-inventory.json"),
+    )
+    assert out.index("imported evidence") < out.index("## Summary")
+
+
+def test_the_html_report_carries_the_import_warning():
+    html = to_html(_run_for("site-imported-inventory"))
+    assert "Collection completeness cannot be verified" in html
+    assert html.index("imported evidence") < html.index('class="card')
+
+
+def test_a_stale_export_is_named_in_days():
+    """The facts can be older than the file that carries them, and the reader
+    is the last person able to notice."""
+    text = to_markdown(_run_for("site-imported-inventory"))
+    assert "14 days older than the export" in _flat(text)
+
+
+def test_no_gap_is_reported_when_the_export_is_same_day():
+    from m365_governance.reporting import _export_gap
+
+    assert not _export_gap(
+        {
+            "collected_at": "2026-06-30T09:00:00Z",
+            "import_source": {"exported_at": "2026-06-30T18:00:00Z"},
+        }
+    )
+
+
+def test_stats_says_an_import_cannot_be_verified_here(capsys):
+    _, out, _ = run(capsys, "stats", str(FIXTURES / "site-imported-inventory.json"))
+    assert "imported" in out
+    assert "cannot be verified by this engine" in _flat(out)

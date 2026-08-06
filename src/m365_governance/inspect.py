@@ -231,6 +231,16 @@ def stats(path: Path) -> str:
     out.append(f"  identity          {identity}")
     if identity == "delegated":
         out.append("                    this run saw what one person sees")
+    if identity == "imported":
+        source = provenance.get("import_source", {})
+        out.append(
+            f"  export tool       {source.get('tool', '?')} "
+            f"{source.get('version', '')}".rstrip()
+        )
+        out.append(f"  exported at       {source.get('exported_at', '?')}")
+        if source.get("exported_by"):
+            out.append(f"  exported by       {source['exported_by']}")
+        out.append("                    completeness cannot be verified by this engine")
     out.append("")
 
     requested = coverage.get("requested", [])

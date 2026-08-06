@@ -8,6 +8,73 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 0.3.0-alpha
+
+Scope, written down, and the first change to the evidence model since it was
+settled.
+
+**Breaking changes:** none for existing documents. Every evidence file that
+validated against `1.0.0` still validates.
+
+### Scope
+
+[docs/SCOPE.md](docs/SCOPE.md) states what this project will not do:
+
+> This project evaluates the Microsoft 365 tenant that exists today. It does
+> not infer the characteristics of an estate it has not observed.
+
+Two modes, and **the engine never knows which one produced the evidence**.
+**Live** observes Microsoft 365 directly. **Assessment** evaluates evidence
+exported by something else.
+
+The separation exists because the alternative is a tool that answers every
+question and answers some of them from nothing. A destination recommendation
+made against a tenant with no source inventory would have to infer the source;
+it would produce an answer, the answer would be plausible, and nobody reading
+it could tell which parts were observed. That is the failure this project is
+built against, in its most tempting form: not a wrong answer, a confident one.
+
+### `identity_kind: imported`
+
+Evidence schema `1.1.0`. A third kind of provenance, for facts that were
+gathered by something else:
+
+```yaml
+identity_kind: imported
+import_source:
+  tool: ShareGate Desktop
+  version: "24.1"
+  exported_at: 2026-07-14T16:41:00Z
+  exported_by: migration-team@contoso.com
+```
+
+An import carries **no `scopes`**, and the schema forbids them: `scopes: []`
+reads as "no permissions were needed" rather than "this does not apply", and
+those are opposite claims. A live run may not carry an `import_source` for the
+same reason. The two are exclusive.
+
+Every report built from imported evidence says so, as prominently as the
+delegated warning and before the first finding:
+
+> This assessment is based on imported evidence. Collection completeness
+> cannot be verified by this engine.
+
+**`collected_at` and `import_source.exported_at` are separate on purpose.**
+The first is when the facts were observed, the second when the file was
+written. When they differ the report says by how much: an export produced
+today from a scan that ran six weeks ago describes a tenant that no longer
+exists, and the reader is the last person able to notice.
+
+### Not done, and deliberately
+
+No score, no rating, no stars. A summary that reads `★★★★☆` is read as "this
+is fine", and the reader stops there. Every line of a summary keeps the nature
+of its truth, or there is no summary.
+
+166 tests.
+
+---
+
 ## 0.2.1-alpha
 
 `explain`, which was the largest gap in using the tool.

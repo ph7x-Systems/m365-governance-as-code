@@ -81,3 +81,66 @@ def test_an_unknown_collection_state_is_rejected():
         lambda d: d["facts"]["items"]["count"].update(state="probably-fine"),
     )
     assert problems(broken)
+
+
+# ---------------------------------------------------------------------------
+# imported evidence
+# ---------------------------------------------------------------------------
+
+
+def test_the_imported_fixture_is_valid():
+    assert problems(evidence("site-imported-inventory")) == []
+
+
+def test_imported_evidence_must_name_who_exported_it():
+    """Without it, an import is indistinguishable from a collection we ran."""
+    broken = sabotage(
+        evidence("site-imported-inventory"),
+        lambda d: d["provenance"].pop("import_source"),
+    )
+    assert problems(broken)
+
+
+def test_imported_evidence_may_not_carry_scopes():
+    """`scopes: []` on an import reads as 'no permissions were needed' rather
+    than 'this does not apply'."""
+    broken = sabotage(
+        evidence("site-imported-inventory"),
+        lambda d: d["provenance"].update(scopes=["Sites.Read.All"]),
+    )
+    assert problems(broken)
+
+
+def test_a_live_run_may_not_carry_an_import_source():
+    broken = sabotage(
+        evidence("site-two-owners"),
+        lambda d: d["provenance"].update(
+            import_source={"tool": "ShareGate", "exported_at": "2026-01-01T00:00:00Z"}
+        ),
+    )
+    assert problems(broken)
+
+
+def test_a_live_run_still_needs_its_scopes_and_tenant():
+    for field in ("scopes", "tenant_id", "source_api"):
+        broken = sabotage(
+            evidence("site-two-owners"), lambda d, f=field: d["provenance"].pop(f)
+        )
+        assert problems(broken), f"a live run without {field} was accepted"
+
+
+def test_an_import_needs_a_tool_and_a_date():
+    for field in ("tool", "exported_at"):
+        broken = sabotage(
+            evidence("site-imported-inventory"),
+            lambda d, f=field: d["provenance"]["import_source"].pop(f),
+        )
+        assert problems(broken), f"an import without {field} was accepted"
+
+
+def test_an_unknown_identity_kind_is_rejected():
+    broken = sabotage(
+        evidence("site-two-owners"),
+        lambda d: d["provenance"].update(identity_kind="trust-me"),
+    )
+    assert problems(broken)

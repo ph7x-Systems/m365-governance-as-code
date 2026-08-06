@@ -1,0 +1,46 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-06-30T09:00:00Z",
+    "collector": "sharegate-import-adapter",
+    "collector_version": "0.1.0",
+    "source_system": "ShareGate",
+    "identity_kind": "imported",
+    "import_source": {
+      "tool": "ShareGate Desktop",
+      "version": "24.1",
+      "exported_at": "2026-07-14T16:41:00Z",
+      "exported_by": "migration-team@contoso.com",
+      "detail": "Site inventory export. Scope chosen by the exporting team."
+    }
+  },
+  "coverage": {
+    "requested": [
+      "owners"
+    ],
+    "completed": [
+      "owners"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "id": "contoso,site,archive-2019",
+    "type": "site",
+    "display_name": "Archive 2019",
+    "url": "https://contoso.sharepoint.com/sites/Archive2019"
+  },
+  "facts": {
+    "owners": {
+      "state": "observed",
+      "direct": [
+        {
+          "principal_id": "user-1",
+          "principal_type": "user"
+        }
+      ],
+      "groups": [],
+      "expansion_complete": true,
+      "effective_count": 1
+    }
+  }
+}

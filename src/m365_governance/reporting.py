@@ -82,10 +82,31 @@ def _provenance_lines(run: Run) -> list[str]:
         f"- Collected: {prov.get('collected_at', '?')} "
         f"by `{prov.get('collector', '?')}` "
         f"{prov.get('collector_version', '')}".rstrip(),
-        f"- Source: {prov.get('source_system', '?')} via {prov.get('source_api', '?')}",
+        f"- Source: {prov.get('source_system', '?')}"
+        + (f" via {prov['source_api']}" if prov.get("source_api") else ""),
     ]
     identity = prov.get("identity_kind")
-    if identity == "delegated":
+    if identity == "imported":
+        source = prov.get("import_source", {})
+        lines.append(
+            f"- **Evidence imported from {source.get('tool', 'another tool')}"
+            + (f" {source['version']}" if source.get("version") else "")
+            + ".** This assessment is based on imported evidence. Collection "
+            "completeness cannot be verified by this engine."
+        )
+        detail = [
+            f"exported {source['exported_at']}" if source.get("exported_at") else "",
+            f"by {source['exported_by']}" if source.get("exported_by") else "",
+        ]
+        detail = ", ".join(part for part in detail if part)
+        if detail:
+            lines.append(f"- Export: {detail}")
+        if source.get("detail"):
+            lines.append(f"- {source['detail']}")
+        stale = _export_gap(prov)
+        if stale:
+            lines.append(f"- **{stale}**")
+    elif identity == "delegated":
         lines.append(
             "- **Identity: delegated.** This run saw what one person sees. "
             "Nothing here may be read as a tenant-wide statement."
@@ -94,6 +115,34 @@ def _provenance_lines(run: Run) -> list[str]:
         scopes = ", ".join(prov.get("scopes", [])) or "none recorded"
         lines.append(f"- Identity: {identity or '?'}, scopes: {scopes}")
     return lines
+
+
+def _export_gap(prov: dict) -> str:
+    """An export produced long after the scan that fed it.
+
+    `collected_at` is when the facts were observed; `import_source.exported_at`
+    is when the file was written. They are usually the same moment. When they
+    are not, the report is older than it looks, and the person reading it is
+    the last one able to notice.
+    """
+    from datetime import datetime
+
+    source = prov.get("import_source", {})
+    observed, exported = prov.get("collected_at"), source.get("exported_at")
+    if not observed or not exported:
+        return ""
+    try:
+        a = datetime.fromisoformat(observed.replace("Z", "+00:00"))
+        b = datetime.fromisoformat(exported.replace("Z", "+00:00"))
+    except ValueError:
+        return ""
+    days = (b - a).days
+    if days < 1:
+        return ""
+    return (
+        f"The facts are {days} days older than the export that carries them. "
+        f"They were observed on {a.date()} and written out on {b.date()}."
+    )
 
 
 def _coverage_lines(run: Run) -> list[str]:
@@ -262,7 +311,31 @@ def to_html(run: Run) -> str:
             f"{_esc(prov.get('collector_version', ''))}, from "
             f"{_esc(prov.get('source_system', '?'))}.</p>"
         )
-        if prov.get("identity_kind") == "delegated":
+        identity = prov.get("identity_kind")
+        if identity == "imported":
+            source = prov.get("import_source", {})
+            exported = ", ".join(
+                part
+                for part in (
+                    f"exported {source['exported_at']}"
+                    if source.get("exported_at")
+                    else "",
+                    f"by {source['exported_by']}" if source.get("exported_by") else "",
+                )
+                if part
+            )
+            parts.append(
+                '<p class="warn"><strong>Evidence imported from '
+                f"{_esc(source.get('tool', 'another tool'))}.</strong> This "
+                "assessment is based on imported evidence. Collection "
+                "completeness cannot be verified by this engine."
+                + (f" ({_esc(exported)})" if exported else "")
+                + "</p>"
+            )
+            gap = _export_gap(prov)
+            if gap:
+                parts.append(f'<p class="warn"><strong>{_esc(gap)}</strong></p>')
+        elif identity == "delegated":
             parts.append(
                 '<p class="warn"><strong>Identity: delegated.</strong> This run '
                 "saw what one person sees. Nothing here may be read as a "

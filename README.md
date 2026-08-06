@@ -11,14 +11,21 @@ which evidence it came from, and what it does not establish.
 Nothing here changes anything in a tenant. There is no write path, no
 remediation command, and no `--fix-all`.
 
+**Scope.** This project evaluates the Microsoft 365 tenant that exists today.
+It does not infer the characteristics of an estate it has not observed. There
+are two modes, and the engine never knows which one produced the evidence it
+is reading: **Live** observes Microsoft 365 directly, **Assessment** evaluates
+evidence exported by something else and says so on the first line of every
+report. See [docs/SCOPE.md](docs/SCOPE.md).
+
 **Why it exists.** We kept writing the same governance findings into
 documents, and kept watching them lose the one thing that made them useful:
 whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `0.2.1-alpha`. Two rules, one collector, a working engine, nine
-commands and 152 tests. Alpha because the rule set is small, not because the model is
+**Status:** `0.3.0-alpha`. Two rules, one collector, a working engine, nine
+commands and 166 tests. Alpha because the rule set is small, not because the model is
 unsettled.
 
 ---

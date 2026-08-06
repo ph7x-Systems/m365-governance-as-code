@@ -1,19 +1,35 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/evidence/1.0.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/evidence/1.1.0",
   "title": "Evidence document",
   "description": "What a collector is allowed to hand to the engine. Structure only. See docs/EVIDENCE-SCHEMA.md.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schema_version", "provenance", "coverage", "resource", "facts"],
+  "required": [
+    "schema_version",
+    "provenance",
+    "coverage",
+    "resource",
+    "facts"
+  ],
   "properties": {
-    "schema_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$" },
-    "provenance": { "$ref": "#/$defs/provenance" },
-    "coverage": { "$ref": "#/$defs/coverage" },
-    "resource": { "$ref": "#/$defs/resource" },
-    "facts": { "$ref": "#/$defs/factsMap" }
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "provenance": {
+      "$ref": "#/$defs/provenance"
+    },
+    "coverage": {
+      "$ref": "#/$defs/coverage"
+    },
+    "resource": {
+      "$ref": "#/$defs/resource"
+    },
+    "facts": {
+      "$ref": "#/$defs/factsMap"
+    }
   },
-
   "$defs": {
     "provenance": {
       "type": "object",
@@ -23,60 +39,172 @@
         "collector",
         "collector_version",
         "source_system",
-        "source_api",
-        "tenant_id",
-        "identity_kind",
-        "scopes"
+        "identity_kind"
       ],
       "properties": {
-        "collected_at": { "type": "string", "format": "date-time" },
-        "collector": { "type": "string", "minLength": 3 },
-        "collector_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
-        "source_system": { "type": "string", "minLength": 3 },
-        "source_api": { "type": "string", "minLength": 3 },
-        "tenant_id": { "type": "string", "minLength": 1 },
-        "identity_kind": {
-          "enum": ["application", "delegated"],
-          "$comment": "A delegated run sees what one person sees. This field is the difference between a partial audit and a misleading one."
+        "collected_at": {
+          "type": "string",
+          "format": "date-time"
         },
-        "scopes": { "type": "array", "items": { "type": "string" } }
-      }
+        "collector": {
+          "type": "string",
+          "minLength": 3
+        },
+        "collector_version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "source_system": {
+          "type": "string",
+          "minLength": 3
+        },
+        "source_api": {
+          "type": "string",
+          "minLength": 3
+        },
+        "tenant_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "identity_kind": {
+          "enum": [
+            "application",
+            "delegated",
+            "imported"
+          ],
+          "$comment": "A delegated run sees what one person sees. An imported one was not produced here at all: we did not choose its scope, we do not know what the exporting identity could read, and we cannot reproduce it. This field is the difference between a partial audit and a misleading one."
+        },
+        "scopes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "import_source": {
+          "$ref": "#/$defs/importSource"
+        }
+      },
+      "allOf": [
+        {
+          "$comment": "A live run knows which API it used, which tenant it read, and with what permissions.",
+          "if": {
+            "properties": {
+              "identity_kind": {
+                "enum": [
+                  "application",
+                  "delegated"
+                ]
+              }
+            },
+            "required": [
+              "identity_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "source_api",
+              "tenant_id",
+              "scopes"
+            ],
+            "not": {
+              "required": [
+                "import_source"
+              ]
+            }
+          }
+        },
+        {
+          "$comment": "An import has no scopes, and writing `scopes: []` would read as 'no permissions were needed' rather than 'this does not apply'. It carries who exported it instead.",
+          "if": {
+            "properties": {
+              "identity_kind": {
+                "const": "imported"
+              }
+            },
+            "required": [
+              "identity_kind"
+            ]
+          },
+          "then": {
+            "required": [
+              "import_source"
+            ],
+            "not": {
+              "required": [
+                "scopes"
+              ]
+            }
+          }
+        }
+      ]
     },
-
     "coverage": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["requested", "completed", "unavailable"],
+      "required": [
+        "requested",
+        "completed",
+        "unavailable"
+      ],
       "properties": {
-        "requested": { "type": "array", "items": { "type": "string" } },
-        "completed": { "type": "array", "items": { "type": "string" } },
+        "requested": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "completed": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "unavailable": {
           "type": "object",
           "additionalProperties": {
             "type": "object",
             "additionalProperties": false,
-            "required": ["state", "detail"],
+            "required": [
+              "state",
+              "detail"
+            ],
             "properties": {
-              "state": { "$ref": "#/$defs/absentState" },
-              "detail": { "type": "string", "minLength": 5 }
+              "state": {
+                "$ref": "#/$defs/absentState"
+              },
+              "detail": {
+                "type": "string",
+                "minLength": 5
+              }
             }
           }
         }
       }
     },
-
     "resource": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type"],
+      "required": [
+        "id",
+        "type"
+      ],
       "properties": {
-        "id": { "type": "string", "minLength": 1 },
-        "type": { "type": "string", "minLength": 2 },
-        "display_name": { "type": "string" },
-        "url": { "type": "string" }
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "type": {
+          "type": "string",
+          "minLength": 2
+        },
+        "display_name": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string"
+        }
       }
     },
-
     "collectionState": {
       "enum": [
         "observed",
@@ -87,135 +215,288 @@
         "invalid"
       ]
     },
-
     "absentState": {
-      "enum": ["missing", "not-supported", "permission-denied", "partial"]
+      "enum": [
+        "missing",
+        "not-supported",
+        "permission-denied",
+        "partial"
+      ]
     },
-
     "factsMap": {
       "type": "object",
       "minProperties": 1,
-      "additionalProperties": { "$ref": "#/$defs/factsNode" }
+      "additionalProperties": {
+        "$ref": "#/$defs/factsNode"
+      }
     },
-
     "factsNode": {
       "anyOf": [
-        { "$ref": "#/$defs/scalarFact" },
-        { "$ref": "#/$defs/aggregateFact" },
-        { "$ref": "#/$defs/factsMap" }
+        {
+          "$ref": "#/$defs/scalarFact"
+        },
+        {
+          "$ref": "#/$defs/aggregateFact"
+        },
+        {
+          "$ref": "#/$defs/factsMap"
+        }
       ]
     },
-
     "scalarFact": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["state"],
+      "required": [
+        "state"
+      ],
       "properties": {
-        "state": { "$ref": "#/$defs/collectionState" },
+        "state": {
+          "$ref": "#/$defs/collectionState"
+        },
         "value": {},
-        "detail": { "type": "string" },
-        "raw": { "$ref": "#/$defs/raw" }
+        "detail": {
+          "type": "string"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw"
+        }
       },
       "allOf": [
         {
           "$comment": "An observed fact has a value. Absence has a reason, never a bare null.",
           "if": {
-            "properties": { "state": { "const": "observed" } },
-            "required": ["state"]
+            "properties": {
+              "state": {
+                "const": "observed"
+              }
+            },
+            "required": [
+              "state"
+            ]
           },
-          "then": { "required": ["value"] }
+          "then": {
+            "required": [
+              "value"
+            ]
+          }
         },
         {
           "$comment": "Anything not observed says why.",
           "if": {
             "properties": {
               "state": {
-                "enum": ["missing", "not-supported", "permission-denied", "invalid"]
+                "enum": [
+                  "missing",
+                  "not-supported",
+                  "permission-denied",
+                  "invalid"
+                ]
               }
             },
-            "required": ["state"]
+            "required": [
+              "state"
+            ]
           },
-          "then": { "required": ["detail"] }
+          "then": {
+            "required": [
+              "detail"
+            ]
+          }
         }
       ]
     },
-
     "raw": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["field", "value"],
+      "required": [
+        "field",
+        "value"
+      ],
       "properties": {
-        "field": { "type": "string", "minLength": 1 },
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
         "value": {}
       }
     },
-
     "aggregateFact": {
       "$comment": "A counted collection whose members may be groups. See docs/EVIDENCE-SCHEMA.md section 8.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["state", "expansion_complete"],
+      "required": [
+        "state",
+        "expansion_complete"
+      ],
       "properties": {
-        "state": { "$ref": "#/$defs/collectionState" },
-        "detail": { "type": "string" },
-        "direct": { "type": "array", "items": { "$ref": "#/$defs/principal" } },
-        "groups": { "type": "array", "items": { "$ref": "#/$defs/groupPrincipal" } },
-        "expansion_complete": { "type": "boolean" },
-        "effective_count": { "type": "integer", "minimum": 0 },
-        "minimum_count": { "type": "integer", "minimum": 0 }
+        "state": {
+          "$ref": "#/$defs/collectionState"
+        },
+        "detail": {
+          "type": "string"
+        },
+        "direct": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/principal"
+          }
+        },
+        "groups": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/groupPrincipal"
+          }
+        },
+        "expansion_complete": {
+          "type": "boolean"
+        },
+        "effective_count": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "minimum_count": {
+          "type": "integer",
+          "minimum": 0
+        }
       },
       "allOf": [
         {
           "$comment": "Complete expansion produces an exact count and no lower bound.",
           "if": {
-            "properties": { "expansion_complete": { "const": true } },
-            "required": ["expansion_complete"]
+            "properties": {
+              "expansion_complete": {
+                "const": true
+              }
+            },
+            "required": [
+              "expansion_complete"
+            ]
           },
           "then": {
-            "required": ["effective_count"],
-            "not": { "required": ["minimum_count"] }
+            "required": [
+              "effective_count"
+            ],
+            "not": {
+              "required": [
+                "minimum_count"
+              ]
+            }
           }
         },
         {
           "$comment": "Incomplete expansion produces a lower bound and never an exact count.",
           "if": {
-            "properties": { "expansion_complete": { "const": false } },
-            "required": ["expansion_complete"]
+            "properties": {
+              "expansion_complete": {
+                "const": false
+              }
+            },
+            "required": [
+              "expansion_complete"
+            ]
           },
           "then": {
-            "required": ["minimum_count"],
-            "not": { "required": ["effective_count"] }
+            "required": [
+              "minimum_count"
+            ],
+            "not": {
+              "required": [
+                "effective_count"
+              ]
+            }
           }
         }
       ]
     },
-
     "principal": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["principal_id", "principal_type"],
+      "required": [
+        "principal_id",
+        "principal_type"
+      ],
       "properties": {
-        "principal_id": { "type": "string", "minLength": 1 },
-        "principal_type": { "enum": ["user", "group", "service-principal"] }
+        "principal_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "principal_type": {
+          "enum": [
+            "user",
+            "group",
+            "service-principal"
+          ]
+        }
       }
     },
-
     "groupPrincipal": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["principal_id", "principal_type", "expansion"],
+      "required": [
+        "principal_id",
+        "principal_type",
+        "expansion"
+      ],
       "properties": {
-        "principal_id": { "type": "string", "minLength": 1 },
-        "principal_type": { "const": "group" },
+        "principal_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "principal_type": {
+          "const": "group"
+        },
         "expansion": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["status"],
+          "required": [
+            "status"
+          ],
           "properties": {
-            "status": { "enum": ["complete", "incomplete", "not-attempted"] },
-            "member_count": { "type": "integer", "minimum": 0 },
-            "detail": { "type": "string" }
+            "status": {
+              "enum": [
+                "complete",
+                "incomplete",
+                "not-attempted"
+              ]
+            },
+            "member_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "detail": {
+              "type": "string"
+            }
           }
+        }
+      }
+    },
+    "importSource": {
+      "$comment": "Named so that a reader can go back to the person who ran the export. Every field here is something the engine cannot check and a person can.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tool",
+        "exported_at"
+      ],
+      "properties": {
+        "tool": {
+          "type": "string",
+          "minLength": 2
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "exported_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "exported_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "detail": {
+          "type": "string"
         }
       }
     }

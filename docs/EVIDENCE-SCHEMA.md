@@ -73,6 +73,51 @@ seen. A delegated run sees what one person sees, and a report built from it
 must not be read as a tenant-wide statement. This field is the difference
 between a partial audit and a misleading one.
 
+### `imported`, the third kind
+
+Evidence does not always come from a collector we wrote. A migration tool
+exports an inventory, somebody sends a CSV, and the facts in it are perfectly
+usable. What is not usable is the assumption that we know how they were
+gathered.
+
+```yaml
+provenance:
+  collected_at: 2026-06-30T09:00:00Z
+  collector: sharegate-import-adapter
+  collector_version: 0.1.0
+  source_system: ShareGate
+  identity_kind: imported
+  import_source:
+    tool: ShareGate Desktop
+    version: "24.1"
+    exported_at: 2026-07-14T16:41:00Z
+    exported_by: migration-team@contoso.com
+```
+
+An import carries **no `scopes`**, and the schema forbids them. Writing
+`scopes: []` would read as "no permissions were needed" rather than "this does
+not apply", and those are opposite claims. For the same reason a live run may
+not carry an `import_source`: the two are exclusive, and a document that
+carried both would be lying about one of them.
+
+Every report built from imported evidence says so:
+
+> This assessment is based on imported evidence. Collection completeness
+> cannot be verified by this engine.
+
+That is a fact with consequences rather than a disclaimer. We did not choose
+the scope of that export, we do not know what the exporting identity could
+read, and we cannot reproduce it. An `unknown` from a live run means "collect
+it again". An `unknown` from an imported run may mean "ask whoever ran the
+export".
+
+**`collected_at` and `exported_at` are deliberately separate.** The first is
+when the facts were observed; the second is when the file was written. They
+are usually the same moment. When they are not, the evidence is older than the
+document that carries it, and the report says how much older: an export
+produced today from a scan that ran six weeks ago describes a tenant that no
+longer exists, and the reader is the last person able to notice.
+
 ---
 
 ## 5. Collection states
