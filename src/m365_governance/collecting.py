@@ -119,6 +119,19 @@ SLICES = {
             describes="every visible list on a site, and its inheritance",
             shaped_like="list-within-limit",
         ),
+        # SpfxCatalog only. The catalog is one call and feeds SPO-SPFX-001;
+        # SpfxPages is a second, expensive mode whose evidence no rule reads
+        # yet, so it stays a script-only mode rather than a slice that would
+        # answer nothing about its own collection.
+        Slice(
+            "spfx",
+            "SpfxCatalog",
+            needs_site=True,
+            needs_tenant=False,
+            profile="spfx",
+            describes="a site's app catalog: which solutions lag their version",
+            shaped_like="site-spfx-behind",
+        ),
     ]
 }
 

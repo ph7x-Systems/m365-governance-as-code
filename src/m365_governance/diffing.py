@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from .results import EvidenceUsed, Outcome, Result, Run
+from .results import EvidenceUsed, Outcome, Result, Run, RunSet
 
 #: Movements worth leading with. A pass turning into anything else is the top
 #: of a report; anything turning into a pass is the bottom.
@@ -126,55 +126,197 @@ def to_markdown(before: Run, after: Run) -> str:
     lines.append("")
 
     for change in changes:
-        lines.append(f"## {change.rule_id}")
+        lines.extend(_change_lines(change))
+
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _change_lines(change: RuleChange, heading: str = "##") -> list[str]:
+    """One rule's movement, rendered.
+
+    The heading level is a parameter because the same block sits under a `##`
+    rule in a single-resource diff and under a `###` rule inside a `##`
+    resource in a run-set diff. Everything below the heading is identical: a
+    difference that read one way per resource and another way across a tenant
+    would be two diffs.
+    """
+    lines = [f"{heading} {change.rule_id}", ""]
+
+    if change.kind == "added":
+        lines.append(f"New in this run: **{change.after.outcome.value}**.")
+        lines.append("")
+        lines.append(change.after.message)
+        lines.append("")
+        return lines
+    if change.kind == "removed":
+        lines.append(
+            f"Present before as **{change.before.outcome.value}**, absent "
+            f"now. A rule that stopped running is not a rule that passed."
+        )
+        lines.append("")
+        return lines
+
+    before_r, after_r = change.before, change.after
+    if before_r.outcome is after_r.outcome:
+        lines.append(f"**{after_r.outcome.value}**, unchanged.")
+    else:
+        lines.append(f"**{before_r.outcome.value} → {after_r.outcome.value}**")
+    lines.append("")
+
+    if change.rule_version_changed:
+        lines.append(
+            f"> **The rule changed too**, from v{before_r.rule_version} to "
+            f"v{after_r.rule_version}. Part of this difference may be the "
+            f"rule rather than the estate. Read the rule's changelog before "
+            f"treating it as a finding."
+        )
         lines.append("")
 
-        if change.kind == "added":
-            lines.append(f"New in this run: **{change.after.outcome.value}**.")
-            lines.append("")
-            lines.append(change.after.message)
-            lines.append("")
+    if change.evidence:
+        lines.append("Evidence that moved:")
+        lines.append("")
+        lines.append("| Path | Before | After |")
+        lines.append("|---|---|---|")
+        for ev in change.evidence:
+            lines.append(f"| `{ev.path}` | {ev.before} | {ev.after} |")
+        lines.append("")
+    elif before_r.outcome is not after_r.outcome:
+        lines.append(
+            "No evidence value changed. The outcome moved for another "
+            "reason: the rule, the profile, or which facts were collected."
+        )
+        lines.append("")
+
+    lines.append(after_r.message)
+    lines.append("")
+    return lines
+
+
+def regressions(changes: list[RuleChange]) -> list[RuleChange]:
+    """The changes where a rule left `pass`.
+
+    Leaving `pass` for anything else is losing an answer, whether the new
+    outcome is `fail` or `unknown`. A pipeline that gates on regressions asks
+    exactly this question.
+    """
+    return [
+        c
+        for c in changes
+        if c.before
+        and c.after
+        and c.before.outcome is Outcome.PASS
+        and c.after.outcome is not Outcome.PASS
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Many resources at once
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class ResourceChange:
+    """How one resource moved between two run sets."""
+
+    resource_id: str
+    display_name: str
+    #: `added`, `removed`, `changed`, or `unchanged`.
+    kind: str
+    rules: list[RuleChange] = field(default_factory=list)
+
+
+def _empty_run(resource: dict) -> Run:
+    """A run with no results, to diff an added or removed resource against.
+
+    `compare` reads only the results, so an empty one makes every rule on the
+    other side read as added or removed, which is what a resource appearing or
+    disappearing means.
+    """
+    return Run(results=[], provenance={}, coverage={}, resource=resource)
+
+
+def compare_sets(before: RunSet, after: RunSet) -> list[ResourceChange]:
+    old = {run.resource.get("id", ""): run for run in before.runs}
+    new = {run.resource.get("id", ""): run for run in after.runs}
+
+    out: list[ResourceChange] = []
+    for rid in sorted(set(old) | set(new)):
+        b, a = old.get(rid), new.get(rid)
+        present = a or b
+        name = present.resource.get("display_name") or present.resource.get("id", "?")
+        if b is None:
+            out.append(
+                ResourceChange(rid, name, "added", compare(_empty_run(a.resource), a))
+            )
+        elif a is None:
+            out.append(
+                ResourceChange(rid, name, "removed", compare(b, _empty_run(b.resource)))
+            )
+        else:
+            rule_changes = compare(b, a)
+            out.append(
+                ResourceChange(
+                    rid, name, "changed" if rule_changes else "unchanged", rule_changes
+                )
+            )
+    return out
+
+
+def many_to_markdown(before: RunSet, after: RunSet) -> str:
+    changes = compare_sets(before, after)
+    added = [c for c in changes if c.kind == "added"]
+    removed = [c for c in changes if c.kind == "removed"]
+    moved = [c for c in changes if c.kind == "changed"]
+
+    lines: list[str] = ["# What changed", ""]
+    lines.append(f"- Resources before: {len(before.runs)}")
+    lines.append(f"- Resources after:  {len(after.runs)}")
+    lines.append("")
+
+    if not (added or removed or moved):
+        lines.append(
+            "Nothing changed. Same resources, same outcomes, same rule versions."
+        )
+        return "\n".join(lines) + "\n"
+
+    lines.append(
+        f"{len(moved)} resources changed, {len(added)} added, {len(removed)} removed."
+    )
+    lines.append("")
+
+    for change in changes:
+        if change.kind == "unchanged":
             continue
+        suffix = {"added": " (new resource)", "removed": " (resource gone)"}.get(
+            change.kind, ""
+        )
+        lines.append(f"## {change.display_name}{suffix}")
+        lines.append("")
+
         if change.kind == "removed":
             lines.append(
-                f"Present before as **{change.before.outcome.value}**, absent "
-                f"now. A rule that stopped running is not a rule that passed."
+                "Present before, absent now. A resource that stopped being "
+                "collected is not a resource that passed."
             )
             lines.append("")
             continue
 
-        before_r, after_r = change.before, change.after
-        if before_r.outcome is after_r.outcome:
-            lines.append(f"**{after_r.outcome.value}**, unchanged.")
-        else:
-            lines.append(f"**{before_r.outcome.value} → {after_r.outcome.value}**")
-        lines.append("")
+        if change.kind == "added":
+            findings = [
+                rc
+                for rc in change.rules
+                if rc.after and rc.after.outcome is not Outcome.PASS
+            ]
+            if not findings:
+                lines.append(
+                    "New in this run. No findings: every rule passed or did not apply."
+                )
+                lines.append("")
+            for rc in findings:
+                lines.extend(_change_lines(rc, heading="###"))
+            continue
 
-        if change.rule_version_changed:
-            lines.append(
-                f"> **The rule changed too**, from v{before_r.rule_version} to "
-                f"v{after_r.rule_version}. Part of this difference may be the "
-                f"rule rather than the estate. Read the rule's changelog before "
-                f"treating it as a finding."
-            )
-            lines.append("")
-
-        if change.evidence:
-            lines.append("Evidence that moved:")
-            lines.append("")
-            lines.append("| Path | Before | After |")
-            lines.append("|---|---|---|")
-            for ev in change.evidence:
-                lines.append(f"| `{ev.path}` | {ev.before} | {ev.after} |")
-            lines.append("")
-        elif before_r.outcome is not after_r.outcome:
-            lines.append(
-                "No evidence value changed. The outcome moved for another "
-                "reason: the rule, the profile, or which facts were collected."
-            )
-            lines.append("")
-
-        lines.append(after_r.message)
-        lines.append("")
+        for rc in change.rules:
+            lines.extend(_change_lines(rc, heading="###"))
 
     return "\n".join(lines).rstrip() + "\n"

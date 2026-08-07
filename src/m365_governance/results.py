@@ -205,3 +205,91 @@ class Run:
             "counts": self.counts(),
             "results": [r.to_dict() for r in self.results],
         }
+
+
+class DuplicateResource(ValueError):
+    """Two evidence documents describe the same resource id.
+
+    A `ValueError`, so the existing contract holds, and named, so the command
+    line can turn it into one clear sentence instead of a traceback. It is the
+    engine refusing to average two answers about one resource, which is the
+    same refusal as scoring: a run set that counted a site twice would report a
+    number no tenant has.
+    """
+
+
+@dataclass
+class RunSet:
+    """A stored evaluation over more than one resource.
+
+    A directory is a stable input shape even when it contains one document
+    today and fifty tomorrow, so its result is a first-class envelope rather
+    than a list that only the command which produced it understands.
+
+    `expected` is deliberately optional. Counting the documents that exist
+    proves how many resources were observed; it cannot prove how many the
+    identity failed to return. Absence of that fact is stored as
+    `not-established`, never as complete coverage.
+    """
+
+    runs: list[Run]
+    coverage: dict = field(default_factory=dict)
+    schema_version: str = "1.0"
+
+    def __post_init__(self) -> None:
+        ids = [run.resource.get("id", "") for run in self.runs]
+        duplicates = sorted(
+            {resource_id for resource_id in ids if ids.count(resource_id) > 1}
+        )
+        if duplicates:
+            joined = ", ".join(duplicates)
+            raise DuplicateResource(
+                f"a run set contains duplicate resource ids: {joined}"
+            )
+
+    def counts(self) -> dict[str, int]:
+        tally = {o.value: 0 for o in Outcome}
+        for run in self.runs:
+            for name, value in run.counts().items():
+                tally[name] += value
+        return tally
+
+    def by_class(self) -> dict[str, int]:
+        tally: dict[str, int] = {}
+        for run in self.runs:
+            name = run.resource_class or "unclassified"
+            tally[name] = tally.get(name, 0) + 1
+        return tally
+
+    def run_coverage(self) -> dict:
+        if self.coverage:
+            return self.coverage
+        return {
+            "state": "not-established",
+            "observed": len(self.runs),
+            "expected": None,
+            "detail": (
+                f"{len(self.runs)} resources are stored. The total number the "
+                "identity was expected to reach was not recorded, so this run "
+                "does not establish complete coverage."
+            ),
+        }
+
+    def to_dict(self) -> dict:
+        return {
+            "run_schema_version": self.schema_version,
+            "resources": len(self.runs),
+            "by_class": self.by_class(),
+            "set_aside": sum(1 for run in self.runs if run.set_aside),
+            "counts": self.counts(),
+            "run_coverage": self.run_coverage(),
+            "runs": [run.to_dict() for run in self.runs],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> RunSet:
+        return cls(
+            runs=[Run.from_dict(run) for run in data.get("runs", [])],
+            coverage=data.get("run_coverage", {}),
+            schema_version=data.get("run_schema_version", "1.0"),
+        )

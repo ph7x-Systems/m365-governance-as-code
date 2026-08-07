@@ -26,9 +26,16 @@ from . import doctor as doctor_module
 from . import inspect as inspect_module
 from .engine import evaluate
 from .loader import DocumentError, load_evidence, load_profile, load_rules
-from .reporting import many_to_json, many_to_markdown, to_html, to_json, to_markdown
+from .reporting import (
+    many_to_html,
+    many_to_json,
+    many_to_markdown,
+    to_html,
+    to_json,
+    to_markdown,
+)
 from .resources import Source, resolve
-from .results import Outcome, Run
+from .results import DuplicateResource, Outcome, Run, RunSet
 from .validator import validate_evidence_document, validate_rules
 
 #: `None` means "use what shipped with this version". A path means "use
@@ -289,6 +296,19 @@ def _render(run: Run, fmt: str) -> str:
     return to_markdown(run)
 
 
+def _render_many(run_set: RunSet, fmt: str) -> str:
+    """The run-set envelope, in whichever format was asked for.
+
+    Every format renders the same run set, so `report` and `evaluate` cannot
+    disagree about a tenant depending on the flag that was passed.
+    """
+    if fmt == "json":
+        return many_to_json(run_set)
+    if fmt == "html":
+        return many_to_html(run_set)
+    return many_to_markdown(run_set)
+
+
 def _rule_source(args) -> Source:
     return resolve("rules", getattr(args, "rules", None))
 
@@ -368,13 +388,14 @@ def _cmd_evaluate(args) -> int:
 
     # The shape follows what was asked for, not how many files happened to be
     # there. A directory with one document in it today and three tomorrow must
-    # not change the shape of what a pipeline parses.
+    # not change the shape of what a pipeline parses. A directory is always a
+    # run set; a single file is always one run. Building the set here, once, is
+    # also where two documents about the same resource are refused, before any
+    # format sees them.
     if not args.evidence.is_dir():
         sys.stdout.write(_render(runs[0], args.format))
-    elif args.format == "json":
-        sys.stdout.write(many_to_json(runs))
     else:
-        sys.stdout.write(many_to_markdown(runs))
+        sys.stdout.write(_render_many(RunSet(runs), args.format))
 
     counts = {o.value: 0 for o in Outcome}
     for run in runs:
@@ -394,55 +415,73 @@ def _cmd_evaluate(args) -> int:
     return 0
 
 
-def _read_run(path: Path, rules_dir: Path) -> Run:
-    """A stored report, or an evidence document evaluated on the spot.
+def _read_run_or_set(path: Path, rules_dir: Path) -> Run | RunSet:
+    """A stored run, a stored run set, or an evidence document evaluated now.
 
-    Accepting both is not convenience. Somebody comparing two runs has one of
-    each often enough: last quarter was archived as a report, this morning is
-    a fresh collection, and refusing to compare them would send them to
-    regenerate something they already have.
+    Accepting all three is not convenience. Somebody comparing two runs has a
+    mix often enough: last quarter was archived as a report, this morning is a
+    fresh collection, and refusing to compare them would send them to
+    regenerate something they already have. A run set is the same story at
+    tenant scale, where the archive is a whole estate rather than one site.
     """
     data = load_evidence(path).data
+    if "runs" in data:
+        return RunSet.from_dict(data)
     if "results" in data:
         return Run.from_dict(data)
     if "facts" in data:
         rules = [loaded.data for loaded in load_rules(rules_dir)]
         return evaluate(rules, data)
     raise DocumentError(
-        f"{path}: neither a report (no `results`) nor evidence (no `facts`)"
+        f"{path}: neither a report (no `results` or `runs`) nor evidence (no `facts`)"
     )
 
 
 def _cmd_report(args) -> int:
     data = load_evidence(args.report).data
-    if "results" not in data:
-        print(
-            f"{args.report}: not a report. `report` re-renders a stored run; "
-            f"to evaluate evidence use `evaluate`.",
-            file=sys.stderr,
-        )
-        return 2
-    sys.stdout.write(_render(Run.from_dict(data), args.format))
-    return 0
+    # A run set carries `runs`; a single run carries `results`. `report` renders
+    # whichever `evaluate` wrote, in whichever format is asked for now.
+    if "runs" in data:
+        sys.stdout.write(_render_many(RunSet.from_dict(data), args.format))
+        return 0
+    if "results" in data:
+        sys.stdout.write(_render(Run.from_dict(data), args.format))
+        return 0
+    print(
+        f"{args.report}: not a report. `report` re-renders a stored run or run "
+        f"set; to evaluate evidence use `evaluate`.",
+        file=sys.stderr,
+    )
+    return 2
 
 
 def _cmd_diff(args) -> int:
     rules_path = _rule_source(args).path
-    before = _read_run(args.before, rules_path)
-    after = _read_run(args.after, rules_path)
-    sys.stdout.write(diffing.to_markdown(before, after))
+    before = _read_run_or_set(args.before, rules_path)
+    after = _read_run_or_set(args.after, rules_path)
 
-    if args.fail_on_regression:
-        regressed = [
-            c
-            for c in diffing.compare(before, after)
-            if c.before
-            and c.after
-            and c.before.outcome is Outcome.PASS
-            and c.after.outcome is not Outcome.PASS
+    # A run and a run set are not comparable: one is a resource, the other an
+    # estate, and pretending would either hide every other resource or invent
+    # one. Refuse rather than guess.
+    if isinstance(before, RunSet) != isinstance(after, RunSet):
+        print(
+            "cannot diff a single resource against a run set. Compare a run "
+            "with a run, or a run set with a run set.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if isinstance(before, RunSet):
+        sys.stdout.write(diffing.many_to_markdown(before, after))
+        changes = [
+            rc for change in diffing.compare_sets(before, after) for rc in change.rules
         ]
-        if regressed:
-            return 1
+    else:
+        sys.stdout.write(diffing.to_markdown(before, after))
+        changes = diffing.compare(before, after)
+
+    if args.fail_on_regression and diffing.regressions(changes):
+        return 1
     return 0
 
 
@@ -464,6 +503,12 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     try:
         return _COMMANDS[args.command](args)
+    except DuplicateResource as exc:
+        # Two documents about one resource. One sentence, not a traceback: the
+        # engine is refusing to average two answers, and the caller needs to
+        # know which resource, not where in the code it was caught.
+        print(f"{exc}", file=sys.stderr)
+        return 2
     except DocumentError as exc:
         print(f"document error: {exc}", file=sys.stderr)
         return 2
