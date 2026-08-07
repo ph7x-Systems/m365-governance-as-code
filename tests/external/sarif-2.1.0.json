@@ -1,0 +1,35 @@
+{
+  "subject": "SARIF 2.1.0 result object",
+  "why_recorded": "Epic B5 proposes emitting SARIF. Asked in prose, a summary of the specification offered 'redirect' and 'hotspot' as permitted result.kind values. Neither is in the enum. This file is the enum, read from the schema.",
+  "source": {
+    "url": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/main/sarif-2.1/schema/sarif-schema-2.1.0.json",
+    "kind": "json-schema",
+    "publisher": "OASIS",
+    "checked_at": "2026-08-07",
+    "read_from": "definitions.result.properties"
+  },
+  "enums": {
+    "result.kind": {
+      "values": [
+        "notApplicable",
+        "pass",
+        "fail",
+        "review",
+        "open",
+        "informational"
+      ],
+      "default": "fail"
+    },
+    "result.level": {
+      "values": ["none", "note", "warning", "error"],
+      "default": "warning"
+    }
+  },
+  "gaps": [
+    {
+      "question": "Which kind values may carry a level other than 'none'?",
+      "state": "unverified",
+      "detail": "Two readings of the specification prose disagreed, and the JSON schema does not encode the constraint. If a non-'fail' kind is forced to level 'none', an 'unknown' on a high-severity rule reaches a pipeline UI with no severity at all, which is 'unknown' quietly reading as fine in a format we chose. Verify against the normative text before any mapping is written."
+    }
+  ]
+}

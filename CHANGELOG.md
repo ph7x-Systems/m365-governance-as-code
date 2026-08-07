@@ -8,6 +8,48 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## Unreleased
+
+Epic B opened on the `1.0.0-beta.1` baseline. See
+[docs/EPIC-B.md](docs/EPIC-B.md). Milestone A is closed and does not reopen.
+
+### Added
+
+- **Facts before design. Schema before mapping. Tenant before rule.** Written
+  into [CONTRIBUTING.md](CONTRIBUTING.md) as a rule of execution rather than an
+  observation: no external behaviour is implemented from memory, from a
+  plausible name, or from secondary documentation, when a schema, an assembly
+  or a specification exists and can be read. Where the normative source does
+  not answer, the product declares the gap instead of filling it by
+  plausibility.
+- **`tests/external/`**, where those readings are recorded with their source
+  and the date they were checked, and `tests/test_external_facts.py`, which
+  enforces that every recorded fact is attributed, that a declared gap carries
+  a usable reason, and that no code reaches for a value the recording does not
+  contain.
+- **The PnP 3.3.0 property sets**, read from the loaded assemblies: 490
+  properties across four types. Every `-Includes` clause in the collector is
+  now checked against them. Injecting `SharingCapability` into the
+  classification clause fails the build, which is the defect that reached a
+  tenant before this existed.
+- **The SARIF 2.1.0 enums**, read from the schema. `result.kind` permits six
+  values and `result.level` four. A prose summary of the same specification
+  offered `redirect` and `hotspot`; the enum contains neither, and a test now
+  says so. The kind-to-level constraint is recorded as unverified, and a test
+  asserts no SARIF mapping exists until it is answered.
+
+### Carried debt
+
+- `Coverage` and `Collector is read-only` run only on the 3.13 matrix entry,
+  so those two gates have the availability of a matrix of one. On 2026-08-06
+  three runs were cancelled with zero steps executed and, when the incident
+  eased, 3.11 and 3.12 passed while 3.13 did not, leaving exactly those two
+  unproven. They passed on the next attempt with no change to the repository.
+  Registered, deliberately not fixed: what was observed was runner
+  availability, not a defect in the design.
+
+---
+
 ## 1.0.0-beta.1
 
 Classification, and the end of Epic A.

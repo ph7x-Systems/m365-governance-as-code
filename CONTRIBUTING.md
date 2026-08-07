@@ -103,6 +103,47 @@ Read-only, always. CI parses the PowerShell and fails on any mutating verb.
 
 ---
 
+## Integrating with anything outside this repository
+
+**Facts before design. Schema before mapping. Tenant before rule.**
+
+Never implement external behaviour from memory, from a plausible-sounding
+name, or from secondary documentation, when a schema, an enum, an assembly, an
+API's own metadata or an official specification exists and can be inspected.
+
+Before writing any integration:
+
+1. **find the normative source** — the schema file, the loaded assembly, the
+   published specification, not an article about it;
+2. **enumerate the values it actually accepts**;
+3. **record that discovery in a test**, under `tests/external/`, with the
+   source and the date it was checked;
+4. **only then write the mapping**;
+5. **run it against real data** where that is possible at all.
+
+If the normative source does not answer the question, **the product declares
+the gap.** It does not fill it by plausibility.
+
+This is not caution. It is the only pattern that has caught anything here:
+
+| | |
+|---|---|
+| **PnP** | `Connect-PnPOnline` has required `-ClientId` since 2.99. The collector as first written could never have connected to anything. |
+| **SharePoint** | `SharingCapability` is not a property of a site. `Get-PnPSite -Includes` rejects it outright; it is a tenant property *about* a site. |
+| **SharePoint** | `DefaultSharingLinkType: None` means "inherits the tenant", not "no default". The rule that read it as a value would have passed 53 sites knowing nothing. |
+| **SARIF** | Asked in prose, a summary of the specification offered `redirect` and `hotspot` as permitted `result.kind` values. The schema's enum contains neither. |
+
+The SARIF one is the cleanest illustration, because nothing about `redirect`
+and `hotspot` looks wrong. **That they sound reasonable does not matter. That
+they are absent from the enum ends the discussion.**
+
+Recorded discoveries live in [tests/external/](tests/external/). A mapping
+that uses a value absent from a recorded enum fails the build, and a recorded
+fact with no source and no date fails it too: an unattributed fact is
+indistinguishable from a remembered one.
+
+---
+
 ## Pull requests
 
 One rule, or one coherent change, per pull request.

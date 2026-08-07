@@ -363,8 +363,16 @@ absent and never as compliant.
 
 ## Roadmap
 
-Ordered by what would make the tool useful to somebody else soonest, not by
-what is most interesting to build.
+`1.0.0-beta.1` is the baseline. Milestone A closed SharePoint end to end and
+does not reopen; see [docs/MILESTONE-A.md](docs/MILESTONE-A.md).
+
+**Epic B is open**: everything one identity cannot see. Application
+authentication, group expansion, importers, HTML reporting, and SARIF once the
+representation of `unknown` is decided. The model is frozen for the whole of
+it. See [docs/EPIC-B.md](docs/EPIC-B.md).
+
+The table below is the direction, ordered by what would make the tool useful
+to somebody else soonest rather than by what is most interesting to build.
 
 | | |
 |---|---|
@@ -374,7 +382,7 @@ what is most interesting to build.
 | **Application authentication** | Delegated runs see what one person sees, and every count in this repository carries that clause. A tenant-wide inventory needs an app identity with `Sites.Read.All` and admin consent. |
 | **Exchange, Teams and Entra collectors** | The evidence schema is service-agnostic. Each collector is new code and no new model. |
 | **HTML reporting** | Markdown and JSON exist. HTML is for the reader who is not in a terminal. |
-| **SARIF output** | So findings appear where code findings already appear, in a pipeline's own UI. |
+| **SARIF output** | So findings appear where code findings already appear, in a pipeline's own UI. Blocked until `unknown` has an agreed representation: SARIF has six `kind` values and this project has six outcomes, and they are not the same six. |
 
 Open issues are the current list. This table is the direction.
 
