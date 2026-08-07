@@ -25,7 +25,6 @@ ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
 #: The content the package ships, not a second copy at the repository root.
 DATA = ROOT / "src" / "m365_governance" / "data"
-RULES = DATA / "rules"
 FIXTURES = DATA / "fixtures" / "sharepoint"
 
 #: One example per outcome a rule can produce, and the fixture that produces
@@ -45,14 +44,17 @@ CASES = [
 
 
 def render(fixture: str, fmt: str) -> str:
+    # No `--rules`: an installed copy evaluates against the set it ships, so
+    # the examples must too. Passing the repository's rules directory would
+    # write "supplied by the caller: <path>" into every example — a local
+    # absolute path committed to a public repository, and a rule source no
+    # user would ever see. The packaged set prints "shipped with this version".
     result = subprocess.run(
         [
             sys.executable,
             "-m",
             "m365_governance.cli",
             "evaluate",
-            "--rules",
-            str(RULES),
             "--evidence",
             str(FIXTURES / f"{fixture}.json"),
             "--format",

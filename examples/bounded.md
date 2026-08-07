@@ -5,7 +5,7 @@
 - Resource: `contoso,site,hr` (site)
 - Collected: 2026-08-05T14:02:11Z by `spo-collector` 0.1.0
 - Source: SharePoint Online via Microsoft Graph v1.0
-- Rules: supplied by the caller: /Users/jtlivio/dev/m365-governance-as-code/src/m365_governance/data/rules
+- Rules: shipped with this version
 - Identity: application, scopes: Sites.Read.All
 
 ## Summary
