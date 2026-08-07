@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import json
 
-from .results import Outcome, Run
+from .results import Outcome, Run, RunSet
 
 _ORDER = [
     Outcome.FAIL,
@@ -477,8 +477,10 @@ def _class_lines(runs: list[Run]) -> list[str]:
     return lines
 
 
-def many_to_markdown(runs: list[Run]) -> str:
+def many_to_markdown(value: list[Run] | RunSet) -> str:
     """One report over many documents, with the set-aside ones at the end."""
+    run_set = value if isinstance(value, RunSet) else RunSet(value)
+    runs = run_set.runs
     if not runs:
         return "No evidence documents.\n"
 
@@ -494,6 +496,19 @@ def many_to_markdown(runs: list[Run]) -> str:
         f"- {line}" if i == 0 else f"  {line.strip()}"
         for i, line in enumerate(_class_lines(runs))
     )
+    lines.append("")
+
+    coverage = run_set.run_coverage()
+    expected = coverage.get("expected")
+    if expected is None:
+        lines.append(
+            f"> **Run coverage: not established.** {coverage.get('detail', '')}"
+        )
+    else:
+        lines.append(
+            f"> **Run coverage:** {coverage.get('observed', len(runs))} of "
+            f"{expected} expected resources are stored."
+        )
     lines.append("")
 
     delegated = any(
@@ -572,17 +587,117 @@ def _esc_md(text: str) -> str:
     return str(text).replace("|", "\\|")
 
 
-def many_to_json(runs: list[Run]) -> str:
-    payload = {
-        "resources": len(runs),
-        "by_class": {},
-        "set_aside": sum(1 for r in runs if r.set_aside),
-        "counts": {o.value: 0 for o in Outcome},
-        "runs": [run.to_dict() for run in runs],
-    }
-    for run in runs:
-        key = run.resource_class or "unclassified"
-        payload["by_class"][key] = payload["by_class"].get(key, 0) + 1
-        for name, value in run.counts().items():
-            payload["counts"][name] += value
-    return json.dumps(payload, indent=2, ensure_ascii=False) + "\n"
+def many_to_json(value: list[Run] | RunSet) -> str:
+    run_set = value if isinstance(value, RunSet) else RunSet(value)
+    return json.dumps(run_set.to_dict(), indent=2, ensure_ascii=False) + "\n"
+
+
+def many_to_html(value: list[Run] | RunSet) -> str:
+    """The many-resource report as one self-contained page.
+
+    It carries the same facts as the Markdown and JSON forms, because a report
+    that said one thing on paper and another in the browser would be two
+    reports. The run coverage line, the delegated warning, the counts and the
+    per-resource findings are all here; colour still does no work, so a printed
+    copy reads the same.
+    """
+    run_set = value if isinstance(value, RunSet) else RunSet(value)
+    runs = run_set.runs
+
+    total = run_set.counts()
+    answered = total[Outcome.PASS.value] + total[Outcome.FAIL.value]
+    evaluated = sum(len(run.results) for run in runs)
+
+    parts: list[str] = [
+        "<!doctype html>",
+        '<html lang="en"><head><meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width,initial-scale=1">',
+        "<title>Governance report</title>",
+        f"<style>{_CSS}</style></head><body><main>",
+        "<h1>Governance report</h1>",
+    ]
+
+    if not runs:
+        parts.append("<p>No evidence documents.</p>")
+        parts.append("</main></body></html>")
+        return "\n".join(parts) + "\n"
+
+    by_class = run_set.by_class()
+    observed = ", ".join(f"{by_class[name]} {name}" for name in sorted(by_class))
+    parts.append(
+        f'<p class="meta">{len(runs)} resources observed: {_esc(observed)}.</p>'
+    )
+
+    coverage = run_set.run_coverage()
+    expected = coverage.get("expected")
+    if expected is None:
+        parts.append(
+            '<p class="warn"><strong>Run coverage: not established.</strong> '
+            f"{_esc(coverage.get('detail', ''))}</p>"
+        )
+    else:
+        parts.append(
+            f'<p class="warn"><strong>Run coverage:</strong> '
+            f"{_esc(coverage.get('observed', len(runs)))} of {_esc(expected)} "
+            "expected resources are stored.</p>"
+        )
+
+    if any((run.provenance or {}).get("identity_kind") == "delegated" for run in runs):
+        parts.append(
+            '<p class="warn"><strong>Identity: delegated.</strong> These runs '
+            "saw what one person sees. Nothing here may be read as a tenant-wide "
+            "statement.</p>"
+        )
+
+    parts.append("<h2>Summary</h2>")
+    parts.append(
+        f"<p>{evaluated} rule evaluations across {len(runs)} resources. "
+        f"<strong>{answered} produced an answer.</strong></p>"
+    )
+    parts.append(
+        "<table><tr><th>Outcome</th><th>Count</th></tr>"
+        + "".join(
+            f"<tr><td>{_LABEL[o]}</td><td>{total[o.value]}</td></tr>" for o in _ORDER
+        )
+        + "</table>"
+    )
+    unresolved = total[Outcome.UNKNOWN.value] + total[Outcome.INVALID_EVIDENCE.value]
+    if unresolved:
+        parts.append(
+            f'<p class="warn">{unresolved} could not be decided. That is not '
+            "compliance: missing evidence is a fact about collection, not about "
+            "the resource.</p>"
+        )
+
+    for heading, selected in (
+        ("Findings", [r for r in runs if not r.set_aside]),
+        ("Set aside by profile", [r for r in runs if r.set_aside]),
+    ):
+        if not selected:
+            continue
+        parts.append(f"<h2>{heading}</h2>")
+        if heading.startswith("Set aside"):
+            parts.append(
+                '<p class="warn">The profile moved these down the page. Nothing '
+                "was removed, and a finding here counts the same as one above "
+                "it.</p>"
+            )
+        interesting = [
+            run
+            for run in selected
+            if any(r.outcome is not Outcome.PASS for r in run.results)
+        ]
+        if not interesting:
+            parts.append(f"<p>{len(selected)} resources, nothing but passes.</p>")
+            continue
+        for run in interesting:
+            name = run.resource.get("display_name") or run.resource.get("id", "?")
+            klass = f" · {run.resource_class}" if run.resource_class else ""
+            parts.append(f"<h3>{_esc(name)}{_esc(klass)}</h3>")
+            for result in run.results:
+                if result.outcome is Outcome.PASS:
+                    continue
+                parts.append(_html_card(result, result.outcome))
+
+    parts.append("</main></body></html>")
+    return "\n".join(parts) + "\n"
