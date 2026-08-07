@@ -9,8 +9,8 @@ permissions:
   contents: read
 
 jobs:
-  rules:
-    name: Rules and tests
+  contract:
+    name: Release contract
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -18,179 +18,31 @@ jobs:
         python-version: ["3.11", "3.12", "3.13"]
 
     steps:
+      # CI does not decide what healthy means. The repository does.
+      # Everything this job does is prepare an interpreter and run one
+      # command — the same one a developer runs locally. A gate that existed
+      # only here would not exist: the developer would prove one thing and CI
+      # another, which is two definitions of healthy, one too many.
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install
+      - name: Environment
         run: |
-          python -m pip install --upgrade pip
+          python -m pip install --upgrade pip build
           pip install -e .
           pip install -r requirements-dev.txt
 
-      - name: Lint
-        run: ruff check src tools tests
-
-      - name: Format
-        run: ruff format --check src tools tests
-
-      - name: Validate every rule
-        # Layers 1 to 4: the file is a document, one field, one file with its
-        # references followed, every file together.
-        # No `--rules`: the packaged set is what an installed copy uses, so it
-        # is what CI validates.
-        run: m365-governance validate
-
-      - name: Schemas are valid JSON Schema
+      - name: ./tools/release-check.sh
+        # The wheel and clean-install gates answer a question that does not
+        # depend on the interpreter, and pwsh is only present on one entry, so
+        # they run once rather than three times. Everything else runs on every
+        # version of Python the package claims to support.
         run: |
-          python - <<'PY'
-          import json, pathlib
-          from jsonschema import Draft202012Validator
-          for p in sorted(pathlib.Path("src/m365_governance/data/schemas").glob("*.json")):
-              Draft202012Validator.check_schema(json.loads(p.read_text()))
-              print(f"{p}: valid")
-          PY
-
-      - name: Tests
-        # A skipped test is a test nobody ran. -ra surfaces any, and the next
-        # step refuses them.
-        run: pytest -q -ra --strict-markers | tee /tmp/pytest.out
-
-      - name: Coverage
-        # A floor rather than a number in a report nobody reads. It was
-        # measured for the first time at 0.8.0 and found the bounded
-        # comparison at 86 per cent: nearly the whole table published in
-        # ARCHITECTURE.md had never executed. A documented claim that nothing
-        # runs is a claim that drifts.
-        if: matrix.python-version == '3.13'
-        run: |
-          coverage run -m pytest -q
-          coverage report
-
-      - name: No skipped tests
-        run: |
-          if grep -qE '[0-9]+ skipped' /tmp/pytest.out; then
-            echo "::error::the suite contains skipped tests"
-            exit 1
+          if [ "${{ matrix.python-version }}" = "3.13" ]; then
+            ./tools/release-check.sh
+          else
+            ./tools/release-check.sh --no-install
           fi
-
-      - name: Examples are current
-        # An example in a README is read as a promise. A hand-edited one is a
-        # promise nobody is keeping: it stays plausible while the behaviour
-        # moves underneath it.
-        run: python tools/examples.py --check
-
-      - name: Collector is read-only
-        # A step rather than a job, and the reason is exposure rather than
-        # tidiness. It ran as its own job, which meant a second runner and a
-        # second `actions/checkout` to resolve. On 2026-08-06 the first job
-        # resolved its actions and this one could not, in the same run, in the
-        # same minute, for the same action. The check itself takes three
-        # seconds; a whole job's worth of dependency on GitHub resolving a
-        # download was the wrong price for it.
-        #
-        # One matrix entry, because the answer does not depend on Python.
-        #
-        # What this proves is narrower than its name. It establishes that the
-        # file is analysable and that no command in it begins with a mutating
-        # verb. It runs nothing: a function can parse cleanly, pass this walk,
-        # and throw on its first line against a tenant, which is exactly what
-        # the first version of Get-ClassificationFacts did. It would also miss
-        # a write reached through a variable or a REST call. A floor under
-        # review, not a substitute for it. See docs/ARCHITECTURE.md, "What the
-        # gates prove, and what they do not".
-        if: matrix.python-version == '3.13'
-        shell: pwsh
-        run: |
-          $path = 'src/m365_governance/data/collectors/powershell/sharepoint/Get-SpoEvidence.ps1'
-          $errs = $null
-          [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errs)
-          if ($errs) { $errs | ForEach-Object { Write-Error $_.Message }; exit 1 }
-          $ast = [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$null)
-          $names = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true) |
-                   ForEach-Object { $_.GetCommandName() } | Sort-Object -Unique
-          $writes = $names | Where-Object { $_ -match '^(Set|New|Remove|Add|Update|Grant|Revoke)-(PnP|Mg|SPO)' }
-          if ($writes) { Write-Error "write path in a read-only collector: $writes"; exit 1 }
-          Write-Host "no write path"
-
-      - name: Every fixture evaluates
-        run: |
-          for f in src/m365_governance/data/fixtures/sharepoint/*.json; do
-            m365-governance evaluate --evidence "$f" --format json > /dev/null
-          done
-          echo "all fixtures evaluated"
-
-  install:
-    name: Clean install
-    runs-on: ubuntu-latest
-
-    # The gate that found the defect it exists to prevent, and the only kind
-    # that could have. Every other job runs from the repository root, so every
-    # other job agreed the product worked while `pip install` produced a
-    # command-line tool with none of its own rules, profiles, schemas or
-    # collector. Nine of ten commands failed the moment somebody stood
-    # anywhere else.
-    #
-    # A clean installation is the reference environment. The development
-    # repository is a convenience, not the execution model.
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Build the wheel
-        run: |
-          python -m pip install --upgrade pip build
-          python -m build --wheel -o dist
-
-      - name: The wheel carries the product
-        run: |
-          python - <<'PY'
-          import glob, zipfile, collections, sys
-          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
-          found = collections.Counter(
-              n.split("/")[2]
-              for n in names
-              if n.startswith("m365_governance/data/") and n.count("/") > 2
-          )
-          missing = [d for d in ("rules", "profiles", "schemas", "collectors", "fixtures")
-                     if not found.get(d)]
-          print(dict(found))
-          if missing:
-              sys.exit(f"the wheel is missing {missing}: the package does not contain the product")
-          PY
-
-      - name: Install it into an empty environment
-        run: |
-          python -m venv /tmp/gate
-          /tmp/gate/bin/pip install dist/*.whl
-
-      - name: Run the product from outside any checkout
-        # `cd /tmp/empty` is the whole point. Run from the repository and this
-        # step proves nothing at all.
-        run: |
-          mkdir -p /tmp/empty && cd /tmp/empty
-          G=/tmp/gate/bin/m365-governance
-          $G doctor
-          $G list-rules
-          $G validate
-          FIXTURE=$(/tmp/gate/bin/python -c 'from m365_governance.resources import packaged; print(packaged("fixtures")/"sharepoint"/"list-over-limit.json")')
-          $G evaluate --evidence "$FIXTURE" --format json > /dev/null
-          $G collect sites --dry-run --tenant-url https://x-admin.sharepoint.com \
-            --client-id 00000000-0000-0000-0000-000000000000 --output out.json
-
-      - name: No path reaches back into the checkout
-        run: |
-          mkdir -p /tmp/empty && cd /tmp/empty
-          /tmp/gate/bin/m365-governance doctor > doctor.txt
-          if grep -q "${GITHUB_WORKSPACE}" doctor.txt; then
-            echo "::error::the installed product resolves a path inside the checkout"
-            cat doctor.txt
-            exit 1
-          fi
-          echo "every path stays inside the installation"
