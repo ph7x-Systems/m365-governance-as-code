@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 
-from conftest import ROOT, evidence, rule
+from conftest import DATA, evidence, rule
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
 from m365_governance.reporting import to_json, to_markdown
@@ -17,7 +17,7 @@ def run(capsys, *argv) -> tuple[int, str, str]:
 
 
 def test_validate_passes_on_the_repository(capsys):
-    code, out, _ = run(capsys, "validate", "--rules", str(ROOT / "rules"))
+    code, out, _ = run(capsys, "validate", "--rules", str(DATA / "rules"))
     assert code == 0
     assert "No problems found" in out
 
@@ -27,9 +27,9 @@ def test_evaluate_produces_markdown(capsys):
         capsys,
         "evaluate",
         "--rules",
-        str(ROOT / "rules"),
+        str(DATA / "rules"),
         "--evidence",
-        str(ROOT / "fixtures/sharepoint/list-over-limit.json"),
+        str(DATA / "fixtures/sharepoint/list-over-limit.json"),
         "--format",
         "markdown",
     )
@@ -43,9 +43,9 @@ def test_evaluate_produces_json(capsys):
         capsys,
         "evaluate",
         "--rules",
-        str(ROOT / "rules"),
+        str(DATA / "rules"),
         "--evidence",
-        str(ROOT / "fixtures/sharepoint/list-over-limit.json"),
+        str(DATA / "fixtures/sharepoint/list-over-limit.json"),
         "--format",
         "json",
     )
@@ -61,9 +61,9 @@ def test_fail_on_unresolved_counts_unknown_as_unresolved(capsys):
         capsys,
         "evaluate",
         "--rules",
-        str(ROOT / "rules"),
+        str(DATA / "rules"),
         "--evidence",
-        str(ROOT / "fixtures/sharepoint/list-count-not-collected.json"),
+        str(DATA / "fixtures/sharepoint/list-count-not-collected.json"),
         "--fail-on",
         "unresolved",
     )
@@ -77,7 +77,7 @@ def test_evaluate_refuses_malformed_evidence(capsys, tmp_path):
         capsys,
         "evaluate",
         "--rules",
-        str(ROOT / "rules"),
+        str(DATA / "rules"),
         "--evidence",
         str(bad),
     )

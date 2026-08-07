@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import __version__
+from .resources import BUNDLED, missing, packaged
 from .validator import validate_rules
 
 #: Below this, the code does not run. StrEnum and the typing syntax used here
@@ -70,10 +71,10 @@ def _dependencies() -> list[Check]:
     return checks
 
 
-def _schemas(root: Path) -> list[Check]:
+def _schemas(root: Path | None) -> list[Check]:
     from jsonschema import Draft202012Validator
 
-    directory = root / "schemas"
+    directory = _content(root, "schemas")
     if not directory.is_dir():
         return [Check("schemas", False, f"{directory} not found")]
 
@@ -87,8 +88,8 @@ def _schemas(root: Path) -> list[Check]:
     return checks or [Check("schemas", False, "no schema files")]
 
 
-def _rules(root: Path) -> list[Check]:
-    directory = root / "rules"
+def _rules(root: Path | None) -> list[Check]:
+    directory = _content(root, "rules")
     if not directory.is_dir():
         return [Check("rules", False, f"{directory} not found")]
     problems = validate_rules(directory)
@@ -105,23 +106,26 @@ def _rules(root: Path) -> list[Check]:
     return [Check("rules", True, f"{count} rules, no problems")]
 
 
-def _profiles(root: Path) -> list[Check]:
+def _profiles(root: Path | None) -> list[Check]:
     import yaml
 
-    directory = root / "profiles"
+    directory = _content(root, "profiles")
     if not directory.is_dir():
         return [Check("profiles", False, f"{directory} not found")]
 
-    known = (
-        {p.stem for p in (root / "rules").rglob("*.yaml")}
-        if (root / "rules").is_dir()
-        else set()
-    )
+    rules_dir = _content(root, "rules")
+    known = {p.stem for p in rules_dir.rglob("*.yaml")} if rules_dir.is_dir() else set()
 
     checks = []
     for path in sorted(directory.glob("*.yaml")):
         data = yaml.safe_load(path.read_text()) or {}
-        selected = data.get("rules") or []
+        # No `rules` key selects every rule. This read `len(selected)` on the
+        # raw value and reported the default profile as selecting zero of
+        # sixteen, next to the line saying nothing was broken. A diagnostic is
+        # consulted precisely when somebody is already unsure.
+        chooses = data.get("rules")
+        selected = chooses if chooses else sorted(known)
+        every = not chooses
         missing = [r for r in selected if r not in known]
         if missing:
             checks.append(
@@ -132,9 +136,10 @@ def _profiles(root: Path) -> list[Check]:
                 )
             )
         else:
-            checks.append(
-                Check(f"profile {path.stem}", True, f"{len(selected)} rules selected")
-            )
+            detail = f"{len(selected)} rules selected"
+            if every:
+                detail += " (every rule: the profile names none)"
+            checks.append(Check(f"profile {path.stem}", True, detail))
     return checks or [Check("profiles", False, "no profiles")]
 
 
@@ -185,9 +190,45 @@ def _powershell() -> list[Check]:
     return checks
 
 
-def run(root: Path) -> tuple[list[tuple[str, list[Check]]], bool]:
+def _content(root: Path | None, name: str) -> Path:
+    """Where to look for one kind of content.
+
+    `None` means what shipped with this version, which is the default and the
+    case that matters: `doctor` is what somebody runs when an install is not
+    behaving, and it has to describe the installation rather than whatever
+    directory they happen to be standing in.
+    """
+    if root is not None:
+        return root / name
+    return packaged(name)
+
+
+def _packaging() -> list[Check]:
+    """Whether the installed package contains the product.
+
+    This check exists because it once would have failed. Before the content
+    moved inside the package, `pip install` produced a command-line tool with
+    no rules, profiles, schemas or collector, and `doctor` reported three
+    directories missing from the working directory as though the user had
+    stood in the wrong place.
+    """
+    absent = missing()
+    if absent:
+        return [
+            Check(
+                "packaged content",
+                False,
+                f"this installation is missing {', '.join(absent)}. The package "
+                "was built without its own content; reinstall from a release.",
+            )
+        ]
+    return [Check("packaged content", True, f"{', '.join(BUNDLED)}")]
+
+
+def run(root: Path | None = None) -> tuple[list[tuple[str, list[Check]]], bool]:
     groups = [
         ("Environment", _python() + _dependencies()),
+        ("Installation", _packaging()),
         ("Schemas", _schemas(root)),
         ("Rules and profiles", _rules(root) + _profiles(root)),
         ("Collector, optional", _powershell()),
@@ -196,9 +237,10 @@ def run(root: Path) -> tuple[list[tuple[str, list[Check]]], bool]:
     return groups, healthy
 
 
-def report(root: Path) -> tuple[str, bool]:
+def report(root: Path | None = None) -> tuple[str, bool]:
     groups, healthy = run(root)
-    lines = [f"m365-governance doctor    working directory: {root}", ""]
+    where = str(root) if root is not None else "the installed package"
+    lines = [f"m365-governance doctor    reading content from: {where}", ""]
     for title, checks in groups:
         lines.append(title)
         lines.extend(check.render() for check in checks)

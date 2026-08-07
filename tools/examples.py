@@ -23,8 +23,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
-RULES = ROOT / "rules"
-FIXTURES = ROOT / "fixtures" / "sharepoint"
+#: The content the package ships, not a second copy at the repository root.
+DATA = ROOT / "src" / "m365_governance" / "data"
+RULES = DATA / "rules"
+FIXTURES = DATA / "fixtures" / "sharepoint"
 
 #: One example per outcome a rule can produce, and the fixture that produces
 #: it. `error` is absent because a rule cannot author it: it describes the

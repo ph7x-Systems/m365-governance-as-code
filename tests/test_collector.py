@@ -9,9 +9,9 @@ from __future__ import annotations
 
 import re
 
-from conftest import ROOT
+from conftest import DATA
 
-COLLECTOR = ROOT / "collectors" / "powershell" / "sharepoint" / "Get-SpoEvidence.ps1"
+COLLECTOR = DATA / "collectors" / "powershell" / "sharepoint" / "Get-SpoEvidence.ps1"
 
 #: Verb-Noun forms that change something. Matched on the PnP and Graph command
 #: surfaces, where a mutation is always one of these verbs.

@@ -85,6 +85,8 @@ def _provenance_lines(run: Run) -> list[str]:
         f"- Source: {prov.get('source_system', '?')}"
         + (f" via {prov['source_api']}" if prov.get("source_api") else ""),
     ]
+    if run.rule_source:
+        lines.append(f"- Rules: {run.rule_source}")
     identity = prov.get("identity_kind")
     if identity == "imported":
         source = prov.get("import_source", {})

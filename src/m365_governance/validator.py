@@ -17,8 +17,12 @@ from pathlib import Path
 from jsonschema import Draft202012Validator, FormatChecker
 
 from .loader import DocumentError, LoadedRule, load_json, load_rules
+from .resources import packaged
 
-SCHEMA_DIR = Path(__file__).resolve().parents[2] / "schemas"
+# The same defect as the collector path, in the layer that would have made
+# every other command fail silently: anchored to `__file__`, correct from
+# `src/`, and pointing at `<prefix>/schemas` from site-packages.
+SCHEMA_DIR = packaged("schemas")
 
 INTERPOLATION = re.compile(r"\{([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)\}")
 

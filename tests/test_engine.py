@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from conftest import evidence, sabotage
+from conftest import DATA, evidence, sabotage
 from m365_governance.engine import evaluate_rule, resolve
 from m365_governance.results import Outcome
 
@@ -353,10 +353,9 @@ def test_no_rule_calls_a_page_classic():
     """The collector reports pages in the library that the modern API did not
     return. A page can be absent from that list for reasons other than being
     classic, and naming the count would be the inference this refuses."""
-    from conftest import ROOT
     from m365_governance.loader import load_rules
 
-    for loaded in load_rules(ROOT / "rules"):
+    for loaded in load_rules(DATA / "rules"):
         text = loaded.path.read_text().lower()
         for path in ("classic_pages", "classic_page_count"):
             assert path not in text, f"{loaded.path.name} reads {path}"
@@ -393,10 +392,9 @@ def test_a_package_id_is_not_a_component_id():
     package_ids = {s["id"] for s in catalog}
     assert package_ids == {"9a131334-3761-4a3c-a892-e9213a74cb7e"}
 
-    from conftest import ROOT
     from m365_governance.loader import load_rules
 
-    for loaded in load_rules(ROOT / "rules"):
+    for loaded in load_rules(DATA / "rules"):
         text = loaded.path.read_text().lower()
         for forbidden in ("unused", "orphan", "not in use", "web_part_id"):
             assert forbidden not in text or "no rule" in text, (

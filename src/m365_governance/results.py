@@ -168,6 +168,11 @@ class Run:
     #: Set when a profile put this resource below the fold. The findings are
     #: still here, still counted, still printed.
     set_aside: bool = False
+    #: Where the rules came from: shipped with this version, or a path the
+    #: caller supplied. A finding produced by rules nobody can identify is not
+    #: reproducible, so this travels with the result rather than being known
+    #: only by whoever typed the command.
+    rule_source: str = ""
 
     def counts(self) -> dict[str, int]:
         tally = {o.value: 0 for o in Outcome}
@@ -185,6 +190,7 @@ class Run:
             resource_class=data.get("resource_class", ""),
             class_reason=data.get("class_reason", ""),
             set_aside=data.get("set_aside", False),
+            rule_source=data.get("rule_source", ""),
         )
 
     def to_dict(self) -> dict:
@@ -195,6 +201,7 @@ class Run:
             "resource_class": self.resource_class,
             "class_reason": self.class_reason,
             "set_aside": self.set_aside,
+            "rule_source": self.rule_source,
             "counts": self.counts(),
             "results": [r.to_dict() for r in self.results],
         }

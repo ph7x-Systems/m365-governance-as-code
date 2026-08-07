@@ -27,11 +27,25 @@ from . import inspect as inspect_module
 from .engine import evaluate
 from .loader import DocumentError, load_evidence, load_profile, load_rules
 from .reporting import many_to_json, many_to_markdown, to_html, to_json, to_markdown
+from .resources import Source, resolve
 from .results import Outcome, Run
 from .validator import validate_evidence_document, validate_rules
 
-DEFAULT_RULES = Path("rules")
-DEFAULT_PROFILE = Path("profiles/default.yaml")
+#: `None` means "use what shipped with this version". A path means "use
+#: exactly this, and nothing else". There is no third option: the packaged set
+#: and a supplied set are never merged, because a rule set assembled from both
+#: exists only in the memory of whoever typed the command.
+#:
+#: These were `Path("rules")` and `Path("profiles/default.yaml")`, resolved
+#: against the working directory, which is why an installed copy could not
+#: find its own rules.
+RULES_HELP = (
+    "a directory of rule files. Omit to use the rules that shipped with this "
+    "version; supplying one replaces them entirely rather than adding to them"
+)
+PROFILE_HELP = (
+    "a profile file. Omit to use the packaged default, which selects every rule"
+)
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -45,13 +59,13 @@ def _build_parser() -> argparse.ArgumentParser:
     listing = sub.add_parser(
         "list-rules", help="every rule, with the kind of claim it makes"
     )
-    listing.add_argument("--rules", type=Path, default=DEFAULT_RULES)
+    listing.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
 
     showing = sub.add_parser(
         "show-rule", help="one rule in full, including what it does not establish"
     )
     showing.add_argument("rule_id", metavar="ID")
-    showing.add_argument("--rules", type=Path, default=DEFAULT_RULES)
+    showing.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
 
     collect = sub.add_parser(
         "collect",
@@ -99,7 +113,12 @@ def _build_parser() -> argparse.ArgumentParser:
     doc = sub.add_parser(
         "doctor", help="what is wrong with this installation, before you ask"
     )
-    doc.add_argument("--root", type=Path, default=Path("."))
+    doc.add_argument(
+        "--root",
+        type=Path,
+        default=None,
+        help="check content in this directory instead of what is packaged",
+    )
 
     stats = sub.add_parser(
         "stats", help="what a collector managed to see, before evaluating it"
@@ -109,14 +128,14 @@ def _build_parser() -> argparse.ArgumentParser:
     validate = sub.add_parser(
         "validate", help="check every rule against the schemas and the invariants"
     )
-    validate.add_argument("--rules", type=Path, default=DEFAULT_RULES)
+    validate.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
 
     evaluate_cmd = sub.add_parser(
         "evaluate", help="run rules against an evidence document"
     )
-    evaluate_cmd.add_argument("--rules", type=Path, default=DEFAULT_RULES)
+    evaluate_cmd.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
     evaluate_cmd.add_argument("--evidence", type=Path, required=True)
-    evaluate_cmd.add_argument("--profile", type=Path, default=DEFAULT_PROFILE)
+    evaluate_cmd.add_argument("--profile", type=Path, default=None, help=PROFILE_HELP)
     evaluate_cmd.add_argument(
         "--format", choices=("markdown", "json", "html"), default="markdown"
     )
@@ -143,7 +162,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     diff.add_argument("before", type=Path)
     diff.add_argument("after", type=Path)
-    diff.add_argument("--rules", type=Path, default=DEFAULT_RULES)
+    diff.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
     diff.add_argument(
         "--fail-on-regression",
         action="store_true",
@@ -158,13 +177,15 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _cmd_list_rules(args) -> int:
-    print(inspect_module.list_rules(args.rules))
+    print(inspect_module.list_rules(_rule_source(args).path))
     return 0
 
 
 def _cmd_show_rule(args) -> int:
     try:
-        sys.stdout.write(inspect_module.show_rule(args.rules, args.rule_id))
+        sys.stdout.write(
+            inspect_module.show_rule(_rule_source(args).path, args.rule_id)
+        )
     except KeyError as exc:
         print(str(exc).strip('"'), file=sys.stderr)
         return 2
@@ -232,7 +253,7 @@ def _cmd_explain(args) -> int:
 
 
 def _cmd_doctor(args) -> int:
-    text, healthy = doctor_module.report(args.root.resolve())
+    text, healthy = doctor_module.report(args.root.resolve() if args.root else None)
     sys.stdout.write(text)
     return 0 if healthy else 1
 
@@ -248,9 +269,10 @@ def _cmd_stats(args) -> int:
 
 
 def _cmd_validate(args) -> int:
-    problems = validate_rules(args.rules)
+    source = _rule_source(args)
+    problems = validate_rules(source.path)
     if not problems:
-        count = len(list(args.rules.rglob("*.yaml")))
+        count = len(list(source.path.rglob("*.yaml")))
         print(f"{count} rules validated. No problems found.")
         return 0
     for problem in sorted(problems, key=lambda p: (p.layer, p.location, p.code)):
@@ -267,10 +289,25 @@ def _render(run: Run, fmt: str) -> str:
     return to_markdown(run)
 
 
+def _rule_source(args) -> Source:
+    return resolve("rules", getattr(args, "rules", None))
+
+
+def _profile_source(args) -> Source:
+    supplied = getattr(args, "profile", None)
+    if supplied is not None:
+        return Source(path=Path(supplied), origin="external")
+    return Source(
+        path=resolve("profiles", None).path / "default.yaml", origin="package"
+    )
+
+
 def _load_rules_for(args) -> list[dict]:
-    rules = [loaded.data for loaded in load_rules(args.rules)]
-    profile = getattr(args, "profile", None)
-    if profile and profile.exists():
+    rules = [loaded.data for loaded in load_rules(_rule_source(args).path)]
+    profile = _profile_source(args).path
+    if profile.exists():
+        # A profile with no `rules` key selects everything. Reading that as an
+        # empty selection would silently evaluate nothing.
         selected = load_profile(profile).get("rules")
         if selected:
             rules = [r for r in rules if r["id"] in selected]
@@ -297,7 +334,7 @@ def _set_aside_classes(profile_path: Path) -> set[str]:
 
 
 def _cmd_evaluate(args) -> int:
-    problems = validate_rules(args.rules)
+    problems = validate_rules(_rule_source(args).path)
     if problems:
         print(
             "refusing to evaluate: the rules do not validate. "
@@ -307,7 +344,7 @@ def _cmd_evaluate(args) -> int:
         return 2
 
     rules = _load_rules_for(args)
-    aside = _set_aside_classes(args.profile) if args.profile else set()
+    aside = _set_aside_classes(_profile_source(args).path)
 
     documents = _evidence_documents(args.evidence)
     runs = []
@@ -326,6 +363,7 @@ def _cmd_evaluate(args) -> int:
             return 2
         run = evaluate(rules, data)
         run.set_aside = run.resource_class in aside
+        run.rule_source = _rule_source(args).describe()
         runs.append(run)
 
     # The shape follows what was asked for, not how many files happened to be
@@ -389,8 +427,9 @@ def _cmd_report(args) -> int:
 
 
 def _cmd_diff(args) -> int:
-    before = _read_run(args.before, args.rules)
-    after = _read_run(args.after, args.rules)
+    rules_path = _rule_source(args).path
+    before = _read_run(args.before, rules_path)
+    after = _read_run(args.after, rules_path)
     sys.stdout.write(diffing.to_markdown(before, after))
 
     if args.fail_on_regression:

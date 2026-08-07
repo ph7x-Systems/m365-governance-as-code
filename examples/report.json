@@ -29,6 +29,7 @@
   "resource_class": "unknown",
   "class_reason": "only lists are classified",
   "set_aside": false,
+  "rule_source": "supplied by the caller: /Users/jtlivio/dev/m365-governance-as-code/src/m365_governance/data/rules",
   "counts": {
     "pass": 1,
     "fail": 0,

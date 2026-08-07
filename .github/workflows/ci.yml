@@ -39,14 +39,16 @@ jobs:
       - name: Validate every rule
         # Layers 1 to 4: the file is a document, one field, one file with its
         # references followed, every file together.
-        run: m365-governance validate --rules rules
+        # No `--rules`: the packaged set is what an installed copy uses, so it
+        # is what CI validates.
+        run: m365-governance validate
 
       - name: Schemas are valid JSON Schema
         run: |
           python - <<'PY'
           import json, pathlib
           from jsonschema import Draft202012Validator
-          for p in sorted(pathlib.Path("schemas").glob("*.json")):
+          for p in sorted(pathlib.Path("src/m365_governance/data/schemas").glob("*.json")):
               Draft202012Validator.check_schema(json.loads(p.read_text()))
               print(f"{p}: valid")
           PY
@@ -102,7 +104,7 @@ jobs:
         if: matrix.python-version == '3.13'
         shell: pwsh
         run: |
-          $path = 'collectors/powershell/sharepoint/Get-SpoEvidence.ps1'
+          $path = 'src/m365_governance/data/collectors/powershell/sharepoint/Get-SpoEvidence.ps1'
           $errs = $null
           [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errs)
           if ($errs) { $errs | ForEach-Object { Write-Error $_.Message }; exit 1 }
@@ -115,7 +117,80 @@ jobs:
 
       - name: Every fixture evaluates
         run: |
-          for f in fixtures/sharepoint/*.json; do
-            m365-governance evaluate --rules rules --evidence "$f" --format json > /dev/null
+          for f in src/m365_governance/data/fixtures/sharepoint/*.json; do
+            m365-governance evaluate --evidence "$f" --format json > /dev/null
           done
           echo "all fixtures evaluated"
+
+  install:
+    name: Clean install
+    runs-on: ubuntu-latest
+
+    # The gate that found the defect it exists to prevent, and the only kind
+    # that could have. Every other job runs from the repository root, so every
+    # other job agreed the product worked while `pip install` produced a
+    # command-line tool with none of its own rules, profiles, schemas or
+    # collector. Nine of ten commands failed the moment somebody stood
+    # anywhere else.
+    #
+    # A clean installation is the reference environment. The development
+    # repository is a convenience, not the execution model.
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Build the wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel -o dist
+
+      - name: The wheel carries the product
+        run: |
+          python - <<'PY'
+          import glob, zipfile, collections, sys
+          names = zipfile.ZipFile(glob.glob("dist/*.whl")[0]).namelist()
+          found = collections.Counter(
+              n.split("/")[2]
+              for n in names
+              if n.startswith("m365_governance/data/") and n.count("/") > 2
+          )
+          missing = [d for d in ("rules", "profiles", "schemas", "collectors", "fixtures")
+                     if not found.get(d)]
+          print(dict(found))
+          if missing:
+              sys.exit(f"the wheel is missing {missing}: the package does not contain the product")
+          PY
+
+      - name: Install it into an empty environment
+        run: |
+          python -m venv /tmp/gate
+          /tmp/gate/bin/pip install dist/*.whl
+
+      - name: Run the product from outside any checkout
+        # `cd /tmp/empty` is the whole point. Run from the repository and this
+        # step proves nothing at all.
+        run: |
+          mkdir -p /tmp/empty && cd /tmp/empty
+          G=/tmp/gate/bin/m365-governance
+          $G doctor
+          $G list-rules
+          $G validate
+          FIXTURE=$(/tmp/gate/bin/python -c 'from m365_governance.resources import packaged; print(packaged("fixtures")/"sharepoint"/"list-over-limit.json")')
+          $G evaluate --evidence "$FIXTURE" --format json > /dev/null
+          $G collect sites --dry-run --tenant-url https://x-admin.sharepoint.com \
+            --client-id 00000000-0000-0000-0000-000000000000 --output out.json
+
+      - name: No path reaches back into the checkout
+        run: |
+          mkdir -p /tmp/empty && cd /tmp/empty
+          /tmp/gate/bin/m365-governance doctor > doctor.txt
+          if grep -q "${GITHUB_WORKSPACE}" doctor.txt; then
+            echo "::error::the installed product resolves a path inside the checkout"
+            cat doctor.txt
+            exit 1
+          fi
+          echo "every path stays inside the installation"

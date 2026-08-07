@@ -127,13 +127,36 @@ Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
 ## Install
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
-pip install -r requirements-dev.txt
+pip install m365-governance-as-code
 ```
+
+The rules, profiles, schemas and the collector ship inside the package, so an
+installed copy works from any directory. Nothing resolves against a checkout.
 
 Requires Python 3.11 or later. The collector additionally requires
 PowerShell 7 and PnP.PowerShell, and is not needed to run anything below.
+
+To work on the project instead of using it:
+
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -e . && pip install -r requirements-dev.txt
+```
+
+### Your own rules
+
+The packaged set is what runs when you supply nothing. A path replaces it
+entirely:
+
+```bash
+m365-governance evaluate --rules ./my-rules --evidence ./evidence
+```
+
+**It replaces; it never merges.** Either the set that shipped with this
+version, complete, or the set you supplied, complete. A rule set assembled
+from both would exist only in the memory of whoever typed the command, and two
+runs of the same version would stop meaning the same thing. Every report says
+which of the two it used.
 
 ---
 
@@ -142,13 +165,15 @@ PowerShell 7 and PnP.PowerShell, and is not needed to run anything below.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pip install -e .                     # 1. install
-m365-governance doctor               # 2. is anything broken here
-m365-governance list-rules           # 3. what is in this repository
+pip install m365-governance-as-code   # 1. install
+m365-governance doctor                # 2. is anything broken here
+m365-governance list-rules            # 3. what ships with this version
 m365-governance show-rule SPO-LIST-001
-m365-governance evaluate \
-  --rules rules --evidence fixtures/sharepoint/list-over-limit.json
+m365-governance evaluate --evidence <an-evidence-file.json>
 ```
+
+Example evidence ships with the package. `m365-governance doctor` prints where
+it lives.
 
 `explain unknown` is the one to run second. The project rests on six words
 being different from each other, and the difference between "we could not read

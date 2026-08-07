@@ -25,7 +25,7 @@ import json
 
 import pytest
 
-from conftest import ROOT
+from conftest import DATA, ROOT
 
 EXTERNAL = ROOT / "tests" / "external"
 
@@ -150,7 +150,7 @@ def test_no_sarif_mapping_exists_yet():
 # The recording that makes the rule retroactive
 # ---------------------------------------------------------------------------
 
-COLLECTOR = ROOT / "collectors" / "powershell" / "sharepoint" / "Get-SpoEvidence.ps1"
+COLLECTOR = DATA / "collectors" / "powershell" / "sharepoint" / "Get-SpoEvidence.ps1"
 
 #: `Get-PnPSite -Includes X` loads a property of the CSOM type, so which type
 #: each cmdlet returns decides which recorded set the names are checked

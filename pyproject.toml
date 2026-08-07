@@ -12,7 +12,7 @@ license = { file = "LICENSE" }
 authors = [{ name = "pH7x Systems", email = "support@ph7x.com" }]
 keywords = ["microsoft-365", "sharepoint", "governance", "policy-as-code"]
 classifiers = [
-  "Development Status :: 3 - Alpha",
+  "Development Status :: 4 - Beta",
   "Intended Audience :: System Administrators",
   "Programming Language :: Python :: 3",
 ]
@@ -23,9 +23,23 @@ m365-governance = "m365_governance.cli:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
+# The product's content ships inside the package. Without this the wheel holds
+# the Python module and none of the rules, profiles, schemas or collectors it
+# exists to run, and nine of ten commands fail outside a checkout.
+include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"m365_governance.data" = [
+  "rules/**/*.yaml",
+  "profiles/*.yaml",
+  "schemas/*.json",
+  "collectors/**/*.ps1",
+  "fixtures/**/*.json",
+  "fixtures/**/*.md",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

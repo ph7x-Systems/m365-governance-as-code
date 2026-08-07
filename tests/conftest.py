@@ -15,9 +15,17 @@ import pytest
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
-RULES = ROOT / "rules"
-FIXTURES = ROOT / "fixtures" / "sharepoint"
-SCHEMAS = ROOT / "schemas"
+
+#: The product's content lives inside the package, so that an installed copy
+#: carries it. The tests read the same files the package ships rather than a
+#: second copy at the repository root: two copies would drift, and the one the
+#: tests agreed with would be the one nobody installs.
+DATA = ROOT / "src" / "m365_governance" / "data"
+RULES = DATA / "rules"
+FIXTURES = DATA / "fixtures" / "sharepoint"
+SCHEMAS = DATA / "schemas"
+PROFILES = DATA / "profiles"
+COLLECTORS = DATA / "collectors"
 
 
 def rule(rule_id: str) -> dict:

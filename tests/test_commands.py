@@ -11,14 +11,14 @@ import json
 
 import pytest
 
-from conftest import FIXTURES, ROOT, evidence
+from conftest import DATA, FIXTURES, ROOT, evidence
 from m365_governance import diffing, doctor, inspect
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
 from m365_governance.reporting import to_html, to_markdown
 from m365_governance.results import Outcome, Run
 
-RULES = ROOT / "rules"
+RULES = DATA / "rules"
 
 
 def run(capsys, *argv) -> tuple[int, str, str]:
@@ -111,14 +111,17 @@ def test_show_rule_says_when_no_source_is_required(capsys):
 # ---------------------------------------------------------------------------
 
 
-def test_doctor_is_healthy_on_this_repository(capsys):
-    code, out, _ = run(capsys, "doctor", "--root", str(ROOT))
+def test_doctor_is_healthy_against_the_packaged_content(capsys):
+    """No `--root`, on purpose. `doctor` describes the installation, which is
+    what somebody running it is asking about; pointing it at a checkout was
+    how the product came to depend on one."""
+    code, out, _ = run(capsys, "doctor")
     assert code == 0
     assert "Nothing is broken." in out
 
 
 def test_doctor_reports_what_it_found_and_not_only_that_it_liked_it(capsys):
-    _, out, _ = run(capsys, "doctor", "--root", str(ROOT))
+    _, out, _ = run(capsys, "doctor")
     import platform
 
     assert platform.python_version() in out
@@ -129,8 +132,8 @@ def test_doctor_fails_when_a_rule_is_broken(tmp_path):
     """A rule that does not validate is a broken installation, not a warning."""
     import shutil
 
-    shutil.copytree(ROOT / "schemas", tmp_path / "schemas")
-    shutil.copytree(ROOT / "profiles", tmp_path / "profiles")
+    shutil.copytree(DATA / "schemas", tmp_path / "schemas")
+    shutil.copytree(DATA / "profiles", tmp_path / "profiles")
     (tmp_path / "rules").mkdir()
     (tmp_path / "rules" / "BAD-RULE-001.yaml").write_text("id: nonsense\n")
 
@@ -149,7 +152,7 @@ def test_a_missing_collector_is_not_a_failure(tmp_path):
 def test_doctor_catches_a_profile_selecting_a_rule_that_does_not_exist(tmp_path):
     import shutil
 
-    shutil.copytree(ROOT / "rules", tmp_path / "rules")
+    shutil.copytree(DATA / "rules", tmp_path / "rules")
     (tmp_path / "profiles").mkdir()
     (tmp_path / "profiles" / "default.yaml").write_text(
         "name: default\nrules:\n  - SPO-GHOST-404\n"
@@ -372,7 +375,7 @@ def test_the_reading_commands_never_reach_a_conclusion(capsys):
     verdicts = {Outcome.PASS.value, Outcome.FAIL.value}
     for argv in (
         ["list-rules", "--rules", str(RULES)],
-        ["doctor", "--root", str(ROOT)],
+        ["doctor"],
         ["stats", str(FIXTURES / "site-two-owners.json")],
     ):
         _, out, _ = run(capsys, *argv)
@@ -566,24 +569,24 @@ def test_the_default_profile_runs_every_rule():
 
     from m365_governance.loader import load_rules
 
-    profile = yaml.safe_load((ROOT / "profiles" / "default.yaml").read_text())
+    profile = yaml.safe_load((DATA / "profiles" / "default.yaml").read_text())
     assert "rules" not in profile, (
         "the default profile selects rules by name again. An absent selection "
         "means every rule; a list means the next rule added is excluded in "
         "silence."
     )
 
-    on_disk = {loaded.data["id"] for loaded in load_rules(ROOT / "rules")}
+    on_disk = {loaded.data["id"] for loaded in load_rules(DATA / "rules")}
     ran = {
         result.rule_id
         for result in evaluate(
-            [loaded.data for loaded in load_rules(ROOT / "rules")],
+            [loaded.data for loaded in load_rules(DATA / "rules")],
             evidence("list-within-limit"),
         ).results
     }
     lists_only = {
         loaded.data["id"]
-        for loaded in load_rules(ROOT / "rules")
+        for loaded in load_rules(DATA / "rules")
         if loaded.data["resource_type"] == "list"
     }
     assert ran == lists_only, f"rules on disk: {on_disk}, evaluated: {ran}"
@@ -608,7 +611,7 @@ def test_no_command_asks_for_support(capsys):
         ["list-rules", "--rules", str(RULES)],
         ["show-rule", "SPO-SITE-001", "--rules", str(RULES)],
         ["explain", "all"],
-        ["doctor", "--root", str(ROOT)],
+        ["doctor"],
         ["stats", str(FIXTURES / "site-two-owners.json")],
         ["validate", "--rules", str(RULES)],
         [
@@ -668,7 +671,7 @@ def test_no_rule_or_schema_mentions_support():
     """A rule is a claim about a tenant. Nothing else belongs in one."""
     from m365_governance.loader import load_rules
 
-    for loaded in load_rules(ROOT / "rules"):
+    for loaded in load_rules(DATA / "rules"):
         text = loaded.path.read_text().lower()
         for word in SUPPORT:
             assert word not in text, f"{loaded.path.name} mentions {word!r}"
@@ -697,7 +700,7 @@ def test_every_slice_names_the_profile_that_reads_it(capsys):
     for facts nobody requested."""
     from m365_governance import collecting
 
-    profiles = {p.stem for p in (ROOT / "profiles").glob("*.yaml")}
+    profiles = {p.stem for p in (DATA / "profiles").glob("*.yaml")}
     for chosen in collecting.SLICES.values():
         assert chosen.profile in profiles, (
             f"slice {chosen.name} points at profile {chosen.profile}, "
@@ -778,7 +781,7 @@ def test_no_profile_overrides_a_basis_or_a_severity():
     comparable across profiles and the basis gets reviewed twice."""
     import yaml
 
-    for path in sorted((ROOT / "profiles").glob("*.yaml")):
+    for path in sorted((DATA / "profiles").glob("*.yaml")):
         profile = yaml.safe_load(path.read_text()) or {}
         # `set_aside_classes` is presentation: it moves a resource down the
         # page and changes no outcome. Anything beyond this set would be a
@@ -795,8 +798,8 @@ def test_every_profile_selects_rules_that_exist():
 
     from m365_governance.loader import load_rules
 
-    known = {loaded.data["id"] for loaded in load_rules(ROOT / "rules")}
-    for path in sorted((ROOT / "profiles").glob("*.yaml")):
+    known = {loaded.data["id"] for loaded in load_rules(DATA / "rules")}
+    for path in sorted((DATA / "profiles").glob("*.yaml")):
         profile = yaml.safe_load(path.read_text()) or {}
         for rule_id in profile.get("rules") or []:
             assert rule_id in known, (
@@ -815,7 +818,7 @@ def test_a_profile_cuts_the_noise_without_hiding_a_finding(capsys):
         "--rules",
         str(RULES),
         "--profile",
-        str(ROOT / "profiles" / "sharing.yaml"),
+        str(DATA / "profiles" / "sharing.yaml"),
         "--evidence",
         str(FIXTURES / "site-sharing-anyone-default-anyone.json"),
         "--format",
@@ -845,7 +848,7 @@ def test_each_slice_is_paired_with_a_profile_that_can_answer_it():
 
     for chosen in collecting.SLICES.values():
         profile = yaml.safe_load(
-            (ROOT / "profiles" / f"{chosen.profile}.yaml").read_text()
+            (DATA / "profiles" / f"{chosen.profile}.yaml").read_text()
         )
         # A profile with no `rules` key selects everything, which is what
         # `default` is for. Reading that as an empty selection would let a
@@ -923,7 +926,7 @@ def test_setting_aside_cannot_hide_a_failure(capsys, tmp_path):
         "--rules",
         str(RULES),
         "--profile",
-        str(ROOT / "profiles" / "capacity.yaml"),
+        str(DATA / "profiles" / "capacity.yaml"),
         "--evidence",
         str(tmp_path),
         "--format",
@@ -948,7 +951,7 @@ def test_a_set_aside_resource_is_still_evaluated(capsys, tmp_path):
         "--rules",
         str(RULES),
         "--profile",
-        str(ROOT / "profiles" / "capacity.yaml"),
+        str(DATA / "profiles" / "capacity.yaml"),
         "--evidence",
         str(tmp_path),
         "--format",
@@ -978,7 +981,7 @@ def test_the_report_counts_resources_by_class(capsys, tmp_path):
         "--rules",
         str(RULES),
         "--profile",
-        str(ROOT / "profiles" / "capacity.yaml"),
+        str(DATA / "profiles" / "capacity.yaml"),
         "--evidence",
         str(tmp_path),
     )
@@ -992,7 +995,7 @@ def test_no_profile_excludes_anything():
     """`set_aside_classes` is the only class key, and it is not `exclude`."""
     import yaml
 
-    for path in sorted((ROOT / "profiles").glob("*.yaml")):
+    for path in sorted((DATA / "profiles").glob("*.yaml")):
         profile = yaml.safe_load(path.read_text()) or {}
         for forbidden in ("exclude_classes", "exclude", "skip", "ignore"):
             assert forbidden not in profile, (

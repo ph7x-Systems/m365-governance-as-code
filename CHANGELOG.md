@@ -10,6 +10,44 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
+P0.1 from [docs/PRODUCT-STRATEGY.md](docs/PRODUCT-STRATEGY.md): self-contained
+installation. Before this, `pip install` produced a command-line tool with none
+of its own content, and `explain` was the only command of ten that worked
+outside a checkout.
+
+### Added
+
+- **The product ships inside the package.** `rules/`, `profiles/`,
+  `schemas/`, `collectors/` and `fixtures/` moved to
+  `src/m365_governance/data/` and are declared as package data, reached
+  through `importlib.resources`.
+- **A clean-install job in CI.** It builds the wheel, checks the wheel
+  actually carries the content, installs it into an empty environment,
+  changes to a directory that is not a checkout, and runs `doctor`,
+  `list-rules`, `validate`, `evaluate` and `collect --dry-run` there. A final
+  step fails if any path in the output reaches back into the workspace.
+- **`--rules` and `--profile` are overrides, not defaults.** Omitted, the
+  packaged set is used. Supplied, it is replaced entirely. **There is never a
+  merge**, and every report now carries a `Rules:` line saying which of the
+  two produced the findings.
+- `resources.py`, `tests/test_resources.py`, and a `Installation` group in
+  `doctor` reporting whether the installed package contains its own content.
+
+### Fixed
+
+- **`doctor` reported the default profile as selecting 0 of 16 rules** and
+  then printed "Nothing is broken". A profile with no `rules` key selects
+  every rule; the count read the raw value.
+- **Two path defects, and the second was the dangerous one.**
+  `Path("rules")` resolved against the working directory and failed loudly.
+  `Path(__file__).resolve().parents[2] / "collectors"` was anchored to
+  `__file__`, was correct from `src/`, and pointed at
+  `lib/python3.x/collectors` from site-packages: plausible, and absent. A
+  test now walks the AST of every module in the package and fails on any
+  `.parents[n]`, rather than searching the text, because two modules describe
+  the defect in prose so that it is not repeated.
+- `Development Status` classifier read `3 - Alpha` beside `version = 1.0.0b1`.
+
 Epic B opened on the `1.0.0-beta.1` baseline. See
 [docs/EPIC-B.md](docs/EPIC-B.md). Milestone A is closed and does not reopen.
 

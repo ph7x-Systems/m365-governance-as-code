@@ -18,13 +18,14 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-COLLECTOR = (
-    Path(__file__).resolve().parents[2]
-    / "collectors"
-    / "powershell"
-    / "sharepoint"
-    / "Get-SpoEvidence.ps1"
-)
+from .resources import packaged
+
+# Asked of the import system, not derived from this file's position. The
+# previous form was `Path(__file__).resolve().parents[2] / "collectors" / ...`,
+# which is right from `src/m365_governance/` and points at
+# `lib/python3.x/collectors` from site-packages: plausible, anchored to
+# `__file__` rather than to the working directory, and absent.
+COLLECTOR = packaged("collectors") / "powershell" / "sharepoint" / "Get-SpoEvidence.ps1"
 
 
 @dataclass(frozen=True)
