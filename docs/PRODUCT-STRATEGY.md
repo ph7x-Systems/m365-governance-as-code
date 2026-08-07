@@ -14,6 +14,18 @@ one end to the other without being told which part is missing.
 **No new rule is written until the Must list in §6 is closed.** The product
 does not need more claims. It needs the ones it has to survive being used.
 
+> **A clean installation is the reference environment. The development
+> repository is a convenience, not the execution model.**
+
+The second principle, and it arrived by accident. Every test in this project
+runs from the repository root, and so every test agreed that the product
+worked. Installing it into an empty virtual environment took one command and
+disagreed immediately.
+
+A tool that only works when it is run from the root of a git checkout is not a
+product yet. It is a development project that happens to have a command name.
+**Nothing verified only from inside the repository counts as verified.**
+
 ---
 
 Every claim below was checked by running the product, not by reading it. Where
@@ -260,12 +272,20 @@ rather than asserted.
 | Candidate | Without it, can the product be used consistently? | Verdict |
 |---|---|---|
 | The loop closing at tenant scale | **No.** `evaluate` emits a shape its own sibling commands reject. | **P0** |
-| An installed copy that contains its rules | **No.** Nine of ten commands fail outside a clone. | **P0** |
+| A self-contained installation | **No.** The product is not relocatable: nine of ten commands fail outside a clone. | **P0** |
 | A clean install proven off this machine | **No.** It is the only thing that can establish the above. | **P0** |
 | `doctor` reporting the default profile truthfully | **No.** It misstates the configuration and then says nothing is broken. | **P0** |
 | `collect spfx` | **No.** A rule and a profile exist that no command can feed. | **P0** |
 | Schema `$id`s resolving | **Yes.** Validation never fetches them; everything works. | Should |
 | Application authentication | **Yes.** Delegated collection works and declares its own limits. | P1 |
+
+The identity question has its own test, and it is not the same one:
+
+> **Is the product consistent with the identity it used?**
+
+Today it is. Every document records `identity_kind`, coverage and provenance,
+so a result is reproducible within the scope that produced it. Application
+authentication widens the scope. It does not repair an inconsistency.
 
 ### Must before 1.0 — P0
 
@@ -289,13 +309,37 @@ Run-level coverage belongs here rather than with application authentication. A
 report over 47 sites that says 47 without saying "of 53" is the inconsistency;
 a wider identity would make it rarer without making it honest.
 
-**2. An installed copy that contains the product.** Not a distribution
-question. `pip install .` today produces a CLI whose rules, profiles, schemas
-and collector are absent, because `pyproject.toml` declares no package data.
-On a clean install, `explain` is the only command of ten that works.
+**2. Self-contained installation.** The product is not relocatable. That is
+the finding, and it is larger than "it is not on PyPI".
 
-Publishing to PyPI is what happens *after* this, not instead of it. A tag and
-a release follow the same way.
+`pip install` must produce a working tool that depends on nothing in the
+repository tree. Closed when all six hold, checked from a directory that is
+not a checkout:
+
+- `doctor` runs and finds what it is checking;
+- `list-rules` runs;
+- `validate` finds the schemas;
+- `evaluate` finds the profiles and the rules;
+- `collect` finds the collectors;
+- **no path resolves against the repository.**
+
+Two separate mechanisms break it, and the second is the more dangerous:
+
+1. **Defaults relative to the working directory.** `DEFAULT_RULES =
+   Path("rules")`, `DEFAULT_PROFILE = Path("profiles/default.yaml")`, and
+   `doctor --root` defaulting to `Path(".")`. These fail loudly, wherever you
+   stand.
+2. **A path relative to the module that assumes the source layout.**
+   `COLLECTOR = Path(__file__).resolve().parents[2] / "collectors" / ...`
+   resolves to the repository root from `src/m365_governance/`, and to
+   `lib/python3.14/collectors/...` from site-packages. It *looks*
+   relocatable, because it is anchored to `__file__` rather than to the
+   working directory, and it silently points somewhere plausible that does
+   not exist.
+
+**Only after this does PyPI mean anything.** Publishing the package as it
+stands would ship a CLI that cannot find its own rules. The tag and the
+release follow packaging; they do not substitute for it.
 
 **3. A clean install proven somewhere that is not this laptop.** It is the
 only evidence that item 2 is closed, and it is how item 2 was found in the
@@ -430,11 +474,22 @@ Objective, each one checkable by running something.
    and the limits of that proof are documented.
 9. Every example in the README reproduces, verified by `tools/examples.py
    --check` in CI.
-10. A clean install from the published artifact, on a machine that has never
+10. **A clean install is a permanent gate, not a one-off check.** CI builds
+    the artifact, installs it into an empty environment, changes to a
+    directory that is not a checkout, and runs the product there: `doctor`,
+    `list-rules`, `validate`, and an `evaluate` over a packaged fixture. It
+    fails on the first path that reaches back into the repository.
+
+    This is the gate that found the defect, and it is the only kind that could
+    have. Every existing test runs from the repository root, so every existing
+    test agreed the product worked. **A suite that only runs where the source
+    lives cannot detect that the product does not run anywhere else.**
+
+11. A clean install from the published artifact, on a machine that has never
     held this repository, producing a report from a fixture.
-11. Documentation consistent with behaviour: no capability described that
+12. Documentation consistent with behaviour: no capability described that
     running the product contradicts. This document's §3 is the template.
-12. A release candidate used against a tenant that is not the validating one.
+13. A release candidate used against a tenant that is not the validating one.
 
 ---
 
@@ -460,6 +515,12 @@ Objective, each one checkable by running something.
   since the first profile, and it is what stops the second profile of a kind
   from existing.
 - **When does the second service open, and is it Entra?**
+- **What ships inside the package, and what stays a repository artifact?**
+  Rules and profiles are the product's content and are also the thing users
+  are invited to fork and replace. Shipping them makes an install work out of
+  the box; shipping them also means a rule update needs a release. A default
+  set inside the package with an override path is the obvious answer and it
+  has not been designed.
 - **Does an importer belong in this repository at all**, or is an adapter that
   emits the schema better off separate, so that a broken export is not a
   broken release here?
