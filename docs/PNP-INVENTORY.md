@@ -67,9 +67,8 @@ domain worth opening rather than a rule worth writing:
 
 ```
 engine     a collector mode and a rule, if Microsoft documents guidance
-site       Knowledge on how the permission is read; a Guide chapter on what an
-           over-granted scope costs at migration
-Workbench  a finding whose evidence is a scope somebody can see
+content    how the permission is read, and what an over-granted scope costs
+           at migration
 upstream   the samples delete unused permissions; nothing inventories them
            against what solutions actually use
 ```
