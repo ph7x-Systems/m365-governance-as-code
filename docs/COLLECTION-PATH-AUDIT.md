@@ -207,3 +207,46 @@ Microsoft's documentation, whether any tenant-level sharing setting carries
 published guidance. If one does, it justifies both the rule and the collection,
 in that order. If none does, the tenant level is a `convention` decision with
 product impact, and that belongs to the owner rather than to the executor.
+
+---
+
+## The normative question, answered
+
+**2026-08-08.** The blocking question was whether Microsoft publishes guidance
+for tenant-level sharing settings, or only describes them. It publishes
+guidance, on a page that exists for that purpose:
+[Best practices for sharing files and folders with unauthenticated users](https://learn.microsoft.com/Office365/Enterprise/best-practices-anonymous-sharing),
+checked on 8 August 2026.
+
+| Tenant setting | Guidance published | Verbatim | Basis it would carry |
+|---|---|---|---|
+| `RequireAnonymousLinksExpireInDays` | **yes** | *"files are often stored … for long periods … If such files are shared with unauthenticated people, this could lead to unexpected access and changes to files in the future. To mitigate this possibility, you can configure an expiration time for Anyone links."* | `documented-guidance` |
+| `DefaultSharingLinkType` | **yes** | *"You can mitigate this risk by changing the default link setting to a link that only works for people inside your organization."* | `documented-guidance` |
+| `FileAnonymousLinkType`, `FolderAnonymousLinkType` | **yes** | *"consider setting the file permissions to View and folder permissions to View or View and upload"* | `documented-guidance` |
+| `SharingDomainRestrictionMode` | described, not recommended | the admin page explains what it does and when it is useful | `convention` if used |
+| `ShowEveryoneClaim` | **no guidance found** | — | would be `convention` |
+| `PreventExternalUsersFromResharing` | described only | *"By default, guests must have full control permission to share items externally."* | `convention` if used |
+
+Three of the eleven carry published guidance with a stated rationale. That is
+enough to justify a tenant rule and, with it, the collection it needs, built in
+the same cycle. The other eight do not, and a rule on any of them would be a
+`convention` with product impact, which is the owner's decision and not the
+executor's.
+
+**A second thing the same page settled.** It gives the exact command for the
+site-level pairing:
+
+```powershell
+Set-SPOSite -Identity … -OverrideTenantAnonymousLinkExpirationPolicy $true -AnonymousLinkExpirationInDays 15
+```
+
+The override and the number are used together, by Microsoft, in their own
+example. The property added to the collector earlier today is confirmed as the
+right one, and the reading in the section above is confirmed as correct: the
+days are meaningless without the flag.
+
+**Still not settled:** what `0` means in either field. The admin interface
+presents expiry as a checkbox plus a number, which suggests the number is only
+read when the box is ticked, but no page states it and the suggestion is not a
+source. A tenant rule should therefore be written on *whether expiry is
+required at all*, not on the number, until that is proven.
