@@ -159,3 +159,51 @@ guesses is worse than no rule: it produces a finding somebody acts on.
 resource of their own. That is a new collection path rather than a new
 property, and it unlocks more than this one rule, because every site-level
 override becomes readable against what it overrode.
+
+---
+
+## Attempted, reverted, and the reason is the interesting part
+
+**2026-08-08.** The next step above says to collect tenant sharing settings as
+a resource of their own. It was implemented and then reverted the same hour,
+because a test refused it for exactly the right reason.
+
+The eleven tenant properties were validated on the cmdlet reference first, and
+they exist: `SharingCapability`, `DefaultSharingLinkType`,
+`DefaultLinkPermission`, `RequireAnonymousLinksExpireInDays`,
+`ExternalUserExpirationRequired`, `ExternalUserExpireInDays`,
+`SharingDomainRestrictionMode`, `PreventExternalUsersFromResharing`,
+`ShowEveryoneClaim`, `FileAnonymousLinkType`, `FolderAnonymousLinkType`. The
+rule schema takes `resource_type` as a free string, so no schema change was
+needed for a level that had never existed here.
+
+Then `test_each_slice_is_paired_with_a_profile_that_can_answer_it` failed:
+
+> *slice tenant-sharing with profile sharing: no rule even applies to a
+> tenant-sharing document*
+
+That is the mirror of the rule at the top of this page. **Never build a rule on
+a property until the collection path is proven to populate it** has a twin:
+**never add a collection path that no rule can consume.** Evidence collected
+for nobody is cost with no reader, and it ages without anyone noticing, because
+nothing fails when it goes wrong.
+
+### The dependency, stated plainly
+
+```
+tenant rule   needs   tenant evidence
+tenant slice  needs   a tenant rule
+```
+
+It is not circular, and the way out is not to relax either side. A tenant rule
+has to be justified before the collection exists, from documented guidance, and
+that justification has not been done: nothing was read that says a tenant
+*should* have `ShowEveryoneClaim` off, or that any of the eleven has a
+recommended value. Asserting one would be `convention` dressed as
+`documented-guidance`, which is the failure the basis field exists to prevent.
+
+**The real next candidate is therefore smaller and comes first:** validate, on
+Microsoft's documentation, whether any tenant-level sharing setting carries
+published guidance. If one does, it justifies both the rule and the collection,
+in that order. If none does, the tenant level is a `convention` decision with
+product impact, and that belongs to the owner rather than to the executor.
