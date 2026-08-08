@@ -10,6 +10,27 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
+### Removed
+
+- **The support link, from this repository.** The badge, the section in the
+  README, the paragraph in CONTRIBUTING and `.github/FUNDING.yml` are gone. The
+  product explains the software, documents how it is licensed today, and asks
+  for nothing; support for the writing and the research lives on ph7x.com,
+  where what is being supported is the publishing.
+
+  It was an allowed exception in the strategy guard until now, and that
+  exception is what made the ambiguity possible: *the coffee link stays* was
+  read as everywhere rather than as on the site. It is a forbidden pattern now.
+  A named exception is a decision somebody has to remember; a forbidden pattern
+  is one they cannot forget.
+
+### Added
+
+- **A result carries the rule's own title.** An id identifies; a title says
+  what was checked, and it is what a person cites in a sentence.
+
+## Unreleased
+
 P0.1 from [docs/PRODUCT-STRATEGY.md](docs/PRODUCT-STRATEGY.md): self-contained
 installation. Before this, `pip install` produced a command-line tool with none
 of its own content, and `explain` was the only command of ten that worked

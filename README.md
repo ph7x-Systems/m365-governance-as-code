@@ -1,6 +1,5 @@
 # Microsoft 365 Governance as Code
 
-[![Support: Buy Me a Coffee](https://img.shields.io/badge/Support-Buy%20Me%20a%20Coffee-FFDD00?logo=buymeacoffee&logoColor=000000)](https://buymeacoffee.com/jtlivio)
 
 > **Every governance conclusion must declare what kind of truth it is.**
 >
@@ -448,19 +447,6 @@ pedantry: `severty: high` must stop the build, not disappear.
 When you change a rule, read [docs/CHANGE-POLICY.md](docs/CHANGE-POLICY.md).
 The test is one sentence: *if a report produced yesterday would be interpreted
 differently today, the rule version must change.*
-
----
-
-## Support
-
-If this project has been useful, you can support its continued development:
-
-☕ [buymeacoffee.com/jtlivio](https://buymeacoffee.com/jtlivio)
-
-Support is entirely optional. The project remains open source and freely
-available regardless of contributions, and nothing here asks for it while you
-are using the tool: there is no message in the CLI output, none in a report,
-and none in the documentation of how anything works. A test enforces that.
 
 ---
 

@@ -603,9 +603,9 @@ def test_no_command_asks_for_support(capsys):
     """A person running a governance check is reading a finding. Nothing in
     that moment should be asking them for anything.
 
-    The link lives in the README, in CONTRIBUTING, and in the Sponsor button
-    GitHub renders from .github/FUNDING.yml. Those are places somebody goes
-    looking. Command output is not.
+    It does not live anywhere in this repository either. The product explains
+    the software and asks for nothing; support for the writing and the research
+    is on ph7x.com, where what is being supported is the publishing.
     """
     invocations = [
         ["list-rules", "--rules", str(RULES)],
@@ -658,13 +658,23 @@ def test_no_report_asks_for_support():
                 assert word not in rendered.lower()
 
 
-def test_the_link_is_where_somebody_would_look_for_it():
-    for name in ("README.md", "CONTRIBUTING.md"):
-        assert "buymeacoffee.com/jtlivio" in (ROOT / name).read_text()
+def test_the_product_repository_asks_for_nothing():
+    """The inverse of what this used to assert.
 
-    funding = ROOT / ".github" / "FUNDING.yml"
-    assert funding.exists(), "the Sponsor button comes from .github/FUNDING.yml"
-    assert "jtlivio" in funding.read_text()
+    It required the support link to be in the README, in CONTRIBUTING and in a
+    FUNDING.yml, which was right while the decision was that it belonged here.
+    The decision was that it belongs on the site: the product repository
+    explains the software, documents how it is licensed today, and asks for
+    nothing.
+    """
+    for name in ("README.md", "CONTRIBUTING.md"):
+        text = (ROOT / name).read_text().lower()
+        for word in SUPPORT:
+            assert word not in text, f"{name} asks for support: {word}"
+
+    assert not (ROOT / ".github" / "FUNDING.yml").exists(), (
+        "a FUNDING.yml renders a Sponsor button on the repository page"
+    )
 
 
 def test_no_rule_or_schema_mentions_support():

@@ -157,17 +157,6 @@ two commits.
 
 ---
 
-## Support the project
-
-This project is developed independently.
-
-If it has saved you time or helped your organisation, you can support future
-development: [buymeacoffee.com/jtlivio](https://buymeacoffee.com/jtlivio)
-
-Contributing a rule is worth more than a coffee, and neither is expected.
-
----
-
 ## What we will decline
 
 - automatic remediation, in any form, including a flag that only suggests it;

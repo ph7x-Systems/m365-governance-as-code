@@ -169,13 +169,20 @@ STRATEGY = (
     r"\bentitlement\b",
     r"\btrial\b",
     r"\bupgrade to\b",
+    # Asking for money, in any form. This repository is the product: it
+    # explains the software, documents how it is licensed today, and asks for
+    # nothing. Support for the writing and the research belongs on ph7x.com,
+    # where the thing being supported is the publishing.
+    #
+    # It was an allowed exception until 8 August 2026 and that is what made the
+    # ambiguity possible: "the coffee link stays" was read as everywhere rather
+    # than as on the site. A named exception is a decision somebody has to
+    # remember; a forbidden pattern is one they cannot forget.
+    r"\bbuymeacoffee\b",
+    r"\bbuy me a coffee\b",
+    r"\bsponsor\b",
+    r"\bdonate\b",
 )
-
-#: What is allowed, and why. The support link is not an oversight: the recorded
-#: decision is that donation links leave at the boundary to the commercial
-#: phase, not before it. Removing it now would take away the only form of
-#: reciprocity the project has while it has nothing to sell.
-ALLOWED = ("buymeacoffee", "sponsor")
 
 
 def test_the_public_repository_explains_the_software_not_the_strategy():
@@ -200,6 +207,12 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
         text=True,
         check=True,
     ).stdout.split()
+
+    # The changelog records what happened, including decisions later reversed.
+    # A changelog that cannot say "this was added" because it was afterwards
+    # removed is a changelog that lies, and this guard is about what the
+    # repository says now rather than about what it once did.
+    tracked = [name for name in tracked if name != "CHANGELOG.md"]
 
     offenders = []
     for path in (ROOT / name for name in sorted(tracked)):
