@@ -6,8 +6,8 @@
 
     You authenticate. Everything after that is automatic.
 
-        pwsh tools/validate-sandbox.ps1 -TenantUrl https://y75hx-admin.sharepoint.com `
-                                        -SiteUrl   https://y75hx.sharepoint.com `
+        pwsh tools/validate-sandbox.ps1 -TenantUrl https://<tenant>-admin.sharepoint.com `
+                                        -SiteUrl   https://<tenant>.sharepoint.com `
                                         -ClientId  <your app id>
 
     READ-ONLY. Nothing here calls a Set-, New-, Remove-, Add-, Grant- or
@@ -125,9 +125,72 @@ catch {
     Say "**That is an answer.** A refusal is a coverage fact, not a gap in this report."
 }
 Say ""
+# ── what the run leaves behind ──────────────────────────────────────────────
+# A validation that only produces a report improves nothing permanently. This
+# writes a fixture in the shape the tenant actually returned, with every
+# identifying value replaced, so the observation becomes a test rather than a
+# memory. No real tenant data enters git.
+Say "## Fixture"
+Say ""
+$fixture = [ordered]@{
+    schema_version = '1.0'
+    provenance     = [ordered]@{
+        collected_at      = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+        collector         = 'spo-collector'
+        collector_version = '0.3.0'
+        source_system     = 'SharePoint Online'
+        source_api        = 'PnP.PowerShell / SharePoint Admin'
+        tenant_id         = 'contoso-admin.sharepoint.com'
+        identity_kind     = 'delegated'
+        scopes            = @('AllSites.Read')
+    }
+    coverage       = [ordered]@{
+        requested   = @('tenant_sharing')
+        completed   = @('tenant_sharing')
+        unavailable = [ordered]@{}
+    }
+    resource       = [ordered]@{
+        id           = 'https://contoso-admin.sharepoint.com'
+        type         = 'tenant'
+        display_name = 'https://contoso-admin.sharepoint.com'
+        url          = 'https://contoso-admin.sharepoint.com'
+    }
+    facts          = [ordered]@{
+        tenant_sharing = [ordered]@{}
+    }
+}
+
+$map = @{
+    capability               = 'SharingCapability'
+    default_link_type        = 'DefaultSharingLinkType'
+    file_anonymous_link_type = 'FileAnonymousLinkType'
+}
+foreach ($name in $map.Keys) {
+    $property = $map[$name]
+    $value = $tenant.$property
+    $fixture.facts.tenant_sharing[$name] = if ($null -eq $value -or "$value" -eq '') {
+        [ordered]@{ state = 'missing'; detail = "$property was not returned for this tenant." }
+    }
+    else {
+        [ordered]@{
+            state = 'observed'
+            value = "$value"
+            raw   = [ordered]@{ field = $property; value = "$value" }
+        }
+    }
+}
+
+$fixtureName = "tenant-sharing-observed-$((Get-Date).ToUniversalTime().ToString('yyyyMMdd')).json"
+$fixturePath = Join-Path 'src/m365_governance/data/fixtures/sharepoint' $fixtureName
+$fixture | ConvertTo-Json -Depth 12 | Set-Content -Path $fixturePath -Encoding utf8
+
+Say "Wrote ``$fixturePath``, in the shape this tenant returned."
+Say ""
+Say "**The tenant identity is replaced**, deliberately and not as an oversight: the shape is the finding, the tenant is not. What is real in it is the arrangement of states and the values the enum actually takes."
+Say ""
 Say "---"
 Say ""
-Say "**Nothing is concluded here.** Whether any of this becomes a rule is decided against Microsoft's documentation, in the open, and a cmdlet is not a reason."
+Say "**Nothing above is a verdict.** These are observations and coverage. What any of it means is the engine's answer, from this evidence."
 
 $dir = Split-Path -Parent $OutputPath
 if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }

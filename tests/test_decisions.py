@@ -224,3 +224,66 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
     assert not offenders, "commercial strategy in the public repository: " + str(
         offenders
     )
+
+
+# ---------------------------------------------------------------------------
+# a validation observes; the engine concludes
+# ---------------------------------------------------------------------------
+
+#: Words that assert a governance conclusion. A validation script may not write
+#: any of them: it captures what a tenant returned, and what that means is the
+#: engine's answer from that evidence.
+VERDICTS = (
+    r"\bcompliant\b",
+    r"\bnon-compliant\b",
+    r"\bsecure\b",
+    r"\binsecure\b",
+    r"\bsafe\b",
+    r"\bunsafe\b",
+    r"\brisky\b",
+    r"\bgood\b",
+    r"\bbad\b",
+    r"\bhealthy\b",
+    r"\bpasses\b",
+)
+
+
+def test_a_validation_records_observations_and_never_a_verdict():
+    """The convenient failure this prevents is three months away, not today.
+
+    A validation script that starts saying `safe` or `compliant` because
+    somebody found it useful has become a second rule engine, unreviewed, with
+    no basis and no evidence requirements. The tenant is observed here; the
+    conclusion is the engine's, from the evidence this captures.
+    """
+    import re  # noqa: PLC0415
+
+    scripts = sorted((ROOT / "tools").glob("validate-*.ps1"))
+    assert scripts, (
+        "no validation script found; this guard would pass by walking nothing"
+    )
+
+    offenders = []
+    for path in scripts:
+        # The comment block names the forbidden words in order to forbid them.
+        text = path.read_text(encoding="utf-8")
+        body = text.split("#>", 1)[1] if "#>" in text else text
+        for pattern in VERDICTS:
+            for hit in re.finditer(pattern, body, re.IGNORECASE):
+                line = body.count("\n", 0, hit.start()) + 1
+                offenders.append(f"{path.name}:{line} {hit.group(0)!r}")
+
+    assert not offenders, "a validation may not conclude: " + str(offenders)
+
+
+def test_a_validation_leaves_a_fixture_with_no_tenant_in_it():
+    """A run that only produces a report improves nothing permanently.
+
+    And a fixture carrying a real tenant would put somebody's estate in a
+    public repository, so the shape is kept and the identity is replaced.
+    """
+    script = (ROOT / "tools" / "validate-sandbox.ps1").read_text(encoding="utf-8")
+
+    assert "fixtures/sharepoint" in script, "the run leaves no fixture behind"
+    assert "contoso" in script, "the fixture must carry a placeholder tenant"
+    assert "y75hx" not in script, "a real tenant name reached a tracked file"
