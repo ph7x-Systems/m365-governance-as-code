@@ -1,65 +1,57 @@
-# Next slice — the calculation
+# Next slice — the engine queue
 
-**Computed 2026-08-08, after the Sharing domain closed.**
+**Recomputed 2026-08-08**, after the Sharing domain closed.
 
-This is the executor's priority calculation, written down so it can be
-disagreed with. A calculation that only happened in a reply cannot be.
+Engine-scoped candidates only. The product queue spans three repositories and
+names work that is not public, so it lives with the platform contract rather
+than here. This page says what the engine's own next steps are, and what it
+refused.
 
-Five factors, scored 0–3, **multiplied**. Multiplication is the point: a zero
-anywhere eliminates the candidate, which is how half a capability gets refused
-arithmetically instead of by argument.
+Five factors, scored 0 to 3, **multiplied**. A zero anywhere eliminates the
+candidate, which is how an unprovable one is refused arithmetically instead of
+by argument. **Hard gates run before scoring**, and a candidate blocked by
+missing evidence or by an owner-only boundary scores zero and is deferred with
+its reason rather than offered as a choice.
 
 | # | Candidate | Value | Impact | Ready | Conn. | Mat. | **Score** | Decision |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Site-side chain for the tenant sharing facts — Knowledge, Guide, Compass, graph | 2 | 2 | 3 | 3 | 2 | **72** | **chosen** |
-| 2 | Tenant rule on *whether* Anyone links expire at all | 2 | 2 | 3 | 3 | 2 | **72** | next |
-| 3 | `SharingDomainRestrictionMode` / `PreventExternalUsersFromResharing` rules | 2 | 2 | 3 | 2 | 1 | 24 | rejected |
-| 4 | `needs-tenant-validation`: enumeration completeness | 2 | 2 | 1 | 1 | 1 | 8 | owner-only |
-| 5 | A rule on `site.sharing_capability` | 2 | 1 | 0 | 1 | 1 | **0** | blocked |
-| 6 | Open a second service | 3 | 3 | 1 | 1 | 2 | 18 | deferred |
+| 1 | Anyone link expiry at tenant level | 2 | 2 | **0** | 3 | 2 | **0** | deferred |
+| 2 | `needs-tenant-validation`: enumeration completeness | 2 | 2 | 1 | 1 | 1 | 8 | owner-only |
+| 3 | Open a second service | 3 | 3 | 1 | 1 | 2 | 18 | deferred |
 
-## Why the winner won a tie
+**Nothing in the engine is currently executable at a score worth taking**, and
+that is a result rather than a gap: SharePoint Online's seven domains all have
+rules, collectors, fixtures and tests, and the three candidates above are each
+blocked for a reason that is written down.
 
-Candidates 1 and 2 both score 72. Tie-break rule 3 decides it: **close a
-domain rather than open one.** Candidate 1 finishes a slice that is already
-half-built; candidate 2 starts a new one. Three half-domains is the failure
-mode the strategy names, and the contract's clause 8 says a slice is complete
-only when every affected layer is coherent. The Governance half of Sharing
-shipped; the Knowledge, Guide, Compass and graph half did not.
+## 1 — Anyone link expiry
 
-Candidate 2 is second and not deferred: it is the same domain, its evidence
-path already exists, and it is expected to run immediately after.
+Microsoft recommends requiring expiry, and the only collectable value remains
+an `Int32` whose `0` has no documented meaning. **A rule cannot distinguish
+"expiry disabled" from any other special reading without inventing one**, and a
+rule that guesses produces a finding somebody acts on.
 
-## Why the losers lost
+Readiness 0, and the gap is exactly `0 semantics not documented`. The
+collection path is not the obstacle: the `TenantSharing` mode already exists.
+Full record in [COLLECTION-PATH-AUDIT.md](COLLECTION-PATH-AUDIT.md).
 
-**3 — the other tenant sharing settings.** `SharingDomainRestrictionMode` is
-described by Microsoft and not recommended; `PreventExternalUsersFromResharing`
-likewise. A rule on either would carry `convention` while looking like
-guidance. Maturity 1 because a convention with product impact is the owner's
-decision, not the executor's. **Rejected, not deferred:** nothing will change
-this except the owner deciding, so leaving it in the queue would be pretending
-otherwise.
+> **A closed domain may contain deferred candidates.** Sharing is closed on
+> data. This does not hold it open and does not reopen it. It reopens when
+> Microsoft documents the value, or a tenant observation settles it.
 
-**4 — enumeration completeness.** Readiness 1: it needs an interactive tenant
-run, which is owner-only and never a device-code session. Not a blocker for
-anything shipping — no live rule depends on the answer.
+## 2 — enumeration completeness
 
-**5 — a rule on `site.sharing_capability`.** Readiness **0**, so the product is
-zero and the arithmetic eliminates it without argument. The property comes from
-the enumeration path whose completeness candidate 4 exists to settle. The safe
-value for the same question already exists at `sharing.capability`, and
-`SPO-SHARE-001` uses it.
+Needs an interactive tenant run, which is owner-only and never a device-code
+session. Not a blocker: no live rule depends on the answer.
 
-**6 — a second service.** Readiness 1: SharePoint Online is not finished, and
-the strategy is explicit that three products at once, none of them deep, is
-the failure mode. High value and high impact do not rescue a low readiness,
-which is the arithmetic working as intended.
+## 3 — a second service
 
-## What the next calculation will look like different
+SharePoint Online is not finished, and three products at once, none of them
+deep, is the failure mode the strategy names. High value and high impact do not
+rescue low readiness, which is the arithmetic working as intended.
 
-Every completed cycle changes the inputs. After candidate 1 ships, its
-connectivity contribution is spent; after candidate 2 ships, the Sharing
-domain has nothing above 24 left, and the queue moves to whichever domain
-scores highest on a repository that no longer looks like this one.
+---
 
-**The queue is recomputed, not followed.**
+**The queue is recomputed, not followed.** Every completed cycle changes the
+inputs, so this is regenerated from repository state rather than carried
+forward.

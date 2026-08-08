@@ -175,9 +175,22 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
     not do is publish a figure, a phase or a roadmap that nobody can act on.
     """
     import re  # noqa: PLC0415
+    import subprocess  # noqa: PLC0415
+
+    # Only what git actually carries. The first version globbed the working
+    # tree and flagged AGENTS.md, which is excluded and never leaves the
+    # machine: a guard that fails on files it does not ship teaches people to
+    # ignore it.
+    tracked = subprocess.run(
+        ["git", "ls-files", "*.md", "docs/*.md"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
 
     offenders = []
-    for path in sorted(ROOT.glob("*.md")) + sorted((ROOT / "docs").glob("*.md")):
+    for path in (ROOT / name for name in sorted(tracked)):
         text = path.read_text(encoding="utf-8")
         for pattern in STRATEGY:
             for hit in re.finditer(pattern, text, re.IGNORECASE):

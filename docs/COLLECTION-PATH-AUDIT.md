@@ -303,3 +303,39 @@ report.
 exists — and it is still not collected, because the rule that would read it
 cannot be written while `0` is undefined. **The cost of the collection was
 never the reason to wait.**
+
+---
+
+## Deferred, durably: anonymous link expiry
+
+**2026-08-08.** Scored and refused rather than left as an open intention. The
+record is here because this is where the collection path lives; the queue entry
+is in [NEXT-SLICE.md](NEXT-SLICE.md).
+
+```
+candidate   a tenant rule on whether Anyone links are required to expire
+gate        evidence integrity
+gap         0 semantics not documented
+score       0  (readiness 0 eliminates it; the product of five factors)
+status      deferred
+```
+
+Microsoft recommends configuring an expiration time for Anyone links, and the
+only collectable value is an `Int32` whose `0` carries no documented meaning.
+**Nothing available distinguishes "expiry is not required" from any other
+special reading of zero**, so a rule would have to guess, and a rule that
+guesses produces a finding somebody acts on.
+
+**The collection path is not the obstacle.** The `TenantSharing` mode already
+exists, so `RequireAnonymousLinksExpireInDays` would be one more property. It
+stays uncollected because the rule that would read it cannot be written, and
+evidence collected for nobody is cost with no reader.
+
+**What would unblock it:** Microsoft documenting the value, or a tenant
+observation that settles it empirically. The admin interface presenting expiry
+as a checkbox plus a number suggests the number is read only when the box is
+ticked, and a suggestion is not a source.
+
+**Sharing stays closed.** A closed domain may contain deferred candidates:
+deferred means today's evidence cannot support implementation, not that the
+domain is unfinished. It reopens when one of the two unblocking facts appears.
