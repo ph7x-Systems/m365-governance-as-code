@@ -162,6 +162,12 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   step "Product coverage matrix is current"
   "$PY" tools/coverage.py --check
 
+  # What can be observed against what is observed. Regenerated so the gap is
+  # measured on every release rather than remembered from the last time
+  # somebody looked at a cmdlet list.
+  step "The observable surface is measured"
+  "$PY" tools/surface.py --check
+
   # Every module loads on its own and exports what it declares. A refactor that
   # leaves a function behind passes every check above and fails here.
   step "Every module imports and exports what it declares"
