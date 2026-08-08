@@ -10,7 +10,7 @@ from __future__ import annotations
 import copy
 import json
 
-from conftest import evidence, rule, sabotage
+from conftest import ROOT, evidence, rule, sabotage
 from m365_governance.engine import evaluate, evaluate_rule
 from m365_governance.reporting import to_markdown
 from m365_governance.results import Outcome
@@ -140,3 +140,49 @@ def test_two_facts_are_expressed_as_applicability_plus_condition():
     result = evaluate_rule(list_rule, evidence("list-unique-permissions"))
     assert result.outcome is Outcome.NOT_APPLICABLE
     assert not result.outcome.is_answer
+
+
+# ---------------------------------------------------------------------------
+# public architecture, private strategy
+# ---------------------------------------------------------------------------
+
+#: What a commercial strategy leaks, and none of it helps somebody using or
+#: contributing to the project today. Published once, it is indexed, quoted and
+#: copied, and a figure written before there is anything to sell becomes a
+#: public promise the product may not want to keep a year later.
+STRATEGY = (
+    r"€\s*\d",
+    r"\$\s*\d",
+    r"\bpricing\b",
+    r"\bperpetual licen[cs]e\b",
+    r"\bbuy licen[cs]e\b",
+    r"\bpaid tier\b",
+    r"\bpurchase flow\b",
+    r"\bSublime\b",
+    r"\bWinRAR\b",
+    r"\bAvalonia\b",
+    r"\bWorkbench\b",
+    r"\bPhase [012]\b",
+)
+
+
+def test_the_public_repository_explains_the_software_not_the_strategy():
+    """The full documents exist, privately. This repository says what the
+    software is and how to use it; the commercial model lives outside it.
+
+    Not secrecy for its own sake: LICENSING.md states plainly that there is no
+    commercial licence today and what will happen when there is. What it does
+    not do is publish a figure, a phase or a roadmap that nobody can act on.
+    """
+    import re  # noqa: PLC0415
+
+    offenders = []
+    for path in sorted(ROOT.glob("*.md")) + sorted((ROOT / "docs").glob("*.md")):
+        text = path.read_text(encoding="utf-8")
+        for pattern in STRATEGY:
+            for hit in re.finditer(pattern, text, re.IGNORECASE):
+                line = text.count("\n", 0, hit.start()) + 1
+                offenders.append(f"{path.name}:{line} {hit.group(0)!r}")
+    assert not offenders, "commercial strategy in the public repository: " + str(
+        offenders
+    )

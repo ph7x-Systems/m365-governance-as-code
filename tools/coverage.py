@@ -173,22 +173,74 @@ def site_surfaces() -> dict:
     if not SITE.is_dir():
         return {"state": "missing", "detail": f"site checkout not found at {SITE}"}
 
-    areas = {
-        "knowledge": SITE / "src" / "knowledge",
-        "guide": SITE / "docs",
-        "analysis": SITE / "src" / "blog",
-        "compass": SITE / "src" / "assets",
-    }
-    found = {}
-    for name, directory in areas.items():
-        if not directory.is_dir():
-            found[name] = {"state": "missing", "detail": f"{directory} does not exist"}
-            continue
-        hits = ids_by_domain(p for p in directory.rglob("*") if p.is_file())
-        found[name] = {
+    # All four surfaces are read from the Knowledge frontmatter, because that
+    # is where the product's relations actually live and where the site's own
+    # check validates them: `next_guide` against written chapters, `next_blog`
+    # against published posts, `next_compass` as yes or no.
+    #
+    # Searching the Guide and the Compass for rule ids was wrong twice over.
+    # It missed chapter 13, which interprets two sharing facts at length and
+    # names no id, because the Guide links through the graph and not through
+    # citations. And it credited domains for ids appearing in a handover, an
+    # audit and the search index, which are not chapters and not findings.
+    # **A false positive closes a row that is open**, which is worse than the
+    # gap it hides: the queue stops asking for work that is genuinely missing.
+    # Requiring an id in a chapter would also have forced rule numbers into a
+    # book to turn a cell green.
+    articles = SITE / "src" / "knowledge"
+    if not articles.is_dir():
+        return {"state": "missing", "detail": f"{articles} does not exist"}
+
+    knowledge, guide, analysis, compass, by_slug = (
+        defaultdict(set),
+        defaultdict(set),
+        defaultdict(set),
+        defaultdict(set),
+        defaultdict(set),
+    )
+    for path in sorted(articles.rglob("*.md")):
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        head = text.split("---", 2)[1] if text.startswith("---") else ""
+
+        def listed(key: str, block: str = head) -> list[str]:
+            found = re.search(rf"^{key}:\s*\[(.*?)\]\s*$", block, re.M)
+            return [v.strip() for v in found.group(1).split(",")] if found else []
+
+        for rid in listed("related_rules"):
+            match = RULE_ID.fullmatch(rid)
+            if not match:
+                continue
+            domain, number = match.group(2), match.group(3)
+            knowledge[domain].add(number)
+            guide[domain].update(f"ch{c}" for c in listed("next_guide"))
+            analysis[domain].update(listed("next_blog"))
+            by_slug[f"{path.parent.name}/{path.stem}"].add(domain)
+
+    # Compass coverage is the finding's own route to method, in rules.json,
+    # not the article's `next_compass` flag. The flag says an article would
+    # like to reach the Compass; this says a user-facing finding actually
+    # explains itself through that article, which is what the closure
+    # criterion asks for.
+    findings = SITE / "src" / "tools" / "compass" / "rules.json"
+    if findings.is_file():
+        for slug in re.findall(
+            r'"(sharepoint/[a-z0-9-]+)"', findings.read_text("utf-8")
+        ):
+            for domain in by_slug.get(slug, ()):
+                compass[domain].add(slug)
+
+    found = {
+        name: {
             "state": "observed",
-            "by_domain": {d: sorted(v) for d, v in sorted(hits.items())},
+            "by_domain": {d: sorted(v) for d, v in hits.items()},
         }
+        for name, hits in (
+            ("knowledge", knowledge),
+            ("guide", guide),
+            ("analysis", analysis),
+            ("compass", compass),
+        )
+    }
     return {"state": "observed", "path": str(SITE), "areas": found}
 
 
@@ -232,7 +284,15 @@ def build() -> dict:
                 if result["state"] != "observed":
                     row[area] = {"state": "missing", "detail": result["detail"]}
                 else:
-                    row[area] = sorted(mine & set(result["by_domain"].get(prefix, [])))
+                    reached = set(result["by_domain"].get(prefix, []))
+                    # `knowledge` holds rule numbers, so it is narrowed to the
+                    # rules that still exist: an article citing a deleted rule
+                    # is a stale reference, not coverage. The other three hold
+                    # chapters, post slugs and article names, which have
+                    # nothing to intersect with and were being emptied by it.
+                    row[area] = sorted(
+                        mine & reached if area == "knowledge" else reached
+                    )
         else:
             for area in ("knowledge", "guide", "analysis", "compass"):
                 row[area] = {"state": "missing", "detail": site["detail"]}

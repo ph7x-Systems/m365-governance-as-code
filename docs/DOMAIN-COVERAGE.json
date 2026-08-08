@@ -12,12 +12,14 @@
         "site-activity-recent",
         "site-activity-stale"
       ],
-      "guide": [],
+      "guide": [
+        "ch2",
+        "ch4"
+      ],
       "knowledge": [
         "001"
       ],
       "missing": [
-        "guide",
         "compass"
       ],
       "name": "Activity",
@@ -37,8 +39,10 @@
       "collector_modes": [
         "Classification"
       ],
-      "compass": [],
-      "complete": false,
+      "compass": [
+        "sharepoint/detect-group-connected-sites"
+      ],
+      "complete": true,
       "fixtures": [
         "site-class-group-unlabelled",
         "site-class-label-invalid",
@@ -47,16 +51,16 @@
         "site-class-legacy-string",
         "site-class-unlabelled"
       ],
-      "guide": [],
+      "guide": [
+        "ch13",
+        "ch2"
+      ],
       "knowledge": [
         "001",
         "002",
         "003"
       ],
-      "missing": [
-        "guide",
-        "compass"
-      ],
+      "missing": [],
       "name": "Classification",
       "profiles": [
         "default"
@@ -80,7 +84,7 @@
         "UniquePermissions"
       ],
       "compass": [
-        "002"
+        "sharepoint/find-unique-permissions"
       ],
       "complete": true,
       "fixtures": [
@@ -100,8 +104,9 @@
         "list-within-limit"
       ],
       "guide": [
-        "002",
-        "003"
+        "ch13",
+        "ch2",
+        "ch3"
       ],
       "knowledge": [
         "001",
@@ -139,14 +144,15 @@
         "site-modern-publishing-on",
         "site-modern-subsite-default-master"
       ],
-      "guide": [],
+      "guide": [
+        "ch3"
+      ],
       "knowledge": [
         "001",
         "003",
         "004"
       ],
       "missing": [
-        "guide",
         "compass"
       ],
       "name": "Modernity",
@@ -172,8 +178,13 @@
         "SiteSharing",
         "TenantSharing"
       ],
-      "compass": [],
-      "complete": false,
+      "compass": [
+        "sharepoint/read-anyone-link-permissions",
+        "sharepoint/read-default-sharing-link-type",
+        "sharepoint/read-sharing-capability",
+        "sharepoint/read-tenant-default-sharing-link-type"
+      ],
+      "complete": true,
       "fixtures": [
         "site-sharing-anyone-default-anyone",
         "site-sharing-anyone-default-direct",
@@ -182,15 +193,18 @@
         "tenant-sharing-default-anyone-and-edit",
         "tenant-sharing-mitigated"
       ],
-      "guide": [],
+      "guide": [
+        "ch13",
+        "ch2",
+        "ch4"
+      ],
       "knowledge": [
         "001",
-        "002"
+        "002",
+        "003",
+        "004"
       ],
-      "missing": [
-        "guide",
-        "compass"
-      ],
+      "missing": [],
       "name": "Sharing",
       "profiles": [
         "default",
@@ -218,8 +232,10 @@
         "TenantSites",
         "UniquePermissions"
       ],
-      "compass": [],
-      "complete": false,
+      "compass": [
+        "sharepoint/get-site-collection-administrators"
+      ],
+      "complete": true,
       "fixtures": [
         "site-delegated-identity",
         "site-groups-only-admins",
@@ -232,16 +248,16 @@
         "site-two-owners"
       ],
       "guide": [
-        "001"
+        "ch13",
+        "ch2",
+        "ch4"
       ],
       "knowledge": [
         "001",
         "002",
         "003"
       ],
-      "missing": [
-        "compass"
-      ],
+      "missing": [],
       "name": "Sites and storage",
       "profiles": [
         "capacity",
@@ -260,7 +276,10 @@
       ]
     },
     "SPFX": {
-      "analysis": [],
+      "analysis": [
+        "spfx-1-23-2-upgrading-is-not-changing-a-number",
+        "why-sharepoint-framework-still-runs-on-react-17"
+      ],
       "collector_modes": [
         "Classification",
         "SpfxCatalog"
@@ -271,12 +290,13 @@
         "site-spfx-behind",
         "site-spfx-current"
       ],
-      "guide": [],
+      "guide": [
+        "ch3"
+      ],
       "knowledge": [
         "001"
       ],
       "missing": [
-        "guide",
         "compass"
       ],
       "name": "SPFx",

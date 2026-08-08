@@ -12,15 +12,15 @@ to point at it.
 
 | Domain | Rules | Collector | Profiles | Fixtures | Tests | Knowledge | Guide | Analysis | Compass | Complete |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Activity** (`ACTIVITY`) | 1 | 2 | 2 | 2 | 1 | 1 | — | — | — | **no** |
-| **Classification** (`CLASS`) | 3 | 1 | 1 | 6 | 3 | 3 | — | — | — | **no** |
-| **Modernity** (`MODERN`) | 3 | 2 | 2 | 4 | 3 | 3 | — | — | — | **no** |
-| **Permissions** (`LIST`) | 3 | 3 | 2 | 14 | 3 | 3 | 2 | — | 1 | yes |
-| **SPFx** (`SPFX`) | 1 | 2 | 2 | 2 | 1 | 1 | — | — | — | **no** |
-| **Sharing** (`SHARE`) | 4 | 3 | 3 | 6 | 4 | 2 | — | — | — | **no** |
-| **Sites and storage** (`SITE`) | 3 | 4 | 3 | 9 | 3 | 3 | 1 | — | — | **no** |
+| **Activity** (`ACTIVITY`) | 1 | 2 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
+| **Classification** (`CLASS`) | 3 | 1 | 1 | 6 | 3 | 3 | 2 | — | 1 | yes |
+| **Modernity** (`MODERN`) | 3 | 2 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
+| **Permissions** (`LIST`) | 3 | 3 | 2 | 14 | 3 | 3 | 3 | — | 1 | yes |
+| **SPFx** (`SPFX`) | 1 | 2 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
+| **Sharing** (`SHARE`) | 4 | 3 | 3 | 6 | 4 | 4 | 3 | — | 4 | yes |
+| **Sites and storage** (`SITE`) | 3 | 4 | 3 | 9 | 3 | 3 | 3 | — | 1 | yes |
 
-**18 rules across 7 domains.** 1 complete, 6 not.
+**18 rules across 7 domains.** 4 complete, 3 not.
 
 ## The Domain Completion Gate
 
@@ -29,12 +29,9 @@ half-domains, none of them deep, is the failure mode the strategy
 names, and this is the check that makes it arithmetic rather than
 judgement.
 
-- **Activity** — missing guide, compass
-- **Classification** — missing guide, compass
-- **Modernity** — missing guide, compass
-- **SPFx** — missing guide, compass
-- **Sharing** — missing guide, compass
-- **Sites and storage** — missing compass
+- **Activity** — missing compass
+- **Modernity** — missing compass
+- **SPFx** — missing compass
 
 ## Completeness by surface
 
@@ -43,9 +40,9 @@ judgement.
 - **Fixtures** 100%
 - **Tests** 100%
 - **Knowledge** 100%
-- **Guide** 29%
-- **Analysis** 0%
-- **Compass** 14%
+- **Guide** 100%
+- **Analysis** 14%
+- **Compass** 57%
 
 These are the fraction of **domains** a surface reaches, not a claim
 about how good the coverage is inside one. A domain with a single
