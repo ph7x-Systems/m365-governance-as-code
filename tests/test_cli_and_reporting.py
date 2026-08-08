@@ -221,3 +221,15 @@ def test_the_model_carries_the_whole_result_on_each_side():
             "after": "Internal",
         }
     ]
+
+
+def test_the_diff_resource_has_the_same_shape_as_every_other():
+    """Found by the Workbench refusing to parse it. A resource reference
+    without a type is not one, and emitting a narrower shape here would make
+    the diff the only document a consumer has to special-case."""
+    from m365_governance import diffing
+
+    before, after = _two_runs()
+    resource = diffing.to_dict(before, after)["resource"]
+    assert set(resource) >= {"id", "type", "display_name"}
+    assert resource["type"] == "tenant"

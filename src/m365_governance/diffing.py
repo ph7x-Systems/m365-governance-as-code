@@ -368,8 +368,13 @@ def to_dict(before: Run, after: Run) -> dict:
     return {
         "diff_schema_version": "1.0",
         "scope": "run",
+        # The same shape as every other resource reference in the product,
+        # `type` included. Emitting a narrower one here would make the diff the
+        # only document whose resource a consumer has to special-case, and the
+        # Workbench found it by refusing to parse it.
         "resource": {
             "id": after.resource.get("id") or before.resource.get("id", ""),
+            "type": after.resource.get("type") or before.resource.get("type", ""),
             "display_name": after.resource.get("display_name")
             or before.resource.get("display_name"),
         },
@@ -394,6 +399,12 @@ def to_dict(before: Run, after: Run) -> dict:
 def many_to_dict(before: RunSet, after: RunSet) -> dict:
     resources = compare_sets(before, after)
     every = [rc for change in resources for rc in change.rules]
+    # ResourceChange carries an id and a name; the type lives on the runs, and
+    # a resource reference without it is not one.
+    types = {
+        run.resource.get("id", ""): run.resource.get("type", "")
+        for run in list(before.runs) + list(after.runs)
+    }
     return {
         "diff_schema_version": "1.0",
         "scope": "run-set",
@@ -405,7 +416,11 @@ def many_to_dict(before: RunSet, after: RunSet) -> dict:
         },
         "resources": [
             {
-                "resource": {"id": r.resource_id, "display_name": r.display_name},
+                "resource": {
+                    "id": r.resource_id,
+                    "type": types.get(r.resource_id, ""),
+                    "display_name": r.display_name,
+                },
                 "kind": r.kind,
                 "changes": [_change_to_dict(c) for c in r.rules],
             }
