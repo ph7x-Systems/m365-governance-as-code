@@ -46,11 +46,34 @@ RULE_ID = re.compile(r"\b(SPO)-([A-Z]+)-(\d+)\b")
 #: The columns that come from the corporate site rather than from here.
 SITE_COLUMNS = ("knowledge", "guide", "analysis", "compass")
 
-#: The one thing that is declared rather than derived: what a domain is called.
-#: The prefix is an identifier and a heading is not, so the mapping is here
-#: with the domains it names, and `unnamed domain` appears if a new prefix
-#: arrives without one.
-DOMAIN_NAMES = {
+#: TWO LISTS, AND THEY MEAN DIFFERENT THINGS.
+#:
+#:     SUBJECT_VOCABULARY   what subjects exist
+#:     COVERAGE_DOMAINS     what the engine promises to cover end to end
+#:     domain               which subject an artefact belongs to
+#:     coverage             how complete an engine domain is
+#:
+#: They were one list, which quietly asked every subject worth writing about to
+#: also be a subject the engine covers with rules, collectors, fixtures, tests
+#: and a Compass route. Agents is the counter-example that made it visible:
+#: three articles, zero rules, and zero rules is the *correct* state there,
+#: because nothing Microsoft documents supports one yet.
+#:
+#: > **A subject does not become a coverage domain because it has content. It
+#: > becomes one only when the engine makes an explicit end-to-end coverage
+#: > commitment for it.**
+#:
+#: The asymmetry travels to whoever reads the matrix: a coverage domain missing
+#: a surface reports `0`, meaning *this obligation was measured and nothing was
+#: found*. A subject outside COVERAGE_DOMAINS reports `not defined`, meaning
+#: *this obligation does not exist here*. Same distinction as `unknown` never
+#: being `pass`.
+
+#: The authorised subject vocabulary of the whole ecosystem: engine, site,
+#: Workbench and the content graph classify against this one list. The prefix
+#: is an identifier and a heading is not, so the names live here too, and
+#: `unnamed domain` appears if a new prefix arrives without one.
+SUBJECT_VOCABULARY = {
     "ACTIVITY": "Activity",
     "CLASS": "Classification",
     "LIST": "Permissions",
@@ -58,7 +81,24 @@ DOMAIN_NAMES = {
     "SHARE": "Sharing",
     "SITE": "Sites and storage",
     "SPFX": "SPFx",
+    # Subjects, deliberately not coverage domains.
+    "AGENTS": "Agents and Copilot",
+    "PLATFORM": "Platform and evidence",
 }
+
+#: What the engine commits to covering end to end. REQUIRED below applies to
+#: these and to nothing else, so the Domain Completion Gate keeps the meaning
+#: it has always had. Adding a subject above does not add an obligation here;
+#: that is a separate, explicit decision.
+COVERAGE_DOMAINS = (
+    "ACTIVITY",
+    "CLASS",
+    "LIST",
+    "MODERN",
+    "SHARE",
+    "SITE",
+    "SPFX",
+)
 
 #: Which surfaces a domain has to reach before it may be called complete.
 #: The Domain Completion Gate reads this.
@@ -254,7 +294,7 @@ def build() -> dict:
     site = site_surfaces()
 
     domains = {}
-    for prefix in sorted(set(on_disk) | set(DOMAIN_NAMES)):
+    for prefix in sorted(set(on_disk) | set(COVERAGE_DOMAINS)):
         rules = sorted(on_disk.get(prefix, []))
         mine = {r.rsplit("-", 1)[1] for r in rules}
 
@@ -269,7 +309,7 @@ def build() -> dict:
         )
 
         row = {
-            "name": DOMAIN_NAMES.get(prefix, "unnamed domain"),
+            "name": SUBJECT_VOCABULARY.get(prefix, "unnamed domain"),
             "rules": rules,
             "profiles": owned,
             "collector_modes": modes,
@@ -306,9 +346,22 @@ def build() -> dict:
         row["complete"] = not missing
         domains[prefix] = row
 
+    # The vocabulary ships beside the matrix so the site can validate an
+    # article's `domain` against it without keeping a second copy. Each subject
+    # says whether an engine coverage obligation exists for it at all, which is
+    # what stops a reader seeing `0` where the honest answer is `not defined`.
+    subjects = {
+        prefix: {
+            "name": name,
+            "coverage": "defined" if prefix in COVERAGE_DOMAINS else "not defined",
+        }
+        for prefix, name in sorted(SUBJECT_VOCABULARY.items())
+    }
+
     return {
         "generated_by": "tools/coverage.py",
         "site_repository": site["state"],
+        "subjects": subjects,
         "domains": domains,
     }
 

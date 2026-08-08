@@ -314,5 +314,43 @@
     }
   },
   "generated_by": "tools/coverage.py",
-  "site_repository": "observed"
+  "site_repository": "observed",
+  "subjects": {
+    "ACTIVITY": {
+      "coverage": "defined",
+      "name": "Activity"
+    },
+    "AGENTS": {
+      "coverage": "not defined",
+      "name": "Agents and Copilot"
+    },
+    "CLASS": {
+      "coverage": "defined",
+      "name": "Classification"
+    },
+    "LIST": {
+      "coverage": "defined",
+      "name": "Permissions"
+    },
+    "MODERN": {
+      "coverage": "defined",
+      "name": "Modernity"
+    },
+    "PLATFORM": {
+      "coverage": "not defined",
+      "name": "Platform and evidence"
+    },
+    "SHARE": {
+      "coverage": "defined",
+      "name": "Sharing"
+    },
+    "SITE": {
+      "coverage": "defined",
+      "name": "Sites and storage"
+    },
+    "SPFX": {
+      "coverage": "defined",
+      "name": "SPFx"
+    }
+  }
 }
