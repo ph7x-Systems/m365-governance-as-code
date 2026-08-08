@@ -163,7 +163,19 @@ STRATEGY = (
     r"\bAvalonia\b",
     r"\bWorkbench\b",
     r"\bPhase [012]\b",
+    # Licensing mechanics, which are strategy even when no figure is attached.
+    r"\blicen[cs]e key\b",
+    r"\bactivation\b",
+    r"\bentitlement\b",
+    r"\btrial\b",
+    r"\bupgrade to\b",
 )
+
+#: What is allowed, and why. The support link is not an oversight: the recorded
+#: decision is that donation links leave at the boundary to the commercial
+#: phase, not before it. Removing it now would take away the only form of
+#: reciprocity the project has while it has nothing to sell.
+ALLOWED = ("buymeacoffee", "sponsor")
 
 
 def test_the_public_repository_explains_the_software_not_the_strategy():

@@ -41,6 +41,7 @@
   "results": [
     {
       "rule_id": "SPO-ACTIVITY-001",
+      "title": "No person has changed anything on this site for over a year",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -77,6 +78,7 @@
     },
     {
       "rule_id": "SPO-CLASS-001",
+      "title": "This site carries no sensitivity label and no classification",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -118,6 +120,7 @@
     },
     {
       "rule_id": "SPO-CLASS-002",
+      "title": "This site carries a sensitivity label that could not be resolved to a name",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -161,6 +164,7 @@
     },
     {
       "rule_id": "SPO-CLASS-003",
+      "title": "This group-connected site carries no sensitivity label",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -210,6 +214,7 @@
     },
     {
       "rule_id": "SPO-MODERN-001",
+      "title": "The classic publishing infrastructure is enabled on this site",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -251,6 +256,7 @@
     },
     {
       "rule_id": "SPO-MODERN-003",
+      "title": "The site uses a master page other than the ones SharePoint provides",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -279,6 +285,7 @@
     },
     {
       "rule_id": "SPO-MODERN-004",
+      "title": "The site loads an alternate stylesheet into every page",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -307,6 +314,7 @@
     },
     {
       "rule_id": "SPO-SHARE-001",
+      "title": "A site that allows Anyone links permits access that cannot be attributed",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -348,6 +356,7 @@
     },
     {
       "rule_id": "SPO-SHARE-002",
+      "title": "The default sharing link should not be Anyone",
       "rule_version": "1.0",
       "schema_version": "2.0",
       "resource": {
@@ -391,6 +400,7 @@
     },
     {
       "rule_id": "SPO-SITE-001",
+      "title": "A site should have at least two owners",
       "rule_version": "1.1",
       "schema_version": "1.0",
       "resource": {
@@ -419,6 +429,7 @@
     },
     {
       "rule_id": "SPO-SITE-002",
+      "title": "A site should have at least one administrator who is a person",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -447,6 +458,7 @@
     },
     {
       "rule_id": "SPO-SITE-003",
+      "title": "A site above 90 per cent of its storage quota is close to stopping",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
@@ -491,6 +503,7 @@
     },
     {
       "rule_id": "SPO-SPFX-001",
+      "title": "A solution is installed at an older version than the catalog holds",
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {

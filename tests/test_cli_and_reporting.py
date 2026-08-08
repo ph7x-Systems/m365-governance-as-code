@@ -233,3 +233,15 @@ def test_the_diff_resource_has_the_same_shape_as_every_other():
     resource = diffing.to_dict(before, after)["resource"]
     assert set(resource) >= {"id", "type", "display_name"}
     assert resource["type"] == "tenant"
+
+
+def test_a_result_carries_the_rules_own_name():
+    """An id identifies; a title says what was checked. A report that carries
+    only the message loses the name of the thing that produced it, which is
+    what a person cites in a sentence."""
+    from conftest import evidence, rule
+    from m365_governance.engine import evaluate_rule
+
+    result = evaluate_rule(rule("SPO-SHARE-003"), evidence("tenant-sharing-mitigated"))
+    assert result.title == "The organisation default sharing link should not be Anyone"
+    assert result.to_dict()["title"] == result.title

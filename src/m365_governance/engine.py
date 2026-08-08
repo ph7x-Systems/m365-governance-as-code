@@ -228,6 +228,7 @@ def evaluate_rule(rule: dict, evidence: dict) -> Result:
         resource = evidence.get("resource", {})
         return Result(
             rule_id=rule.get("id", "<unknown>"),
+            title=str(rule.get("title", "")),
             rule_version=str(rule.get("version", "")),
             schema_version=str(rule.get("schema_version", "")),
             resource_id=resource.get("id", "<unknown>"),
@@ -261,6 +262,7 @@ def _evaluate(rule: dict, evidence: dict) -> Result:
         message, degraded = _render(template, resolutions)
         return Result(
             rule_id=rule["id"],
+            title=str(rule.get("title", "")),
             rule_version=str(rule["version"]),
             schema_version=str(rule["schema_version"]),
             resource_id=resource.get("id", "<unknown>"),

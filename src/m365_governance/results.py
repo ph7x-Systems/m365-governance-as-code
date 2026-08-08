@@ -77,6 +77,10 @@ class Result:
     message: str
     basis_type: str
     severity: str
+    #: The rule's own name. An id identifies; a title says what was checked,
+    #: and it is what a person cites in a sentence. A report that carries only
+    #: the message loses the name of the thing that produced it.
+    title: str = ""
     evidence_used: list[EvidenceUsed] = field(default_factory=list)
     limitation: str = ""
     sources: list[dict] = field(default_factory=list)
@@ -87,6 +91,7 @@ class Result:
     def to_dict(self) -> dict:
         return {
             "rule_id": self.rule_id,
+            "title": self.title,
             "rule_version": self.rule_version,
             "schema_version": self.schema_version,
             "resource": {"id": self.resource_id, "type": self.resource_type},
@@ -124,6 +129,7 @@ class Result:
         resource = data.get("resource", {})
         return cls(
             rule_id=data["rule_id"],
+            title=data.get("title", ""),
             rule_version=data.get("rule_version", ""),
             schema_version=data.get("schema_version", ""),
             resource_id=resource.get("id", "<unknown>"),
