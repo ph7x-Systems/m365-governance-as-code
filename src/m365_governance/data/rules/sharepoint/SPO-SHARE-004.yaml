@@ -1,0 +1,114 @@
+# Documented guidance. Microsoft's best-practice page for unauthenticated
+# sharing names the setting, the concern and the values to consider, which is
+# what separates this basis from a convention of ours.
+
+schema_version: "2.0"
+id: SPO-SHARE-004
+version: "1.0"
+title: Anyone links should not be able to change what they open
+description: >
+  An Anyone link needs no sign-in, so whoever holds it cannot be identified.
+  By default those links allow editing. This rule reads what an unauthenticated
+  holder is permitted to do, which is a different question from whether
+  unauthenticated sharing is allowed at all.
+
+service: sharepoint
+resource_type: tenant
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/Office365/Enterprise/best-practices-anonymous-sharing
+      title: Best practices for sharing files and folders with unauthenticated users
+      publisher: Microsoft
+      checked_at: "2026-08-08"
+  rationale: >
+    Microsoft states the default and the alternative in the same section: "By
+    default, Anyone links for a file allow people to edit the file, and Anyone
+    links for a folder allow people to edit and view files, and upload new
+    files to the folder. You can change these permissions for files and for
+    folders, independently, to view-only."
+
+    And then the recommendation: "If you want to allow unauthenticated sharing,
+    but are concerned about unauthenticated people modifying your
+    organization's content, consider setting the file permissions to View and
+    folder permissions to View or View and upload."
+
+    It is conditional guidance, and the condition is the ordinary case. The
+    same page notes what is not lost by following it: Specific people links
+    still grant edit, and those require the recipient to authenticate, which
+    makes their activity auditable.
+
+severity:
+  default: medium
+  rationale: >
+    The consequence is unauthenticated change to content rather than
+    unauthenticated reading of it, and the holder of the link cannot be
+    identified afterwards. Not high, because it applies only where Anyone
+    links are permitted and used, and it is reversible in one setting.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: tenant_sharing.capability
+  value: ExternalUserAndGuestSharing
+
+evidence_requirements:
+  - path: tenant_sharing.capability
+    type: string
+    required: true
+  - path: tenant_sharing.file_anonymous_link_type
+    type: string
+    required: true
+
+condition:
+  operator: not-equals
+  evidence: tenant_sharing.file_anonymous_link_type
+  value: View
+
+outcomes:
+  pass:
+    message: >
+      Anyone links to a file grant {tenant_sharing.file_anonymous_link_type},
+      so an unauthenticated holder can read the file and not change it.
+  fail:
+    message: >
+      Anyone links to a file grant
+      {tenant_sharing.file_anonymous_link_type}. Somebody who was never asked
+      to sign in can change the file, and no record identifies who did.
+  unknown:
+    message: >
+      What an Anyone link permits was not read. This is not a pass: the
+      product default is edit, so an unread setting is more likely to be the
+      permissive value than the restrictive one.
+  not_applicable:
+    message: >
+      This organisation does not permit Anyone links, so there is no
+      unauthenticated permission to read. The rule has nothing to say about it.
+  invalid_evidence:
+    message: >
+      The Anyone link permission was returned in a form this rule cannot
+      evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Set file permissions for Anyone links to View. Set folder permissions to
+  View, or to View and upload where the Request Files feature is needed, which
+  Microsoft names as the reason that middle value exists. Editing remains
+  available through Specific people links, which require the recipient to
+  authenticate.
+
+limitations:
+  passes_without_resolving: >
+    View-only is still unauthenticated read. This rule narrows what an
+    anonymous holder can do; it does not make the content private, and a link
+    that was passed on is still a link that was passed on.
+  other:
+    - >
+      This reads the file permission and not the folder one. Microsoft names
+      two acceptable values for folders, View and View and upload, because the
+      second is what the Request Files feature needs. A rule comparing to a
+      single value would fail organisations that are following the guidance,
+      so the folder setting is deliberately not collected and not evaluated.
+    - >
+      This is the organisation setting. A site can be more restrictive, and
+      this rule does not read sites.

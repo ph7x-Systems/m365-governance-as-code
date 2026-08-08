@@ -130,7 +130,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('SiteOwners', 'SiteSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification')]
+    [ValidateSet('SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification')]
     [string] $Mode,
 
     [Parameter(Mandatory = $true)]
@@ -1011,6 +1011,50 @@ function Get-ModernityFacts {
     return $facts
 }
 
+function Get-TenantSharingFacts {
+    param($Tenant)
+
+    # THE FACT AN EXISTING RULE SAYS IS MISSING.
+    #
+    # SPO-SHARE-002 already records, in its own limitations, that a site with
+    # no default of its own follows the tenant and that "the tenant setting is
+    # a separate fact this collection does not gather". This is that fact.
+    #
+    # THREE PROPERTIES, AND ONLY THREE. Eleven are available on the tenant, and
+    # seven of them are described by Microsoft without being recommended: a
+    # rule on those would be our convention wearing the clothes of documented
+    # guidance. Collecting them anyway would be evidence with no reader, which
+    # ages without anything going red. Every name below is consumed by a rule
+    # in the same change. See docs/COLLECTION-PATH-AUDIT.md.
+    #
+    # Validated on the tenant cmdlet reference and on the anonymous-sharing
+    # best practice page, both checked on 8 August 2026.
+    $facts = [ordered]@{ tenant_sharing = [ordered]@{} }
+    $map = [ordered]@{
+        capability                 = 'SharingCapability'
+        default_link_type          = 'DefaultSharingLinkType'
+        file_anonymous_link_type   = 'FileAnonymousLinkType'
+    }
+    foreach ($name in $map.Keys) {
+        $property = $map[$name]
+        try {
+            $value = $Tenant.$property
+            if ($null -eq $value -or "$value" -eq '') {
+                $facts.tenant_sharing[$name] = New-AbsentFact -State 'missing' `
+                    -Detail "$property was not returned for this tenant."
+            }
+            else {
+                $facts.tenant_sharing[$name] = New-ScalarFact -Value ("$value") -RawField $property
+            }
+        }
+        catch {
+            $facts.tenant_sharing[$name] = New-AbsentFact `
+                -State (Resolve-FailureState $_) -Detail $_.Exception.Message
+        }
+    }
+    return $facts
+}
+
 function Get-SiteInventoryFacts {
     param($TenantSite)
 
@@ -1123,6 +1167,21 @@ switch ($Mode) {
                 }) `
                 -Facts $result.facts -Requested @('owners') `
                 -Completed $completed -Unavailable $unavailable)
+    }
+
+    'TenantSharing' {
+        # One resource, not one per site. The tenant is what every site
+        # inherits from when it sets nothing of its own.
+        $tenant = Get-PnPTenant
+        Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
+                -Resource ([ordered]@{
+                    id = $TenantUrl; type = 'tenant'
+                    display_name = $TenantUrl; url = $TenantUrl
+                }) `
+                -Facts (Get-TenantSharingFacts -Tenant $tenant) `
+                -Requested @('tenant_sharing') -Completed @('tenant_sharing') `
+                -Unavailable ([ordered]@{}) `
+                -SourceApi 'PnP.PowerShell / SharePoint Admin')
     }
 
     'SiteSharing' {

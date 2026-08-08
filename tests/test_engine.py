@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import copy
+
 import pytest
 
 from conftest import DATA, evidence, sabotage
@@ -262,6 +264,83 @@ def test_inheriting_the_tenant_default_is_never_a_pass():
     )
     assert result.outcome is Outcome.UNKNOWN
     assert not result.outcome.is_answer
+
+
+# ---------------------------------------------------------------------------
+# the organisation level: a different resource, not a bigger site
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture, expected",
+    [
+        ("tenant-sharing-default-anyone-and-edit", Outcome.FAIL),
+        ("tenant-sharing-mitigated", Outcome.PASS),
+        # Anyone links are not permitted at all, so the Anyone link cannot be
+        # the default. Out of scope rather than a pass: nothing was mitigated.
+        ("tenant-sharing-internal-only", Outcome.NOT_APPLICABLE),
+    ],
+)
+def test_the_organisation_default_link_rule(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SHARE-003"), evidence(fixture)).outcome is expected
+
+
+@pytest.mark.parametrize(
+    "fixture, expected",
+    [
+        ("tenant-sharing-default-anyone-and-edit", Outcome.FAIL),
+        ("tenant-sharing-mitigated", Outcome.PASS),
+        ("tenant-sharing-internal-only", Outcome.NOT_APPLICABLE),
+    ],
+)
+def test_what_an_anyone_link_permits(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SHARE-004"), evidence(fixture)).outcome is expected
+
+
+def test_a_tenant_that_forbids_anyone_links_is_not_asked_for_evidence_it_has_none_of():
+    """`tenant-sharing-internal-only` carries `file_anonymous_link_type` as
+    `missing`, which is honest: the property has nothing to describe where the
+    capability is Disabled. Applicability has to be decided before evidence is
+    required, or every such tenant reports `unknown` on a question that does
+    not apply to it."""
+    from conftest import rule
+
+    document = evidence("tenant-sharing-internal-only")
+    assert document["facts"]["tenant_sharing"]["file_anonymous_link_type"]["state"] == (
+        "missing"
+    )
+
+    result = evaluate_rule(rule("SPO-SHARE-004"), document)
+    assert result.outcome is Outcome.NOT_APPLICABLE
+    assert result.outcome is not Outcome.UNKNOWN
+
+
+def test_the_two_tenant_rules_read_different_settings():
+    """They come from one Microsoft page and one collector call, which makes
+    them easy to collapse into one rule. Whether an Anyone link is the default
+    and what an Anyone link permits have different remediations, and a tenant
+    can be wrong about either one alone."""
+    from conftest import rule
+
+    mitigated = evidence("tenant-sharing-mitigated")
+    facts = mitigated["facts"]["tenant_sharing"]
+
+    # The default is safe and the permission is safe. Now break one at a time.
+    half = copy.deepcopy(mitigated)
+    half["facts"]["tenant_sharing"]["default_link_type"]["value"] = "AnonymousAccess"
+    assert evaluate_rule(rule("SPO-SHARE-003"), half).outcome is Outcome.FAIL
+    assert evaluate_rule(rule("SPO-SHARE-004"), half).outcome is Outcome.PASS
+
+    other_half = copy.deepcopy(mitigated)
+    other_half["facts"]["tenant_sharing"]["file_anonymous_link_type"]["value"] = "Edit"
+    assert evaluate_rule(rule("SPO-SHARE-003"), other_half).outcome is Outcome.PASS
+    assert evaluate_rule(rule("SPO-SHARE-004"), other_half).outcome is Outcome.FAIL
+
+    assert facts["default_link_type"]["value"] == "Internal"  # fixture untouched
 
 
 def test_the_declared_setting_is_kept_beside_the_effective_one():

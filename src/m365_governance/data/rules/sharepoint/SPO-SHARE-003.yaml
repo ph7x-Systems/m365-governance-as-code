@@ -1,0 +1,118 @@
+# Documented guidance, at the level the guidance is written for. Microsoft's
+# best-practice page for unauthenticated sharing states the mitigation in the
+# organisation's own settings, and this rule reads exactly that setting.
+#
+# Not a duplicate of SPO-SHARE-002. That rule reads one site, and records in
+# its own limitations that a site setting no default of its own follows the
+# tenant, "a separate fact this collection does not gather". This is that fact,
+# at that level, with a different remediation: one change here moves every site
+# that has not decided for itself.
+
+schema_version: "2.0"
+id: SPO-SHARE-003
+version: "1.0"
+title: The organisation default sharing link should not be Anyone
+description: >
+  The tenant default is what a person gets when they press Share on a site that
+  has not chosen a default of its own, which is most sites. Every other link
+  type stays available. This is not about what can be shared: it is about what
+  happens across the whole organisation when nobody is thinking about it.
+
+service: sharepoint
+resource_type: tenant
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/Office365/Enterprise/best-practices-anonymous-sharing
+      title: Best practices for sharing files and folders with unauthenticated users
+      publisher: Microsoft
+      checked_at: "2026-08-08"
+    - url: https://learn.microsoft.com/sharepoint/turn-external-sharing-on-or-off
+      title: Manage sharing settings for SharePoint and OneDrive in Microsoft 365
+      publisher: Microsoft
+      checked_at: "2026-08-08"
+  rationale: >
+    Microsoft states the risk and the mitigation in the same paragraph: "While
+    this can be convenient for users, it can increase the risk of unintentional
+    unauthenticated sharing. If a user forgets to change the link type while
+    sharing a sensitive document, they might accidentally create a sharing link
+    that doesn't require authentication. You can mitigate this risk by changing
+    the default link setting to a link that only works for people inside your
+    organization."
+
+    Guidance and not a requirement: the product permits the alternative, the
+    page describes how to choose it, and an organisation whose work is
+    genuinely public may reasonably keep it.
+
+severity:
+  default: medium
+  rationale: >
+    One setting, and it is exercised by everybody who shares anything without
+    thinking about it, on every site that has not overridden it. Rated for
+    reach rather than for how bad a single link is.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: tenant_sharing.capability
+  value: ExternalUserAndGuestSharing
+
+evidence_requirements:
+  - path: tenant_sharing.capability
+    type: string
+    required: true
+  - path: tenant_sharing.default_link_type
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: tenant_sharing.default_link_type
+  value: AnonymousAccess
+
+outcomes:
+  pass:
+    message: >
+      The organisation default sharing link is
+      {tenant_sharing.default_link_type}, which is not the Anyone link. A site
+      that sets no default of its own inherits this.
+  fail:
+    message: >
+      The organisation default sharing link is the Anyone link
+      ({tenant_sharing.default_link_type}). On every site that has not chosen a
+      default of its own, a person who presses Share and changes nothing
+      produces a link that works without signing in.
+  unknown:
+    message: >
+      The organisation default was not read. This is not a pass: sites that
+      set no default of their own inherit whatever it is, and this run cannot
+      say what that is.
+  not_applicable:
+    message: >
+      This organisation does not permit Anyone links at all, so the Anyone
+      link cannot be the default. The rule has nothing to say about it.
+  invalid_evidence:
+    message: >
+      The organisation default link type was returned in a form this rule
+      cannot evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Set the organisation default to a link that works only for people inside the
+  organisation, and leave the Anyone link available for those who select it
+  deliberately. Microsoft's page describes this arrangement as the mitigation
+  rather than as a restriction.
+
+limitations:
+  passes_without_resolving: >
+    A safe organisation default says nothing about individual sites. A site
+    that overrides it with the Anyone link passes this rule and fails
+    SPO-SHARE-002, and the two are meant to be read together.
+  other:
+    - >
+      The default applies to the modern experience. Microsoft states it does
+      not affect Outlook on the web, Outlook 2016 or Office clients before
+      2016, so sharing through those paths is outside what this rule describes.
+    - >
+      This reads the setting, not behaviour. People who select the Anyone link
+      every time produce the same result whether the default is safe or not.

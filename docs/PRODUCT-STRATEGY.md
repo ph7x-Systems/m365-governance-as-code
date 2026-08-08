@@ -223,7 +223,7 @@ document and nowhere per run.*
 Finish SharePoint Online. Decide when a second service opens, and open exactly
 one. **Three products at once, none of them deep, is the failure mode.**
 
-*Today: 16 rules, one service, two resource types, three of five basis types
+*Today: 18 rules, one service, three resource types, three of five basis types
 in use.*
 
 ### C. Assessment mode

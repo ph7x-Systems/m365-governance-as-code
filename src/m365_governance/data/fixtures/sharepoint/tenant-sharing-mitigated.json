@@ -1,0 +1,58 @@
+{
+ "schema_version": "1.0",
+ "provenance": {
+  "collected_at": "2026-08-08T09:00:00Z",
+  "collector": "spo-collector",
+  "collector_version": "0.3.0",
+  "source_system": "SharePoint Online",
+  "source_api": "PnP.PowerShell / SharePoint Admin",
+  "tenant_id": "contoso-admin.sharepoint.com",
+  "identity_kind": "application",
+  "scopes": [
+   "Sites.Read.All"
+  ]
+ },
+ "coverage": {
+  "requested": [
+   "tenant_sharing"
+  ],
+  "completed": [
+   "tenant_sharing"
+  ],
+  "unavailable": {}
+ },
+ "resource": {
+  "id": "https://fabrikam-admin.sharepoint.com",
+  "type": "tenant",
+  "display_name": "https://fabrikam-admin.sharepoint.com",
+  "url": "https://fabrikam-admin.sharepoint.com"
+ },
+ "facts": {
+  "tenant_sharing": {
+   "capability": {
+    "state": "observed",
+    "value": "ExternalUserAndGuestSharing",
+    "raw": {
+     "field": "SharingCapability",
+     "value": "ExternalUserAndGuestSharing"
+    }
+   },
+   "default_link_type": {
+    "state": "observed",
+    "value": "Internal",
+    "raw": {
+     "field": "DefaultSharingLinkType",
+     "value": "Internal"
+    }
+   },
+   "file_anonymous_link_type": {
+    "state": "observed",
+    "value": "View",
+    "raw": {
+     "field": "FileAnonymousLinkType",
+     "value": "View"
+    }
+   }
+  }
+ }
+}

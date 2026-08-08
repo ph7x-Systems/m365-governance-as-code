@@ -254,3 +254,52 @@ presents expiry as a checkbox plus a number, which suggests the number is only
 read when the box is ticked, but no page states it and the suggestion is not a
 source. A tenant rule should therefore be written on *whether expiry is
 required at all*, not on the number, until that is proven.
+
+---
+
+## Closed: the tenant level exists, and it is two rules wide
+
+**2026-08-08.** The second attempt shipped, and the difference from the first
+is that the justification came first and the collection followed it.
+
+| | First attempt | Second |
+|---|---|---|
+| Properties collected | 11 | **3** |
+| Rules that read them | 0 | 2 |
+| Profile | `sharing`, which selects site rules | **`tenant-sharing`**, its own |
+| Outcome | reverted by a test | in the release contract |
+
+What ships:
+
+- `SPO-SHARE-003` — the organisation default sharing link should not be Anyone.
+- `SPO-SHARE-004` — Anyone links should not be able to change what they open.
+- Collector mode `TenantSharing`, reading `SharingCapability`,
+  `DefaultSharingLinkType` and `FileAnonymousLinkType`. **Three, because three
+  rules read three.** The other eight validated properties were not collected.
+- Three fixtures: the permissive tenant, the mitigated tenant, and the tenant
+  that forbids Anyone links entirely.
+
+### Two things the build taught, which are not in the rules
+
+**A new level needs a new profile, not a bigger old one.** Registering the
+slice against `sharing` failed the pairing test a second time, and correctly:
+that profile selects site rules, and a tenant document has no site in it. The
+symptom was identical to the first failure and the cause was not, which is the
+argument for keeping the test's message about *documents* rather than *rules*.
+
+**Applicability has to be decided before evidence is required.** The
+internal-only fixture carries `file_anonymous_link_type` as `missing`, which is
+honest — the property has nothing to describe where the capability is
+`Disabled`. If evidence requirements were checked first, every organisation
+that forbids Anyone links would report `unknown` on a question that does not
+apply to it. The engine already does this; there is now a test that says so, so
+that a future change to the ordering fails here rather than in a customer's
+report.
+
+### Still open, unchanged by this cycle
+
+`0` in either expiry field, and the tenant expiry value itself. Collecting
+`RequireAnonymousLinksExpireInDays` is now cheaper than it was — the mode
+exists — and it is still not collected, because the rule that would read it
+cannot be written while `0` is undefined. **The cost of the collection was
+never the reason to wait.**

@@ -89,6 +89,17 @@ SLICES = {
             shaped_like="site-sharing-anyone-default-anyone",
         ),
         Slice(
+            "tenant-sharing",
+            "TenantSharing",
+            needs_site=False,
+            needs_tenant=True,
+            profile="tenant-sharing",
+            describes=(
+                "what the organisation permits, which every site inherits by default"
+            ),
+            shaped_like="tenant-sharing-default-anyone-and-edit",
+        ),
+        Slice(
             "activity",
             "Activity",
             needs_site=True,

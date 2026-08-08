@@ -1,0 +1,21 @@
+# Pairs with `collect tenant-sharing`.
+#
+# Separate from the `sharing` profile, and not a variant of it. That profile
+# reads one site; this one reads the organisation. Merging them would mean
+# running site rules against a document with no site in it, and tenant rules
+# against a document with no tenant in it, producing `unknown` on one half of
+# the list every time either was used.
+#
+# Both rules here are `documented-guidance`, from the same Microsoft page. That
+# is a coincidence of the evidence available, not a property of the level: a
+# tenant rule carries whatever basis its source carries, like any other.
+
+name: tenant-sharing
+description: >
+  What the organisation permits by default, and what an unauthenticated holder
+  of a link may do with what they open. Evaluate against evidence collected
+  with `collect tenant-sharing`.
+
+rules:
+  - SPO-SHARE-003
+  - SPO-SHARE-004
