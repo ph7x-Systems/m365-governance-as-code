@@ -37,6 +37,9 @@ where = ["src"]
   "profiles/*.yaml",
   "schemas/*.json",
   "collectors/**/*.ps1",
+  # The entry point is useless without them, and a glob that named only .ps1
+  # shipped a wheel whose collector could not import its own modules.
+  "collectors/**/*.psm1",
   "fixtures/**/*.json",
   "fixtures/**/*.md",
 ]

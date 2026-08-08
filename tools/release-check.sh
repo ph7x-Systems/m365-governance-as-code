@@ -127,18 +127,71 @@ echo "  ✓ all fixtures evaluated"
 # line against a tenant. It would also miss a write reached through a variable
 # or a REST call. A floor under review, not a substitute for it.
 if [[ $INSTALL_GATES -eq 1 ]]; then
+  # Every file, not one path. Naming a single script was true while there was
+  # a single script, and would have gone on passing — proving nothing about
+  # nine tenths of the code — the moment the collector was split into modules.
   step "Collector is read-only"
   pwsh -NoProfile -Command '
-    $path = "src/m365_governance/data/collectors/powershell/sharepoint/Get-SpoEvidence.ps1"
-    $errs = $null
-    [void][System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$errs)
-    if ($errs) { $errs | ForEach-Object { Write-Error $_.Message }; exit 1 }
-    $ast = [System.Management.Automation.Language.Parser]::ParseFile($path, [ref]$null, [ref]$null)
-    $names = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.CommandAst] }, $true) |
-             ForEach-Object { $_.GetCommandName() } | Sort-Object -Unique
-    $writes = $names | Where-Object { $_ -match "^(Set|New|Remove|Add|Update|Grant|Revoke)-(PnP|Mg|SPO)" }
-    if ($writes) { Write-Error "write path in a read-only collector: $writes"; exit 1 }
-    Write-Host "  ✓ no write path"'
+    $root = "src/m365_governance/data/collectors"
+    $files = Get-ChildItem -Path $root -Recurse -Include *.ps1, *.psm1
+    if (-not $files) { Write-Error "no PowerShell found under $root"; exit 1 }
+    foreach ($file in $files) {
+        $errs = $null
+        [void][System.Management.Automation.Language.Parser]::ParseFile(
+            $file.FullName, [ref]$null, [ref]$errs)
+        if ($errs) {
+            $errs | ForEach-Object { Write-Error "$($file.Name): $($_.Message)" }
+            exit 1
+        }
+        $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+            $file.FullName, [ref]$null, [ref]$null)
+        $names = $ast.FindAll({ param($n)
+            $n -is [System.Management.Automation.Language.CommandAst] }, $true) |
+                 ForEach-Object { $_.GetCommandName() } | Sort-Object -Unique
+        $writes = $names | Where-Object {
+            $_ -match "^(Set|New|Remove|Add|Update|Grant|Revoke)-(PnP|Mg|SPO)" }
+        if ($writes) {
+            Write-Error "write path in $($file.Name): $writes"; exit 1
+        }
+    }
+    Write-Host "  ✓ $($files.Count) files, no write path"'
+
+  # Every module loads on its own and exports what it declares. A refactor that
+  # leaves a function behind passes every check above and fails here.
+  step "Every module imports and exports what it declares"
+  pwsh -NoProfile -Command '
+    $dir = "src/m365_governance/data/collectors/powershell/sharepoint/modules"
+    $exported = @{}
+    foreach ($module in (Get-ChildItem "$dir/*.psm1")) {
+        try { $loaded = Import-Module $module.FullName -Force -PassThru }
+        catch { Write-Error "$($module.Name) does not import: $($_.Exception.Message)"; exit 1 }
+        if (-not $loaded.ExportedFunctions.Count) {
+            Write-Error "$($module.Name) exports nothing"; exit 1
+        }
+        foreach ($name in $loaded.ExportedFunctions.Keys) { $exported[$name] = $true }
+    }
+    $approved = (Get-Verb).Verb
+    $unapproved = $exported.Keys | Where-Object { $approved -notcontains ($_ -split "-")[0] }
+    if ($unapproved) { Write-Error "unapproved verb: $unapproved"; exit 1 }
+    Write-Host "  ✓ $($exported.Count) functions exported, all approved verbs"'
+
+  # The rules nobody remembers. Configured at the repository root so that a
+  # suppression is a line in a reviewable file rather than an attribute buried
+  # in a function.
+  step "PSScriptAnalyzer"
+  if (! pwsh -NoProfile -Command 'exit ([int](-not (Get-Module -ListAvailable PSScriptAnalyzer)))'); then
+    echo "  PSScriptAnalyzer is not installed."
+    echo "  Install-Module PSScriptAnalyzer -Scope CurrentUser"
+    exit 1
+  fi
+  pwsh -NoProfile -Command '
+    $found = Invoke-ScriptAnalyzer -Path "src/m365_governance/data/collectors" -Recurse `
+        -Settings ./PSScriptAnalyzerSettings.psd1
+    if ($found) {
+        $found | Format-Table -AutoSize RuleName, Severity, ScriptName, Line, Message
+        Write-Error "$($found.Count) findings"; exit 1
+    }
+    Write-Host "  ✓ clean"'
 fi
 
 # ── 9. the wheel, and what it carries ────────────────────────────────────────
@@ -155,7 +208,7 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
 
   step "The wheel carries the product"
   "$PY" - "$TMP" <<'PY'
-import collections, glob, sys, zipfile
+import collections, glob, pathlib, sys, zipfile
 names = zipfile.ZipFile(glob.glob(f"{sys.argv[1]}/dist/*.whl")[0]).namelist()
 found = collections.Counter(
     n.split("/")[2] for n in names
@@ -165,6 +218,17 @@ missing = [d for d in ("rules", "profiles", "schemas", "collectors", "fixtures")
 print("  " + str(dict(found)))
 if missing:
     sys.exit(f"  ✗ the wheel is missing {missing}: the package does not contain the product")
+
+# Counting directories is not enough. A glob that named only *.ps1 left every
+# .psm1 out, and the count above still said `collectors: 1` while the collector
+# could not import a single one of its own modules. Compare against the tree.
+data = pathlib.Path("src/m365_governance/data")
+on_disk = {str(p.relative_to(data.parent.parent))
+           for p in (data / "collectors").rglob("*")
+           if p.suffix in {".ps1", ".psm1"}}
+absent = sorted(on_disk - set(names))
+if absent:
+    sys.exit(f"  ✗ PowerShell files not carried by the wheel: {absent}")
 PY
 
   # ── 10. a clean installation is the reference environment ──────────────────
