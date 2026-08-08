@@ -395,11 +395,23 @@ function Get-SharingFacts {
     # tenant, so both values are reported for context rather than for a rule
     # about one exceeding the other: that rule could never fire.
     $facts = [ordered]@{ sharing = [ordered]@{} }
+    #
+    # anonymous_link_expiry_override is collected BECAUSE the number beside it
+    # cannot be read without it. The site's expiry figure is governed by
+    # OverrideTenantAnonymousLinkExpirationPolicy, a Boolean: with the override
+    # false the site is following the tenant, and its own number says nothing
+    # about what is in force. Collecting the days without the flag is
+    # collecting a value with no meaning, and it is why no rule reads the days
+    # today. The cmdlet that writes either of them is deliberately not named
+    # here: this file is read-only, and a test enforces that by pattern, which
+    # is stricter than parsing comments and right to be.
+    # See docs/COLLECTION-PATH-AUDIT.md.
     $map = [ordered]@{
-        capability                 = 'SharingCapability'
-        default_link_type          = 'DefaultSharingLinkType'
-        default_link_permission    = 'DefaultLinkPermission'
-        anonymous_link_expiry_days = 'AnonymousLinkExpirationInDays'
+        capability                     = 'SharingCapability'
+        default_link_type              = 'DefaultSharingLinkType'
+        default_link_permission        = 'DefaultLinkPermission'
+        anonymous_link_expiry_days     = 'AnonymousLinkExpirationInDays'
+        anonymous_link_expiry_override = 'OverrideTenantAnonymousLinkExpirationPolicy'
     }
     foreach ($name in $map.Keys) {
         $property = $map[$name]
