@@ -1,0 +1,297 @@
+{
+  "domains": {
+    "ACTIVITY": {
+      "analysis": [],
+      "collector_modes": [
+        "Activity",
+        "Classification"
+      ],
+      "compass": [],
+      "complete": false,
+      "fixtures": [
+        "site-activity-recent",
+        "site-activity-stale"
+      ],
+      "guide": [],
+      "knowledge": [
+        "001"
+      ],
+      "missing": [
+        "guide",
+        "compass"
+      ],
+      "name": "Activity",
+      "profiles": [
+        "activity",
+        "default"
+      ],
+      "rules": [
+        "SPO-ACTIVITY-001"
+      ],
+      "tests": [
+        "001"
+      ]
+    },
+    "CLASS": {
+      "analysis": [],
+      "collector_modes": [
+        "Classification"
+      ],
+      "compass": [],
+      "complete": false,
+      "fixtures": [
+        "site-class-group-unlabelled",
+        "site-class-label-invalid",
+        "site-class-label-unresolved",
+        "site-class-labelled",
+        "site-class-legacy-string",
+        "site-class-unlabelled"
+      ],
+      "guide": [],
+      "knowledge": [
+        "001",
+        "002",
+        "003"
+      ],
+      "missing": [
+        "guide",
+        "compass"
+      ],
+      "name": "Classification",
+      "profiles": [
+        "default"
+      ],
+      "rules": [
+        "SPO-CLASS-001",
+        "SPO-CLASS-002",
+        "SPO-CLASS-003"
+      ],
+      "tests": [
+        "001",
+        "002",
+        "003"
+      ]
+    },
+    "LIST": {
+      "analysis": [],
+      "collector_modes": [
+        "Classification",
+        "TenantSites",
+        "UniquePermissions"
+      ],
+      "compass": [
+        "002"
+      ],
+      "complete": true,
+      "fixtures": [
+        "list-catalog-over-hard-limit",
+        "list-class-application",
+        "list-class-catalog",
+        "list-class-content",
+        "list-class-system",
+        "list-class-system-and-application",
+        "list-class-unknown",
+        "list-over-limit",
+        "list-scopes-counted-in-part",
+        "list-scopes-not-counted",
+        "list-scopes-over-hard-limit",
+        "list-scopes-over-recommended",
+        "list-scopes-within-recommended",
+        "list-within-limit"
+      ],
+      "guide": [
+        "002",
+        "003"
+      ],
+      "knowledge": [
+        "001",
+        "002",
+        "003"
+      ],
+      "missing": [],
+      "name": "Permissions",
+      "profiles": [
+        "capacity",
+        "default"
+      ],
+      "rules": [
+        "SPO-LIST-001",
+        "SPO-LIST-002",
+        "SPO-LIST-003"
+      ],
+      "tests": [
+        "001",
+        "002",
+        "003"
+      ]
+    },
+    "MODERN": {
+      "analysis": [],
+      "collector_modes": [
+        "Classification",
+        "Modernity"
+      ],
+      "compass": [],
+      "complete": false,
+      "fixtures": [
+        "site-modern-clean",
+        "site-modern-custom-master",
+        "site-modern-publishing-on",
+        "site-modern-subsite-default-master"
+      ],
+      "guide": [],
+      "knowledge": [
+        "001",
+        "003",
+        "004"
+      ],
+      "missing": [
+        "guide",
+        "compass"
+      ],
+      "name": "Modernity",
+      "profiles": [
+        "default",
+        "modernisation"
+      ],
+      "rules": [
+        "SPO-MODERN-001",
+        "SPO-MODERN-003",
+        "SPO-MODERN-004"
+      ],
+      "tests": [
+        "001",
+        "003",
+        "004"
+      ]
+    },
+    "SHARE": {
+      "analysis": [],
+      "collector_modes": [
+        "Classification",
+        "SiteSharing",
+        "TenantSharing"
+      ],
+      "compass": [],
+      "complete": false,
+      "fixtures": [
+        "site-sharing-anyone-default-anyone",
+        "site-sharing-anyone-default-direct",
+        "site-sharing-guests-only",
+        "site-sharing-inherits-tenant-default",
+        "tenant-sharing-default-anyone-and-edit",
+        "tenant-sharing-mitigated"
+      ],
+      "guide": [],
+      "knowledge": [
+        "001",
+        "002"
+      ],
+      "missing": [
+        "guide",
+        "compass"
+      ],
+      "name": "Sharing",
+      "profiles": [
+        "default",
+        "sharing",
+        "tenant-sharing"
+      ],
+      "rules": [
+        "SPO-SHARE-001",
+        "SPO-SHARE-002",
+        "SPO-SHARE-003",
+        "SPO-SHARE-004"
+      ],
+      "tests": [
+        "001",
+        "002",
+        "003",
+        "004"
+      ]
+    },
+    "SITE": {
+      "analysis": [],
+      "collector_modes": [
+        "Classification",
+        "SiteOwners",
+        "TenantSites",
+        "UniquePermissions"
+      ],
+      "compass": [],
+      "complete": false,
+      "fixtures": [
+        "site-delegated-identity",
+        "site-groups-only-admins",
+        "site-imported-inventory",
+        "site-named-and-group-admins",
+        "site-one-owner",
+        "site-partial-expansion-decides",
+        "site-storage-comfortable",
+        "site-storage-nearly-full",
+        "site-two-owners"
+      ],
+      "guide": [
+        "001"
+      ],
+      "knowledge": [
+        "001",
+        "002",
+        "003"
+      ],
+      "missing": [
+        "compass"
+      ],
+      "name": "Sites and storage",
+      "profiles": [
+        "capacity",
+        "default",
+        "ownership"
+      ],
+      "rules": [
+        "SPO-SITE-001",
+        "SPO-SITE-002",
+        "SPO-SITE-003"
+      ],
+      "tests": [
+        "001",
+        "002",
+        "003"
+      ]
+    },
+    "SPFX": {
+      "analysis": [],
+      "collector_modes": [
+        "Classification",
+        "SpfxCatalog"
+      ],
+      "compass": [],
+      "complete": false,
+      "fixtures": [
+        "site-spfx-behind",
+        "site-spfx-current"
+      ],
+      "guide": [],
+      "knowledge": [
+        "001"
+      ],
+      "missing": [
+        "guide",
+        "compass"
+      ],
+      "name": "SPFx",
+      "profiles": [
+        "default",
+        "spfx"
+      ],
+      "rules": [
+        "SPO-SPFX-001"
+      ],
+      "tests": [
+        "001"
+      ]
+    }
+  },
+  "generated_by": "tools/coverage.py",
+  "site_repository": "observed"
+}

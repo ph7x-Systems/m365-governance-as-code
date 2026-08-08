@@ -156,6 +156,12 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
     }
     Write-Host "  ✓ $($files.Count) files, no write path"'
 
+  # The coverage matrix is derived, never maintained. This is what stops it
+  # rotting: a rule, collector, fixture or article added without regenerating
+  # fails here rather than leaving a document that quietly says otherwise.
+  step "Product coverage matrix is current"
+  "$PY" tools/coverage.py --check
+
   # Every module loads on its own and exports what it declares. A refactor that
   # leaves a function behind passes every check above and fails here.
   step "Every module imports and exports what it declares"
