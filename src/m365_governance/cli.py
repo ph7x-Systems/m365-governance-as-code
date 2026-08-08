@@ -170,6 +170,7 @@ def _build_parser() -> argparse.ArgumentParser:
     diff.add_argument("before", type=Path)
     diff.add_argument("after", type=Path)
     diff.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
+    diff.add_argument("--format", choices=("markdown", "json"), default="markdown")
     diff.add_argument(
         "--fail-on-regression",
         action="store_true",
@@ -471,13 +472,25 @@ def _cmd_diff(args) -> int:
         )
         return 2
 
+    # Markdown is what a person reads; JSON is what everything else reads. Both
+    # are projections of one comparison, so they cannot disagree about what
+    # changed.
+    as_json = args.format == "json"
     if isinstance(before, RunSet):
-        sys.stdout.write(diffing.many_to_markdown(before, after))
+        sys.stdout.write(
+            diffing.many_to_json(before, after)
+            if as_json
+            else diffing.many_to_markdown(before, after)
+        )
         changes = [
             rc for change in diffing.compare_sets(before, after) for rc in change.rules
         ]
     else:
-        sys.stdout.write(diffing.to_markdown(before, after))
+        sys.stdout.write(
+            diffing.to_json(before, after)
+            if as_json
+            else diffing.to_markdown(before, after)
+        )
         changes = diffing.compare(before, after)
 
     if args.fail_on_regression and diffing.regressions(changes):

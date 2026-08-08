@@ -132,3 +132,92 @@ def test_json_report_carries_rule_and_schema_versions():
     result = payload["results"][0]
     assert result["rule_version"] == rule("SPO-SITE-001")["version"]
     assert result["schema_version"] == rule("SPO-SITE-001")["schema_version"]
+
+
+# ---------------------------------------------------------------------------
+# the diff as a model, not only as prose
+# ---------------------------------------------------------------------------
+
+
+def _two_runs():
+    from conftest import evidence, rule
+    from m365_governance.engine import evaluate
+
+    rules = [rule("SPO-SHARE-003"), rule("SPO-SHARE-004")]
+    return (
+        evaluate(rules, evidence("tenant-sharing-default-anyone-and-edit")),
+        evaluate(rules, evidence("tenant-sharing-mitigated")),
+    )
+
+
+def test_the_diff_has_a_model_and_not_only_markdown():
+    """Markdown used to be the only way out of `diff`, which made it the one
+    surface a reader had to parse prose to consume. Anything needing to know
+    what changed would have re-derived it, and a second derivation of "what
+    changed" is a second answer to the question the product exists for."""
+    import json
+
+    from m365_governance import diffing
+
+    before, after = _two_runs()
+    document = json.loads(diffing.to_json(before, after))
+
+    assert document["diff_schema_version"] == "1.0"
+    assert document["counts"]["rules_differing"] == 2
+    assert document["counts"]["outcome_changed"] == 2
+    assert document["counts"]["regressions"] == 0
+    assert [c["rule_id"] for c in document["changes"]] == [
+        "SPO-SHARE-003",
+        "SPO-SHARE-004",
+    ]
+
+
+def test_the_model_states_the_kind_rather_than_leaving_it_to_be_inferred():
+    """A consumer working `added`/`removed`/`changed` out from the two
+    outcomes would be making the semantic decision the engine already made,
+    and two consumers would eventually disagree about it."""
+    from m365_governance import diffing
+
+    before, after = _two_runs()
+    document = diffing.to_dict(before, after)
+    assert {c["kind"] for c in document["changes"]} == {"changed"}
+    for change in document["changes"]:
+        assert change["before"]["outcome"] == "fail"
+        assert change["after"]["outcome"] == "pass"
+
+
+def test_both_renderings_describe_the_same_comparison():
+    """Markdown is what a person reads and JSON is what everything else reads.
+    They are projections of one comparison, so they cannot disagree about which
+    rules moved."""
+    import re
+
+    from m365_governance import diffing
+
+    before, after = _two_runs()
+    prose = diffing.to_markdown(before, after)
+    document = diffing.to_dict(before, after)
+
+    in_prose = set(re.findall(r"SPO-[A-Z]+-\d+", prose))
+    assert in_prose == {c["rule_id"] for c in document["changes"]}
+    assert f"{document['counts']['rules_differing']} rules differ" in prose
+
+
+def test_the_model_carries_the_whole_result_on_each_side():
+    """Summarising them would be a third description of a result, and a
+    consumer wanting the basis or the sources would have to go and find the
+    run again."""
+    from m365_governance import diffing
+
+    before, after = _two_runs()
+    change = diffing.to_dict(before, after)["changes"][0]
+
+    assert change["before"]["basis"] == "documented-guidance"
+    assert change["after"]["sources"]
+    assert change["evidence"] == [
+        {
+            "path": "tenant_sharing.default_link_type",
+            "before": "AnonymousAccess",
+            "after": "Internal",
+        }
+    ]

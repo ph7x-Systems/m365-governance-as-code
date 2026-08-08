@@ -11,6 +11,7 @@ them apart is worse than no comparison.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass, field
 
 from .results import EvidenceUsed, Outcome, Result, Run, RunSet
@@ -320,3 +321,102 @@ def many_to_markdown(before: RunSet, after: RunSet) -> str:
             lines.extend(_change_lines(rc, heading="###"))
 
     return "\n".join(lines).rstrip() + "\n"
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# the same comparison, as a model
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Markdown was the only way out of here, which made this the one product
+# surface a reader could not consume without parsing prose. Anything that had
+# to know what changed would have had to re-derive it, and a second derivation
+# of "what changed" is a second answer to the question the whole product is
+# for.
+#
+# So the model comes first and the renderers are projections of it. The
+# Markdown above is untouched: it is what a person reads, and this is what
+# everything else reads.
+
+
+def _change_to_dict(change: RuleChange) -> dict:
+    """One rule's movement.
+
+    `kind` is stated rather than left to be inferred from the two outcomes. A
+    consumer working it out from `before` and `after` would be making the
+    semantic decision this function exists to have already made, and two
+    consumers would eventually disagree about it.
+    """
+    return {
+        "rule_id": change.rule_id,
+        "kind": change.kind,
+        "rule_version_changed": change.rule_version_changed,
+        # The full result on each side, in the same shape `evaluate --format
+        # json` emits. A diff that summarised them would be a third
+        # description of a result, and a consumer wanting the basis or the
+        # sources would have to go and find the run again.
+        "before": change.before.to_dict() if change.before else None,
+        "after": change.after.to_dict() if change.after else None,
+        "evidence": [
+            {"path": e.path, "before": e.before, "after": e.after}
+            for e in change.evidence
+        ],
+    }
+
+
+def to_dict(before: Run, after: Run) -> dict:
+    changes = compare(before, after)
+    return {
+        "diff_schema_version": "1.0",
+        "scope": "run",
+        "resource": {
+            "id": after.resource.get("id") or before.resource.get("id", ""),
+            "display_name": after.resource.get("display_name")
+            or before.resource.get("display_name"),
+        },
+        "before_collected_at": before.provenance.get("collected_at"),
+        "after_collected_at": after.provenance.get("collected_at"),
+        # Counted here so no consumer has to count, and so every consumer
+        # counts the same. `regressions` is the engine's own definition of a
+        # rule that left `pass`, not an arithmetic anybody repeats.
+        "counts": {
+            "rules_differing": len(changes),
+            "outcome_changed": sum(
+                1
+                for c in changes
+                if c.before and c.after and c.before.outcome is not c.after.outcome
+            ),
+            "regressions": len(regressions(changes)),
+        },
+        "changes": [_change_to_dict(c) for c in changes],
+    }
+
+
+def many_to_dict(before: RunSet, after: RunSet) -> dict:
+    resources = compare_sets(before, after)
+    every = [rc for change in resources for rc in change.rules]
+    return {
+        "diff_schema_version": "1.0",
+        "scope": "run-set",
+        "counts": {
+            "resources": len(resources),
+            "resources_changed": sum(1 for r in resources if r.kind != "unchanged"),
+            "rules_differing": len(every),
+            "regressions": len(regressions(every)),
+        },
+        "resources": [
+            {
+                "resource": {"id": r.resource_id, "display_name": r.display_name},
+                "kind": r.kind,
+                "changes": [_change_to_dict(c) for c in r.rules],
+            }
+            for r in resources
+        ],
+    }
+
+
+def to_json(before: Run, after: Run) -> str:
+    return json.dumps(to_dict(before, after), indent=2, ensure_ascii=False) + "\n"
+
+
+def many_to_json(before: RunSet, after: RunSet) -> str:
+    return json.dumps(many_to_dict(before, after), indent=2, ensure_ascii=False) + "\n"
