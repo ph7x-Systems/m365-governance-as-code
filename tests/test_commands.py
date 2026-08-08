@@ -857,6 +857,8 @@ def test_each_slice_is_paired_with_a_profile_that_can_answer_it():
     on_disk = {loaded.data["id"]: loaded.data for loaded in load_rules(RULES)}
 
     for chosen in collecting.SLICES.values():
+        if not chosen.produces_findings:
+            continue  # inventory slice; the test below covers it instead
         profile = yaml.safe_load(
             (DATA / "profiles" / f"{chosen.profile}.yaml").read_text()
         )
@@ -876,6 +878,33 @@ def test_each_slice_is_paired_with_a_profile_that_can_answer_it():
         assert any(o is not Outcome.UNKNOWN for o in outcomes), (
             f"slice {chosen.name} paired with profile {chosen.profile} answers "
             f"nothing about its own evidence: {[o.value for o in outcomes]}"
+        )
+
+
+def test_a_slice_no_rule_consumes_says_what_does():
+    """The twin rule, kept honest for the exception.
+
+    A collection path no rule reads is normally forbidden, because it costs
+    maintenance and produces nothing. One slice is deliberately outside that,
+    and the price of the exception is naming its consumer: without it, the
+    next reader cannot tell a considered decision from an oversight.
+    """
+    from m365_governance import collecting
+
+    for chosen in collecting.SLICES.values():
+        if chosen.produces_findings:
+            assert chosen.consumed_by == "governance rules", (
+                f"slice {chosen.name} produces findings, so its consumer is "
+                f"the rules; it names {chosen.consumed_by!r}."
+            )
+            continue
+        assert chosen.consumed_by != "governance rules", (
+            f"slice {chosen.name} collects evidence no rule reads and names "
+            f"the rules as its consumer. Say what actually reads it."
+        )
+        assert len(chosen.consumed_by) > 12, (
+            f"slice {chosen.name} names its consumer as "
+            f"{chosen.consumed_by!r}, which explains nothing."
         )
 
 

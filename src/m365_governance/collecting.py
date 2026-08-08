@@ -47,11 +47,37 @@ class Slice:
     #: inventory, not owners, and pointing it at the ownership profile
     #: produced 106 `unknown` results across 53 sites.
     shaped_like: str
+    #: Whether any rule consumes what this slice collects.
+    #:
+    #: The standing twin rule is that a collection path no rule can consume
+    #: must not exist, and it holds: a path nobody reads is a maintenance cost
+    #: with no output. `agents` is the first deliberate exception and it is
+    #: recorded rather than smuggled past a test.
+    #:
+    #: Its evidence has no rule because the surface has no documented basis for
+    #: one. Microsoft publishes nothing about how many agents an organisation
+    #: should have or where they should live, so a threshold would be invented
+    #: and a pass would mean nothing. The inventory is still worth collecting:
+    #: the consumer is the report and the Workbench, and `consumed_by` names it
+    #: so that "no rule" never reads as "nobody looked".
+    produces_findings: bool = True
+    consumed_by: str = "governance rules"
 
 
 SLICES = {
     s.name: s
     for s in [
+        Slice(
+            "agents",
+            "Agents",
+            needs_site=True,
+            needs_tenant=False,
+            profile="default",
+            produces_findings=False,
+            consumed_by="the agent inventory in a report, and the Workbench",
+            describes="the Copilot agents in one site, and the sources each declares",
+            shaped_like="site-agents-with-sources",
+        ),
         Slice(
             "sites",
             "TenantSites",

@@ -6,8 +6,8 @@ What can be read against what is read. The engine's coverage question asked of i
 
 - PnP.PowerShell **3.3.0**
 - **283** read-only cmdlets available
-- **11** called by the collector
-- **272** not called
+- **12** called by the collector
+- **271** not called
 
 > **This is a list of candidates, not a backlog.** A cmdlet appearing here is a surface somebody *could* read. Whether it should become evidence, and whether a rule can be written on it, is the rule contract's question, and that starts with a documented basis. **A cmdlet is not a reason.**
 
@@ -20,6 +20,7 @@ Two standing rules apply to everything below, and they are twins:
 ## What the collector reads today
 
 - `Get-PnPApp`
+- `Get-PnPCopilotAgent`
 - `Get-PnPFeature`
 - `Get-PnPList`
 - `Get-PnPListItem`
@@ -309,7 +310,6 @@ No area pattern matched these. An area missing from the map is more likely than 
 - `Get-PnPContainerTypeConfiguration`
 - `Get-PnPContext`
 - `Get-PnPCopilotAdminLimitedMode`
-- `Get-PnPCopilotAgent`
 - `Get-PnPDefaultColumnValues`
 - `Get-PnPDeletedContainer`
 - `Get-PnPDeletedTeam`

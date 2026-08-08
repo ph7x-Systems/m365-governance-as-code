@@ -1,0 +1,114 @@
+{
+  "schema_version": "1.0",
+  "provenance": {
+    "collected_at": "2026-08-08T18:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant_id": "contoso.sharepoint.com",
+    "identity_kind": "delegated",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "agents",
+      "enumeration"
+    ],
+    "completed": [
+      "agents"
+    ],
+    "unavailable": {
+      "enumeration": {
+        "state": "partial",
+        "detail": "Agents are files, so this is what the running identity can see in this site collection. A site with no agents and a site this identity cannot open return the same empty result."
+      }
+    }
+  },
+  "resource": {
+    "id": "contoso,site,finance",
+    "type": "site",
+    "display_name": "Finance",
+    "url": "https://contoso.sharepoint.com/sites/finance"
+  },
+  "facts": {
+    "agents": {
+      "inventory": {
+        "state": "observed",
+        "value": [
+          {
+            "file": "/sites/finance/SiteAssets/Budget questions.agent",
+            "type": "Site",
+            "schema_version": "1.0",
+            "name": "Budget questions",
+            "description": "Answers questions about the quarterly budget files.",
+            "has_instructions": true,
+            "source_count": 2,
+            "sources": [
+              {
+                "url": "https://contoso.sharepoint.com/sites/finance/Shared Documents/Budget",
+                "name": "Budget",
+                "type": "Folder",
+                "site_id": "1f1d1a1c-0000-4000-8000-00000000ab01",
+                "web_id": "1f1d1a1c-0000-4000-8000-00000000ab02",
+                "list_id": "1f1d1a1c-0000-4000-8000-00000000ab03",
+                "unique_id": "1f1d1a1c-0000-4000-8000-00000000ab04",
+                "named_by": "url"
+              },
+              {
+                "url": "https://contoso.sharepoint.com/sites/finance/Shared Documents/Forecast.xlsx",
+                "name": "Forecast.xlsx",
+                "type": "File",
+                "site_id": "1f1d1a1c-0000-4000-8000-00000000ab01",
+                "web_id": "1f1d1a1c-0000-4000-8000-00000000ab02",
+                "list_id": "1f1d1a1c-0000-4000-8000-00000000ab03",
+                "unique_id": "1f1d1a1c-0000-4000-8000-00000000ab05",
+                "named_by": "id"
+              }
+            ]
+          },
+          {
+            "file": "/sites/finance/SiteAssets/Invoices.agent",
+            "type": "DocumentLibrary",
+            "schema_version": "1.0",
+            "name": "Invoices",
+            "description": "",
+            "has_instructions": false,
+            "source_count": 0,
+            "sources": []
+          }
+        ],
+        "raw": {
+          "field": "Get-PnPCopilotAgent",
+          "value": "2 agents"
+        }
+      },
+      "count": {
+        "state": "observed",
+        "value": 2,
+        "raw": {
+          "field": "Get-PnPCopilotAgent",
+          "value": 2
+        }
+      },
+      "source_count": {
+        "state": "observed",
+        "value": 2,
+        "raw": {
+          "field": "Get-PnPCopilotAgent",
+          "value": 2
+        }
+      },
+      "agents_without_declared_sources": {
+        "state": "observed",
+        "value": 1,
+        "raw": {
+          "field": "Get-PnPCopilotAgent",
+          "value": 1
+        }
+      }
+    }
+  }
+}

@@ -137,7 +137,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification')]
+    [ValidateSet('SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents')]
     [string] $Mode,
 
     [Parameter(Mandatory = $true)]
@@ -187,7 +187,7 @@ $CollectorName = 'spo-collector'
 
 $Modules = Join-Path $PSScriptRoot 'modules'
 foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions',
-        'Modernity', 'Activity', 'Classification', 'Spfx')) {
+        'Modernity', 'Activity', 'Classification', 'Spfx', 'Agents')) {
     Import-Module (Join-Path $Modules "$module.psm1") -Force
 }
 
@@ -348,6 +348,27 @@ switch ($Mode) {
                         -TenantSiteError $tenantSiteError) `
                 -Requested @('activity') -Completed @('activity') `
                 -Unavailable ([ordered]@{}))
+    }
+
+    'Agents' {
+        # Agents are files in the Site Assets library, so this is a site read
+        # and not an admin centre one. Whatever this identity cannot open does
+        # not appear, which is why coverage says `partial` rather than letting
+        # the count pass for a complete one.
+        $web = Get-PnPWeb
+        $facts = Get-AgentFacts
+        $nota = New-Unavailable -State 'partial' -Detail (
+            'Agents are files, so this is what the running identity can see ' +
+            'in this site collection. A site with no agents and a site this ' +
+            'identity cannot open return the same empty result.')
+        Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
+                -Resource ([ordered]@{
+                    id = $SiteUrl; type = 'site'
+                    display_name = [string] $web.Title; url = $SiteUrl
+                }) `
+                -Facts $facts -Requested @('agents', 'enumeration') `
+                -Completed @('agents') `
+                -Unavailable ([ordered]@{ enumeration = $nota }))
     }
 
     'SpfxCatalog' {
