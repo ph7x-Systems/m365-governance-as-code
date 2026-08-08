@@ -17,7 +17,7 @@ to point at it.
 | **Modernity** (`MODERN`) | 3 | 2 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
 | **Permissions** (`LIST`) | 3 | 3 | 2 | 14 | 3 | 3 | 3 | — | 1 | yes |
 | **SPFx** (`SPFX`) | 1 | 2 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
-| **Sharing** (`SHARE`) | 4 | 3 | 3 | 6 | 4 | 4 | 3 | — | 4 | yes |
+| **Sharing** (`SHARE`) | 4 | 3 | 3 | 7 | 4 | 4 | 3 | — | 4 | yes |
 | **Sites and storage** (`SITE`) | 3 | 4 | 3 | 9 | 3 | 3 | 3 | — | 1 | yes |
 
 **18 rules across 7 domains.** 4 complete, 3 not.

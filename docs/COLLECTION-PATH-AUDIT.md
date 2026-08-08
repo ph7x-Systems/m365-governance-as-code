@@ -51,7 +51,7 @@ evaluates comes from the second.
 | `site.storage_quota_mb` | `Get-PnPTenantSite` (enumeration) | **unproven** | `SPO-SITE-003` | **safe by design**, see below |
 | `site.storage_used_mb` | enumeration | **unproven** | `SPO-SITE-003` | **safe by design** |
 | `site.storage_used_percent` | derived | only when both are `observed` | `SPO-SITE-003` | **safe by design** |
-| `site.sharing_capability` | enumeration | **unproven** | nothing | **exposed, not safe to evaluate** |
+| `site.sharing_capability` | enumeration | **documented not populated** | nothing, by construction | **not evidence**, see below |
 
 ### Why SPO-SITE-003 is safe
 
@@ -339,3 +339,150 @@ ticked, and a suggestion is not a source.
 **Sharing stays closed.** A closed domain may contain deferred candidates:
 deferred means today's evidence cannot support implementation, not that the
 domain is unfinished. It reopens when one of the two unblocking facts appears.
+
+---
+
+## Closed: the enumeration path is documented not to populate this
+
+**2026-08-08, against a sandbox tenant, interactive.** The question this audit
+opened is closed. The behaviour was reproduced, and then the cause was found in
+Microsoft's own documentation rather than inferred from the symptom.
+
+### What was observed
+
+Five sites, read both ways:
+
+| Site | `SharingCapability` enumerated | by `-Identity` |
+|---|---|---|
+| root | **`Disabled`** | **`ExternalUserAndGuestSharing`** |
+| root (second) | `ExternalUserAndGuestSharing` | same |
+| `/search` | `Disabled` | same |
+| `/sites/allcompany` | `ExternalUserSharingOnly` | same |
+| `/sites/DigitalInitiative…` | `ExternalUserSharingOnly` | same |
+
+One in five disagreed, and in the dangerous direction: a site that permits
+external sharing with guests reported as sharing disabled.
+
+### What should have been observed
+
+The site's effective `SharingCapability` — the same value the per-site
+retrieval returns, since both name one property of one site.
+
+### Why they differ, and it is documented
+
+`Get-SPOSite` states the limitation on its own reference page:
+
+> If the Limit or Filter parameters are provided then the following site
+> collection properties will not be populated and may contain a default value:
+> […] **SharingCapability**, SharingDomainRestrictionMode.
+
+Twenty-two properties are named. `SharingCapability` is one of them.
+
+The bridge from that page to this collector is the API each path calls.
+`Get-PnPTenantSite` without `-Identity` calls
+`Tenant.GetSitePropertiesFromSharePointByFilters`, the filter-based enumeration
+the documented limitation describes. With `-Identity` it calls
+`Tenant.GetSitePropertiesByUrl` or `GetSitePropertiesById`, which the limitation
+does not cover.
+
+`Disabled` is the zero member of the enum: exactly the "default value" the
+documentation names.
+
+**Cause status: documented and reproduced.** Not inferred, and not a guess about
+an undocumented internal.
+
+### The part the documentation explains and the reassuring reading does not
+
+Four sites of five agreed. That looks like a rare fault; the documentation says
+otherwise. The wording is *may contain a default value* — population is not
+guaranteed, rather than uniformly absent. **Agreement on four sites is the lack
+of a symptom, not the presence of correctness**, and nothing in the API contract
+says which site gets a populated value on which call.
+
+That is why the decision is not "retry", and not "compare and keep the more
+permissive value".
+
+### The decision that follows
+
+**The enumeration path is not accepted as evidence for any property on the
+documented list.** Only the per-site retrieval is authoritative for them.
+
+- `site.sharing_capability` is **no longer collected as a fact**. The collector
+  writes `not-supported` with the reason and a pointer to the identity path.
+  Recorded rather than deleted: a future reader deserves to find out why it is
+  absent instead of wondering whether anybody thought about it.
+- **No live rule was affected**, which the audit predicted and this confirms
+  rather than assumes: `SPO-SHARE-001` reads `sharing.capability` from the
+  identity path.
+- The rest of the enumerated map — `Template`, `LockState`,
+  `StorageUsageCurrent`, `StorageQuota`, `LastContentModifiedDate`, `HubSiteId`
+  and `GroupId` — appears nowhere on the documented list, which is why storage
+  agreed on all five sites. That is now a checked fact rather than an
+  observation: a test fails if any of the twenty-two ever enters that map, and a
+  second test keeps the list printed below in step with the list the guard
+  holds.
+- The five properties `Sharing.psm1` reads that **are** on the list —
+  `SharingCapability`, `DefaultSharingLinkType`, `DefaultLinkPermission`,
+  `AnonymousLinkExpirationInDays` and
+  `OverrideTenantAnonymousLinkExpirationPolicy` — reach it from
+  `Get-PnPTenantSite -Identity`. `SensitivityLabelInfo` comes from
+  `Get-PnPSite`, a different API that the limitation does not describe.
+
+### The twenty-two, as documented
+
+```
+AllowDownloadingNonWebViewableFiles
+AllowEditing
+AllowSelfServiceUpgrade
+AnonymousLinkExpirationInDays
+ConditionalAccessPolicy
+DefaultLinkPermission
+DefaultLinkToExistingAccess
+DefaultSharingLinkType
+DenyAddAndCustomizePages
+DisableCompanyWideSharingLinks
+ExternalUserExpirationInDays
+InformationSegment
+LimitedAccessFileType
+OverrideTenantAnonymousLinkExpirationPolicy
+OverrideTenantExternalUserExpirationPolicy
+PWAEnabled
+SandboxedCodeActivationCapability
+SensitivityLabel
+SharingAllowedDomainList
+SharingBlockedDomainList
+SharingCapability
+SharingDomainRestrictionMode
+```
+
+### The lesson, and it is bigger than this property
+
+> **A property with the correct type and a plausible value is not evidence
+> until its collection path is documented or proven to populate it. A path that
+> returns a default value on failure produces a wrong answer with no marker on
+> it.**
+
+`Disabled` is a real member of the enum. It has the right type, a sensible
+meaning and nothing to distinguish it from a reading. **A null announces itself;
+this does not.** Every defence this engine has — required evidence,
+applicability gates, the five states — is built to catch an absence, and none of
+them catches a confident wrong answer.
+
+The working rule for the next collector: **before mapping a property out of a
+bulk or filtered call, read what the cmdlet reference page says that call
+populates.** Here the page named the property outright, and the whole defect was
+one paragraph away from never existing.
+
+### References
+
+- [Get-SPOSite](https://learn.microsoft.com/powershell/module/microsoft.online.sharepoint.powershell/get-sposite) — the documented limitation and the list of twenty-two
+- [Get-PnPTenantSite](https://pnp.github.io/powershell/cmdlets/Get-PnPTenantSite.html) — the cmdlet this collector calls
+- `pnp/powershell`, `src/Commands/Admin/GetTenantSite.cs` — which Tenant API each parameter set calls
+
+### Still open
+
+`Get-PnPEntraIDAppPermission` was refused: *Forbidden (403), insufficient
+privileges*. That is the Graph, not SharePoint, and reading application
+permissions needs `Application.Read.All` across the whole directory. **Recorded
+as coverage, not as a hole to force**: whether that scope is worth granting is
+the owner's decision, and the SPFx candidate waits behind it.

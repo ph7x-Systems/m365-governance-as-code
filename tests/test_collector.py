@@ -157,3 +157,84 @@ def test_a_slice_with_no_site_connects_to_the_admin_centre():
         f"slice modes with no -SiteUrl that would connect to one: "
         f"{sorted(siteless - admin)}"
     )
+
+
+#: The site properties Microsoft documents as **not populated** by
+#: `Get-SPOSite` when `-Limit` or `-Filter` is given: "will not be populated and
+#: may contain a default value". `Get-PnPTenantSite` without `-Identity` calls
+#: the same filter-based admin API, so the limitation reaches this collector.
+#:
+#: One of them, `SharingCapability`, was read from that path and was wrong on a
+#: tenant on 2026-08-08 — the enum's zero member, with no marker on it. These
+#: two tests exist so nobody has to remember that.
+#:
+#: https://learn.microsoft.com/powershell/module/microsoft.online.sharepoint.powershell/get-sposite
+UNPOPULATED_BY_ENUMERATION = frozenset(
+    {
+        "AllowDownloadingNonWebViewableFiles",
+        "AllowEditing",
+        "AllowSelfServiceUpgrade",
+        "AnonymousLinkExpirationInDays",
+        "ConditionalAccessPolicy",
+        "DefaultLinkPermission",
+        "DefaultLinkToExistingAccess",
+        "DefaultSharingLinkType",
+        "DenyAddAndCustomizePages",
+        "DisableCompanyWideSharingLinks",
+        "ExternalUserExpirationInDays",
+        "InformationSegment",
+        "LimitedAccessFileType",
+        "OverrideTenantAnonymousLinkExpirationPolicy",
+        "OverrideTenantExternalUserExpirationPolicy",
+        "PWAEnabled",
+        "SandboxedCodeActivationCapability",
+        "SensitivityLabel",
+        "SharingAllowedDomainList",
+        "SharingBlockedDomainList",
+        "SharingCapability",
+        "SharingDomainRestrictionMode",
+    }
+)
+
+#: The one module fed by the enumeration. Every other module receives a site
+#: from `Get-PnPTenantSite -Identity` or from `Get-PnPSite`, neither of which
+#: the documented limitation describes.
+SITES_MODULE = COLLECTORS / "powershell" / "sharepoint" / "modules" / "Sites.psm1"
+
+AUDIT = COLLECTORS.parents[3] / "docs" / "COLLECTION-PATH-AUDIT.md"
+
+
+def enumerated_map() -> set[str]:
+    """The PnP property names `Get-SiteInventoryFacts` maps, read out of the
+    hashtable rather than restated here: a list kept by hand would go stale
+    exactly when it mattered."""
+    text = SITES_MODULE.read_text(encoding="utf-8")
+    block = text.split("$map = [ordered]@{", 1)[1].split("}", 1)[0]
+    return set(re.findall(r"=\s*'([A-Za-z]+)'", block))
+
+
+def test_the_enumerated_map_is_read_and_not_empty():
+    """If the parse above ever returns nothing, the guard below passes for the
+    wrong reason. This is the test that keeps it honest."""
+    assert len(enumerated_map()) >= 5
+
+
+def test_the_enumerated_map_avoids_every_documented_unpopulated_property():
+    """Microsoft documents that filtered enumeration may return a default value
+    for these instead of the real one, so a fact built on them would be a wrong
+    answer with the right type and no marker."""
+    forbidden = enumerated_map() & UNPOPULATED_BY_ENUMERATION
+    assert not forbidden, (
+        f"{sorted(forbidden)} read from the enumeration path, which Get-SPOSite "
+        "documents as not populated there. Use Get-PnPTenantSite -Identity."
+    )
+
+
+def test_the_audit_lists_the_same_properties_as_the_guard():
+    """The audit prints the twenty-two so a reader can see them. Two copies of
+    a list drift; this makes them fail together instead."""
+    heading = "### The twenty-two, as documented"
+    printed = AUDIT.read_text(encoding="utf-8").split(heading, 1)
+    assert len(printed) == 2, "the audit no longer prints the documented list"
+    block = printed[1].split("```")[1]
+    assert set(block.split()) == set(UNPOPULATED_BY_ENUMERATION)

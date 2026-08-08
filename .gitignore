@@ -18,3 +18,4 @@ AGENTS.md
 # A binary that changes on every run and tells a reader nothing.
 .coverage
 htmlcov/
+.DS_Store

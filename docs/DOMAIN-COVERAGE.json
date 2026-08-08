@@ -191,7 +191,8 @@
         "site-sharing-guests-only",
         "site-sharing-inherits-tenant-default",
         "tenant-sharing-default-anyone-and-edit",
-        "tenant-sharing-mitigated"
+        "tenant-sharing-mitigated",
+        "tenant-sharing-observed-20260808"
       ],
       "guide": [
         "ch13",

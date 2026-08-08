@@ -51,9 +51,32 @@ Connect-PnPOnline -Url $TenantUrl -Interactive -ClientId $ClientId
 # unpopulated, and nothing says whether Get-PnPTenantSite inherits it.
 Say "## 1. Enumeration against identity"
 Say ""
-$sites = @(Get-PnPTenantSite | Select-Object -First $Sample)
-Say "Compared $($sites.Count) sites, both ways."
-Say ""
+
+# A refusal is an answer. The first run of this script died here with
+# "Attempted to perform an unauthorized operation", which is a coverage fact
+# reported as a crash: the product's own principle, broken by the tool meant to
+# validate it. Every step is now allowed to fail without ending the run, and
+# what failed is recorded with the reason.
+$sites = @()
+$refused = $null
+try {
+    $sites = @(Get-PnPTenantSite -ErrorAction Stop | Select-Object -First $Sample)
+}
+catch {
+    $refused = $_.Exception.Message
+}
+
+if ($refused) {
+    Say "**Not read.** $refused"
+    Say ""
+    Say "Delegated admin reads need SharePoint ``AllSites.FullControl`` on the application **and** an account with the SharePoint Administrator role. Microsoft documents the first: *admin API operations on behalf of a user require consent for AllSites.FullControl*."
+    Say ""
+    Say "This is **coverage**, not a failure of the run. Nothing below depends on it."
+    Say ""
+}
+else {
+    Say "Compared $($sites.Count) sites, both ways."
+    Say ""
 Say "| Site | Quota | Used | Sharing | Agrees |"
 Say "|---|---|---|---|---|"
 
@@ -68,32 +91,43 @@ foreach ($s in $sites) {
     Say "| ``$name`` | $($s.StorageQuota) / $($one.StorageQuota) | $($s.StorageUsageCurrent) / $($one.StorageUsageCurrent) | $($s.SharingCapability) / $($one.SharingCapability) | $(if ($same) { 'yes' } else { '**NO**' }) |"
 }
 Say ""
-Say $(if ($divergent -eq 0) {
-    "**No divergence across $($sites.Count) sites.** The risk is reduced and this is the record of it. It is not a proof for every site in every tenant."
-} else {
-    "**$divergent of $($sites.Count) diverged. A collector defect is proven**, and the enumeration path stops being evidence for those properties."
-})
-Say ""
+    Say $(if ($divergent -eq 0) {
+        "**No divergence across $($sites.Count) sites.** The risk is reduced and this is the record of it. It is not a proof for every site in every tenant."
+    } else {
+        "**$divergent of $($sites.Count) diverged. A collector defect is proven**, and the enumeration path stops being evidence for those properties."
+    })
+    Say ""
+}
 
 # ── 2. the tenant sharing collector, first real run ─────────────────────────
 Say "## 2. TenantSharing, first run against a tenant"
 Say ""
-$tenant = Get-PnPTenant
-Say "| Property | Value |"
-Say "|---|---|"
-foreach ($p in 'SharingCapability', 'DefaultSharingLinkType', 'FileAnonymousLinkType') {
-    Say "| ``$p`` | $($tenant.$p) |"
+$tenant = $null
+try { $tenant = Get-PnPTenant -ErrorAction Stop }
+catch {
+    Say "**Not read.** $($_.Exception.Message)"
+    Say ""
+    Say "The same permission as step 1. Coverage, not a failure."
+    Say ""
 }
-Say ""
-Say "These are the three the collector reads and the two rules evaluate. **Read here to prove the call returns them at all**, which a fixture cannot."
-Say ""
+
+if ($tenant) {
+    Say "| Property | Value |"
+    Say "|---|---|"
+    foreach ($p in 'SharingCapability', 'DefaultSharingLinkType', 'FileAnonymousLinkType') {
+        Say "| ``$p`` | $($tenant.$p) |"
+    }
+    Say ""
+    Say "These are the three the collector reads and the two rules evaluate. **Read here to prove the call returns them at all**, which a fixture cannot."
+    Say ""
+}
 
 # ── 3. what the two Knowledge articles claim ────────────────────────────────
 Say "## 3. The two articles"
 Say ""
 Say "``read-tenant-default-sharing-link-type`` and ``read-anyone-link-permissions`` say ``tested_with: [PnP.PowerShell 3.3.0]`` and deliberately not ``SharePoint Online``."
 Say ""
-$observed = $tenant.SharingCapability -and $tenant.DefaultSharingLinkType
+$observed = $tenant -and $tenant.SharingCapability -and $tenant.DefaultSharingLinkType
 Say $(if ($observed) {
     "**Observed.** The frontmatter may now say ``SharePoint Online`` as well, and the enum values above are what a reader will see."
 } else {
@@ -132,6 +166,11 @@ Say ""
 # memory. No real tenant data enters git.
 Say "## Fixture"
 Say ""
+if (-not $tenant) {
+    Say "None. A fixture is the shape of something observed, and nothing was."
+    Say ""
+}
+else {
 $fixture = [ordered]@{
     schema_version = '1.0'
     provenance     = [ordered]@{
@@ -142,7 +181,10 @@ $fixture = [ordered]@{
         source_api        = 'PnP.PowerShell / SharePoint Admin'
         tenant_id         = 'contoso-admin.sharepoint.com'
         identity_kind     = 'delegated'
-        scopes            = @('AllSites.Read')
+        # AllSites.FullControl, and not Read: Microsoft documents that admin
+        # API operations on behalf of a user require it. Recording Read here
+        # would put a scope in the provenance that the run did not hold.
+        scopes            = @('AllSites.FullControl')
     }
     coverage       = [ordered]@{
         requested   = @('tenant_sharing')
@@ -188,6 +230,7 @@ Say "Wrote ``$fixturePath``, in the shape this tenant returned."
 Say ""
 Say "**The tenant identity is replaced**, deliberately and not as an oversight: the shape is the finding, the tenant is not. What is real in it is the arrangement of states and the values the enum actually takes."
 Say ""
+}
 Say "---"
 Say ""
 Say "**Nothing above is a verdict.** These are observations and coverage. What any of it means is the engine's answer, from this evidence."
