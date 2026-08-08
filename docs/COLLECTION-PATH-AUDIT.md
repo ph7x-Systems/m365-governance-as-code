@@ -95,6 +95,10 @@ We do not know, and we are not assuming the equivalence in either direction.
 The question is empirical and cannot be settled from documentation:
 
 ```text
+Run it interactively. Never with a device code: a device-code session is not
+the same consent or the same user context, and a validation that does not
+reproduce the context validates nothing.
+
 For a sample of the same sites, compare:
     Get-PnPTenantSite            (enumeration)  → StorageQuota, StorageUsageCurrent, SharingCapability
     Get-PnPTenantSite -Identity  (single site)  → the same three
