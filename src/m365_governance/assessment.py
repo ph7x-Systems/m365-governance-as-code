@@ -39,12 +39,27 @@ HASHED = ("run_set", "evidence", "versions")
 
 
 def _digest(value: Any) -> str:
-    """A digest of the value as canonical JSON.
+    """A digest of the value in the contract's canonical form.
 
-    Sorted keys and no incidental whitespace, so that two exports of the same
-    assessment agree byte for byte without anybody comparing their contents.
+    THE CANONICAL FORM IS PART OF THE CONTRACT, not an implementation detail,
+    because a consumer has to reproduce it exactly to verify anything:
+
+        keys sorted, byte order
+        no whitespace between tokens
+        UTF-8, with nothing escaped that does not have to be
+
+    That last line was learned rather than chosen. The first version left
+    Python's default `ensure_ascii=True` in place, and a consumer using the
+    ordinary .NET encoder escaped apostrophes as \u0027 while Python wrote
+    them raw. Ten apostrophes in one run set were enough for two correct
+    implementations of "the same JSON" to produce different digests.
+
+    Escaping as little as possible is the only version of this that two
+    languages agree on without one of them imitating the other's defaults.
     """
-    encoded = json.dumps(value, sort_keys=True, separators=(",", ":")).encode()
+    encoded = json.dumps(
+        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 

@@ -149,7 +149,8 @@
           "type": "string",
           "enum": [
             "sha256"
-          ]
+          ],
+          "description": "sha256 over the canonical form, which is part of this contract: keys sorted in byte order, no whitespace between tokens, UTF-8 with nothing escaped that does not have to be. A consumer that escapes more, as the ordinary .NET encoder does with apostrophes, computes a different digest for the same document."
         },
         "canonical_parts": {
           "type": "object",

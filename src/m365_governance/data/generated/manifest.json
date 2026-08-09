@@ -18,7 +18,7 @@
   "generator_version": "1.0.0",
   "schemas": {
     "https://ph7x.com/schemas/m365-governance/assessment/1.0.0": {
-      "digest": "68f6d2ee5218829f136bdb5bfad35fae8775d9135ed8b2b80a53217c80a68b16",
+      "digest": "394b25489ecd7b97d1c1c498c7ae2fc7888da868abe947462d4303b6b1111fc9",
       "path": "schemas/assessment.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/1.0.0": {
@@ -42,5 +42,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "999ce4f4fe3fec2099fe4cb099631bb1fd0617ff6f88a9a7fe23a3b2720f9042"
+  "set_digest": "e96def11488766427ca6c1b629d99662c186ccb0a1c020126f588202cdbe473e"
 }
