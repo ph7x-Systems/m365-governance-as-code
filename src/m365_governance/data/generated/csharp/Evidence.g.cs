@@ -46,7 +46,7 @@ public sealed record Evidence(
     [property: JsonPropertyName("provenance")] Provenance Provenance,
     [property: JsonPropertyName("coverage")] Coverage Coverage,
     [property: JsonPropertyName("resource")] Resource Resource,
-    [property: JsonPropertyName("facts")] JsonElement Facts,
+    [property: JsonPropertyName("facts")] IReadOnlyDictionary<string, JsonElement?> Facts,
     /// <summary>The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand.</summary>
     [property: JsonPropertyName("$schema")] string Schema
 );
@@ -67,7 +67,7 @@ public sealed record Provenance(
 public sealed record Coverage(
     [property: JsonPropertyName("requested")] IReadOnlyList<string> Requested,
     [property: JsonPropertyName("completed")] IReadOnlyList<string> Completed,
-    [property: JsonPropertyName("unavailable")] JsonElement Unavailable
+    [property: JsonPropertyName("unavailable")] IReadOnlyDictionary<string, CoverageUnavailableEntry> Unavailable
 );
 public sealed record Resource(
     [property: JsonPropertyName("id")] string Id,
@@ -121,6 +121,10 @@ public sealed record Tenant(
     [property: JsonPropertyName("id")] string? Id,
     /// <summary>The SharePoint host, which is an endpoint rather than an identity. Normalised from the admin centre form documented by Microsoft as `{prefix}-admin`, so one tenant reached two ways produces one value. That normalisation is a compatibility mechanism for as long as the directory id is unobserved, not the definition of a tenant: a multi-geo satellite still carries its own host and is not silently folded into the primary.</summary>
     [property: JsonPropertyName("host")] string Host
+);
+public sealed record CoverageUnavailableEntry(
+    [property: JsonPropertyName("state")] string State,
+    [property: JsonPropertyName("detail")] string Detail
 );
 public sealed record GroupPrincipalExpansion(
     [property: JsonPropertyName("status")] string Status,

@@ -68,15 +68,15 @@ public sealed record Manifest(
 public sealed record Versions(
     [property: JsonPropertyName("engine")] string Engine,
     /// <summary>Rule id to the version of that rule as it was evaluated.</summary>
-    [property: JsonPropertyName("rules")] JsonElement Rules,
+    [property: JsonPropertyName("rules")] IReadOnlyDictionary<string, string> Rules,
     /// <summary>Collector name to its version, as the evidence declared it.</summary>
-    [property: JsonPropertyName("collectors")] JsonElement Collectors
+    [property: JsonPropertyName("collectors")] IReadOnlyDictionary<string, string> Collectors
 );
 public sealed record Hashes(
     /// <summary>sha256 over the canonical form, which is part of this contract: keys sorted in byte order, no whitespace between tokens, UTF-8 with nothing escaped that does not have to be. A consumer that escapes more, as the ordinary .NET encoder does with apostrophes, computes a different digest for the same document.</summary>
     [property: JsonPropertyName("algorithm")] string Algorithm,
     /// <summary>Part name to its digest, for every required member of `canonical` except `hashes`. The manifest IS covered, minus its `assessment_id`: that field is the id and the id derives from these digests, so including it would ask the identity to contain itself. Leaving the whole manifest out, which an earlier version did, let `tenant`, `created_at` and `identity_kind` be changed without anything noticing.</summary>
-    [property: JsonPropertyName("canonical_parts")] JsonElement CanonicalParts,
+    [property: JsonPropertyName("canonical_parts")] IReadOnlyDictionary<string, string> CanonicalParts,
     /// <summary>One digest over the parts above, in sorted key order. This is what a Comparison references and what `assessment_id` derives from, so two exports of the same assessment agree without comparing their contents.</summary>
     [property: JsonPropertyName("canonical_hash")] string CanonicalHash
 );

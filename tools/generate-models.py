@@ -246,6 +246,19 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
         if "properties" in node:
             nested.append((pascal(name), node))
             return pascal(name)
+
+        # A map: no fixed keys, and every value the same shape. The keys are
+        # data — a slice name, a rule id, a resource class — so there is
+        # nothing to name a property after, and that is not a reason to hand a
+        # consumer raw JSON. `coverage.unavailable` reached a viewer as an
+        # opaque element and the viewer would have had to parse the contract by
+        # hand to read it, which is the one thing a generated model exists to
+        # stop.
+        extra = node.get("additionalProperties")
+        if isinstance(extra, dict) and extra:
+            value = type_of(extra, f"{name}_entry", nested, defs)
+            return f"IReadOnlyDictionary<string, {value}>"
+
         return "JsonElement"
 
     if declared in PRIMITIVE:

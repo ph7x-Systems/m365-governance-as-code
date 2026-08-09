@@ -40,7 +40,7 @@ public sealed record RunSet(
     /// <summary>How many resources were observed. It cannot say how many the identity failed to return, and `run_coverage` is where that limit is recorded rather than inferred.</summary>
     [property: JsonPropertyName("resources")] int Resources,
     /// <summary>Resource class to how many carried it. A label, never a filter.</summary>
-    [property: JsonPropertyName("by_class")] JsonElement ByClass,
+    [property: JsonPropertyName("by_class")] IReadOnlyDictionary<string, int> ByClass,
     /// <summary>How many runs a profile moved BELOW THE FOLD. Not how many were skipped: their findings are evaluated, counted and printed, just lower down. This said 'set aside rather than evaluated', which is the opposite of what the engine does, and a consumer implementing the contract as written would report evaluated resources as unevaluated.</summary>
     [property: JsonPropertyName("set_aside")] int SetAside,
     [property: JsonPropertyName("counts")] Counts Counts,
