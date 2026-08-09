@@ -17,10 +17,24 @@
 //   oneOf
 //   then
 //
-// Validate against the schema as well. `JsonSerializerOptions` must set
-// UnmappedMemberHandling.Disallow, because System.Text.Json ignores unknown
-// members by default while this schema refuses them, and that difference is
-// silent in exactly the case that matters.
+// VALIDATE AGAINST THE SCHEMA AS WELL. Two settings are required and are not
+// the defaults:
+//
+//   UnmappedMemberHandling = Disallow          unknown members are ignored
+//                                              by default; these schemas
+//                                              refuse them
+//   RespectRequiredConstructorParameters = true a missing required member is
+//                                              filled with null by default
+//
+// Both were verified against a compiler rather than assumed, and even with
+// both the model is narrower than the contract. Demonstrated: a property that
+// is optional and NOT nullable, such as an optional `string`, permits absence
+// and refuses null. C# collapses the two into the same `null`, so
+//
+//   {"tenant": null}   the model accepts it, the schema refuses it
+//
+// Deserialising successfully is therefore not honouring the contract, and the
+// order that holds is validate, then deserialise.
 // </auto-generated>
 #nullable enable
 using System.Collections.Generic;

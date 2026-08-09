@@ -4,10 +4,15 @@
     tools/generate-models.py            write the models
     tools/generate-models.py --check    fail if what is on disk is stale
 
-WHY THIS EXISTS. The Workbench's models were written by hand against JSON the
-engine happens to emit. That is a synchronisation problem waiting for the first
+WHY THIS EXISTS. A consumer that writes its models by hand against JSON this
+engine happens to emit has a synchronisation problem waiting for the first
 schema change, and the synchronisation is invisible until something silently
 reads a field that moved.
+
+WHAT THIS GENERATOR DOES NOT KNOW. Who consumes it. The engine publishes
+contracts and a generator; naming a particular consumer here would make the
+public repository depend on knowing about a private one, and the next consumer
+would arrive to find the generator shaped around somebody else.
 
 WHAT "GENERATED" HAS TO MEAN, AND IT IS NOT "produced automatically". It means
 verifiable equivalence with the contract. A class that compiles against a
@@ -49,9 +54,9 @@ OUT = ROOT / "src" / "m365_governance" / "data" / "generated" / "csharp"
 #: without the contract changing, and the diff then means nothing.
 GENERATOR_VERSION = "1.0.0"
 
-#: What the Workbench consumes. Evidence and rule schemas describe the engine's
-#: inputs and no consumer outside this repository reads them, so generating
-#: them would ship types nobody constructs.
+#: The aggregates a consumer imports. Evidence and rule schemas describe this
+#: engine's INPUTS, which no external consumer constructs, so generating them
+#: would ship types nobody builds.
 GENERATE = (
     "run.schema.json",
     "run-set.schema.json",
@@ -268,10 +273,24 @@ def render(path: Path) -> str:
 // honouring the contract:
 {warning}
 //
-// Validate against the schema as well. `JsonSerializerOptions` must set
-// UnmappedMemberHandling.Disallow, because System.Text.Json ignores unknown
-// members by default while this schema refuses them, and that difference is
-// silent in exactly the case that matters.
+// VALIDATE AGAINST THE SCHEMA AS WELL. Two settings are required and are not
+// the defaults:
+//
+//   UnmappedMemberHandling = Disallow          unknown members are ignored
+//                                              by default; these schemas
+//                                              refuse them
+//   RespectRequiredConstructorParameters = true a missing required member is
+//                                              filled with null by default
+//
+// Both were verified against a compiler rather than assumed, and even with
+// both the model is narrower than the contract. Demonstrated: a property that
+// is optional and NOT nullable, such as an optional `string`, permits absence
+// and refuses null. C# collapses the two into the same `null`, so
+//
+//   {{"tenant": null}}   the model accepts it, the schema refuses it
+//
+// Deserialising successfully is therefore not honouring the contract, and the
+// order that holds is validate, then deserialise.
 // </auto-generated>
 #nullable enable
 using System.Collections.Generic;
