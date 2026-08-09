@@ -32,6 +32,7 @@
       "additionalProperties": false,
       "required": [
         "assessment_id",
+        "canonical_hash",
         "created_at"
       ],
       "description": "Which assessment, by identity rather than by copy. A comparison that embedded both would duplicate the canonical truth it is describing.",
@@ -46,6 +47,11 @@
         },
         "tenant": {
           "type": "string"
+        },
+        "canonical_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "The assessment's canonical digest. Identity that can be verified rather than trusted, and the reason a comparison never carries a path: a path says where a file sat on one machine, not what it held."
         }
       }
     },
@@ -78,7 +84,8 @@
         "rule",
         "before",
         "after",
-        "kind"
+        "kind",
+        "causes"
       ],
       "properties": {
         "resource": {
@@ -98,14 +105,25 @@
         "kind": {
           "type": "string",
           "enum": [
-            "outcome-changed",
-            "resource-added",
-            "resource-removed",
-            "rule-added",
-            "rule-removed",
-            "rule-version-changed"
+            "added",
+            "removed",
+            "changed"
           ],
-          "description": "Why the two sides differ. `rule-version-changed` exists because a finding that moved when the rule moved is not a tenant that changed, and reporting the two the same way is the mistake this field prevents."
+          "description": "What happened to this resource-and-rule pair between the two sides. Deliberately three values: what changed is a different question from why, and answering both in one field forces a simultaneous change to hide one of its halves."
+        },
+        "causes": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Why the two sides differ, and more than one may be true at once. A run where the tenant moved AND the rule was reissued has both causes, and a model that made them exclusive would report a rule change as tenant drift or the reverse.",
+          "items": {
+            "type": "string",
+            "enum": [
+              "evidence-changed",
+              "outcome-changed",
+              "rule-version-changed"
+            ]
+          }
         }
       }
     },

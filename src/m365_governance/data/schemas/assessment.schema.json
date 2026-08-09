@@ -80,7 +80,7 @@
         "assessment_id": {
           "type": "string",
           "minLength": 1,
-          "description": "Stable for the life of the assessment. Two exports of the same assessment carry the same id."
+          "description": "Derived from the canonical digest, not assigned. Two exports of the same assessment carry the same id because the same bytes produce it, and an id somebody chose would let two different assessments claim to be one."
         },
         "created_at": {
           "type": "string",
@@ -140,7 +140,8 @@
       "additionalProperties": false,
       "required": [
         "algorithm",
-        "canonical_parts"
+        "canonical_parts",
+        "canonical_hash"
       ],
       "description": "What makes the canonical half verifiable after it has travelled. The derived half is deliberately unhashed: it is rebuilt rather than trusted.",
       "properties": {
@@ -152,11 +153,16 @@
         },
         "canonical_parts": {
           "type": "object",
-          "description": "Part name to its digest. Every required member of `canonical` except `hashes` itself appears here.",
+          "description": "Part name to its digest, for every required member of `canonical` except `hashes` and `manifest`. The manifest is excluded because it carries the `assessment_id`, and that id derives from these digests: hashing it here would ask the identity to contain itself.",
           "additionalProperties": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
           }
+        },
+        "canonical_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "One digest over the parts above, in sorted key order. This is what a Comparison references and what `assessment_id` derives from, so two exports of the same assessment agree without comparing their contents."
         }
       }
     },
