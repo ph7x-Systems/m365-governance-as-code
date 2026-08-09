@@ -14,10 +14,13 @@ not edit a rule, rewrite an article, or promote a `tested_with`. Correcting the
 product automatically would be writing governance from a source that is not an
 observation, which is the one thing the whole contract exists to prevent.
 
-WHAT IT FAILS ON. Exactly one thing: something this product **depends on** has
-disappeared. A cmdlet the collector calls, or a parameter it passes. That is
-breakage and a release should stop for it. Everything new is reported and
-passes, because new is a candidate and a candidate is somebody's decision.
+WHAT IT FAILS ON. Two things, and only two. Something this product **depends
+on** has disappeared: a cmdlet the collector calls, or a parameter it passes.
+Or **the source could not be read at all**, because a detector that did not run
+has not passed, and "could not check" is not "nothing changed".
+
+Everything new is reported and passes, because new is a candidate and a
+candidate is somebody's decision.
 
 WHY PnP FIRST. `tools/surface.py` already reads the installed module, so the
 first detector needs no new dependency and nothing to scrape. The shape is the
@@ -183,10 +186,16 @@ def main() -> int:
 
     now = snapshot()
     if now is None:
-        # No pwsh, or the module is absent. Saying nothing moved would be a
-        # green tick over a detector that never ran.
-        print("  ! PnP.PowerShell could not be read on this machine; nothing compared")
-        return 0
+        # A DETECTOR THAT CANNOT READ ITS SOURCE HAS NOT PASSED.
+        #
+        # This warned and returned success, which is the exact failure the
+        # release contract's own header forbids: a green tick over a step that
+        # never ran. A machine without pwsh cannot tell whether PnP moved, and
+        # "could not check" is not "nothing changed".
+        print("  ✗ PnP.PowerShell could not be read, so nothing was compared.")
+        print("    Install PowerShell and the module, or run the contract on a")
+        print("    machine that has them. This does not pass by default.")
+        return 1
 
     if not args.check:
         BASELINE.write_text(
