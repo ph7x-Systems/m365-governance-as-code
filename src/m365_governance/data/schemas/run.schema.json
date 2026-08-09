@@ -194,8 +194,8 @@
           "type": "array",
           "description": "The rule's normative sources. Empty for a convention, which is the honest value rather than an omission.",
           "items": {
-            "type": "object",
-            "description": "The citation shape belongs to the rule contract, which is authored rather than serialised and is not modelled. Referencing it here would name a type no generated file emits, so a consumer receives a source as raw JSON until the rule contract is modelled too."
+            "$ref": "https://ph7x.com/schemas/m365-governance/rule/1.0.0#/$defs/source",
+            "description": "The citation, defined once by the rule contract that authors it. It used to be an unnamed object here, on the reasoning that the rule contract is authored rather than serialised and so is not modelled — which left a consumer receiving a citation as raw JSON and taking the title and url out of it by hand. A run carries citations to a consumer whether or not the contract defining them is itself deserialised, so the generator now emits this shape rather than refusing to name it."
           }
         },
         "remediation": {

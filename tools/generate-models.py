@@ -61,8 +61,12 @@ CONTRACT_VERSION = "1.0.0"
 
 #: The aggregates a consumer imports, and everything they contain. Evidence is
 #: here because an assessment carries the documents it was evaluated from: a
-#: consumer does not construct evidence, and it certainly reads it. The rule
-#: schema stays out, because nothing a consumer opens contains one.
+#: consumer does not construct evidence, and it certainly reads it.
+#:
+#: The rule schema stays out, because nothing a consumer opens IS one. A run
+#: does carry a citation the rule contract defines, and that shape is adopted
+#: by name rather than by modelling the whole authoring contract — see
+#: `adopt`. Being referenced is not the same as being consumed.
 GENERATE = (
     "run.schema.json",
     "run-set.schema.json",
@@ -164,6 +168,42 @@ def unknown_in(node, found: set[str]) -> set[str]:
     return found
 
 
+def adopt(owner: str, target: str, name: str, nested: list) -> str:
+    """Emit a shape defined by a schema this generator does not model.
+
+    Bounded on purpose: the shape must be self-contained. A def that refers on
+    to further defs would have to be resolved against the OTHER file's `$defs`,
+    and everything here resolves `#/$defs/...` against the document being
+    rendered — so it would quietly name types from the wrong contract. Refusing
+    that is the same rule as before, kept where it still applies.
+    """
+    source = SCHEMAS / f"{owner}.schema.json"
+    if not source.is_file():
+        raise Unsupported(
+            f"{name}: {owner} is not modelled and {source.name} is not here "
+            "either, so nothing can emit the type it names"
+        )
+
+    resolved = (
+        json.loads(source.read_text(encoding="utf-8")).get("$defs", {}).get(target)
+    )
+    if resolved is None:
+        raise Unsupported(f"{name}: {owner} has no $defs/{target} to adopt")
+    if refs_in(resolved, set()):
+        raise Unsupported(
+            f"{name}: {owner}#/$defs/{target} refers on to other defs, which "
+            "would resolve against the wrong contract. Flatten it or model "
+            f"{owner} properly."
+        )
+    if "properties" not in resolved:
+        # Not a record. Inline whatever it actually is, exactly as a local
+        # `$ref` to a non-object def already does.
+        return type_of(resolved, name, nested)
+
+    nested.append((pascal(target), resolved))
+    return pascal(target)
+
+
 def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> str:
     """The C# type for one property, queuing nested records as it goes."""
     if "$ref" in node:
@@ -195,17 +235,7 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
             # `ProvenanceTenant`. It compiled nowhere and the generator was
             # perfectly happy. Refusing is the fix; the schema says what it
             # shares by naming it.
-            # A reference into a schema nothing models names a type no file
-            # will ever emit. It generates cleanly and fails at the consumer's
-            # compiler, which is a long way from here: `run` referenced the
-            # rule contract's `source`, and `Source` existed in no generated
-            # file because rules are authored rather than serialised.
             owner = url.rstrip("/").rsplit("/", 2)[-2]
-            if f"{owner}.schema.json" not in GENERATE:
-                raise Unsupported(
-                    f"{name}: {ref} points into {owner}, which is not modelled, "
-                    "so the type it names would never be emitted"
-                )
 
             parts = fragment.strip("/").split("/")
             if len(parts) != 2:
@@ -213,6 +243,23 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
                     f"{name}: cross-file reference {ref} points inside a def. "
                     "Give the shared shape its own $defs entry."
                 )
+
+            # A reference into a schema nothing models used to be refused,
+            # because it named a type no file would ever emit: it generated
+            # cleanly and failed at the consumer's compiler, a long way from
+            # here. `run` referenced the rule contract's `source`, and `Source`
+            # existed in no generated file because rules are authored rather
+            # than serialised.
+            #
+            # REFUSING WAS THE WRONG HALF OF THE FIX. The objection was that
+            # nothing emitted the type, so the answer is to emit it. A run
+            # carries citations to a consumer whether or not the contract that
+            # defines them is itself deserialised, and the alternative was a
+            # consumer parsing a citation out of raw JSON by hand — which is
+            # the one thing a generated model exists to stop.
+            if f"{owner}.schema.json" not in GENERATE:
+                return adopt(owner, parts[1], name, nested)
+
             return pascal(parts[1])
         return pascal(url.rstrip("/").rsplit("/", 2)[-2])
 
