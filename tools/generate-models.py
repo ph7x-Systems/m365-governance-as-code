@@ -54,6 +54,11 @@ OUT = ROOT / "src" / "m365_governance" / "data" / "generated" / "csharp"
 #: without the contract changing, and the diff then means nothing.
 GENERATOR_VERSION = "1.0.0"
 
+#: The contract as a whole. Moves when any schema moves, so a consumer can say
+#: which contract it was built against in one string rather than by comparing
+#: six digests by eye.
+CONTRACT_VERSION = "1.0.0"
+
 #: The aggregates a consumer imports. Evidence and rule schemas describe this
 #: engine's INPUTS, which no external consumer constructs, so generating them
 #: would ship types nobody builds.
@@ -303,6 +308,40 @@ namespace Ph7x.Governance.Contracts;
 """
 
 
+def build_manifest() -> dict:
+    """What a consumer needs in order to know which contract it holds.
+
+    A digest per schema and one over the set, so a bundle can be verified
+    without the engine being anywhere near the machine. That last part is the
+    whole point: a guard that only works when the sibling checkout happens to
+    exist is a guard that is absent on the machine that builds the release.
+    """
+    schemas = {}
+    for path in sorted(SCHEMAS.glob("*.json")):
+        schemas[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+    combined = hashlib.sha256(
+        "".join(f"{name}:{digest}" for name, digest in sorted(schemas.items())).encode()
+    ).hexdigest()
+    return {
+        "_comment": [
+            "The contract this engine publishes. Copied into a consumer beside",
+            "the schemas and the generated models, so the consumer can prove",
+            "locally which contract it was built against.",
+            "",
+            "Refreshing it is an explicit operation. A consumer that compared",
+            "itself opportunistically against whatever engine happened to be on",
+            "the machine would be reproducible only on that machine.",
+        ],
+        "contract_version": CONTRACT_VERSION,
+        "generator_version": GENERATOR_VERSION,
+        "generated": sorted(
+            pascal(n.replace(".schema.json", "")) + ".g.cs" for n in GENERATE
+        ),
+        "schemas": schemas,
+        "set_digest": combined,
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
@@ -324,6 +363,18 @@ def main() -> int:
         else:
             target.write_text(text, encoding="utf-8")
             print(f"  wrote {target.relative_to(ROOT)}")
+
+    manifest = build_manifest()
+    manifest_path = OUT.parent / "manifest.json"
+    manifest_text = json.dumps(manifest, indent=2, sort_keys=True) + "\n"
+    if args.check:
+        if not manifest_path.is_file() or (
+            manifest_path.read_text(encoding="utf-8") != manifest_text
+        ):
+            stale.append(manifest_path.name)
+    else:
+        manifest_path.write_text(manifest_text, encoding="utf-8")
+        print(f"  wrote {manifest_path.relative_to(ROOT)}")
 
     if args.check:
         if stale:

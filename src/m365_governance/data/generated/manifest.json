@@ -1,0 +1,28 @@
+{
+  "_comment": [
+    "The contract this engine publishes. Copied into a consumer beside",
+    "the schemas and the generated models, so the consumer can prove",
+    "locally which contract it was built against.",
+    "",
+    "Refreshing it is an explicit operation. A consumer that compared",
+    "itself opportunistically against whatever engine happened to be on",
+    "the machine would be reproducible only on that machine."
+  ],
+  "contract_version": "1.0.0",
+  "generated": [
+    "Assessment.g.cs",
+    "Comparison.g.cs",
+    "Run.g.cs",
+    "RunSet.g.cs"
+  ],
+  "generator_version": "1.0.0",
+  "schemas": {
+    "assessment.schema.json": "68f6d2ee5218829f136bdb5bfad35fae8775d9135ed8b2b80a53217c80a68b16",
+    "comparison.schema.json": "7cd6447c1f5c6248717c5c08642680ff8e19bebbb583aaff5d20ee8872ed19df",
+    "evidence.schema.json": "b51cfa3692db26746c1d78a022ccb0f8c39dae1fe190451d6b87310c0185aa29",
+    "rule.schema.json": "7d6cd962ff0a776162099224cbeb562efd942ab19d229eb6484632bb1be4375d",
+    "run-set.schema.json": "4309f231a2128d08369e2980bdfca388e32312375eed2b5cd10887878cede195",
+    "run.schema.json": "bef2cb5b67b01c8b0be53dc191fc439bfb078cdbabcc41760b470f5e3b6d384f"
+  },
+  "set_digest": "43ee789a42beadafc039a97e36db80e489b6c8d80c390d68c187a2dedd734094"
+}
