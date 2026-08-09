@@ -165,6 +165,13 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   # What can be observed against what is observed. Regenerated so the gap is
   # measured on every release rather than remembered from the last time
   # somebody looked at a cmdlet list.
+  # ── DISCOVERY. Every source goes stale, and none of them announces it to a
+  # repository. This fails only when something the collector DEPENDS on has
+  # disappeared; anything new is a candidate, and a candidate is somebody's
+  # decision rather than a broken build.
+  step "Nothing this product depends on has moved"
+  "$PY" tools/discovery.py --check
+
   step "The observable surface is measured"
   "$PY" tools/surface.py --check
 
