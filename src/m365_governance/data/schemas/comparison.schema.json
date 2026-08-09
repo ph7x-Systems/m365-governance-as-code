@@ -126,7 +126,7 @@
         "attribution": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Optional, and absent until somebody actually evaluates causality. Kept apart from `changes` so that observing several things move together never reads as knowing which one mattered.",
+          "description": "Optional, and absent until somebody actually evaluates causality. Kept apart from `changes` so that observing several things move together never reads as knowing which one mattered. Under `ambiguous`, factors are candidates rather than confirmed causes, and the state is what says so.",
           "required": [
             "state"
           ],
@@ -138,15 +138,79 @@
                 "ambiguous",
                 "not-evaluated"
               ],
-              "description": "`ambiguous` is a real answer and the common one: two things moved and the comparison cannot separate them. `not-evaluated` says nobody tried, which is different again."
+              "description": "`ambiguous` is a real answer and probably the common one: two things moved and the comparison cannot separate them. `not-evaluated` says nobody tried, which is a different sentence. `established` is a claim, and a claim carries what and how or it is not one."
             },
             "factors": {
               "type": "array",
+              "uniqueItems": true,
+              "description": "What the attribution points at. `outcome` is deliberately not a value: the outcome is the effect, and listing it here would put the result among its own causes.",
               "items": {
-                "type": "string"
+                "type": "string",
+                "enum": [
+                  "evidence",
+                  "rule-version"
+                ]
+              }
+            },
+            "method": {
+              "type": "string",
+              "minLength": 1,
+              "description": "How it was established. Re-evaluating the older evidence against the newer rule is a method; noticing that both moved is not."
+            }
+          },
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "established"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "required": [
+                  "factors",
+                  "method"
+                ],
+                "properties": {
+                  "factors": {
+                    "minItems": 1
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "state": {
+                    "const": "not-evaluated"
+                  }
+                },
+                "required": [
+                  "state"
+                ]
+              },
+              "then": {
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": [
+                        "factors"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "method"
+                      ]
+                    }
+                  ]
+                }
               }
             }
-          }
+          ]
         }
       },
       "if": {
