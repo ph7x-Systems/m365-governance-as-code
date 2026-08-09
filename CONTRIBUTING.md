@@ -144,6 +144,32 @@ indistinguishable from a remembered one.
 
 ---
 
+## Licence and sign-off
+
+**Inbound equals outbound.** Everything you contribute is licensed under the
+same [MIT Licence](LICENSE) this project is released under. There is no
+separate grant, and nothing you send is licensed to us on terms the rest of the
+project does not already have.
+
+**There is no CLA, and there will not be one.** A contributor licence agreement
+asks you to assign or license rights beyond the project's own licence, usually
+to a company. That would make this repository's licence and its contributors'
+obligations two different things. Inbound=outbound keeps them one thing.
+
+**Sign your commits off under the [DCO 1.1](DCO.txt).** The Developer
+Certificate of Origin is a statement that you have the right to send what you
+sent — not a transfer of anything. Add the line with `git commit -s`:
+
+```
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+The name and address must be real and must be the ones you commit under. CI
+refuses a pull request whose commits are not signed off, and it names the
+commits rather than failing with a tick nobody can act on.
+
+If you forget, `git rebase --signoff origin/main` fixes a branch.
+
 ## Pull requests
 
 One rule, or one coherent change, per pull request.
