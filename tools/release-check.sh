@@ -172,6 +172,12 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   step "Nothing this product depends on has moved"
   "$PY" tools/discovery.py --check
 
+  # Staleness only. Whether the output is valid C# is the CONSUMER's gate:
+  # it has the compiler, and adding dotnet to this contract would make the
+  # engine depend on a toolchain it never uses.
+  step "The generated models match the schemas"
+  "$PY" tools/generate-models.py --check
+
   step "The observable surface is measured"
   "$PY" tools/surface.py --check
 
