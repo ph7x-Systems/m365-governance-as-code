@@ -22,6 +22,13 @@
     `SharingCapability` and the path was still wrong, so this reports every
     field of every agent rather than a summary that could hide one.
 
+    THE CASE THAT MATTERS MOST IS THE EMPTY ONE. The manifest schema says
+    that an agent omitting both source arrays can reach every OneDrive and
+    SharePoint source in the organisation the asking user can already see. So
+    an agent with zero sources is the widest one, not a curiosity at the edge
+    of the test, and whether the SharePoint UI can even produce that state is
+    the single most valuable thing this run can settle.
+
     WHAT IT DOES NOT DO. It does not read the `.agent` file's permissions.
     Who may use an agent is the other half of the model and needs its own
     collection path, and mixing it in here would widen the scope of a
@@ -135,6 +142,24 @@ if ($facts.agents['inventory'].state -eq 'observed') {
     }
     Say ""
     Say "Derived facts: count $($facts.agents['count'].value), total sources $($facts.agents['source_count'].value), agents declaring none $($facts.agents['agents_without_declared_sources'].value)."
+    Say ""
+
+    # The reading that inverts the obvious one, and the reason this run exists.
+    $wide = [int] $facts.agents['agents_without_declared_sources'].value
+    if ($wide -gt 0) {
+        Say "**$wide agent(s) declare no source at all.** The declarative agent"
+        Say "manifest schema states that omitting both source arrays lets the agent"
+        Say "reach every OneDrive and SharePoint source in the organisation that the"
+        Say "asking user can already see. **These are the widest agents here, not the"
+        Say "narrowest**, and this run has now shown the SharePoint interface can"
+        Say "produce that state."
+    }
+    else {
+        Say "No agent declares zero sources. **That is not proof the state is"
+        Say "impossible**: it is proof that nothing in this site reached it. Try"
+        Say "creating one with no source selected; if the interface refuses, that"
+        Say "refusal is the finding and is worth more than the fixture."
+    }
 }
 else {
     Say "The collector recorded ``$($facts.agents['inventory'].state)``: $($facts.agents['inventory'].detail)"
