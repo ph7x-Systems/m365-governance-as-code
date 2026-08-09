@@ -23,7 +23,7 @@
       "path": "schemas/assessment.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/2.0.0": {
-      "digest": "86c995f0a490a166de776b6c132d1081c75451b6b294ea9c57b479a69d4d4987",
+      "digest": "d49f23278570d66d0f2974a29456e73906fcf32a2548e1b2f420a1b41cca31d2",
       "path": "schemas/comparison.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
@@ -47,5 +47,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "4821252adb075297b8dff904cd234cca6d34bbe3d9fc3b91860e97add6a57ac3"
+  "set_digest": "98187515e0e3b437ed4e0787a848f54ead826e769947be505c8cc5de2de69070"
 }

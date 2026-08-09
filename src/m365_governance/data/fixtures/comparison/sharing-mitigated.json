@@ -1,0 +1,54 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/comparison/2.0.0",
+  "before": {
+    "assessment_id": "b714e2075c77104618dcb7345d28f77742d7c9d4d7e5bf4070913296d8fcb643",
+    "created_at": "2026-07-01T09:00:00Z",
+    "canonical_hash": "b714e2075c77104618dcb7345d28f77742d7c9d4d7e5bf4070913296d8fcb643",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "after": {
+    "assessment_id": "8f603a25b0b89b89e8321dcd87ba36a5b4bbc2c3cd22d3614b2d55809b5d0e71",
+    "created_at": "2026-08-01T09:00:00Z",
+    "canonical_hash": "8f603a25b0b89b89e8321dcd87ba36a5b4bbc2c3cd22d3614b2d55809b5d0e71",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "diff": {
+    "produced_by": "1.0.0b1",
+    "changes": [
+      {
+        "resource": "contoso.sharepoint.com",
+        "rule": "SPO-SHARE-003",
+        "before": "fail",
+        "after": "pass",
+        "kind": "changed",
+        "changes": [
+          "evidence",
+          "outcome"
+        ],
+        "attribution": {
+          "state": "not-evaluated"
+        }
+      },
+      {
+        "resource": "contoso.sharepoint.com",
+        "rule": "SPO-SHARE-004",
+        "before": "fail",
+        "after": "pass",
+        "kind": "changed",
+        "changes": [
+          "evidence",
+          "outcome"
+        ],
+        "attribution": {
+          "state": "not-evaluated"
+        }
+      }
+    ]
+  }
+}

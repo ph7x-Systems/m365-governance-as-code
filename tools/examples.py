@@ -53,6 +53,15 @@ CASES = [
 #: started deriving `mixed` from those same three files. Nothing could catch it,
 #: because verifying asks whether a document changed, not whether it is current.
 ASSESSMENT = DATA / "fixtures" / "assessment" / "three-resources.json"
+#: A real comparison of two real assessments: the same tenant before and after
+#: somebody turned Anyone links off. Two assessments rather than two runs,
+#: because a comparison relates two archived states and names each by an
+#: identity that verifies.
+COMPARISON = DATA / "fixtures" / "comparison" / "sharing-mitigated.json"
+COMPARED = [
+    ("tenant-sharing-default-anyone-and-edit", "2026-07-01T09:00:00Z"),
+    ("tenant-sharing-mitigated", "2026-08-01T09:00:00Z"),
+]
 ASSESSED = ["site-agents-with-sources", "site-spfx-current", "list-class-content"]
 #: Pinned so the same inputs produce the same bytes. An identity that moved
 #: because time passed would make the fixture unusable as a fixture.
@@ -86,6 +95,58 @@ def assess() -> str:
     if result.returncode != 0:
         raise SystemExit(f"assess failed\n{result.stderr}")
     return result.stdout
+
+
+def compare() -> str:
+    """One comparison, produced by the command a user would run."""
+    with tempfile.TemporaryDirectory() as scratch:
+        sides = []
+        for name, when in COMPARED:
+            folder = Path(scratch) / name
+            folder.mkdir()
+            (folder / f"{name}.json").write_text(
+                (FIXTURES / f"{name}.json").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+            out = Path(scratch) / f"{name}-assessment.json"
+            done = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "m365_governance.cli",
+                    "assess",
+                    "--evidence",
+                    str(folder),
+                    "--created-at",
+                    when,
+                    "--out",
+                    str(out),
+                ],
+                capture_output=True,
+                text=True,
+                cwd=ROOT,
+            )
+            if done.returncode != 0:
+                raise SystemExit(f"assess failed\n{done.stderr}")
+            sides.append(str(out))
+
+        done = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "m365_governance.cli",
+                "diff",
+                *sides,
+                "--format",
+                "json",
+            ],
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
+    if done.returncode != 0:
+        raise SystemExit(f"diff failed\n{done.stderr}")
+    return done.stdout
 
 
 def render(fixture: str, fmt: str) -> str:
@@ -146,16 +207,15 @@ def main(argv: list[str] | None = None) -> int:
     EXAMPLES.mkdir(exist_ok=True)
     wanted = build()
     assessment = assess()
+    comparison = compare()
 
     if args.check:
         stale = []
-        if (
-            not ASSESSMENT.exists()
-            or ASSESSMENT.read_text(encoding="utf-8") != assessment
-        ):
-            print(f"stale:  {ASSESSMENT.relative_to(ROOT)}", file=sys.stderr)
-            print("\nrun: python tools/examples.py", file=sys.stderr)
-            return 1
+        for path, body in ((ASSESSMENT, assessment), (COMPARISON, comparison)):
+            if not path.exists() or path.read_text(encoding="utf-8") != body:
+                print(f"stale:  {path.relative_to(ROOT)}", file=sys.stderr)
+                print("\nrun: python tools/examples.py", file=sys.stderr)
+                return 1
         for name, body in wanted.items():
             path = EXAMPLES / name
             if not path.exists() or path.read_text(encoding="utf-8") != body:
@@ -178,7 +238,9 @@ def main(argv: list[str] | None = None) -> int:
     for name, body in wanted.items():
         (EXAMPLES / name).write_text(body, encoding="utf-8")
     ASSESSMENT.write_text(assessment, encoding="utf-8")
-    print(f"{len(wanted)} examples and 1 assessment written.")
+    COMPARISON.parent.mkdir(parents=True, exist_ok=True)
+    COMPARISON.write_text(comparison, encoding="utf-8")
+    print(f"{len(wanted)} examples, 1 assessment and 1 comparison written.")
     return 0
 
 

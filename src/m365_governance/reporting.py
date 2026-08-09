@@ -705,3 +705,87 @@ def many_to_html(value: list[Run] | RunSet) -> str:
 
     parts.append("</main></body></html>")
     return "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# a comparison, for a person
+# ---------------------------------------------------------------------------
+
+
+def comparison_to_markdown(document: dict) -> str:
+    """One comparison, rendered.
+
+    A projection and never a second opinion: every line here is read out of the
+    document, including which changes there are and what each one means. If
+    this rendering and the JSON ever disagreed, one of them would be computing
+    something, and a reader would have no way to tell which.
+    """
+    before, after = document["before"], document["after"]
+    diff = document["diff"]
+    changes = diff["changes"]
+
+    lines = [
+        "# What changed",
+        "",
+        f"- Tenant: {before['tenant']['host']}",
+        f"- Before: {before['created_at']}  `{before['assessment_id'][:12]}`",
+        f"- After:  {after['created_at']}  `{after['assessment_id'][:12]}`",
+        f"- Produced by: {diff['produced_by']}",
+        "",
+    ]
+
+    if not changes:
+        lines += [
+            "Nothing changed. Every resource and rule that appears in one "
+            "assessment appears in the other with the same outcome, the same "
+            "rule version and the same evidence.",
+            "",
+        ]
+        return "\n".join(lines)
+
+    kinds = {"changed": [], "added": [], "removed": []}
+    for change in changes:
+        kinds[change["kind"]].append(change)
+
+    lines += [f"{len(changes)} changes.", ""]
+
+    for kind, heading in (
+        ("changed", "Changed"),
+        ("added", "Newly evaluated"),
+        ("removed", "No longer evaluated"),
+    ):
+        if not kinds[kind]:
+            continue
+        lines += [f"## {heading}", ""]
+        for change in kinds[kind]:
+            movement = (
+                f"{change['before']} → {change['after']}"
+                if kind == "changed"
+                else (change["after"] or change["before"])
+            )
+            lines.append(
+                f"- **{change['rule']}** on `{change['resource']}`: {movement}"
+            )
+            if change.get("changes"):
+                lines.append(f"  - observed to differ: {', '.join(change['changes'])}")
+            state = change.get("attribution", {}).get("state")
+            if state == "ambiguous":
+                factors = ", ".join(change["attribution"]["factors"])
+                lines.append(
+                    f"  - **why is not established**: {factors} both moved, and "
+                    "nothing here evaluated which one produced the outcome"
+                )
+            elif state == "not-evaluated":
+                lines.append(
+                    "  - **why is not established**: nobody evaluated causality"
+                )
+        lines.append("")
+
+    lines += [
+        "> **What this does not say.** These are observations about two "
+        "recorded states. Which change produced which outcome is a separate "
+        "question, and answering it needs the older evidence re-evaluated "
+        "against the newer rule — which nothing here did.",
+        "",
+    ]
+    return "\n".join(lines)

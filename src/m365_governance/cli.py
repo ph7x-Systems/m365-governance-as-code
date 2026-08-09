@@ -30,7 +30,7 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import __version__, assessment, collecting, diffing, explaining
+from . import __version__, assessment, collecting, comparison, explaining, reporting
 from . import doctor as doctor_module
 from . import inspect as inspect_module
 from .engine import evaluate
@@ -210,11 +210,10 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     diff = sub.add_parser(
-        "diff", help="what changed between two runs, and whether the rule moved too"
+        "diff", help="what changed between two assessments, and what it does not say"
     )
-    diff.add_argument("before", type=Path)
-    diff.add_argument("after", type=Path)
-    diff.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
+    diff.add_argument("before", type=Path, help="an assessment, from `assess`")
+    diff.add_argument("after", type=Path, help="an assessment, from `assess`")
     diff.add_argument("--format", choices=("markdown", "json"), default="markdown")
     diff.add_argument(
         "--fail-on-regression",
@@ -657,44 +656,54 @@ def _cmd_report(args) -> int:
 
 
 def _cmd_diff(args) -> int:
-    rules_path = _rule_source(args).path
-    before = _read_run_or_set(args.before, rules_path)
-    after = _read_run_or_set(args.after, rules_path)
+    """What changed between two assessments.
 
-    # A run and a run set are not comparable: one is a resource, the other an
-    # estate, and pretending would either hide every other resource or invent
-    # one. Refuse rather than guess.
-    if isinstance(before, RunSet) != isinstance(after, RunSet):
-        print(
-            "cannot diff a single resource against a run set. Compare a run "
-            "with a run, or a run set with a run set.",
-            file=sys.stderr,
+    A COMPARISON RELATES TWO STATES AND BELONGS TO NEITHER, which is why it is
+    its own document rather than a section of an assessment. It names each side
+    by identity and digest and embeds neither: a comparison carrying both would
+    duplicate the canonical truth it describes, and the copy is what somebody
+    edits.
+
+    It takes assessments and not runs. A run is an evaluation; an assessment is
+    the thing somebody archived, and only an assessment can be named by an
+    identity that verifies. Comparing what a run-level diff compares is still
+    how this is computed underneath — it just is not a document anybody keeps.
+    """
+    documents = {}
+    for side, path in (("before", args.before), ("after", args.after)):
+        data = load_evidence(path).data
+        if "canonical" not in data:
+            print(
+                f"{path}: not an assessment. `diff` compares two assessments, "
+                f"which `assess` writes; a stored run is not one.",
+                file=sys.stderr,
+            )
+            return 2
+        documents[side] = data
+
+    try:
+        document = comparison.build(
+            documents["before"], documents["after"], engine_version=__version__
         )
+    except comparison.Incomparable as exc:
+        print(f"refusing to compare: {exc}", file=sys.stderr)
         return 2
 
-    # Markdown is what a person reads; JSON is what everything else reads. Both
-    # are projections of one comparison, so they cannot disagree about what
-    # changed.
-    as_json = args.format == "json"
-    if isinstance(before, RunSet):
-        sys.stdout.write(
-            diffing.many_to_json(before, after)
-            if as_json
-            else diffing.many_to_markdown(before, after)
-        )
-        changes = [
-            rc for change in diffing.compare_sets(before, after) for rc in change.rules
-        ]
+    if args.format == "json":
+        sys.stdout.write(json.dumps(document, indent=2, ensure_ascii=False) + "\n")
     else:
-        sys.stdout.write(
-            diffing.to_json(before, after)
-            if as_json
-            else diffing.to_markdown(before, after)
-        )
-        changes = diffing.compare(before, after)
+        sys.stdout.write(reporting.comparison_to_markdown(document))
 
-    if args.fail_on_regression and diffing.regressions(changes):
-        return 1
+    if args.fail_on_regression:
+        # A regression is leaving `pass`, and only the engine's own outcomes
+        # decide that. Nothing here re-reads evidence to form a second opinion.
+        left = [
+            change
+            for change in document["diff"]["changes"]
+            if change["before"] == "pass" and change["after"] != "pass"
+        ]
+        if left:
+            return 1
     return 0
 
 

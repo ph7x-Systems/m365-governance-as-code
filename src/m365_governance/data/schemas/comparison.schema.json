@@ -34,7 +34,8 @@
       "required": [
         "assessment_id",
         "canonical_hash",
-        "created_at"
+        "created_at",
+        "tenant"
       ],
       "description": "Which assessment, by identity rather than by copy. A comparison that embedded both would duplicate the canonical truth it is describing.",
       "properties": {
@@ -47,7 +48,8 @@
           "format": "date-time"
         },
         "tenant": {
-          "type": "string"
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0#/$defs/tenant",
+          "description": "Which tenant both sides are about, copied from the assessments rather than restated. It was a bare string, which put a hostname where an organisation belongs."
         },
         "canonical_hash": {
           "type": "string",

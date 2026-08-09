@@ -8,6 +8,7 @@
     <dir>/csharp/*.g.cs     the generated models
     <dir>/samples/*.json    runs this engine really emitted
     <dir>/assessments/*.json  whole assessments, digests and all
+    <dir>/comparisons/*.json  what changed between two of them
 
 WHY SAMPLES TRAVEL WITH IT. A contract a consumer cannot exercise is a contract
 it can only agree with in principle. The samples are produced by evaluating
@@ -66,7 +67,7 @@ def main() -> int:
             return 1
 
     out = args.out
-    for sub in ("schemas", "csharp", "samples", "assessments"):
+    for sub in ("schemas", "csharp", "samples", "assessments", "comparisons"):
         target = out / sub
         if target.exists():
             shutil.rmtree(target)
@@ -124,6 +125,20 @@ def main() -> int:
     for path in assessments:
         shutil.copy2(path, out / "assessments" / f"assessment-{path.name}")
 
+    # A comparison is the one document that relates two others, so a consumer
+    # that never received one cannot have exercised how two archives are read
+    # together.
+    comparisons = sorted(
+        (ROOT / "src" / "m365_governance" / "data" / "fixtures" / "comparison").glob(
+            "*.json"
+        )
+    )
+    if not comparisons:
+        print("  ✗ no comparison fixtures to publish")
+        return 1
+    for path in comparisons:
+        shutil.copy2(path, out / "comparisons" / f"comparison-{path.name}")
+
     if written < 20:
         print(f"  ✗ only {written} samples produced, which is fewer than this")
         print("    engine has fixtures. A bundle with almost no samples lets a")
@@ -133,7 +148,8 @@ def main() -> int:
     print(
         f"  ✓ contract {manifest['contract_version']} published to {out}: "
         f"{len(manifest['schemas'])} schemas, {len(manifest['generated'])} models, "
-        f"{written} samples, {len(assessments)} assessments"
+        f"{written} samples, {len(assessments)} assessments, "
+        f"{len(comparisons)} comparisons"
     )
     return 0
 

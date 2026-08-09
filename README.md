@@ -199,7 +199,7 @@ the source, and how the rule can pass while the problem survives.
 | `validate` | Every rule against the schemas and the invariants |
 | `evaluate` | Rules against evidence: one document or a directory of them. Markdown, JSON or self-contained HTML |
 | `report RUN.json` | Re-render a stored run in another format, without evaluating again |
-| `diff BEFORE AFTER` | What moved between two runs, and whether the rule moved too |
+| `diff BEFORE AFTER` | What moved between two assessments, and what that does not establish |
 
 `diff` is the one a periodic audit needs:
 
