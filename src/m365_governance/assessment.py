@@ -28,7 +28,7 @@ import hashlib
 import json
 from typing import Any
 
-from . import registry
+from . import identity, registry
 from .results import RunSet
 
 #: Which members of `canonical` are hashed.
@@ -189,14 +189,14 @@ def _evaluated_from(run_set: RunSet, evidence: list[dict]) -> None:
     together. Every finding would then cite evidence that never produced it.
     """
     documented = {
-        document.get("resource", {}).get("id")
+        identity.key(document["resource"])
         for document in evidence
-        if document.get("resource", {}).get("id")
+        if document.get("resource")
     }
     orphans = sorted(
-        str(run.resource.get("id"))
+        identity.readable(run.resource)
         for run in run_set.runs
-        if run.resource.get("id") not in documented
+        if identity.key(run.resource) not in documented
     )
     if orphans:
         raise Mismatch(

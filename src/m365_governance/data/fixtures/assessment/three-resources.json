@@ -1,8 +1,8 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/3.0.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.0.0",
   "canonical": {
     "run_set": {
-      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/3.0.0",
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.0.0",
       "resources": 3,
       "by_class": {
         "content": 1,
@@ -25,7 +25,7 @@
       },
       "runs": [
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/3.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
           "provenance": {
             "collected_at": "2026-08-05T14:02:11Z",
             "collector": "spo-collector",
@@ -54,10 +54,19 @@
             "unavailable": {}
           },
           "resource": {
-            "id": "contoso,list,documents-c",
+            "workload": "sharepoint",
             "type": "list",
+            "native_id": "contoso,list,documents-c",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
             "scope": "container",
-            "parent": "contoso,site,documents-host",
+            "parent": {
+              "workload": "sharepoint",
+              "type": "site",
+              "native_id": "contoso,site,documents-host"
+            },
             "display_name": "Documents",
             "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
           },
@@ -80,8 +89,9 @@
               "rule_version": "2.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,list,documents-c",
-                "type": "list"
+                "workload": "sharepoint",
+                "type": "list",
+                "native_id": "contoso,list,documents-c"
               },
               "outcome": "pass",
               "message": "The list holds 4200 items and inherits its permissions, within the 100,000 boundary at which inheritance can no longer be broken.",
@@ -137,8 +147,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,list,documents-c",
-                "type": "list"
+                "workload": "sharepoint",
+                "type": "list",
+                "native_id": "contoso,list,documents-c"
               },
               "outcome": "unknown",
               "message": "The scope count does not settle this list's position relative to the 50,000 limit: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
@@ -186,8 +197,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,list,documents-c",
-                "type": "list"
+                "workload": "sharepoint",
+                "type": "list",
+                "native_id": "contoso,list,documents-c"
               },
               "outcome": "unknown",
               "message": "The scope count does not settle this list's position relative to the recommended 5,000: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
@@ -247,7 +259,7 @@
           }
         },
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/3.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
           "provenance": {
             "collected_at": "2026-08-08T18:00:00Z",
             "collector": "spo-collector",
@@ -280,10 +292,19 @@
             }
           },
           "resource": {
-            "id": "contoso,site,finance",
+            "workload": "sharepoint",
             "type": "site",
+            "native_id": "contoso,site,finance",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
             "scope": "collection",
-            "parent": "contoso.sharepoint.com",
+            "parent": {
+              "workload": "sharepoint",
+              "type": "tenant",
+              "native_id": "contoso.sharepoint.com"
+            },
             "display_name": "Finance",
             "url": "https://contoso.sharepoint.com/sites/finance"
           },
@@ -306,8 +327,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.",
@@ -350,8 +372,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.",
@@ -399,8 +422,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.",
@@ -450,8 +474,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "Whether this group-connected site carries a sensitivity label was not established. This is not a pass.",
@@ -507,8 +532,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.",
@@ -556,8 +582,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.",
@@ -592,8 +619,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.",
@@ -628,8 +656,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.",
@@ -677,8 +706,9 @@
               "rule_version": "1.0",
               "schema_version": "2.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.",
@@ -728,8 +758,9 @@
               "rule_version": "1.1",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The owner count does not settle whether this site has two: either the owners were not collected, or a group among them was not expanded. The evidence beside this finding says which. This is not a pass.",
@@ -764,8 +795,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.",
@@ -800,8 +832,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The storage figures for this site were not read, so how full it is remains unknown. This is not a pass.",
@@ -852,8 +885,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,finance",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
               "message": "The catalog was not read, so whether any solution is behind the version it holds is not known. This is not a pass.",
@@ -902,7 +936,7 @@
           }
         },
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/3.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
           "provenance": {
             "collected_at": "2026-08-06T16:00:00Z",
             "collector": "spo-collector",
@@ -929,10 +963,19 @@
             "unavailable": {}
           },
           "resource": {
-            "id": "contoso,site,spfx-ok",
+            "workload": "sharepoint",
             "type": "site",
+            "native_id": "contoso,site,spfx-ok",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
             "scope": "collection",
-            "parent": "contoso.sharepoint.com",
+            "parent": {
+              "workload": "sharepoint",
+              "type": "tenant",
+              "native_id": "contoso.sharepoint.com"
+            },
             "display_name": "Training",
             "url": "https://contoso.sharepoint.com/sites/spfx-ok"
           },
@@ -955,8 +998,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.",
@@ -999,8 +1043,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.",
@@ -1048,8 +1093,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.",
@@ -1099,8 +1145,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "Whether this group-connected site carries a sensitivity label was not established. This is not a pass.",
@@ -1156,8 +1203,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.",
@@ -1205,8 +1253,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.",
@@ -1241,8 +1290,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.",
@@ -1277,8 +1327,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.",
@@ -1326,8 +1377,9 @@
               "rule_version": "1.0",
               "schema_version": "2.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.",
@@ -1377,8 +1429,9 @@
               "rule_version": "1.1",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "The owner count does not settle whether this site has two: either the owners were not collected, or a group among them was not expanded. The evidence beside this finding says which. This is not a pass.",
@@ -1413,8 +1466,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.",
@@ -1449,8 +1503,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "unknown",
               "message": "The storage figures for this site were not read, so how full it is remains unknown. This is not a pass.",
@@ -1501,8 +1556,9 @@
               "rule_version": "1.0",
               "schema_version": "1.0",
               "resource": {
-                "id": "contoso,site,spfx-ok",
-                "type": "site"
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
               },
               "outcome": "pass",
               "message": "Every solution in this catalog is installed at the version the catalog holds.",
@@ -1552,7 +1608,7 @@
     },
     "evidence": [
       {
-        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
         "provenance": {
           "collected_at": "2026-08-05T14:02:11Z",
           "collector": "spo-collector",
@@ -1581,10 +1637,19 @@
           "unavailable": {}
         },
         "resource": {
-          "id": "contoso,list,documents-c",
+          "workload": "sharepoint",
           "type": "list",
+          "native_id": "contoso,list,documents-c",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
           "scope": "container",
-          "parent": "contoso,site,documents-host",
+          "parent": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,documents-host"
+          },
           "display_name": "Documents",
           "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
         },
@@ -1654,7 +1719,7 @@
         }
       },
       {
-        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
         "provenance": {
           "collected_at": "2026-08-08T18:00:00Z",
           "collector": "spo-collector",
@@ -1687,10 +1752,19 @@
           }
         },
         "resource": {
-          "id": "contoso,site,finance",
+          "workload": "sharepoint",
           "type": "site",
+          "native_id": "contoso,site,finance",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
           "scope": "collection",
-          "parent": "contoso.sharepoint.com",
+          "parent": {
+            "workload": "sharepoint",
+            "type": "tenant",
+            "native_id": "contoso.sharepoint.com"
+          },
           "display_name": "Finance",
           "url": "https://contoso.sharepoint.com/sites/finance"
         },
@@ -1774,7 +1848,7 @@
         }
       },
       {
-        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
         "provenance": {
           "collected_at": "2026-08-06T16:00:00Z",
           "collector": "spo-collector",
@@ -1801,10 +1875,19 @@
           "unavailable": {}
         },
         "resource": {
-          "id": "contoso,site,spfx-ok",
+          "workload": "sharepoint",
           "type": "site",
+          "native_id": "contoso,site,spfx-ok",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
           "scope": "collection",
-          "parent": "contoso.sharepoint.com",
+          "parent": {
+            "workload": "sharepoint",
+            "type": "tenant",
+            "native_id": "contoso.sharepoint.com"
+          },
           "display_name": "Training",
           "url": "https://contoso.sharepoint.com/sites/spfx-ok"
         },
@@ -1909,17 +1992,17 @@
           "collected"
         ]
       },
-      "assessment_id": "736dacd82daa216816d8ed124f5be5c680ee1c6a5cab0172efd884ba7136919d"
+      "assessment_id": "09bfd0caaa8fe73dfb7d81fb3cbbf89588032d8359c04033af49f3d67fb99f6d"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "557563d87c1b73a20cc1181f588e68c73c66a230dff0ce85ea9b365eaa4d23ca",
-        "evidence": "604f4f0333d43f3afc2855437c0455813f916c45fb1e9872cdbdcbb47ef75c1c",
+        "run_set": "07161931f0becacee3d12e4f657e2604273b0ef7d3afc9298b816d2fe8bf91f5",
+        "evidence": "ddae3acf9b6d2b75890c33abc47f7bfa30a2dd932328605661cb052cb4ba7521",
         "versions": "bdb473969bfdc85c1f3dcb3f4bfd2186e8794d5835beea7d434d762c98a05955",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "736dacd82daa216816d8ed124f5be5c680ee1c6a5cab0172efd884ba7136919d"
+      "canonical_hash": "09bfd0caaa8fe73dfb7d81fb3cbbf89588032d8359c04033af49f3d67fb99f6d"
     }
   }
 }

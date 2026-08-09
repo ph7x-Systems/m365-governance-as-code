@@ -13,6 +13,7 @@ from __future__ import annotations
 import json
 
 from . import attention
+from . import identity as identity_module
 from .results import Outcome, Run, RunSet
 
 #: The order a report groups its findings in — DERIVED, never written here.
@@ -58,7 +59,7 @@ def to_json(run: Run) -> str:
 def to_markdown(run: Run) -> str:
     lines: list[str] = []
     resource = run.resource
-    name = resource.get("display_name") or resource.get("id", "<unknown>")
+    name = identity_module.label(resource)
 
     lines.append(f"# Governance report: {name}")
     lines.append("")
@@ -99,7 +100,7 @@ def _provenance_lines(run: Run) -> list[str]:
     ]
     if run.rule_source:
         lines.append(f"- Rules: {run.rule_source}")
-    identity = prov.get("identity_kind")
+    identity_kind = prov.get("identity_kind")
     # Keyed on acquisition, not on identity. They were one field, so this
     # warning was asking who observed the evidence in order to answer how it
     # got here — and an import that named its collecting identity lost the
@@ -124,14 +125,14 @@ def _provenance_lines(run: Run) -> list[str]:
         stale = _export_gap(prov)
         if stale:
             lines.append(f"- **{stale}**")
-    elif identity == "delegated":
+    elif identity_kind == "delegated":
         lines.append(
             "- **Identity: delegated.** This run saw what one person sees. "
             "Nothing here may be read as a tenant-wide statement."
         )
     else:
         scopes = ", ".join(prov.get("scopes", [])) or "none recorded"
-        lines.append(f"- Identity: {identity or '?'}, scopes: {scopes}")
+        lines.append(f"- Identity: {identity_kind or '?'}, scopes: {scopes}")
     return lines
 
 
@@ -341,7 +342,7 @@ def to_html(run: Run) -> str:
     a different shade is the green box under a new name.
     """
     resource = run.resource
-    name = resource.get("display_name") or resource.get("id", "<unknown>")
+    name = identity_module.label(resource)
     counts = run.counts()
     answered = counts[Outcome.PASS.value] + counts[Outcome.FAIL.value]
     total = len(run.results)
@@ -353,7 +354,7 @@ def to_html(run: Run) -> str:
         f"<title>Governance report: {_esc(name)}</title>",
         f"<style>{_CSS}</style></head><body><main>",
         f"<h1>Governance report: {_esc(name)}</h1>",
-        f'<p class="meta">{_esc(resource.get("id", ""))} '
+        f'<p class="meta">{_esc(identity_module.readable(resource))} '
         f"({_esc(resource.get('type', '?'))})</p>",
     ]
 
@@ -365,7 +366,7 @@ def to_html(run: Run) -> str:
             f"{_esc(prov.get('collector_version', ''))}, from "
             f"{_esc(prov.get('source_system', '?'))}.</p>"
         )
-        identity = prov.get("identity_kind")
+        identity_kind = prov.get("identity_kind")
         if prov.get("acquisition") == "imported":
             source = prov.get("import_source", {})
             exported = ", ".join(
@@ -389,7 +390,7 @@ def to_html(run: Run) -> str:
             gap = _export_gap(prov)
             if gap:
                 parts.append(f'<p class="warn"><strong>{_esc(gap)}</strong></p>')
-        elif identity == "delegated":
+        elif identity_kind == "delegated":
             parts.append(
                 '<p class="warn"><strong>Identity: delegated.</strong> This run '
                 "saw what one person sees. Nothing here may be read as a "
@@ -618,7 +619,7 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
             lines.append("")
             continue
         for run in interesting:
-            name = run.resource.get("display_name") or run.resource.get("id", "?")
+            name = identity_module.label(run.resource)
             klass = f" · {run.resource_class}" if run.resource_class else ""
             lines.append(f"### {_esc_md(name)}{klass}")
             lines.append("")
@@ -743,7 +744,7 @@ def many_to_html(value: list[Run] | RunSet) -> str:
             parts.append(f"<p>{len(selected)} resources, nothing but passes.</p>")
             continue
         for run in interesting:
-            name = run.resource.get("display_name") or run.resource.get("id", "?")
+            name = identity_module.label(run.resource)
             klass = f" · {run.resource_class}" if run.resource_class else ""
             parts.append(f"<h3>{_esc(name)}{_esc(klass)}</h3>")
             for result in run.results:

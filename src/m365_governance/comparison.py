@@ -111,7 +111,7 @@ def _changes(before: dict, after: dict) -> list[dict[str, Any]]:
                 continue
 
             change: dict[str, Any] = {
-                "resource": resource.resource_id,
+                "resource": dict(resource.resource_ref),
                 "rule": rule.rule_id,
                 "before": rule.before.outcome.value if rule.before else None,
                 "after": rule.after.outcome.value if rule.after else None,

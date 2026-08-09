@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
   "provenance": {
     "collected_at": "2026-08-06T09:00:00Z",
     "collector": "spo-collector",
@@ -26,10 +26,19 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "contoso,site,operations",
+    "workload": "sharepoint",
     "type": "site",
+    "native_id": "contoso,site,operations",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
     "scope": "collection",
-    "parent": "contoso.sharepoint.com",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
     "display_name": "Operations",
     "url": "https://contoso.sharepoint.com/sites/operations"
   },

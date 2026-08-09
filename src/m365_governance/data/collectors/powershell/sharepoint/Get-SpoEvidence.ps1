@@ -219,8 +219,10 @@ switch ($Mode) {
         }
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts $result.facts -Requested @('owners') `
@@ -233,7 +235,9 @@ switch ($Mode) {
         $tenant = Get-PnPTenant
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $TenantHost; type = 'tenant'
+                    workload = 'sharepoint'; type = 'tenant'
+                    native_id = $TenantHost
+                    tenant = (New-TenantIdentity)
                     scope = 'tenant'; parent = $null
                     display_name = $TenantUrl; url = $TenantUrl
                 }) `
@@ -257,8 +261,10 @@ switch ($Mode) {
         $site = Get-PnPTenantSite -Identity $SiteUrl
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $site.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SharingFacts -Site $site) -Requested @('sharing') `
@@ -271,8 +277,10 @@ switch ($Mode) {
             IsSystemList, IsCatalog, IsApplicationList, BaseTemplate, Hidden
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = "$SiteUrl::$ListTitle"; type = 'list'
-                    scope = 'container'; parent = $SiteUrl
+                    workload = 'sharepoint'; type = 'list'
+                    native_id = "$SiteUrl::$ListTitle"
+                    tenant = (New-TenantIdentity)
+                    scope = 'container'; parent = [ordered]@{ workload = 'sharepoint'; type = 'site'; native_id = $SiteUrl }
                     display_name = $ListTitle; url = $SiteUrl
                 }) `
                 -Facts (Get-ListPermissionFacts -List $list `
@@ -295,8 +303,10 @@ switch ($Mode) {
             $file = Join-Path $OutputPath ((Get-SafeName "$($TenantHost)-$($list.Title)") + '.json')
             Write-Evidence -Path $file -Evidence (New-Evidence `
                     -Resource ([ordered]@{
-                        id = "$SiteUrl::$($list.Title)"; type = 'list'
-                        scope = 'container'; parent = $SiteUrl
+                        workload = 'sharepoint'; type = 'list'
+                        native_id = "$SiteUrl::$($list.Title)"
+                        tenant = (New-TenantIdentity)
+                        scope = 'container'; parent = [ordered]@{ workload = 'sharepoint'; type = 'site'; native_id = $SiteUrl }
                         display_name = [string] $list.Title; url = $SiteUrl
                     }) `
                     -Facts (Get-ListPermissionFacts -List $list `
@@ -312,8 +322,10 @@ switch ($Mode) {
             CustomMasterUrl, AlternateCssUrl
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ModernityFacts -Web $web) `
@@ -326,8 +338,10 @@ switch ($Mode) {
         $site = Get-PnPSite -Includes SensitivityLabelId, SensitivityLabelInfo, Classification, GroupId
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ClassificationFacts -Site $site) `
@@ -348,8 +362,10 @@ switch ($Mode) {
         }
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ActivityFacts -Web $web -TenantSite $tenantSite `
@@ -371,8 +387,10 @@ switch ($Mode) {
             'identity cannot open return the same empty result.')
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts $facts -Requested @('agents', 'enumeration') `
@@ -385,8 +403,10 @@ switch ($Mode) {
         $web = Get-PnPWeb
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SpfxCatalogFacts -Scope $scope) `
@@ -397,8 +417,10 @@ switch ($Mode) {
         $web = Get-PnPWeb
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
-                    scope = 'collection'; parent = $TenantHost
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SpfxPageFacts -MaxPages $MaxPages `
@@ -421,8 +443,10 @@ switch ($Mode) {
             $file = Join-Path $OutputPath ((Get-SafeName $tenantSite.Url) + '.json')
             Write-Evidence -Path $file -Evidence (New-Evidence `
                     -Resource ([ordered]@{
-                        id = [string] $tenantSite.Url; type = 'site'
-                        scope = 'collection'; parent = $TenantHost
+                        workload = 'sharepoint'; type = 'site'
+                        native_id = [string] $tenantSite.Url
+                        tenant = (New-TenantIdentity)
+                        scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                         display_name = [string] $tenantSite.Title
                         url = [string] $tenantSite.Url
                     }) `

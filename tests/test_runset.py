@@ -149,7 +149,7 @@ def test_the_command_line_says_which_resource_rather_than_a_traceback(capsys, tm
     shutil.copy(FIXTURES / "site-two-owners.json", tmp_path / "b.json")
     code, _, err = run(capsys, "evaluate", "--evidence", str(tmp_path))
     assert code == 2
-    assert "duplicate resource ids" in err
+    assert "describes the same resource twice" in err
     assert "contoso,site,finance" in err
     assert "Traceback" not in err
 
@@ -261,9 +261,11 @@ def test_the_run_level_comparison_pairs_by_id_and_shows_what_moved():
     """
     before = RunSet([_run_for("site-two-owners")])
     after = RunSet([_run_for("site-one-owner")])
-    # The same resource, one owner later. Renaming the id is how a fixture
-    # becomes the same site at a different moment.
-    after.runs[0].resource["id"] = "contoso,site,finance"
+    # The same resource, one owner later. Identity is structured now, so the
+    # native id is the field that makes two documents the same site — and the
+    # display name is deliberately NOT part of it, which is why setting it here
+    # changes what is printed and nothing about what is paired.
+    after.runs[0].resource["native_id"] = before.runs[0].resource["native_id"]
     after.runs[0].resource["display_name"] = "Finance"
 
     text = diffing.many_to_markdown(before, after)

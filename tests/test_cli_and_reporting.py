@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 
 from conftest import DATA, evidence, rule
+from m365_governance import registry
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
 from m365_governance.reporting import to_json, to_markdown
@@ -162,7 +163,7 @@ def test_the_diff_has_a_model_and_not_only_markdown():
     before, after = _two_runs()
     document = json.loads(diffing.to_json(before, after))
 
-    assert document["$schema"].endswith("/comparison/2.0.0")
+    assert document["$schema"] == registry.contract("comparison")
     assert document["counts"]["rules_differing"] == 2
     assert document["counts"]["outcome_changed"] == 2
     assert document["counts"]["regressions"] == 0
@@ -231,7 +232,9 @@ def test_the_diff_resource_has_the_same_shape_as_every_other():
 
     before, after = _two_runs()
     resource = diffing.to_dict(before, after)["resource"]
-    assert set(resource) >= {"id", "type", "display_name"}
+    # The structured reference, not a bare id. Identity is three fields now,
+    # and a consumer compares them rather than agreeing on a string.
+    assert set(resource) >= {"workload", "type", "native_id"}
     assert resource["type"] == "tenant"
 
 

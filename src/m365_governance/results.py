@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Any
 
 from . import attention as attention_module
-from . import registry
+from . import identity, registry
 
 
 class Outcome(StrEnum):
@@ -74,8 +74,8 @@ class Result:
     rule_id: str
     rule_version: str
     schema_version: str
-    resource_id: str
-    resource_type: str
+    #: The resource this result is about, as a structured reference.
+    resource_ref: dict
     outcome: Outcome
     message: str
     basis_type: str
@@ -97,7 +97,7 @@ class Result:
             "title": self.title,
             "rule_version": self.rule_version,
             "schema_version": self.schema_version,
-            "resource": {"id": self.resource_id, "type": self.resource_type},
+            "resource": dict(self.resource_ref),
             "outcome": self.outcome.value,
             "message": self.message,
             "basis": self.basis_type,
@@ -141,8 +141,7 @@ class Result:
             title=data.get("title", ""),
             rule_version=data.get("rule_version", ""),
             schema_version=data.get("schema_version", ""),
-            resource_id=resource.get("id", "<unknown>"),
-            resource_type=resource.get("type", "<unknown>"),
+            resource_ref=identity.ref(resource),
             outcome=Outcome(data["outcome"]),
             message=data.get("message", ""),
             basis_type=data.get("basis", "<unknown>"),
@@ -254,14 +253,17 @@ class RunSet:
     coverage: dict = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        ids = [run.resource.get("id", "") for run in self.runs]
-        duplicates = sorted(
-            {resource_id for resource_id in ids if ids.count(resource_id) > 1}
-        )
+        keys = [identity.key(run.resource) for run in self.runs]
+        duplicates = sorted({k for k in keys if keys.count(k) > 1})
         if duplicates:
-            joined = ", ".join(duplicates)
+            # Assembled for the message only. Comparison above is structural;
+            # nothing reads this string back.
+            joined = ", ".join(
+                identity.readable(dict(zip(identity.FIELDS, k, strict=False)))
+                for k in duplicates
+            )
             raise DuplicateResource(
-                f"a run set contains duplicate resource ids: {joined}"
+                f"a run set describes the same resource twice: {joined}"
             )
 
     def counts(self) -> dict[str, int]:

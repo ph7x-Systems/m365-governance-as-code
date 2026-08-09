@@ -80,6 +80,23 @@ function Resolve-FailureState {
     return 'missing'
 }
 
+<#
+    The tenant a resource belongs to, in one place.
+
+    Identity is structured now, so every resource carries its own tenant rather
+    than borrowing it from the document it happens to sit in. Written once here
+    because twelve call sites building the same hashtable is twelve chances for
+    one of them to differ.
+#>
+function New-TenantIdentity {
+    [ordered]@{
+        # Null until a collection path for the directory identity is proven on
+        # a tenant. The host is an endpoint, and saying so is the point.
+        id   = $null
+        host = $script:TenantHost
+    }
+}
+
 function New-Evidence {
     param(
         $Resource,
@@ -98,7 +115,7 @@ function New-Evidence {
         # ordinary property, and this is where the two conventions are kept
         # apart. It replaces `schema_version = '1.0'`, a second version that
         # could not express the one in the schema's own $id.
-        '$schema'      = 'https://ph7x.com/schemas/m365-governance/evidence/2.0.0'
+        '$schema'      = 'https://ph7x.com/schemas/m365-governance/evidence/3.0.0'
         provenance     = [ordered]@{
             collected_at      = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
             collector         = $script:CollectorName
@@ -154,4 +171,4 @@ function Get-SafeName {
     return ($Value -replace '^https?://', '' -replace '[^A-Za-z0-9._-]', '-').Trim('-')
 }
 
-Export-ModuleMember -Function New-Unavailable, New-ScalarFact, New-AbsentFact, Resolve-FailureState, New-Evidence, Write-Evidence, Get-SafeName, Initialize-Evidence
+Export-ModuleMember -Function New-Unavailable, New-TenantIdentity, New-ScalarFact, New-AbsentFact, Resolve-FailureState, New-Evidence, Write-Evidence, Get-SafeName, Initialize-Evidence

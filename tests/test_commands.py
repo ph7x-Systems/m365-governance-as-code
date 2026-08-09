@@ -13,7 +13,7 @@ from pathlib import Path
 import pytest
 
 from conftest import DATA, FIXTURES, ROOT, evidence
-from m365_governance import doctor, inspect
+from m365_governance import doctor, inspect, registry
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
 from m365_governance.reporting import to_html, to_markdown
@@ -305,7 +305,9 @@ def test_diff_compares_two_assessments_and_names_neither_by_path(capsys, tmp_pat
     assert code == 0, err
 
     document = json.loads(out)
-    assert document["$schema"].endswith("/comparison/2.0.0")
+    # From the registry: a literal version here is a second
+    # representation that goes stale in silence.
+    assert document["$schema"] == registry.contract("comparison")
     assert len(document["before"]["canonical_hash"]) == 64
     assert document["before"]["assessment_id"] != document["after"]["assessment_id"]
     # Named, never embedded: a comparison carrying both would duplicate the

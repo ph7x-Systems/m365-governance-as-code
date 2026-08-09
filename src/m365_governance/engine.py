@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from typing import Any
 
+from . import identity
 from .results import EvidenceUsed, Outcome, Result, Run, message_key
 
 INTERPOLATION = re.compile(r"\{([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)*)\}")
@@ -231,8 +232,7 @@ def evaluate_rule(rule: dict, evidence: dict) -> Result:
             title=str(rule.get("title", "")),
             rule_version=str(rule.get("version", "")),
             schema_version=str(rule.get("schema_version", "")),
-            resource_id=resource.get("id", "<unknown>"),
-            resource_type=resource.get("type", "<unknown>"),
+            resource_ref=identity.ref(resource),
             outcome=Outcome.ERROR,
             message=(
                 "The evaluation did not finish. This describes the engine, "
@@ -265,8 +265,7 @@ def _evaluate(rule: dict, evidence: dict) -> Result:
             title=str(rule.get("title", "")),
             rule_version=str(rule["version"]),
             schema_version=str(rule["schema_version"]),
-            resource_id=resource.get("id", "<unknown>"),
-            resource_type=resource.get("type", "<unknown>"),
+            resource_ref=identity.ref(resource),
             outcome=outcome,
             message=message,
             basis_type=rule["basis"]["type"],

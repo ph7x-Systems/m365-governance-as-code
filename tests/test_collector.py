@@ -243,25 +243,27 @@ def test_the_audit_lists_the_same_properties_as_the_guard():
 #: Every resource block the collector writes. Containment is not optional in
 #: the schema, so a mode that forgets it produces evidence the engine refuses
 #: at runtime, on a tenant, after somebody waited for a collection.
-RESOURCE_BLOCK = re.compile(r"id\s*=\s*[^;]+;\s*type\s*=\s*'(\w+)'", re.MULTILINE)
+RESOURCE_BLOCK = re.compile(r"workload = 'sharepoint'; type = '([a-z]+)'\n")
 
 
 def test_every_resource_the_collector_writes_declares_its_containment():
-    """`scope` and `parent` are required by evidence.schema.json.
+    """Containment is not optional in the schema.
 
-    A resource without them is a resource whose place in the estate lives in
-    prose, which is the thing the model was changed to stop.
+    A mode that forgets it produces evidence the engine refuses at runtime, on
+    a tenant, after somebody waited for a collection.
     """
     source = COLLECTOR.read_text(encoding="utf-8")
-    blocks = [m for m in RESOURCE_BLOCK.finditer(source)]
+    blocks = list(RESOURCE_BLOCK.finditer(source))
     assert len(blocks) >= 8, "the resource blocks moved; this test found almost none"
 
     for match in blocks:
-        # The two fields follow the type on the next lines of the same literal.
-        window = source[match.end() : match.end() + 220]
+        # The remaining fields follow the type on the next lines of the same
+        # literal. The window grew when identity became structured: a resource
+        # now carries its own native id and tenant before it reaches `scope`.
+        window = source[match.end() : match.end() + 420]
         kind = match.group(1)
-        assert "scope" in window, f"a {kind} resource is written without a scope"
-        assert "parent" in window, f"a {kind} resource is written without a parent"
+        for field in ("native_id", "tenant", "scope", "parent"):
+            assert field in window, f"a {kind} resource is written without {field}"
 
 
 #: url -> the tenant it belongs to. The admin centre lives on its own host, and

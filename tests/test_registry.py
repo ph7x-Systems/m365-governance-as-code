@@ -35,7 +35,11 @@ SCHEMAS = DATA / "schemas"
 FIXTURES = DATA / "fixtures" / "sharepoint"
 ARCHIVE = DATA / "fixtures" / "archive"
 
-EVIDENCE = "https://ph7x.com/schemas/m365-governance/evidence/2.0.0"
+# From the registry, never written out again. A literal version in a test is a
+# second representation of the one thing this module is strictest about, and it
+# goes stale in silence: the test keeps passing against the version it names
+# while the engine ships another.
+EVIDENCE = registry_module.contract("evidence")
 EVIDENCE_1_2_0 = "https://ph7x.com/schemas/m365-governance/evidence/1.2.0"
 
 

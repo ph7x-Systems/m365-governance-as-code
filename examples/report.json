@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/run/3.0.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
   "provenance": {
     "collected_at": "2026-08-05T14:02:11Z",
     "collector": "spo-collector",
@@ -26,10 +26,19 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "contoso,site,hr",
+    "workload": "sharepoint",
     "type": "site",
+    "native_id": "contoso,site,hr",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
     "scope": "collection",
-    "parent": "contoso.sharepoint.com",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
     "display_name": "HR",
     "url": "https://contoso.sharepoint.com/sites/HR"
   },
@@ -52,8 +61,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.",
@@ -96,8 +106,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.",
@@ -145,8 +156,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.",
@@ -196,8 +208,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "Whether this group-connected site carries a sensitivity label was not established. This is not a pass.",
@@ -253,8 +266,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.",
@@ -302,8 +316,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.",
@@ -338,8 +353,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.",
@@ -374,8 +390,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.",
@@ -423,8 +440,9 @@
       "rule_version": "1.0",
       "schema_version": "2.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.",
@@ -474,8 +492,9 @@
       "rule_version": "1.1",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "pass",
       "message": "The site has at least 3 owners.",
@@ -510,8 +529,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.",
@@ -546,8 +566,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The storage figures for this site were not read, so how full it is remains unknown. This is not a pass.",
@@ -598,8 +619,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The catalog was not read, so whether any solution is behind the version it holds is not known. This is not a pass.",
