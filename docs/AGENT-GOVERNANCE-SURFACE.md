@@ -151,6 +151,47 @@ means "unprotected" is the dangerous direction**, exactly as `Disabled` was.
 > `needs-tenant-validation`, and not negotiable, because the failure would be
 > silent and would read as safe.
 
+## The next slice, and the cmdlet everybody assumes answers it
+
+**`Get-SPOM365AgentAccessInsightsReport` does not say who may use an agent.**
+The page it belongs to is *Monitor agent access to SharePoint and OneDrive*,
+and the direction is the opposite one: which agents reached which sites,
+derived from unified audit data. That is history, not permission.
+
+The distinction matters enough to write down before anybody builds on it:
+
+```
+who may USE the agent      the .agent file's permissions. An ordinary file
+                           read, no report and no extra licence, and this
+                           engine already reads unique permissions on list
+                           items for the LIST domain.
+
+what the agent REACHED     the access insights report. SAM or Copilot
+                           licence, audit-derived, and a different question
+                           with a different answer.
+
+what the agent may reach   the sources in its own definition, which the
+                           inventory already collects.
+```
+
+**Three questions, and only the first is "who can use this agent".** Reading
+the report as an answer to it would have produced a slice that needs a licence
+to answer something the file already carries.
+
+**Documented limits on the report, for whenever that third slice opens:**
+
+```
+one report per range (1, 7, 14, 28 days), so four at most
+a new report for a range REPLACES the old one
+24 hours between generations, up to 48 for a large tenant to have data
+"might not include every audit event"
+Start- queues a job, so it writes and stays outside the collector
+data collection itself needs Start-SPOAuditDataCollectionForActivityInsights
+```
+
+The last line is the one that decides scope: the report is not a read of
+current state, it is a read of a job somebody had to start.
+
 ## Where the normative question lands, and it lands badly
 
 The rule contract requires a documented basis before a rule exists. Searching
