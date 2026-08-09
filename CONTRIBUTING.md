@@ -168,7 +168,20 @@ The name and address must be real and must be the ones you commit under. CI
 refuses a pull request whose commits are not signed off, and it names the
 commits rather than failing with a tick nobody can act on.
 
-If you forget, `git rebase --signoff origin/main` fixes a branch.
+If you forget, `git rebase --signoff` from the merge base fixes a branch — the
+refusal prints the exact command.
+
+**History from before the policy is not reopened.** The rule applies to commits
+a pull request introduces, measured from the merge base, and everything
+reachable from the commit that adopted it is left alone. Rewriting published
+history would change every hash on the default branch, break every link and
+clone that refers to them, and re-certify years of work retroactively — which
+is the opposite of what a certificate means.
+
+**Nobody signs for anybody else.** A sign-off by someone other than the author
+is a certificate about work the signer did not write, and the gate refuses it.
+If a commit on your branch is not yours, its author adds the sign-off; a
+maintainer will not add one on their behalf.
 
 ## Pull requests
 
