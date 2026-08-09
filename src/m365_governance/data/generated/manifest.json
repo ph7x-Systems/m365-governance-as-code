@@ -17,12 +17,30 @@
   ],
   "generator_version": "1.0.0",
   "schemas": {
-    "assessment.schema.json": "68f6d2ee5218829f136bdb5bfad35fae8775d9135ed8b2b80a53217c80a68b16",
-    "comparison.schema.json": "7cd6447c1f5c6248717c5c08642680ff8e19bebbb583aaff5d20ee8872ed19df",
-    "evidence.schema.json": "b51cfa3692db26746c1d78a022ccb0f8c39dae1fe190451d6b87310c0185aa29",
-    "rule.schema.json": "7d6cd962ff0a776162099224cbeb562efd942ab19d229eb6484632bb1be4375d",
-    "run-set.schema.json": "4309f231a2128d08369e2980bdfca388e32312375eed2b5cd10887878cede195",
-    "run.schema.json": "bef2cb5b67b01c8b0be53dc191fc439bfb078cdbabcc41760b470f5e3b6d384f"
+    "https://ph7x.com/schemas/m365-governance/assessment/1.0.0": {
+      "digest": "68f6d2ee5218829f136bdb5bfad35fae8775d9135ed8b2b80a53217c80a68b16",
+      "path": "schemas/assessment.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/comparison/1.0.0": {
+      "digest": "7cd6447c1f5c6248717c5c08642680ff8e19bebbb583aaff5d20ee8872ed19df",
+      "path": "schemas/comparison.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
+      "digest": "b51cfa3692db26746c1d78a022ccb0f8c39dae1fe190451d6b87310c0185aa29",
+      "path": "schemas/evidence.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/rule/1.0.0": {
+      "digest": "7d6cd962ff0a776162099224cbeb562efd942ab19d229eb6484632bb1be4375d",
+      "path": "schemas/rule.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/run-set/1.0.0": {
+      "digest": "4309f231a2128d08369e2980bdfca388e32312375eed2b5cd10887878cede195",
+      "path": "schemas/run-set.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/run/1.0.0": {
+      "digest": "bef2cb5b67b01c8b0be53dc191fc439bfb078cdbabcc41760b470f5e3b6d384f",
+      "path": "schemas/run.schema.json"
+    }
   },
-  "set_digest": "43ee789a42beadafc039a97e36db80e489b6c8d80c390d68c187a2dedd734094"
+  "set_digest": "999ce4f4fe3fec2099fe4cb099631bb1fd0617ff6f88a9a7fe23a3b2720f9042"
 }

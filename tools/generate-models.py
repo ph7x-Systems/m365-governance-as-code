@@ -308,6 +308,63 @@ namespace Ph7x.Governance.Contracts;
 """
 
 
+def refs_in(node, found: set[str]) -> set[str]:
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key == "$ref" and isinstance(value, str):
+                found.add(value)
+            refs_in(value, found)
+    elif isinstance(node, list):
+        for item in node:
+            refs_in(item, found)
+    return found
+
+
+def check_closure(schemas: dict) -> None:
+    """Every `$ref` target is in the bundle, and everything in it is reached.
+
+    Both directions matter. A reference to something absent makes a bundle
+    that cannot be loaded without going outside it; a resource nobody
+    references makes one that ships weight without saying why.
+    """
+    declared = set(schemas)
+    missing, reached = {}, set()
+    for uri, entry in schemas.items():
+        document = json.loads(
+            (ROOT / "src" / "m365_governance" / "data" / entry["path"]).read_text(
+                encoding="utf-8"
+            )
+        )
+        for ref in refs_in(document, set()):
+            if ref.startswith("#"):
+                continue  # internal, resolved within this document
+            target = ref.split("#", 1)[0]
+            if target not in declared:
+                missing.setdefault(uri, []).append(ref)
+            else:
+                reached.add(target)
+    if missing:
+        detail = "; ".join(f"{u} -> {r}" for u, rs in missing.items() for r in rs)
+        raise Unsupported(
+            f"the bundle would not be self-sufficient: {detail}. Every "
+            "referenced resource travels with it, or the consumer has to go "
+            "outside the artefact to load it."
+        )
+    # A root is reached by nobody, which is normal. Only warn about a resource
+    # that is neither a root nor referenced.
+    roots = {
+        u
+        for u in declared
+        if u.rsplit("/", 2)[-2]
+        in ("run", "assessment", "comparison", "run-set", "evidence", "rule")
+    }
+    orphans = declared - reached - roots
+    if orphans:
+        raise Unsupported(
+            f"resources nobody references and nobody roots: {sorted(orphans)}"
+        )
+
+
 def build_manifest() -> dict:
     """What a consumer needs in order to know which contract it holds.
 
@@ -316,11 +373,27 @@ def build_manifest() -> dict:
     whole point: a guard that only works when the sibling checkout happens to
     exist is a guard that is absent on the machine that builds the release.
     """
+    # URI -> local path -> digest. A `$ref` to an absolute URI is an identity
+    # and not an instruction to fetch anything: the bundle is self-sufficient
+    # when it contains every referenced resource and can register each one
+    # under its own `$id`. That is what Draft 2020-12 calls a compound schema
+    # document, and it is why nothing here duplicates a definition to avoid a
+    # cross-file reference.
     schemas = {}
     for path in sorted(SCHEMAS.glob("*.json")):
-        schemas[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+        document = json.loads(path.read_text(encoding="utf-8"))
+        uri = document["$id"]
+        if uri in schemas:
+            raise Unsupported(f"two schemas claim the same $id: {uri}")
+        schemas[uri] = {
+            "path": f"schemas/{path.name}",
+            "digest": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }
+    check_closure(schemas)
     combined = hashlib.sha256(
-        "".join(f"{name}:{digest}" for name, digest in sorted(schemas.items())).encode()
+        "".join(
+            f"{uri}:{entry['digest']}" for uri, entry in sorted(schemas.items())
+        ).encode()
     ).hexdigest()
     return {
         "_comment": [
