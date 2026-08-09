@@ -55,9 +55,9 @@
       "path": "schemas/archive/run-2.0.0.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/run/3.0.0": {
-      "digest": "5b32ebcaadc2275d42bebda32cc2abbe84fa16479675d0537ecc6af591cc0e5f",
+      "digest": "7077816571e249ebf66bafa9ea7952c718fc4ed6dc0cfaf90e7dfd17da229ef1",
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "f6cd7cc88bade35a1150a2f39772a975d7a109e1a6227e9c02d1b0b1fa8d9e63"
+  "set_digest": "0959f867208c170579b9424610129f6afaaa9860c4c2a5ea49135f29e6915dce"
 }

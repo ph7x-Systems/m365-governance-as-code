@@ -13,6 +13,7 @@
 //   const
 //   if
 //   minProperties
+//   minimum
 //   not
 //   then
 //

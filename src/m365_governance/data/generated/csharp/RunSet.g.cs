@@ -9,6 +9,7 @@
 // that no C# type expresses, so deserialising successfully is not the same as
 // honouring the contract:
 //   const
+//   minimum
 //
 // VALIDATE AGAINST THE SCHEMA AS WELL. Two settings are required and are not
 // the defaults:

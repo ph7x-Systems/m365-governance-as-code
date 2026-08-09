@@ -276,12 +276,13 @@
             "none",
             "not-evaluated"
           ],
-          "description": "`act` is a documented violation: the tenant is outside something the vendor wrote down. `review` is decided and not normative — a choice to weigh. `observe` is the engine reaching no answer, and it covers both an absent reading and an untrustworthy one, which stay apart in `rank` and `because`. `none` is decided with nothing following. `not-evaluated` is NOT `none`: it says no judgement was formed at all, and collapsing the two would make an unranked result indistinguishable from a clean one."
+          "description": "THE FIVE STATES, and the only vocabulary that appears in this field. `act` is a documented violation: the tenant is outside something the vendor wrote down. `review` is decided and not normative — a choice to weigh. `observe` is the engine reaching no answer, and it covers two different reasons that must not be flattened: evidence read and not trusted, and evidence never read. Which of the two is in `rank`. `none` is a JUDGEMENT and not an absence: the engine looked, decided, and nothing follows — it is counted like every other state, because a state that vanished when it was empty would make 'nothing to do' and 'nobody asked' read alike. `not-evaluated` is the one that means no judgement was formed."
         },
         "rank": {
           "type": "integer",
           "minimum": 0,
-          "description": "The published order, ascending. Ordering carries governance meaning, so it belongs to the engine rather than to whoever draws the list: 0 a documented violation; 1 evidence read and not trusted, above an absent reading because a malformed value looks like data while an absence announces itself; 2 evidence not read at all, above a decided non-normative matter because a gap undermines every other answer on the page; 3 decided and worth weighing; 4 nothing follows; 5 no judgement. Finer than `state` on purpose — it is what keeps unknown and invalid evidence apart in the one place a reader actually perceives them."
+          "description": "The published order, ascending, and a SECOND vocabulary: it is the index of a tier, not of a state. Six tiers to five states, because `observe` spans two of them. No tier shares a name with a state, deliberately — the two used to share one dictionary keyed by a mixture of state names and outcome names, `observe` had no entry in it, and a run in `observe` fell through to a default and published 2, which is `no-judgement`'s rank. 0 documented-violation → act. 1 evidence-untrusted → observe: read and not to be relied on, above an absent reading because a malformed value looks like data while an absence announces itself. 2 no-judgement → not-evaluated: HERE and not last, because it says nothing about the tenant, which is exactly why somebody has to look, and ranking it below a pass would bury a defect of ours underneath good news. 3 evidence-absent → observe: nobody read it. A gap rather than a defect, and still above a decided non-normative matter, because the product's whole claim is that uncertainty stays visible. 4 decided-non-normative → review. 5 settled → none.",
+          "maximum": 5
         },
         "because": {
           "type": "array",
@@ -297,7 +298,7 @@
     "run_attention": {
       "type": "object",
       "additionalProperties": false,
-      "description": "What the run as a whole needs. NOT a sum of its results: a slice the collector could not read produces no result at all, so a run whose every rule passed can still be a run that saw almost nothing. Counting only results would report that as clean.",
+      "description": "What the run as a whole needs. NOT a sum of its results: a slice the collector could not read produces no result at all, so a run whose every rule passed can still be a run that saw almost nothing. The run takes the most urgent tier present, counting an unread area as an unread reading — the same rule its results use, asked once.",
       "required": [
         "state",
         "rank",
@@ -314,12 +315,13 @@
             "none",
             "not-evaluated"
           ],
-          "description": "`act` is a documented violation: the tenant is outside something the vendor wrote down. `review` is decided and not normative — a choice to weigh. `observe` is the engine reaching no answer, and it covers both an absent reading and an untrustworthy one, which stay apart in `rank` and `because`. `none` is decided with nothing following. `not-evaluated` is NOT `none`: it says no judgement was formed at all, and collapsing the two would make an unranked result indistinguishable from a clean one."
+          "description": "THE FIVE STATES, and the only vocabulary that appears in this field. `act` is a documented violation: the tenant is outside something the vendor wrote down. `review` is decided and not normative — a choice to weigh. `observe` is the engine reaching no answer, and it covers two different reasons that must not be flattened: evidence read and not trusted, and evidence never read. Which of the two is in `rank`. `none` is a JUDGEMENT and not an absence: the engine looked, decided, and nothing follows — it is counted like every other state, because a state that vanished when it was empty would make 'nothing to do' and 'nobody asked' read alike. `not-evaluated` is the one that means no judgement was formed."
         },
         "rank": {
           "type": "integer",
           "minimum": 0,
-          "description": "The published order, ascending. Ordering carries governance meaning, so it belongs to the engine rather than to whoever draws the list: 0 a documented violation; 1 evidence read and not trusted, above an absent reading because a malformed value looks like data while an absence announces itself; 2 evidence not read at all, above a decided non-normative matter because a gap undermines every other answer on the page; 3 decided and worth weighing; 4 nothing follows; 5 no judgement. Finer than `state` on purpose — it is what keeps unknown and invalid evidence apart in the one place a reader actually perceives them."
+          "description": "The published order, ascending, and a SECOND vocabulary: it is the index of a tier, not of a state. Six tiers to five states, because `observe` spans two of them. No tier shares a name with a state, deliberately — the two used to share one dictionary keyed by a mixture of state names and outcome names, `observe` had no entry in it, and a run in `observe` fell through to a default and published 2, which is `no-judgement`'s rank. 0 documented-violation → act. 1 evidence-untrusted → observe: read and not to be relied on, above an absent reading because a malformed value looks like data while an absence announces itself. 2 no-judgement → not-evaluated: HERE and not last, because it says nothing about the tenant, which is exactly why somebody has to look, and ranking it below a pass would bury a defect of ours underneath good news. 3 evidence-absent → observe: nobody read it. A gap rather than a defect, and still above a decided non-normative matter, because the product's whole claim is that uncertainty stays visible. 4 decided-non-normative → review. 5 settled → none.",
+          "maximum": 5
         },
         "because": {
           "type": "array",
@@ -333,7 +335,7 @@
         "counts": {
           "type": "object",
           "additionalProperties": false,
-          "description": "How many results reached each state.",
+          "description": "How many results reached each state. All five keys, always, zeros included — `none` among them, because it is a judgement rather than an absence and a count that disappeared when it was zero would hide that.",
           "required": [
             "act",
             "review",

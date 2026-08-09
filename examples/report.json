@@ -631,7 +631,7 @@
   ],
   "attention": {
     "state": "observe",
-    "rank": 2,
+    "rank": 3,
     "because": [
       "12 finding(s) reached no answer"
     ],

@@ -12,7 +12,7 @@
 
 **Part of this could not be answered, so the report describes less than the resource.**
 
-- 3 finding(s) reached no answer
+- evidence was read that could not be trusted
 
 ## Summary
 

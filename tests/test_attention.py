@@ -277,11 +277,11 @@ def test_an_engine_failure_is_never_buried_under_good_news():
     says nothing about the tenant, which is precisely why somebody has to look:
     part of the report is missing and the rest looks complete.
     """
-    assert attention.RANKS["not-evaluated"] < attention.RANKS["review"]
-    assert attention.RANKS["not-evaluated"] < attention.RANKS["none"]
-    # And still below the two states that describe a real reading.
-    assert attention.RANKS["act"] < attention.RANKS["not-evaluated"]
-    assert attention.RANKS["invalid-evidence"] < attention.RANKS["not-evaluated"]
+    assert attention.RANK["no-judgement"] < attention.RANK["decided-non-normative"]
+    assert attention.RANK["no-judgement"] < attention.RANK["settled"]
+    # And still below the two tiers that describe a real reading.
+    assert attention.RANK["documented-violation"] < attention.RANK["no-judgement"]
+    assert attention.RANK["evidence-untrusted"] < attention.RANK["no-judgement"]
 
 
 def test_a_run_that_produced_no_judgement_says_so_before_it_says_anything_else():
@@ -317,3 +317,122 @@ def test_the_order_is_stable_across_calls():
     from m365_governance import reporting
 
     assert [o.value for o in reporting._ORDER] == [o.value for o in reporting._ORDER]
+
+
+# ── two vocabularies, and they are not the same one ───────────────────────
+
+
+def test_a_state_and_a_tier_never_share_a_name():
+    """The defect this reconciliation closed.
+
+    Ranks were keyed by a mixture of state names and OUTCOME names, so
+    `observe` had no entry at all. Anything asking for its rank missed and fell
+    through to a default.
+    """
+    assert not set(attention.STATES) & set(attention.TIERS)
+    assert len(attention.STATES) == 5
+    assert len(attention.TIERS) == 6
+
+
+def test_every_tier_maps_to_a_state_and_every_state_is_reachable():
+    assert set(attention.STATE_OF_TIER) == set(attention.TIERS)
+    assert set(attention.STATE_OF_TIER.values()) == set(attention.STATES)
+
+
+def test_observe_is_the_one_state_spanning_two_tiers():
+    """Which is the whole reason there are two enumerations."""
+    spanning = [
+        state
+        for state in attention.STATES
+        if sum(1 for s in attention.STATE_OF_TIER.values() if s == state) > 1
+    ]
+    assert spanning == ["observe"]
+
+
+def test_a_run_that_reached_no_answer_is_never_ranked_as_no_judgement():
+    """The bug, stated as a test.
+
+    `observe` had no rank entry, so a run in `observe` published 2 — which is
+    `no-judgement`'s rank. The document said one thing in `state` and another
+    in `rank`, and both looked deliberate.
+    """
+    judged = attention.for_run(
+        [result(outcome="unknown")],
+        {"unavailable": {}},
+    )
+
+    assert judged["state"] == "observe"
+    assert judged["rank"] == attention.RANK["evidence-absent"]
+    assert judged["rank"] != attention.RANK["no-judgement"]
+
+
+def test_every_published_rank_is_the_index_of_its_tier():
+    assert {t: i for i, t in enumerate(attention.TIERS)} == attention.RANK
+    assert min(attention.RANK.values()) == 0
+    assert max(attention.RANK.values()) == 5
+
+
+def test_a_run_takes_the_most_urgent_tier_present_however_it_arose():
+    """One rule, asked once.
+
+    `observe` used to appear twice in the run's ladder — above `not-evaluated`
+    when the gap was an unread area, below it when the gap was an unanswered
+    rule. Which state a run reported depended on which kind of gap it had.
+    """
+    unread_area = attention.for_run(
+        [result(outcome="error")],
+        {"unavailable": {"sharing": {"state": "permission-denied", "detail": "no"}}},
+    )
+    unanswered_rule = attention.for_run(
+        [result(outcome="error"), result(outcome="unknown")],
+        {"unavailable": {}},
+    )
+
+    # A defect of ours outranks a gap, whichever kind of gap it is.
+    assert unread_area["state"] == "not-evaluated"
+    assert unanswered_rule["state"] == "not-evaluated"
+    assert unread_area["rank"] == unanswered_rule["rank"]
+
+
+def test_none_is_a_judgement_and_is_counted_like_any_other():
+    """It is not absence. `not-evaluated` is the one that means that."""
+    judged = attention.for_run(
+        [result(outcome="pass"), result(outcome="not-applicable")],
+        {"unavailable": {}},
+    )
+
+    assert judged["state"] == "none"
+    assert judged["counts"]["none"] == 2
+    assert set(judged["counts"]) == set(attention.STATES)
+    assert attention.STATE_OF_TIER["settled"] == "none"
+
+
+def test_the_state_a_result_publishes_is_always_its_tier_s_state():
+    """No path may set one without the other."""
+    for outcome in (
+        "pass",
+        "fail",
+        "unknown",
+        "invalid-evidence",
+        "not-applicable",
+        "error",
+        "made-up",
+    ):
+        judged = attention.for_result(result(outcome=outcome))
+        tier = attention.TIERS[judged["rank"]]
+        assert judged["state"] == attention.STATE_OF_TIER[tier]
+
+
+def test_the_schema_publishes_exactly_the_five_states_the_engine_knows():
+    """The contract and the code cannot drift apart on the vocabulary."""
+    schema = json.loads(
+        (
+            ROOT / "src" / "m365_governance" / "data" / "schemas" / "run.schema.json"
+        ).read_text(encoding="utf-8")
+    )
+    for name in ("attention", "run_attention"):
+        declared = schema["$defs"][name]["properties"]["state"]["enum"]
+        assert sorted(declared) == sorted(attention.STATES)
+        rank = schema["$defs"][name]["properties"]["rank"]
+        assert rank["minimum"] == 0
+        assert rank["maximum"] == len(attention.TIERS) - 1

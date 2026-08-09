@@ -91,7 +91,6 @@ SHAPE = {
     # Annotation, and it changes nothing a type can carry.
     "$comment",
     "additionalProperties",
-    "minimum",
     "minLength",
     "minItems",
     "uniqueItems",
@@ -114,6 +113,12 @@ CONSTRAINT = {
     # dictionary type cannot say it, so the generated header reports it
     # instead of the model pretending to enforce it.
     "minProperties",
+    # And a bounded integer is the same kind of claim. `minimum` used to sit
+    # among the SHAPE keywords, which said an `int` enforced it — it does not,
+    # and the generated header was quietly missing one of the things it exists
+    # to list. `maximum` arriving is what exposed it.
+    "minimum",
+    "maximum",
 }
 
 PRIMITIVE = {
