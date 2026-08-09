@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/assessment/1.0.0",
+  "title": "Assessment",
+  "description": "What a person means by 'I assessed a tenant': the transferable aggregate. A RunSet alone cannot be handed over because it does not carry what produced it. The canonical half is archived and verified; the derived half is thrown away and rebuilt, and a report that cannot be regenerated from the canonical half is a second original rather than a projection. A diff is deliberately absent: it relates two assessments and belongs to a Comparison.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "canonical"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "canonical": {
+      "$ref": "#/$defs/canonical"
+    },
+    "derived": {
+      "$ref": "#/$defs/derived",
+      "description": "Optional by design. An assessment with nothing derived is complete; an assessment with nothing canonical is not an assessment."
+    }
+  },
+  "$defs": {
+    "canonical": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest",
+        "run_set",
+        "evidence",
+        "versions",
+        "hashes"
+      ],
+      "properties": {
+        "manifest": {
+          "$ref": "#/$defs/manifest"
+        },
+        "run_set": {
+          "type": "object",
+          "description": "The evaluation at tenant scale, as the engine emits it. Structure owned by the run-set schema rather than restated here.",
+          "required": [
+            "runs"
+          ],
+          "properties": {
+            "runs": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "evidence": {
+          "type": "array",
+          "description": "Every evidence document the run set was evaluated from. Kept whole: a finding whose evidence was discarded cannot be re-checked, and re-checking is the point.",
+          "items": {
+            "type": "object"
+          }
+        },
+        "versions": {
+          "$ref": "#/$defs/versions"
+        },
+        "hashes": {
+          "$ref": "#/$defs/hashes"
+        }
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assessment_id",
+        "created_at",
+        "tenant",
+        "identity_kind"
+      ],
+      "properties": {
+        "assessment_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Stable for the life of the assessment. Two exports of the same assessment carry the same id."
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tenant": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Which tenant this describes. An assessment that does not say is not archivable, because nobody can tell later what it was about."
+        },
+        "identity_kind": {
+          "type": "string",
+          "enum": [
+            "delegated",
+            "application"
+          ],
+          "description": "Which identity observed it. A delegated run sees what one person sees, and the difference changes what an empty result means."
+        },
+        "label": {
+          "type": "string",
+          "description": "What a person calls it. Optional, and never used to identify anything."
+        }
+      }
+    },
+    "versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine",
+        "rules",
+        "collectors"
+      ],
+      "description": "What produced this. Without it a finding cannot be explained two releases later, and 'the rule changed' becomes unanswerable.",
+      "properties": {
+        "engine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rules": {
+          "type": "object",
+          "description": "Rule id to the version of that rule as it was evaluated.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "collectors": {
+          "type": "object",
+          "description": "Collector name to its version, as the evidence declared it.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "hashes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "canonical_parts"
+      ],
+      "description": "What makes the canonical half verifiable after it has travelled. The derived half is deliberately unhashed: it is rebuilt rather than trusted.",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": [
+            "sha256"
+          ]
+        },
+        "canonical_parts": {
+          "type": "object",
+          "description": "Part name to its digest. Every required member of `canonical` except `hashes` itself appears here.",
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          }
+        }
+      }
+    },
+    "derived": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "reports": {
+          "type": "array",
+          "description": "Projections of the canonical half, each saying what rendered it so that the same output can be produced again.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "format",
+              "produced_by"
+            ],
+            "properties": {
+              "format": {
+                "type": "string",
+                "minLength": 1
+              },
+              "produced_by": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Which renderer, at which version. A report nobody can regenerate is not derived."
+              },
+              "path": {
+                "type": "string",
+                "description": "Where the rendered file sits, relative to the assessment."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

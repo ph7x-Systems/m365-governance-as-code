@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/comparison/1.0.0",
+  "title": "Comparison",
+  "description": "The relation between two assessments, and the only place a diff belongs. A diff is not part of an assessment: it is a claim about two states, and putting it inside one would make that state carry an assertion about another. This may be cached, exported or shipped inside a delivery package, and it stays derivable in all three cases: given both assessments, the engine reproduces it.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "before",
+    "after",
+    "diff"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$"
+    },
+    "before": {
+      "$ref": "#/$defs/side"
+    },
+    "after": {
+      "$ref": "#/$defs/side"
+    },
+    "diff": {
+      "$ref": "#/$defs/diff"
+    }
+  },
+  "$defs": {
+    "side": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "assessment_id",
+        "created_at"
+      ],
+      "description": "Which assessment, by identity rather than by copy. A comparison that embedded both would duplicate the canonical truth it is describing.",
+      "properties": {
+        "assessment_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "tenant": {
+          "type": "string"
+        }
+      }
+    },
+    "diff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "produced_by",
+        "changes"
+      ],
+      "properties": {
+        "produced_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The engine version that computed it. A diff nobody can reproduce is an opinion about history."
+        },
+        "changes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/change"
+          }
+        }
+      }
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "resource",
+        "rule",
+        "before",
+        "after",
+        "kind"
+      ],
+      "properties": {
+        "resource": {
+          "type": "string",
+          "minLength": 1
+        },
+        "rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "before": {
+          "$ref": "#/$defs/outcome"
+        },
+        "after": {
+          "$ref": "#/$defs/outcome"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "outcome-changed",
+            "resource-added",
+            "resource-removed",
+            "rule-added",
+            "rule-removed",
+            "rule-version-changed"
+          ],
+          "description": "Why the two sides differ. `rule-version-changed` exists because a finding that moved when the rule moved is not a tenant that changed, and reporting the two the same way is the mistake this field prevents."
+        }
+      }
+    },
+    "outcome": {
+      "description": "Five states, never three, and `null` where the side did not carry this pair at all.",
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "unknown",
+            "not-applicable",
+            "invalid-evidence"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  }
+}
