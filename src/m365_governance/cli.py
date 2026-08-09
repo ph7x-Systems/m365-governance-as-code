@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
@@ -43,7 +44,7 @@ from .reporting import (
     to_json,
     to_markdown,
 )
-from .resources import Source, resolve
+from .resources import Source, packaged, resolve
 from .results import DuplicateResource, Outcome, Run, RunSet
 from .validator import validate_evidence_document, validate_rules
 
@@ -220,6 +221,15 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="exit non-zero when any rule left `pass`",
     )
+    contracts = sub.add_parser(
+        "contracts",
+        help="write the contract bundle a consumer vendors: schemas, models, "
+        "samples and a manifest",
+    )
+    contracts.add_argument(
+        "--out", required=True, type=Path, help="a directory to write into"
+    )
+
     return parser
 
 
@@ -707,6 +717,45 @@ def _cmd_diff(args) -> int:
     return 0
 
 
+def _cmd_contracts(args) -> int:
+    """Write the vendored bundle from THIS INSTALLATION.
+
+    WHY A COMMAND AND NOT A DOCUMENT IN THE REPOSITORY. A consumer that had to
+    clone this repository to obtain the contract could only be as current as
+    whoever last remembered to copy it, and nothing could answer "is this
+    bundle current?" by any automated means. The bundle now ships in the wheel,
+    so `pip install` and this command are enough — and the version it declares
+    is the engine's own, which moves when the engine is released.
+    """
+    root = packaged("generated")
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+
+    out = args.out
+    out.mkdir(parents=True, exist_ok=True)
+    for sub in ("schemas", "csharp"):
+        target = out / sub
+        if target.exists():
+            shutil.rmtree(target)
+        target.mkdir(parents=True)
+
+    data = packaged("schemas").parent
+    for entry in manifest["schemas"].values():
+        source = data / entry["path"]
+        target = out / entry["path"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+    for model in sorted((root / "csharp").glob("*.g.cs")):
+        shutil.copy2(model, out / "csharp" / model.name)
+    shutil.copy2(root / "manifest.json", out / "manifest.json")
+
+    print(
+        f"contract {manifest['contract_version']} written to {out}: "
+        f"{len(manifest['schemas'])} schemas, {len(manifest['generated'])} models"
+    )
+    return 0
+
+
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
@@ -720,6 +769,7 @@ _COMMANDS = {
     "verify": _cmd_verify,
     "report": _cmd_report,
     "diff": _cmd_diff,
+    "contracts": _cmd_contracts,
 }
 
 

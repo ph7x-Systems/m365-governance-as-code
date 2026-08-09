@@ -54,10 +54,27 @@ OUT = ROOT / "src" / "m365_governance" / "data" / "generated" / "csharp"
 #: without the contract changing, and the diff then means nothing.
 GENERATOR_VERSION = "1.0.0"
 
-#: The contract as a whole. Moves when any schema moves, so a consumer can say
-#: which contract it was built against in one string rather than by comparing
-#: six digests by eye.
-CONTRACT_VERSION = "1.0.0"
+
+def _contract_version() -> str:
+    """The engine's own version, and not a second one kept beside it.
+
+    THIS WAS A FROZEN CONSTANT, and its comment claimed it moved when any
+    schema moved. It did not: `run`, `run-set` and `assessment` went from 2.0.0
+    to 3.0.0 and this stayed at 1.0.0, so a consumer comparing it across a
+    BREAKING contract change would have seen no change at all — which is
+    exactly the question it exists to answer.
+
+    A hand-maintained number beside the package version is the second
+    representation this repository has removed everywhere else. The bundle is
+    published as part of the engine's release, so the engine's version is what
+    identifies it. `set_digest` still answers the narrower question of whether
+    these exact bytes are the same.
+    """
+    sys.path.insert(0, str(ROOT / "src"))
+    import m365_governance
+
+    return m365_governance.__version__
+
 
 #: The aggregates a consumer imports, and everything they contain. Evidence is
 #: here because an assessment carries the documents it was evaluated from: a
@@ -543,7 +560,7 @@ def build_manifest() -> dict:
             "itself opportunistically against whatever engine happened to be on",
             "the machine would be reproducible only on that machine.",
         ],
-        "contract_version": CONTRACT_VERSION,
+        "contract_version": _contract_version(),
         "generator_version": GENERATOR_VERSION,
         "generated": sorted(
             pascal(n.replace(".schema.json", "")) + ".g.cs" for n in GENERATE
