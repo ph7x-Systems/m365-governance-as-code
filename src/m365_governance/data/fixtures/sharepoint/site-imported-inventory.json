@@ -12,7 +12,8 @@
       "exported_at": "2026-07-14T16:41:00Z",
       "exported_by": "migration-team@contoso.com",
       "detail": "Site inventory export. Scope chosen by the exporting team."
-    }
+    },
+    "tenant_id": "contoso.sharepoint.com"
   },
   "coverage": {
     "requested": [
@@ -27,7 +28,7 @@
     "id": "contoso,site,archive-2019",
     "type": "site",
     "scope": "collection",
-    "parent": "https://contoso-admin.sharepoint.com",
+    "parent": "contoso.sharepoint.com",
     "display_name": "Archive 2019",
     "url": "https://contoso.sharepoint.com/sites/Archive2019"
   },

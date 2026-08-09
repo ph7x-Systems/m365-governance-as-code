@@ -262,3 +262,43 @@ def test_every_resource_the_collector_writes_declares_its_containment():
         kind = match.group(1)
         assert "scope" in window, f"a {kind} resource is written without a scope"
         assert "parent" in window, f"a {kind} resource is written without a parent"
+
+
+#: url -> the tenant it belongs to. The admin centre lives on its own host, and
+#: recording that host as the tenant meant two modes on one tenant produced two
+#: tenant identities: evidence that could never be assembled into one
+#: assessment. Microsoft documents the admin form as `{prefix}-admin`.
+#:
+#: https://learn.microsoft.com/sharepoint/dev/spfx/set-up-your-developer-tenant
+TENANT_OF = {
+    "https://contoso-admin.sharepoint.com": "contoso.sharepoint.com",
+    "https://contoso.sharepoint.com/sites/finance": "contoso.sharepoint.com",
+    # Every cloud keeps the shape and changes the suffix, so only the first
+    # label is touched.
+    "https://contoso-admin.sharepoint.us": "contoso.sharepoint.us",
+    # `-admin` is a suffix on the first label and not a substring anywhere.
+    "https://admin-portal.sharepoint.com": "admin-portal.sharepoint.com",
+    # A KNOWN LIMIT, asserted so it is a decision rather than a surprise: a
+    # multi-geo satellite is returned as itself, because the documented mapping
+    # covers the admin centre and nothing else. Resolving it needs the
+    # directory id, and no collection path for that has been proven yet.
+    "https://contoso-emea.sharepoint.com/sites/x": "contoso-emea.sharepoint.com",
+}
+
+
+def test_the_tenant_is_the_tenant_and_not_whatever_was_connected_to():
+    if not shutil.which("pwsh"):
+        pytest.skip("pwsh is not installed; only collection needs it")
+
+    module = COLLECTOR.parent / "modules" / "Connection.psm1"
+    script = f"Import-Module '{module}' -Force; " + "; ".join(
+        f"Get-TenantHost -Url '{url}'" for url in TENANT_OF
+    )
+    answers = subprocess.run(
+        ["pwsh", "-NoProfile", "-Command", script],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+
+    assert answers == list(TENANT_OF.values())

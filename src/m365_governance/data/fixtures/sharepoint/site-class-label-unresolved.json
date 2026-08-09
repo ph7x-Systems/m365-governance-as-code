@@ -25,7 +25,7 @@
     "id": "contoso,site,label-unresolved",
     "type": "site",
     "scope": "collection",
-    "parent": "https://contoso-admin.sharepoint.com",
+    "parent": "contoso.sharepoint.com",
     "display_name": "Accounting",
     "url": "https://contoso.sharepoint.com/sites/ACCOUNTING"
   },

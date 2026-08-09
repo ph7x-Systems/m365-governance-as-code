@@ -25,7 +25,7 @@
     "id": "contoso,site,archived",
     "type": "site",
     "scope": "collection",
-    "parent": "https://contoso-admin.sharepoint.com",
+    "parent": "contoso.sharepoint.com",
     "display_name": "Archive 2023",
     "url": "https://contoso.sharepoint.com/sites/archived"
   },

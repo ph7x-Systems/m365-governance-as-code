@@ -27,7 +27,7 @@
     "id": "contoso,site,portal",
     "type": "site",
     "scope": "collection",
-    "parent": "https://contoso-admin.sharepoint.com",
+    "parent": "contoso.sharepoint.com",
     "display_name": "Classic Portal",
     "url": "https://contoso.sharepoint.com/sites/portal"
   },

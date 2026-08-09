@@ -5,8 +5,8 @@
       "run_schema_version": "1.0",
       "resources": 3,
       "by_class": {
-        "unknown": 2,
-        "content": 1
+        "content": 1,
+        "unknown": 2
       },
       "set_aside": 0,
       "counts": {
@@ -24,6 +24,187 @@
         "detail": "3 resources are stored. The total number the identity was expected to reach was not recorded, so this run does not establish complete coverage."
       },
       "runs": [
+        {
+          "provenance": {
+            "collected_at": "2026-08-05T14:02:11Z",
+            "collector": "spo-collector",
+            "collector_version": "0.1.0",
+            "source_system": "SharePoint Online",
+            "source_api": "Microsoft Graph v1.0",
+            "tenant_id": "contoso.sharepoint.com",
+            "identity_kind": "application",
+            "scopes": [
+              "Sites.Read.All"
+            ]
+          },
+          "coverage": {
+            "requested": [
+              "items",
+              "permissions"
+            ],
+            "completed": [
+              "items",
+              "permissions"
+            ],
+            "unavailable": {}
+          },
+          "resource": {
+            "id": "contoso,list,documents-c",
+            "type": "list",
+            "scope": "container",
+            "parent": "contoso,site,documents-host",
+            "display_name": "Documents",
+            "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
+          },
+          "resource_class": "content",
+          "class_reason": "the product marks it as none of catalog, system or application",
+          "set_aside": false,
+          "rule_source": "shipped with this version",
+          "counts": {
+            "pass": 1,
+            "fail": 0,
+            "unknown": 2,
+            "not-applicable": 0,
+            "invalid-evidence": 0,
+            "error": 0
+          },
+          "results": [
+            {
+              "rule_id": "SPO-LIST-001",
+              "title": "A list or library past 100,000 items can no longer have its permission inheritance broken",
+              "rule_version": "2.0",
+              "schema_version": "1.0",
+              "resource": {
+                "id": "contoso,list,documents-c",
+                "type": "list"
+              },
+              "outcome": "pass",
+              "message": "The list holds 4200 items and inherits its permissions, within the 100,000 boundary at which inheritance can no longer be broken.",
+              "basis": "documented-limit",
+              "severity": "medium",
+              "evidence_used": [
+                {
+                  "path": "items.count",
+                  "state": "observed",
+                  "value": 4200,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                },
+                {
+                  "path": "permissions.inheritance_broken",
+                  "state": "observed",
+                  "value": false,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                }
+              ],
+              "passes_without_resolving": "A list holding 99,000 items and growing passes this rule today and loses the ability permanently within weeks, without anything in the report changing to warn about it. The rule measures a position, not a trajectory, and the boundary it describes is the one place where being close to a limit matters more than being past it: once crossed, the option does not come back. Every pass here means \"not yet\", never \"safe\".",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+                  "title": "SharePoint limits, Items in lists and libraries",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-05"
+                },
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
+                  "title": "Manage Permission Scopes in SharePoint",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-05"
+                }
+              ],
+              "remediation": "Microsoft's guidance is preventive, not corrective: \"share large folders before they hit 100,000 items\". For a container already past the limit, reducing the count does not restore the ability in every case, and the supported route is to restructure the content across containers that stay below it. Decide whether this container will ever need unique permissions before restructuring, because if the answer is no, no action is required.",
+              "message_degraded": false,
+              "engine_detail": ""
+            },
+            {
+              "rule_id": "SPO-LIST-002",
+              "title": "A list or library may not hold more than 50,000 unique permission scopes",
+              "rule_version": "1.0",
+              "schema_version": "1.0",
+              "resource": {
+                "id": "contoso,list,documents-c",
+                "type": "list"
+              },
+              "outcome": "unknown",
+              "message": "The scope count does not settle this list's position relative to the 50,000 limit: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
+              "basis": "documented-limit",
+              "severity": "high",
+              "evidence_used": [
+                {
+                  "path": "permissions.unique_scope_count",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                }
+              ],
+              "passes_without_resolving": "A list at 49,000 scopes passes and is one sharing operation away from the ceiling, and a list at 6,000 passes this rule while sitting well above the number Microsoft recommends for performance. This rule measures only the supported ceiling, and passing it says nothing about whether the list is usable.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+                  "title": "SharePoint limits, Unique security scopes per list or library",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                },
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
+                  "title": "Manage Permission Scopes in SharePoint",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                }
+              ],
+              "remediation": "Restructure the content so that fewer containers carry their own permissions. A folder shared with three people is one scope; three files shared individually are three. Where a list has grown past the ceiling, the supported route is to split the content across containers rather than to remove permissions one by one, which is slow and rarely finishes.",
+              "message_degraded": false,
+              "engine_detail": ""
+            },
+            {
+              "rule_id": "SPO-LIST-003",
+              "title": "A list or library above 5,000 unique permission scopes is past the recommended limit",
+              "rule_version": "1.0",
+              "schema_version": "1.0",
+              "resource": {
+                "id": "contoso,list,documents-c",
+                "type": "list"
+              },
+              "outcome": "unknown",
+              "message": "The scope count does not settle this list's position relative to the recommended 5,000: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
+              "basis": "documented-guidance",
+              "severity": "low",
+              "evidence_used": [
+                {
+                  "path": "permissions.unique_scope_count",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                }
+              ],
+              "passes_without_resolving": "A list at 4,999 scopes passes, and if its access control lists are large it may already be slower than a list at 8,000 with small ones. Microsoft says so explicitly. The count is a proxy for a cost this rule cannot measure, and a pass here is not a statement that the list performs well.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+                  "title": "SharePoint limits, Unique security scopes per list or library",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                },
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
+                  "title": "Manage Permission Scopes in SharePoint",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                }
+              ],
+              "remediation": "Treat it as a design question rather than a cleanup task. Microsoft's own advice is to design lists to have as few unique permissions as possible, and the cheapest version of that is usually to grant access at a folder rather than at each file inside it.",
+              "message_degraded": false,
+              "engine_detail": ""
+            }
+          ]
+        },
         {
           "provenance": {
             "collected_at": "2026-08-08T18:00:00Z",
@@ -56,14 +237,14 @@
             "id": "contoso,site,finance",
             "type": "site",
             "scope": "collection",
-            "parent": "https://contoso-admin.sharepoint.com",
+            "parent": "contoso.sharepoint.com",
             "display_name": "Finance",
             "url": "https://contoso.sharepoint.com/sites/finance"
           },
           "resource_class": "unknown",
           "class_reason": "only lists are classified",
           "set_aside": false,
-          "rule_source": "",
+          "rule_source": "shipped with this version",
           "counts": {
             "pass": 0,
             "fail": 0,
@@ -592,14 +773,14 @@
             "id": "contoso,site,spfx-ok",
             "type": "site",
             "scope": "collection",
-            "parent": "https://contoso-admin.sharepoint.com",
+            "parent": "contoso.sharepoint.com",
             "display_name": "Training",
             "url": "https://contoso.sharepoint.com/sites/spfx-ok"
           },
           "resource_class": "unknown",
           "class_reason": "only lists are classified",
           "set_aside": false,
-          "rule_source": "",
+          "rule_source": "shipped with this version",
           "counts": {
             "pass": 1,
             "fail": 0,
@@ -1101,191 +1282,108 @@
               "engine_detail": ""
             }
           ]
-        },
-        {
-          "provenance": {
-            "collected_at": "2026-08-05T14:02:11Z",
-            "collector": "spo-collector",
-            "collector_version": "0.1.0",
-            "source_system": "SharePoint Online",
-            "source_api": "Microsoft Graph v1.0",
-            "tenant_id": "00000000-0000-0000-0000-000000000000",
-            "identity_kind": "application",
-            "scopes": [
-              "Sites.Read.All"
-            ]
-          },
-          "coverage": {
-            "requested": [
-              "items",
-              "permissions"
-            ],
-            "completed": [
-              "items",
-              "permissions"
-            ],
-            "unavailable": {}
-          },
-          "resource": {
-            "id": "contoso,list,documents-c",
-            "type": "list",
-            "scope": "container",
-            "parent": "contoso,site,documents-host",
-            "display_name": "Documents",
-            "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
-          },
-          "resource_class": "content",
-          "class_reason": "the product marks it as none of catalog, system or application",
-          "set_aside": false,
-          "rule_source": "",
-          "counts": {
-            "pass": 1,
-            "fail": 0,
-            "unknown": 2,
-            "not-applicable": 0,
-            "invalid-evidence": 0,
-            "error": 0
-          },
-          "results": [
-            {
-              "rule_id": "SPO-LIST-001",
-              "title": "A list or library past 100,000 items can no longer have its permission inheritance broken",
-              "rule_version": "2.0",
-              "schema_version": "1.0",
-              "resource": {
-                "id": "contoso,list,documents-c",
-                "type": "list"
-              },
-              "outcome": "pass",
-              "message": "The list holds 4200 items and inherits its permissions, within the 100,000 boundary at which inheritance can no longer be broken.",
-              "basis": "documented-limit",
-              "severity": "medium",
-              "evidence_used": [
-                {
-                  "path": "items.count",
-                  "state": "observed",
-                  "value": 4200,
-                  "lower_bound": null,
-                  "upper_bound": null,
-                  "detail": null
-                },
-                {
-                  "path": "permissions.inheritance_broken",
-                  "state": "observed",
-                  "value": false,
-                  "lower_bound": null,
-                  "upper_bound": null,
-                  "detail": null
-                }
-              ],
-              "passes_without_resolving": "A list holding 99,000 items and growing passes this rule today and loses the ability permanently within weeks, without anything in the report changing to warn about it. The rule measures a position, not a trajectory, and the boundary it describes is the one place where being close to a limit matters more than being past it: once crossed, the option does not come back. Every pass here means \"not yet\", never \"safe\".",
-              "sources": [
-                {
-                  "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
-                  "title": "SharePoint limits, Items in lists and libraries",
-                  "publisher": "Microsoft",
-                  "checked_at": "2026-08-05"
-                },
-                {
-                  "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
-                  "title": "Manage Permission Scopes in SharePoint",
-                  "publisher": "Microsoft",
-                  "checked_at": "2026-08-05"
-                }
-              ],
-              "remediation": "Microsoft's guidance is preventive, not corrective: \"share large folders before they hit 100,000 items\". For a container already past the limit, reducing the count does not restore the ability in every case, and the supported route is to restructure the content across containers that stay below it. Decide whether this container will ever need unique permissions before restructuring, because if the answer is no, no action is required.",
-              "message_degraded": false,
-              "engine_detail": ""
-            },
-            {
-              "rule_id": "SPO-LIST-002",
-              "title": "A list or library may not hold more than 50,000 unique permission scopes",
-              "rule_version": "1.0",
-              "schema_version": "1.0",
-              "resource": {
-                "id": "contoso,list,documents-c",
-                "type": "list"
-              },
-              "outcome": "unknown",
-              "message": "The scope count does not settle this list's position relative to the 50,000 limit: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
-              "basis": "documented-limit",
-              "severity": "high",
-              "evidence_used": [
-                {
-                  "path": "permissions.unique_scope_count",
-                  "state": "missing",
-                  "value": null,
-                  "lower_bound": null,
-                  "upper_bound": null,
-                  "detail": "not present in the evidence"
-                }
-              ],
-              "passes_without_resolving": "A list at 49,000 scopes passes and is one sharing operation away from the ceiling, and a list at 6,000 passes this rule while sitting well above the number Microsoft recommends for performance. This rule measures only the supported ceiling, and passing it says nothing about whether the list is usable.",
-              "sources": [
-                {
-                  "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
-                  "title": "SharePoint limits, Unique security scopes per list or library",
-                  "publisher": "Microsoft",
-                  "checked_at": "2026-08-06"
-                },
-                {
-                  "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
-                  "title": "Manage Permission Scopes in SharePoint",
-                  "publisher": "Microsoft",
-                  "checked_at": "2026-08-06"
-                }
-              ],
-              "remediation": "Restructure the content so that fewer containers carry their own permissions. A folder shared with three people is one scope; three files shared individually are three. Where a list has grown past the ceiling, the supported route is to split the content across containers rather than to remove permissions one by one, which is slow and rarely finishes.",
-              "message_degraded": false,
-              "engine_detail": ""
-            },
-            {
-              "rule_id": "SPO-LIST-003",
-              "title": "A list or library above 5,000 unique permission scopes is past the recommended limit",
-              "rule_version": "1.0",
-              "schema_version": "1.0",
-              "resource": {
-                "id": "contoso,list,documents-c",
-                "type": "list"
-              },
-              "outcome": "unknown",
-              "message": "The scope count does not settle this list's position relative to the recommended 5,000: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
-              "basis": "documented-guidance",
-              "severity": "low",
-              "evidence_used": [
-                {
-                  "path": "permissions.unique_scope_count",
-                  "state": "missing",
-                  "value": null,
-                  "lower_bound": null,
-                  "upper_bound": null,
-                  "detail": "not present in the evidence"
-                }
-              ],
-              "passes_without_resolving": "A list at 4,999 scopes passes, and if its access control lists are large it may already be slower than a list at 8,000 with small ones. Microsoft says so explicitly. The count is a proxy for a cost this rule cannot measure, and a pass here is not a statement that the list performs well.",
-              "sources": [
-                {
-                  "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
-                  "title": "SharePoint limits, Unique security scopes per list or library",
-                  "publisher": "Microsoft",
-                  "checked_at": "2026-08-06"
-                },
-                {
-                  "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
-                  "title": "Manage Permission Scopes in SharePoint",
-                  "publisher": "Microsoft",
-                  "checked_at": "2026-08-06"
-                }
-              ],
-              "remediation": "Treat it as a design question rather than a cleanup task. Microsoft's own advice is to design lists to have as few unique permissions as possible, and the cheapest version of that is usually to grant access at a folder rather than at each file inside it.",
-              "message_degraded": false,
-              "engine_detail": ""
-            }
-          ]
         }
       ]
     },
     "evidence": [
+      {
+        "schema_version": "1.0",
+        "provenance": {
+          "collected_at": "2026-08-05T14:02:11Z",
+          "collector": "spo-collector",
+          "collector_version": "0.1.0",
+          "source_system": "SharePoint Online",
+          "source_api": "Microsoft Graph v1.0",
+          "tenant_id": "contoso.sharepoint.com",
+          "identity_kind": "application",
+          "scopes": [
+            "Sites.Read.All"
+          ]
+        },
+        "coverage": {
+          "requested": [
+            "items",
+            "permissions"
+          ],
+          "completed": [
+            "items",
+            "permissions"
+          ],
+          "unavailable": {}
+        },
+        "resource": {
+          "id": "contoso,list,documents-c",
+          "type": "list",
+          "scope": "container",
+          "parent": "contoso,site,documents-host",
+          "display_name": "Documents",
+          "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
+        },
+        "facts": {
+          "items": {
+            "count": {
+              "state": "observed",
+              "value": 4200,
+              "raw": {
+                "field": "ItemCount",
+                "value": 4200
+              }
+            }
+          },
+          "permissions": {
+            "inheritance_broken": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "hasUniqueRoleAssignments",
+                "value": false
+              }
+            }
+          },
+          "list": {
+            "is_catalog": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "IsCatalog",
+                "value": false
+              }
+            },
+            "is_system": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "IsSystemList",
+                "value": false
+              }
+            },
+            "is_application": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "IsApplicationList",
+                "value": false
+              }
+            },
+            "hidden": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "Hidden",
+                "value": false
+              }
+            },
+            "base_template": {
+              "state": "observed",
+              "value": 101,
+              "raw": {
+                "field": "BaseTemplate",
+                "value": 101
+              }
+            }
+          }
+        }
+      },
       {
         "schema_version": "1.0",
         "provenance": {
@@ -1319,7 +1417,7 @@
           "id": "contoso,site,finance",
           "type": "site",
           "scope": "collection",
-          "parent": "https://contoso-admin.sharepoint.com",
+          "parent": "contoso.sharepoint.com",
           "display_name": "Finance",
           "url": "https://contoso.sharepoint.com/sites/finance"
         },
@@ -1429,7 +1527,7 @@
           "id": "contoso,site,spfx-ok",
           "type": "site",
           "scope": "collection",
-          "parent": "https://contoso-admin.sharepoint.com",
+          "parent": "contoso.sharepoint.com",
           "display_name": "Training",
           "url": "https://contoso.sharepoint.com/sites/spfx-ok"
         },
@@ -1489,104 +1587,6 @@
             }
           }
         }
-      },
-      {
-        "schema_version": "1.0",
-        "provenance": {
-          "collected_at": "2026-08-05T14:02:11Z",
-          "collector": "spo-collector",
-          "collector_version": "0.1.0",
-          "source_system": "SharePoint Online",
-          "source_api": "Microsoft Graph v1.0",
-          "tenant_id": "00000000-0000-0000-0000-000000000000",
-          "identity_kind": "application",
-          "scopes": [
-            "Sites.Read.All"
-          ]
-        },
-        "coverage": {
-          "requested": [
-            "items",
-            "permissions"
-          ],
-          "completed": [
-            "items",
-            "permissions"
-          ],
-          "unavailable": {}
-        },
-        "resource": {
-          "id": "contoso,list,documents-c",
-          "type": "list",
-          "scope": "container",
-          "parent": "contoso,site,documents-host",
-          "display_name": "Documents",
-          "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
-        },
-        "facts": {
-          "items": {
-            "count": {
-              "state": "observed",
-              "value": 4200,
-              "raw": {
-                "field": "ItemCount",
-                "value": 4200
-              }
-            }
-          },
-          "permissions": {
-            "inheritance_broken": {
-              "state": "observed",
-              "value": false,
-              "raw": {
-                "field": "hasUniqueRoleAssignments",
-                "value": false
-              }
-            }
-          },
-          "list": {
-            "is_catalog": {
-              "state": "observed",
-              "value": false,
-              "raw": {
-                "field": "IsCatalog",
-                "value": false
-              }
-            },
-            "is_system": {
-              "state": "observed",
-              "value": false,
-              "raw": {
-                "field": "IsSystemList",
-                "value": false
-              }
-            },
-            "is_application": {
-              "state": "observed",
-              "value": false,
-              "raw": {
-                "field": "IsApplicationList",
-                "value": false
-              }
-            },
-            "hidden": {
-              "state": "observed",
-              "value": false,
-              "raw": {
-                "field": "Hidden",
-                "value": false
-              }
-            },
-            "base_template": {
-              "state": "observed",
-              "value": 101,
-              "raw": {
-                "field": "BaseTemplate",
-                "value": 101
-              }
-            }
-          }
-        }
       }
     ],
     "versions": {
@@ -1610,25 +1610,24 @@
         "SPO-SPFX-001": "1.0"
       },
       "collectors": {
-        "spo-collector": "0.1.0"
+        "spo-collector": "0.3.0"
       }
     },
     "manifest": {
       "created_at": "2026-08-08T18:00:00Z",
       "tenant": "contoso.sharepoint.com",
-      "identity_kind": "delegated",
-      "label": "Three resources, one tenant",
-      "assessment_id": "113e91c5ea6ef0c3271d4f48fab2da0eccfe90ef5966b31dbf6fefab98a52028"
+      "identity_kind": "mixed",
+      "assessment_id": "0483f5c980ad442c469c2f82dccfb554a8684f63f5697961eb9e280ee8d17077"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "70171e3aae6823ad314f27c9338843c0e4a2eb98bb28b044ece66686d130725b",
-        "evidence": "748c5693a14e46d5df3a3832b1abd74073614e8ba2d5256c5c596184c9b9201d",
-        "versions": "bf91daeb857d8d860155ed103de1c11754035d48e4a1bd1babc04662f4c5c6a6",
-        "manifest": "641b1e8d0013aa060cee2ab7535102448040b00f8f5428cf489203f64d0e6c15"
+        "run_set": "ea57e45ee848c999d3df2cb70dcadd8eba13125d12c58e1c9a7a0ae57e5e0545",
+        "evidence": "7a3c2ab3110f0a6f3124fd7981b452446767abb28994f1cd7c25adb6eaab1443",
+        "versions": "bdb473969bfdc85c1f3dcb3f4bfd2186e8794d5835beea7d434d762c98a05955",
+        "manifest": "b85dc6a31ce804ea0947ea1ed6c612c30a4bf15b14a5cb5ed4597e3df901fb30"
       },
-      "canonical_hash": "113e91c5ea6ef0c3271d4f48fab2da0eccfe90ef5966b31dbf6fefab98a52028"
+      "canonical_hash": "0483f5c980ad442c469c2f82dccfb554a8684f63f5697961eb9e280ee8d17077"
     }
   }
 }

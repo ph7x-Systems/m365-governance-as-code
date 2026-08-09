@@ -1080,3 +1080,116 @@ def test_content_is_never_assigned_by_absence():
                 assert block[name]["state"] == "observed", (
                     f"{fixture} was called content while {name} was not observed"
                 )
+
+
+# ---------------------------------------------------------------------------
+# assess and verify: the two halves of handing a result to somebody else
+# ---------------------------------------------------------------------------
+
+
+def three_resources(tmp_path):
+    """An evidence directory with three distinct resources in it.
+
+    Distinct on purpose: the whole fixture set describes the same site many
+    times over, and a run set refuses two documents about one resource rather
+    than averaging them.
+    """
+    folder = tmp_path / "evidence"
+    folder.mkdir(parents=True)
+    for name in ("site-agents-with-sources", "site-spfx-current", "list-class-content"):
+        (folder / f"{name}.json").write_text(
+            (FIXTURES / f"{name}.json").read_text(encoding="utf-8"), encoding="utf-8"
+        )
+    return folder
+
+
+def assessed(capsys, tmp_path, *extra) -> dict:
+    out = tmp_path / "assessment.json"
+    code, _, err = run(
+        capsys,
+        "assess",
+        "--evidence",
+        str(three_resources(tmp_path)),
+        "--created-at",
+        "2026-08-09T10:00:00Z",
+        "--out",
+        str(out),
+        *extra,
+    )
+    assert code == 0, err
+    return json.loads(out.read_text(encoding="utf-8"))
+
+
+def test_assess_writes_something_verify_accepts(capsys, tmp_path):
+    document = assessed(capsys, tmp_path)
+    path = tmp_path / "assessment.json"
+
+    code, out, err = run(capsys, "verify", str(path))
+    assert code == 0, err
+    assert document["canonical"]["manifest"]["assessment_id"] in out
+    assert "contoso.sharepoint.com" in out
+
+
+def test_the_same_inputs_produce_the_same_assessment(capsys, tmp_path):
+    """`--created-at` exists for this. An identity that moved because time
+    passed would make an assessment unverifiable by construction, and nobody
+    could rebuild one to check a claim about it."""
+    first = assessed(capsys, tmp_path)
+    second = assessed(capsys, tmp_path / "again")
+    assert (
+        first["canonical"]["manifest"]["assessment_id"]
+        == second["canonical"]["manifest"]["assessment_id"]
+    )
+
+
+def test_verify_refuses_an_assessment_that_was_edited(capsys, tmp_path):
+    assessed(capsys, tmp_path)
+    path = tmp_path / "assessment.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["canonical"]["manifest"]["tenant"] = "somebody-elses.sharepoint.com"
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    code, _, err = run(capsys, "verify", str(path))
+    assert code == 1
+    assert "digest" in err
+
+
+def test_verify_says_what_a_report_is_rather_than_crashing(capsys, tmp_path):
+    """A stored run is not an assessment, and telling somebody which command
+    they wanted costs one sentence."""
+    stored = tmp_path / "run.json"
+    stored.write_text(json.dumps(_run_for("site-spfx-current").to_dict()), "utf-8")
+
+    code, _, err = run(capsys, "verify", str(stored))
+    assert code == 2
+    assert "report" in err
+
+
+def test_the_manifest_cannot_claim_a_tenant_the_evidence_denies(capsys, tmp_path):
+    """Two collections of two different tenants in one directory. The refusal
+    is the point: every count in one summary would be a sum across estates
+    nobody manages together."""
+    folder = three_resources(tmp_path)
+    stray = json.loads((FIXTURES / "site-modern-clean.json").read_text())
+    stray["provenance"]["tenant_id"] = "fabrikam.sharepoint.com"
+    (folder / "stray.json").write_text(json.dumps(stray), encoding="utf-8")
+
+    code, _, err = run(capsys, "assess", "--evidence", str(folder))
+    assert code == 2
+    assert "more than one tenant" in err
+
+
+def test_an_assessment_renders_and_compares_like_what_it_carries(capsys, tmp_path):
+    """`report` and `diff` take one because an assessment is what somebody was
+    sent. Neither reads anything under `derived`: a report that could not be
+    regenerated from the canonical half would be a second original."""
+    assessed(capsys, tmp_path)
+    path = str(tmp_path / "assessment.json")
+
+    code, out, err = run(capsys, "report", path)
+    assert code == 0, err
+    assert "3 resources observed" in out
+
+    code, out, err = run(capsys, "diff", path, path)
+    assert code == 0, err
+    assert "Resources before: 3" in out

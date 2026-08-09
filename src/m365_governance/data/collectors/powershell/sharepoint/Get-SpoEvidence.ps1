@@ -220,8 +220,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts $result.facts -Requested @('owners') `
@@ -234,7 +233,7 @@ switch ($Mode) {
         $tenant = Get-PnPTenant
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $TenantUrl; type = 'tenant'
+                    id = $TenantHost; type = 'tenant'
                     scope = 'tenant'; parent = $null
                     display_name = $TenantUrl; url = $TenantUrl
                 }) `
@@ -259,8 +258,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $site.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SharingFacts -Site $site) -Requested @('sharing') `
@@ -315,8 +313,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ModernityFacts -Web $web) `
@@ -330,8 +327,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ClassificationFacts -Site $site) `
@@ -353,8 +349,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ActivityFacts -Web $web -TenantSite $tenantSite `
@@ -377,8 +372,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts $facts -Requested @('agents', 'enumeration') `
@@ -392,8 +386,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SpfxCatalogFacts -Scope $scope) `
@@ -405,8 +398,7 @@ switch ($Mode) {
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
                     id = $SiteUrl; type = 'site'
-                    scope = 'collection'
-                    parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                    scope = 'collection'; parent = $TenantHost
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SpfxPageFacts -MaxPages $MaxPages `
@@ -430,8 +422,7 @@ switch ($Mode) {
             Write-Evidence -Path $file -Evidence (New-Evidence `
                     -Resource ([ordered]@{
                         id = [string] $tenantSite.Url; type = 'site'
-                        scope = 'collection'
-                        parent = if ($TenantUrl) { $TenantUrl } else { $null }
+                        scope = 'collection'; parent = $TenantHost
                         display_name = [string] $tenantSite.Title
                         url = [string] $tenantSite.Url
                     }) `

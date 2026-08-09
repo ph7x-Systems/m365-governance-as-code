@@ -6,7 +6,7 @@
     "collector_version": "0.3.0",
     "source_system": "SharePoint Online",
     "source_api": "PnP.PowerShell / SharePoint Admin",
-    "tenant_id": "contoso-admin.sharepoint.com",
+    "tenant_id": "contoso.sharepoint.com",
     "identity_kind": "application",
     "scopes": [
       "Sites.Read.All"
@@ -25,7 +25,7 @@
     "id": "contoso,site,operations",
     "type": "site",
     "scope": "collection",
-    "parent": "https://contoso-admin.sharepoint.com",
+    "parent": "contoso.sharepoint.com",
     "display_name": "Operations",
     "url": "https://contoso.sharepoint.com/sites/operations"
   },

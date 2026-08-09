@@ -6,7 +6,7 @@
     "collector_version": "0.3.0",
     "source_system": "SharePoint Online",
     "source_api": "PnP.PowerShell / SharePoint Admin",
-    "tenant_id": "contoso-admin.sharepoint.com",
+    "tenant_id": "contoso.sharepoint.com",
     "identity_kind": "delegated",
     "scopes": [
       "AllSites.FullControl"
@@ -22,7 +22,7 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "https://contoso-admin.sharepoint.com",
+    "id": "contoso.sharepoint.com",
     "type": "tenant",
     "scope": "tenant",
     "parent": null,

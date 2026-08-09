@@ -19,6 +19,7 @@ import argparse
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -41,6 +42,50 @@ CASES = [
     ("bounded.md", "site-partial-expansion-decides", "markdown"),
     ("report.json", "site-partial-expansion-decides", "json"),
 ]
+
+
+#: The assessment fixture, and the three evidence documents it is built from.
+#: Three distinct resources, because a run set refuses two documents about one.
+#:
+#: IT USED TO BE WRITTEN BY HAND, and that is exactly how a document can verify
+#: and still be wrong: its digests were internally consistent while the evidence
+#: underneath had moved on, so it said `delegated` long after the engine had
+#: started deriving `mixed` from those same three files. Nothing could catch it,
+#: because verifying asks whether a document changed, not whether it is current.
+ASSESSMENT = DATA / "fixtures" / "assessment" / "three-resources.json"
+ASSESSED = ["site-agents-with-sources", "site-spfx-current", "list-class-content"]
+#: Pinned so the same inputs produce the same bytes. An identity that moved
+#: because time passed would make the fixture unusable as a fixture.
+ASSESSED_AT = "2026-08-08T18:00:00Z"
+
+
+def assess() -> str:
+    """One assessment, built by the command a user would run."""
+    with tempfile.TemporaryDirectory() as scratch:
+        folder = Path(scratch)
+        for name in ASSESSED:
+            (folder / f"{name}.json").write_text(
+                (FIXTURES / f"{name}.json").read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "m365_governance.cli",
+                "assess",
+                "--evidence",
+                str(folder),
+                "--created-at",
+                ASSESSED_AT,
+            ],
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        )
+    if result.returncode != 0:
+        raise SystemExit(f"assess failed\n{result.stderr}")
+    return result.stdout
 
 
 def render(fixture: str, fmt: str) -> str:
@@ -100,9 +145,17 @@ def main(argv: list[str] | None = None) -> int:
 
     EXAMPLES.mkdir(exist_ok=True)
     wanted = build()
+    assessment = assess()
 
     if args.check:
         stale = []
+        if (
+            not ASSESSMENT.exists()
+            or ASSESSMENT.read_text(encoding="utf-8") != assessment
+        ):
+            print(f"stale:  {ASSESSMENT.relative_to(ROOT)}", file=sys.stderr)
+            print("\nrun: python tools/examples.py", file=sys.stderr)
+            return 1
         for name, body in wanted.items():
             path = EXAMPLES / name
             if not path.exists() or path.read_text(encoding="utf-8") != body:
@@ -124,7 +177,8 @@ def main(argv: list[str] | None = None) -> int:
 
     for name, body in wanted.items():
         (EXAMPLES / name).write_text(body, encoding="utf-8")
-    print(f"{len(wanted)} examples written.")
+    ASSESSMENT.write_text(assessment, encoding="utf-8")
+    print(f"{len(wanted)} examples and 1 assessment written.")
     return 0
 
 

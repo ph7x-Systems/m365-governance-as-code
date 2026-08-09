@@ -27,7 +27,7 @@
     "id": "contoso,site,locked",
     "type": "site",
     "scope": "collection",
-    "parent": "https://contoso-admin.sharepoint.com",
+    "parent": "contoso.sharepoint.com",
     "display_name": "Unreadable",
     "url": "https://contoso.sharepoint.com/sites/locked"
   },

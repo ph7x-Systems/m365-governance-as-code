@@ -38,8 +38,6 @@ def built(**overrides) -> dict:
         RunSet(runs),
         documents,
         engine_version=overrides.pop("engine_version", "0.3.0"),
-        tenant=overrides.pop("tenant", "contoso.sharepoint.com"),
-        identity_kind=overrides.pop("identity_kind", "delegated"),
         created_at=overrides.pop("created_at", "2026-08-08T18:00:00Z"),
         **overrides,
     )
@@ -159,5 +157,88 @@ def test_the_evidence_is_kept_whole():
 
 
 def test_an_identity_kind_nobody_defined_is_refused():
-    with pytest.raises(ValueError):
-        built(identity_kind="hopeful")
+    documents = [json.loads((FIXTURES / "site-spfx-current.json").read_text())]
+    documents[0]["provenance"]["identity_kind"] = "hopeful"
+    with pytest.raises(assessment.Mismatch):
+        assessment.build(
+            RunSet([evaluate(rules(), documents[0])]),
+            documents,
+            engine_version="0.3.0",
+            created_at="2026-08-08T18:00:00Z",
+        )
+
+
+# ---------------------------------------------------------------------------
+# the manifest describes the evidence underneath it, or there is no assessment
+# ---------------------------------------------------------------------------
+
+
+def one(name: str) -> tuple[RunSet, list[dict]]:
+    documents = [json.loads((FIXTURES / f"{name}.json").read_text())]
+    return RunSet([evaluate(rules(), documents[0])]), documents
+
+
+def test_the_tenant_is_read_from_the_evidence_and_not_supplied():
+    """It used to be a free string. The manifest could name a tenant that
+    appears nowhere in the documents underneath it, and the digests would then
+    prove that contradiction unchanged for as long as anyone kept the file."""
+    assert built()["canonical"]["manifest"]["tenant"] == "contoso.sharepoint.com"
+
+
+def test_a_manifest_that_would_contradict_the_evidence_is_refused():
+    run_set, documents = one("site-spfx-current")
+    with pytest.raises(assessment.Mismatch, match="somebody-elses"):
+        assessment.build(
+            run_set,
+            documents,
+            engine_version="0.3.0",
+            created_at="2026-08-08T18:00:00Z",
+            tenant="somebody-elses.sharepoint.com",
+        )
+
+
+def test_two_tenants_are_two_assessments():
+    """Not one bigger one: every count in the summary would be a sum across
+    estates nobody manages together."""
+    run_set, documents = one("site-spfx-current")
+    other = json.loads((FIXTURES / "site-modern-clean.json").read_text())
+    other["provenance"]["tenant_id"] = "fabrikam.sharepoint.com"
+    with pytest.raises(assessment.Mismatch, match="more than one tenant"):
+        assessment.build(
+            RunSet(run_set.runs + [evaluate(rules(), other)]),
+            documents + [other],
+            engine_version="0.3.0",
+            created_at="2026-08-08T18:00:00Z",
+        )
+
+
+def test_evidence_that_did_not_produce_these_runs_is_refused():
+    """The digests prove nothing moved after the fact. They cannot prove the
+    two halves ever belonged together, and without that every finding could
+    cite evidence that never produced it."""
+    run_set, _ = one("site-spfx-current")
+    unrelated = [json.loads((FIXTURES / "site-modern-clean.json").read_text())]
+    with pytest.raises(assessment.Mismatch, match="does not contain"):
+        assessment.build(
+            run_set,
+            unrelated,
+            engine_version="0.3.0",
+            created_at="2026-08-08T18:00:00Z",
+        )
+
+
+@pytest.mark.parametrize(
+    "names,expected",
+    [
+        (["site-spfx-current", "site-modern-clean"], "delegated"),
+        (["list-class-content", "list-within-limit"], "application"),
+        (["site-spfx-current", "list-class-content"], "mixed"),
+        (["site-imported-inventory"], "imported"),
+    ],
+    ids=["all delegated", "all application", "mixed", "imported"],
+)
+def test_the_identity_describes_what_observed_it(names, expected):
+    """`mixed` is a real answer and never the reassuring one: part of the
+    archive is tenant-wide and part of it is one person's view, and the reader
+    resolves that per document rather than by taking an average."""
+    assert built(names=names)["canonical"]["manifest"]["identity_kind"] == expected

@@ -85,14 +85,101 @@ def _hashable(value: Any, name: str) -> Any:
     return {k: v for k, v in value.items() if k not in NOT_IN_ITS_OWN_DIGEST}
 
 
+#: What a collector may declare about the identity that observed something.
+#: `imported` is the third kind: facts from a tool we did not write, whose
+#: collection completeness this engine cannot verify.
+IDENTITY_KINDS = ("delegated", "application", "imported")
+
+
+class Mismatch(ValueError):
+    """The manifest would have said something the evidence does not support."""
+
+
+def _one_tenant(evidence: list[dict]) -> str:
+    """Which tenant this evidence is about, or a refusal.
+
+    An assessment is about one tenant. Two tenants in one archive is not a
+    bigger assessment, it is two assessments in a trench coat: every count in
+    the summary would be a sum across estates nobody manages together.
+    """
+    seen = {
+        document.get("provenance", {}).get("tenant_id")
+        for document in evidence
+        if document.get("provenance", {}).get("tenant_id")
+    }
+    if not seen:
+        raise Mismatch(
+            "no evidence document says which tenant it is about, so the "
+            "assessment cannot say either"
+        )
+    if len(seen) > 1:
+        raise Mismatch(
+            "this evidence is about more than one tenant "
+            f"({', '.join(sorted(seen))}), and an assessment is about one"
+        )
+    return seen.pop()
+
+
+def _identity(evidence: list[dict]) -> str:
+    """Which kind of identity observed this, across the whole set.
+
+    `mixed` is a real answer and never a reassuring one. It says the documents
+    do not agree, which the reader must resolve per document rather than take
+    as an average: an application run and a delegated run in one archive mean
+    part of it is tenant-wide and part of it is one person's view.
+    """
+    seen = {
+        document.get("provenance", {}).get("identity_kind")
+        for document in evidence
+        if document.get("provenance", {}).get("identity_kind")
+    }
+    if not seen:
+        raise Mismatch(
+            "no evidence document says which identity observed it, and "
+            "without that an empty result cannot be read"
+        )
+    unknown = seen - set(IDENTITY_KINDS)
+    if unknown:
+        raise Mismatch(
+            f"identity_kind is one of {IDENTITY_KINDS}, not {sorted(unknown)}"
+        )
+    return seen.pop() if len(seen) == 1 else "mixed"
+
+
+def _evaluated_from(run_set: RunSet, evidence: list[dict]) -> None:
+    """Refuse a run set that was not evaluated from this evidence.
+
+    Nothing structural stops a caller passing one tenant's runs and another
+    collection's documents, and the result would verify perfectly: the digests
+    prove nothing moved after the fact, not that the two halves ever belonged
+    together. Every finding would then cite evidence that never produced it.
+    """
+    documented = {
+        document.get("resource", {}).get("id")
+        for document in evidence
+        if document.get("resource", {}).get("id")
+    }
+    orphans = sorted(
+        str(run.resource.get("id"))
+        for run in run_set.runs
+        if run.resource.get("id") not in documented
+    )
+    if orphans:
+        raise Mismatch(
+            "the run set evaluated resources this evidence does not contain: "
+            + ", ".join(orphans[:3])
+            + (f" and {len(orphans) - 3} more" if len(orphans) > 3 else "")
+        )
+
+
 def build(
     run_set: RunSet,
     evidence: list[dict],
     *,
     engine_version: str,
-    tenant: str,
-    identity_kind: str,
     created_at: str,
+    tenant: str | None = None,
+    identity_kind: str | None = None,
     label: str | None = None,
 ) -> dict:
     """One assessment, with its identity derived rather than assigned.
@@ -100,11 +187,29 @@ def build(
     `created_at` is passed in rather than read from the clock, so that the same
     inputs produce the same bytes. An assessment whose digest moved because
     time passed would be unverifiable by construction.
+
+    `tenant` and `identity_kind` are **read from the evidence**, not accepted
+    from the caller. They used to be two free strings, which meant the manifest
+    could describe a tenant that appears nowhere in the documents underneath
+    it, and the digests would happily prove that lie unchanged. Passing either
+    one now asserts it: agreement is silence, disagreement is a refusal.
     """
-    if identity_kind not in ("delegated", "application"):
-        raise ValueError(
-            f"identity_kind is delegated or application, not {identity_kind!r}"
+    observed_tenant = _one_tenant(evidence)
+    if tenant is not None and tenant != observed_tenant:
+        raise Mismatch(
+            f"the manifest would say {tenant!r} and the evidence was collected "
+            f"from {observed_tenant!r}"
         )
+
+    observed_identity = _identity(evidence)
+    if identity_kind is not None and identity_kind != observed_identity:
+        raise Mismatch(
+            f"the manifest would say {identity_kind!r} and the evidence was "
+            f"observed by a {observed_identity!r} identity"
+        )
+
+    _evaluated_from(run_set, evidence)
+    tenant, identity_kind = observed_tenant, observed_identity
 
     # Rule and collector versions come from what was actually evaluated, never
     # from what is installed now. Two releases later, "the rule changed" has to

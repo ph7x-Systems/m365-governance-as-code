@@ -78,15 +78,17 @@
         "tenant": {
           "type": "string",
           "minLength": 1,
-          "description": "Which tenant this describes. An assessment that does not say is not archivable, because nobody can tell later what it was about."
+          "description": "Which tenant this describes, read from the evidence rather than supplied. An assessment that does not say is not archivable, because nobody can tell later what it was about; one that says something the documents underneath it contradict is worse, because the digests then prove that contradiction unchanged."
         },
         "identity_kind": {
           "type": "string",
           "enum": [
             "delegated",
-            "application"
+            "application",
+            "imported",
+            "mixed"
           ],
-          "description": "Which identity observed it. A delegated run sees what one person sees, and the difference changes what an empty result means."
+          "description": "Which identity observed it, derived from the evidence. A delegated run sees what one person sees, and the difference changes what an empty result means. `imported` means the facts came from a tool this engine did not write and whose collection completeness it cannot verify. `mixed` means the documents do not agree, and it is never the reassuring answer: part of the archive is tenant-wide and part of it is one person's view, so the reader resolves it per document rather than taking an average."
         },
         "label": {
           "type": "string",

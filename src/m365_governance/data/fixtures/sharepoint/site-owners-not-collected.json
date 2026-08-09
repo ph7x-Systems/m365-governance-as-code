@@ -6,7 +6,7 @@
     "collector_version": "0.1.0",
     "source_system": "SharePoint Online",
     "source_api": "Microsoft Graph v1.0",
-    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "tenant_id": "contoso.sharepoint.com",
     "identity_kind": "application",
     "scopes": [
       "Sites.Read.All"
@@ -28,7 +28,7 @@
     "id": "contoso,site,legal",
     "type": "site",
     "scope": "collection",
-    "parent": "https://contoso-admin.sharepoint.com",
+    "parent": "contoso.sharepoint.com",
     "display_name": "Legal",
     "url": "https://contoso.sharepoint.com/sites/Legal"
   },
