@@ -188,7 +188,20 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
         # `$defs` type defined once is visible to all of them.
         url, _, fragment = ref.partition("#")
         if fragment.startswith("/$defs/"):
-            return pascal(fragment.rsplit("/", 1)[1])
+            # Only a `$defs` entry, never a pointer into one. A deeper pointer
+            # names a type by its last segment while the target file emits it
+            # by parent and key, so `#/$defs/provenance/properties/tenant`
+            # produced a reference to `Tenant` against a record called
+            # `ProvenanceTenant`. It compiled nowhere and the generator was
+            # perfectly happy. Refusing is the fix; the schema says what it
+            # shares by naming it.
+            parts = fragment.strip("/").split("/")
+            if len(parts) != 2:
+                raise Unsupported(
+                    f"{name}: cross-file reference {ref} points inside a def. "
+                    "Give the shared shape its own $defs entry."
+                )
+            return pascal(parts[1])
         return pascal(url.rstrip("/").rsplit("/", 2)[-2])
 
     if "oneOf" in node:

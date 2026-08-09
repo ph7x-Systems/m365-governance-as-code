@@ -63,7 +63,8 @@
         "assessment_id",
         "created_at",
         "tenant",
-        "identity_kind"
+        "identity",
+        "acquisition"
       ],
       "properties": {
         "assessment_id": {
@@ -76,23 +77,62 @@
           "format": "date-time"
         },
         "tenant": {
-          "type": "string",
-          "minLength": 1,
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/1.2.0#/$defs/tenant",
           "description": "Which tenant this describes, read from the evidence rather than supplied. An assessment that does not say is not archivable, because nobody can tell later what it was about; one that says something the documents underneath it contradict is worse, because the digests then prove that contradiction unchanged."
-        },
-        "identity_kind": {
-          "type": "string",
-          "enum": [
-            "delegated",
-            "application",
-            "imported",
-            "mixed"
-          ],
-          "description": "Which identity observed it, derived from the evidence. A delegated run sees what one person sees, and the difference changes what an empty result means. `imported` means the facts came from a tool this engine did not write and whose collection completeness it cannot verify. `mixed` means the documents do not agree, and it is never the reassuring answer: part of the archive is tenant-wide and part of it is one person's view, so the reader resolves it per document rather than taking an average."
         },
         "label": {
           "type": "string",
           "description": "What a person calls it. Optional, and never used to identify anything."
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "summary",
+            "kinds"
+          ],
+          "description": "A summary across the evidence, which is a different kind of thing from the identity that observed one document. This field used to hold an identity kind and answer with `mixed`, which is not an identity anybody can authenticate as.",
+          "properties": {
+            "summary": {
+              "enum": [
+                "single",
+                "multiple",
+                "not-established"
+              ],
+              "description": "`multiple` is never the reassuring answer: part of the archive is tenant-wide and part is one person's view, and the reader resolves that per document rather than by averaging. `not-established` means no document named the identity that produced it."
+            },
+            "kinds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The distinct identity kinds observed, sorted. Empty only when the summary is `not-established`."
+            }
+          }
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "summary",
+            "kinds"
+          ],
+          "description": "How the evidence reached the engine, summarised the same way. An archive that mixes collected and imported evidence has one half whose completeness this engine can speak to and one half whose it cannot.",
+          "properties": {
+            "summary": {
+              "enum": [
+                "single",
+                "multiple"
+              ]
+            },
+            "kinds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          }
         }
       }
     },

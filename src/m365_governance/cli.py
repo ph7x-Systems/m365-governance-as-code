@@ -590,8 +590,14 @@ def _cmd_verify(args) -> int:
 
     manifest = document["canonical"]["manifest"]
     print(f"{manifest['assessment_id']}")
-    print(f"  tenant     {manifest['tenant']}")
-    print(f"  identity   {manifest['identity_kind']}")
+    tenant = manifest["tenant"]
+    print(f"  tenant     {tenant['host']}")
+    if tenant["id"]:
+        print(f"  directory  {tenant['id']}")
+    identity = manifest["identity"]
+    print(f"  identity   {identity['summary']}: {', '.join(identity['kinds']) or '—'}")
+    acquired = manifest["acquisition"]
+    print(f"  acquired   {', '.join(acquired['kinds'])}")
     print(f"  created    {manifest['created_at']}")
     if manifest.get("label"):
         print(f"  label      {manifest['label']}")

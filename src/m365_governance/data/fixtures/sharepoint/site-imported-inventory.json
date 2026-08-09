@@ -5,15 +5,19 @@
     "collector": "sharegate-import-adapter",
     "collector_version": "0.1.0",
     "source_system": "ShareGate",
-    "identity_kind": "imported",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "identity_kind": "not-established",
+    "acquisition": "imported",
     "import_source": {
       "tool": "ShareGate Desktop",
       "version": "24.1",
       "exported_at": "2026-07-14T16:41:00Z",
       "exported_by": "migration-team@contoso.com",
       "detail": "Site inventory export. Scope chosen by the exporting team."
-    },
-    "tenant_id": "contoso.sharepoint.com"
+    }
   },
   "coverage": {
     "requested": [

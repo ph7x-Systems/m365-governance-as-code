@@ -31,8 +31,12 @@
             "collector_version": "0.1.0",
             "source_system": "SharePoint Online",
             "source_api": "Microsoft Graph v1.0",
-            "tenant_id": "contoso.sharepoint.com",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
             "identity_kind": "application",
+            "acquisition": "collected",
             "scopes": [
               "Sites.Read.All"
             ]
@@ -212,8 +216,12 @@
             "collector_version": "0.3.0",
             "source_system": "SharePoint Online",
             "source_api": "PnP.PowerShell / CSOM",
-            "tenant_id": "contoso.sharepoint.com",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
             "identity_kind": "delegated",
+            "acquisition": "collected",
             "scopes": [
               "AllSites.Read"
             ]
@@ -754,8 +762,12 @@
             "collector_version": "0.3.0",
             "source_system": "SharePoint Online",
             "source_api": "PnP.PowerShell / CSOM",
-            "tenant_id": "contoso.sharepoint.com",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
             "identity_kind": "delegated",
+            "acquisition": "collected",
             "scopes": [
               "AllSites.Read"
             ]
@@ -1294,8 +1306,12 @@
           "collector_version": "0.1.0",
           "source_system": "SharePoint Online",
           "source_api": "Microsoft Graph v1.0",
-          "tenant_id": "contoso.sharepoint.com",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
           "identity_kind": "application",
+          "acquisition": "collected",
           "scopes": [
             "Sites.Read.All"
           ]
@@ -1392,8 +1408,12 @@
           "collector_version": "0.3.0",
           "source_system": "SharePoint Online",
           "source_api": "PnP.PowerShell / CSOM",
-          "tenant_id": "contoso.sharepoint.com",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
           "identity_kind": "delegated",
+          "acquisition": "collected",
           "scopes": [
             "AllSites.Read"
           ]
@@ -1508,8 +1528,12 @@
           "collector_version": "0.3.0",
           "source_system": "SharePoint Online",
           "source_api": "PnP.PowerShell / CSOM",
-          "tenant_id": "contoso.sharepoint.com",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
           "identity_kind": "delegated",
+          "acquisition": "collected",
           "scopes": [
             "AllSites.Read"
           ]
@@ -1615,19 +1639,34 @@
     },
     "manifest": {
       "created_at": "2026-08-08T18:00:00Z",
-      "tenant": "contoso.sharepoint.com",
-      "identity_kind": "mixed",
-      "assessment_id": "0483f5c980ad442c469c2f82dccfb554a8684f63f5697961eb9e280ee8d17077"
+      "tenant": {
+        "id": null,
+        "host": "contoso.sharepoint.com"
+      },
+      "identity": {
+        "summary": "multiple",
+        "kinds": [
+          "application",
+          "delegated"
+        ]
+      },
+      "acquisition": {
+        "summary": "single",
+        "kinds": [
+          "collected"
+        ]
+      },
+      "assessment_id": "09c29d1ca234e096ca688e272cf00dd6e4479fb8eead785a8a66d431f624b585"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "ea57e45ee848c999d3df2cb70dcadd8eba13125d12c58e1c9a7a0ae57e5e0545",
-        "evidence": "7a3c2ab3110f0a6f3124fd7981b452446767abb28994f1cd7c25adb6eaab1443",
+        "run_set": "611d140be9ac9abecc098695ab0d91fc6d83d986bb06b87091f87e55c4cf82e7",
+        "evidence": "61bd726604f69533a6ff458e5f35633b08c6aa5848f14f311cc0e8a3b9cfd7d4",
         "versions": "bdb473969bfdc85c1f3dcb3f4bfd2186e8794d5835beea7d434d762c98a05955",
-        "manifest": "b85dc6a31ce804ea0947ea1ed6c612c30a4bf15b14a5cb5ed4597e3df901fb30"
+        "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "0483f5c980ad442c469c2f82dccfb554a8684f63f5697961eb9e280ee8d17077"
+      "canonical_hash": "09c29d1ca234e096ca688e272cf00dd6e4479fb8eead785a8a66d431f624b585"
     }
   }
 }

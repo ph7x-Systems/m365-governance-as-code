@@ -39,7 +39,9 @@
         "collector",
         "collector_version",
         "source_system",
-        "identity_kind"
+        "identity_kind",
+        "acquisition",
+        "tenant"
       ],
       "properties": {
         "collected_at": {
@@ -62,17 +64,13 @@
           "type": "string",
           "minLength": 3
         },
-        "tenant_id": {
-          "type": "string",
-          "minLength": 1
-        },
         "identity_kind": {
           "enum": [
             "application",
             "delegated",
-            "imported"
+            "not-established"
           ],
-          "$comment": "A delegated run sees what one person sees. An imported one was not produced here at all: we did not choose its scope, we do not know what the exporting identity could read, and we cannot reproduce it. This field is the difference between a partial audit and a misleading one."
+          "description": "Which authentication identity observed this. A delegated run sees what one person sees, and the difference changes what an empty result means. `not-established` is for evidence that does not carry the identity that produced it, which is common in an import: an export that does not name its collecting identity leaves this unknown, and unknown is what it must say. It used to also accept `imported`, which answered a different question — how the evidence got here, not who observed it — and hid the fact that an import's identity is usually simply not recorded."
         },
         "scopes": {
           "type": "array",
@@ -82,28 +80,34 @@
         },
         "import_source": {
           "$ref": "#/$defs/importSource"
+        },
+        "acquisition": {
+          "enum": [
+            "collected",
+            "imported"
+          ],
+          "description": "How this evidence reached the engine. `collected` means a collector in this system read it; `imported` means it came from a tool we did not write, whose collection completeness cannot be verified here. Separate from identity because they answer different questions and an import can perfectly well preserve the identity that collected it."
+        },
+        "tenant": {
+          "$ref": "#/$defs/tenant"
         }
       },
       "allOf": [
         {
-          "$comment": "A live run knows which API it used, which tenant it read, and with what permissions.",
+          "$comment": "A collected run knows which API it used and with what permissions. Keyed on acquisition and not on identity: the two were one field, so the rule that governs scopes was riding on the answer to a different question.",
           "if": {
             "properties": {
-              "identity_kind": {
-                "enum": [
-                  "application",
-                  "delegated"
-                ]
+              "acquisition": {
+                "const": "collected"
               }
             },
             "required": [
-              "identity_kind"
+              "acquisition"
             ]
           },
           "then": {
             "required": [
               "source_api",
-              "tenant_id",
               "scopes"
             ],
             "not": {
@@ -114,15 +118,15 @@
           }
         },
         {
-          "$comment": "An import has no scopes, and writing `scopes: []` would read as 'no permissions were needed' rather than 'this does not apply'. It carries who exported it instead.",
+          "$comment": "An import has no scopes of ours, and writing `scopes: []` would read as 'no permissions were needed' rather than 'this does not apply'. It carries who exported it instead.",
           "if": {
             "properties": {
-              "identity_kind": {
+              "acquisition": {
                 "const": "imported"
               }
             },
             "required": [
-              "identity_kind"
+              "acquisition"
             ]
           },
           "then": {
@@ -524,6 +528,29 @@
         },
         "detail": {
           "type": "string"
+        }
+      }
+    },
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "host"
+      ],
+      "description": "Which tenant this is about. Two fields because a tenant has one canonical identity and any number of endpoints: the admin centre, the primary host and every multi-geo satellite are all addresses of the same organisation, and treating an address as the identity is what made one tenant read as two.",
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The directory identity, canonical when it can be observed. Required and nullable rather than optional: null says nobody read it, and an omitted field says nothing at all. No collection path for it has been proven on a tenant yet, so today it is null and the host carries the identity."
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The SharePoint host, which is an endpoint rather than an identity. Normalised from the admin centre form documented by Microsoft as `{prefix}-admin`, so one tenant reached two ways produces one value. That normalisation is a compatibility mechanism for as long as the directory id is unobserved, not the definition of a tenant: a multi-geo satellite still carries its own host and is not silently folded into the primary."
         }
       }
     }

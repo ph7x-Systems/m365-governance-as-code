@@ -5,8 +5,12 @@
     "collector_version": "0.1.0",
     "source_system": "SharePoint Online",
     "source_api": "Microsoft Graph v1.0",
-    "tenant_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
     "identity_kind": "application",
+    "acquisition": "collected",
     "scopes": [
       "Sites.Read.All"
     ]

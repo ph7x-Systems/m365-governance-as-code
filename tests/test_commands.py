@@ -1171,12 +1171,12 @@ def test_the_manifest_cannot_claim_a_tenant_the_evidence_denies(capsys, tmp_path
     nobody manages together."""
     folder = three_resources(tmp_path)
     stray = json.loads((FIXTURES / "site-modern-clean.json").read_text())
-    stray["provenance"]["tenant_id"] = "fabrikam.sharepoint.com"
+    stray["provenance"]["tenant"]["host"] = "fabrikam.sharepoint.com"
     (folder / "stray.json").write_text(json.dumps(stray), encoding="utf-8")
 
     code, _, err = run(capsys, "assess", "--evidence", str(folder))
     assert code == 2
-    assert "more than one tenant" in err
+    assert "more than one host" in err
 
 
 def test_an_assessment_renders_and_compares_like_what_it_carries(capsys, tmp_path):

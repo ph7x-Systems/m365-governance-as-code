@@ -86,7 +86,7 @@ def test_a_different_evaluation_is_a_different_assessment():
 
 
 def test_the_manifest_is_covered_except_for_what_cannot_be():
-    """`tenant`, `created_at` and `identity_kind` are facts about what was
+    """`tenant`, `created_at` and the identity summary are facts about what was
     assessed, so changing one has to be detectable. An earlier version left the
     whole manifest out of the digests and a workspace test found the hole: an
     assessment could be relabelled as belonging to a different tenant and still
@@ -94,9 +94,10 @@ def test_the_manifest_is_covered_except_for_what_cannot_be():
     assert "manifest" in built()["canonical"]["hashes"]["canonical_parts"]
 
     moves = (
-        ("tenant", "somebody-elses.sharepoint.com", True),
+        ("tenant", {"id": None, "host": "somebody-elses.sharepoint.com"}, True),
         ("created_at", "2020-01-01T00:00:00Z", True),
-        ("identity_kind", "application", True),
+        ("identity", {"summary": "single", "kinds": ["application"]}, True),
+        ("acquisition", {"summary": "single", "kinds": ["imported"]}, True),
         # A label is what a person calls it. Renaming is not producing a
         # different thing, so it is outside the digest and outside identity.
         ("label", "A better name", False),
@@ -156,6 +157,58 @@ def test_the_evidence_is_kept_whole():
     assert all("facts" in evidence for evidence in document["canonical"]["evidence"])
 
 
+def test_a_multi_geo_host_is_never_silently_folded_into_the_primary():
+    """One tenant reached at two hosts and no directory identity anywhere. The
+    prefix looks shared and that is not evidence of anything: folding them
+    would invent an identity nobody read, so it refuses and says what would
+    settle it."""
+    run_set, documents = one("site-spfx-current")
+    satellite = json.loads((FIXTURES / "site-modern-clean.json").read_text())
+    satellite["provenance"]["tenant"]["host"] = "contoso-emea.sharepoint.com"
+
+    with pytest.raises(assessment.Mismatch, match="directory identity"):
+        assessment.build(
+            RunSet(run_set.runs + [evaluate(rules(), satellite)]),
+            documents + [satellite],
+            engine_version="0.3.0",
+            created_at="2026-08-08T18:00:00Z",
+        )
+
+
+def test_the_directory_identity_settles_what_hosts_cannot():
+    """Two addresses of one organisation, and something read the identity. The
+    id is canonical, so this is one tenant and the hosts are endpoints."""
+    run_set, documents = one("site-spfx-current")
+    satellite = json.loads((FIXTURES / "site-modern-clean.json").read_text())
+    satellite["provenance"]["tenant"]["host"] = "contoso-emea.sharepoint.com"
+    directory = "9a1f0c7e-0000-4000-8000-00000000dead"
+    for document in documents + [satellite]:
+        document["provenance"]["tenant"]["id"] = directory
+
+    manifest = assessment.build(
+        RunSet(run_set.runs + [evaluate(rules(), satellite)]),
+        documents + [satellite],
+        engine_version="0.3.0",
+        created_at="2026-08-08T18:00:00Z",
+    )["canonical"]["manifest"]
+    assert manifest["tenant"]["id"] == directory
+
+
+def test_two_directory_identities_are_two_tenants():
+    run_set, documents = one("site-spfx-current")
+    other = json.loads((FIXTURES / "site-modern-clean.json").read_text())
+    documents[0]["provenance"]["tenant"]["id"] = "9a1f0c7e-0000-4000-8000-0000000000a1"
+    other["provenance"]["tenant"]["id"] = "9a1f0c7e-0000-4000-8000-0000000000b2"
+
+    with pytest.raises(assessment.Mismatch, match="more than one directory"):
+        assessment.build(
+            RunSet(run_set.runs + [evaluate(rules(), other)]),
+            documents + [other],
+            engine_version="0.3.0",
+            created_at="2026-08-08T18:00:00Z",
+        )
+
+
 def test_an_identity_kind_nobody_defined_is_refused():
     documents = [json.loads((FIXTURES / "site-spfx-current.json").read_text())]
     documents[0]["provenance"]["identity_kind"] = "hopeful"
@@ -182,7 +235,12 @@ def test_the_tenant_is_read_from_the_evidence_and_not_supplied():
     """It used to be a free string. The manifest could name a tenant that
     appears nowhere in the documents underneath it, and the digests would then
     prove that contradiction unchanged for as long as anyone kept the file."""
-    assert built()["canonical"]["manifest"]["tenant"] == "contoso.sharepoint.com"
+    tenant = built()["canonical"]["manifest"]["tenant"]
+    assert tenant["host"] == "contoso.sharepoint.com"
+    # Null, and required to be present. No collection path for the directory
+    # id has been proven on a tenant, so the honest answer is that nobody read
+    # it — which is not the same as the field not existing.
+    assert tenant["id"] is None
 
 
 def test_a_manifest_that_would_contradict_the_evidence_is_refused():
@@ -202,8 +260,8 @@ def test_two_tenants_are_two_assessments():
     estates nobody manages together."""
     run_set, documents = one("site-spfx-current")
     other = json.loads((FIXTURES / "site-modern-clean.json").read_text())
-    other["provenance"]["tenant_id"] = "fabrikam.sharepoint.com"
-    with pytest.raises(assessment.Mismatch, match="more than one tenant"):
+    other["provenance"]["tenant"]["host"] = "fabrikam.sharepoint.com"
+    with pytest.raises(assessment.Mismatch, match="more than one host"):
         assessment.build(
             RunSet(run_set.runs + [evaluate(rules(), other)]),
             documents + [other],
@@ -228,17 +286,68 @@ def test_evidence_that_did_not_produce_these_runs_is_refused():
 
 
 @pytest.mark.parametrize(
-    "names,expected",
+    "names,summary,kinds",
     [
-        (["site-spfx-current", "site-modern-clean"], "delegated"),
-        (["list-class-content", "list-within-limit"], "application"),
-        (["site-spfx-current", "list-class-content"], "mixed"),
-        (["site-imported-inventory"], "imported"),
+        (["site-spfx-current", "site-modern-clean"], "single", ["delegated"]),
+        (["list-class-content", "list-within-limit"], "single", ["application"]),
+        (
+            ["site-spfx-current", "list-class-content"],
+            "multiple",
+            ["application", "delegated"],
+        ),
+        (["site-imported-inventory"], "not-established", []),
     ],
-    ids=["all delegated", "all application", "mixed", "imported"],
+    ids=["all delegated", "all application", "two kinds", "identity not recorded"],
 )
-def test_the_identity_describes_what_observed_it(names, expected):
-    """`mixed` is a real answer and never the reassuring one: part of the
-    archive is tenant-wide and part of it is one person's view, and the reader
-    resolves that per document rather than by taking an average."""
-    assert built(names=names)["canonical"]["manifest"]["identity_kind"] == expected
+def test_the_identity_is_summarised_and_never_averaged(names, summary, kinds):
+    """The manifest holds a statement about a set of documents, so it may not
+    wear the name of a statement about one. It used to say `mixed`, which is
+    not an identity anybody can authenticate as, and `imported`, which answers
+    how the evidence arrived rather than who observed it.
+
+    `not-established` is the honest reading of an export that does not name its
+    collecting identity. Calling that identity `imported` said we knew
+    something we did not.
+    """
+    identity = built(names=names)["canonical"]["manifest"]["identity"]
+    assert identity == {"summary": summary, "kinds": kinds}
+
+
+@pytest.mark.parametrize(
+    "names,summary,kinds",
+    [
+        (["site-spfx-current", "site-modern-clean"], "single", ["collected"]),
+        (["site-imported-inventory"], "single", ["imported"]),
+        (
+            ["site-spfx-current", "site-imported-inventory"],
+            "multiple",
+            ["collected", "imported"],
+        ),
+    ],
+    ids=["all collected", "all imported", "both"],
+)
+def test_acquisition_is_summarised_separately(names, summary, kinds):
+    """An archive with both halves has one whose collection completeness this
+    engine can speak to and one whose it cannot, and a reader has to be able to
+    see that without opening every document."""
+    acquisition = built(names=names)["canonical"]["manifest"]["acquisition"]
+    assert acquisition == {"summary": summary, "kinds": kinds}
+
+
+def test_an_import_that_names_its_collector_keeps_that_identity():
+    """The case the old model could not express at all: one field cannot hold
+    both `who observed this` and `how it got here`, so an export that recorded
+    a delegated collection was flattened into `imported` and the identity was
+    lost."""
+    documents = [json.loads((FIXTURES / "site-imported-inventory.json").read_text())]
+    documents[0]["provenance"]["identity_kind"] = "delegated"
+
+    manifest = assessment.build(
+        RunSet([evaluate(rules(), documents[0])]),
+        documents,
+        engine_version="0.3.0",
+        created_at="2026-08-08T18:00:00Z",
+    )["canonical"]["manifest"]
+
+    assert manifest["identity"] == {"summary": "single", "kinds": ["delegated"]}
+    assert manifest["acquisition"] == {"summary": "single", "kinds": ["imported"]}

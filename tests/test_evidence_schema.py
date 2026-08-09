@@ -121,12 +121,72 @@ def test_a_live_run_may_not_carry_an_import_source():
     assert problems(broken)
 
 
-def test_a_live_run_still_needs_its_scopes_and_tenant():
-    for field in ("scopes", "tenant_id", "source_api"):
+def test_a_collected_run_still_needs_its_scopes_and_tenant():
+    for field in ("scopes", "tenant", "source_api"):
         broken = sabotage(
             evidence("site-two-owners"), lambda d, f=field: d["provenance"].pop(f)
         )
-        assert problems(broken), f"a live run without {field} was accepted"
+        assert problems(broken), f"a collected run without {field} was accepted"
+
+
+def test_acquisition_is_required_and_separate_from_identity():
+    """They were one field, and the conditional rules that govern `scopes` and
+    `import_source` were keyed on the answer to a different question: who
+    observed this, rather than how it got here. An import that named its
+    collecting identity could not be expressed at all."""
+    broken = sabotage(
+        evidence("site-two-owners"), lambda d: d["provenance"].pop("acquisition")
+    )
+    assert problems(broken)
+
+    # The two vocabularies do not overlap, and neither accepts the other's
+    # words. `imported` as an identity is what this replaced.
+    for field, value in (
+        ("identity_kind", "imported"),
+        ("identity_kind", "collected"),
+        ("acquisition", "delegated"),
+    ):
+        broken = sabotage(
+            evidence("site-two-owners"),
+            lambda d, f=field, v=value: d["provenance"].update({f: v}),
+        )
+        assert problems(broken), f"{field}={value} was accepted"
+
+
+def test_an_import_carries_no_scopes_of_ours():
+    """`scopes: []` would read as 'no permissions were needed' rather than
+    'this does not apply', and those are opposite claims."""
+    broken = sabotage(
+        evidence("site-imported-inventory"),
+        lambda d: d["provenance"].update(scopes=["Sites.Read.All"]),
+    )
+    assert problems(broken)
+
+
+def test_a_tenant_carries_an_identity_and_an_address():
+    """A hostname is an endpoint. Requiring the id and allowing it to be null
+    is the difference between `nobody read this` and `nobody meant this field
+    to exist`."""
+    for field in ("id", "host"):
+        broken = sabotage(
+            evidence("site-two-owners"),
+            lambda d, f=field: d["provenance"]["tenant"].pop(f),
+        )
+        assert problems(broken), f"a tenant without {field} was accepted"
+
+    # Null is a permitted answer for the id and never for the address.
+    assert problems(
+        sabotage(
+            evidence("site-two-owners"),
+            lambda d: d["provenance"]["tenant"].update(host=None),
+        )
+    )
+    assert not problems(
+        sabotage(
+            evidence("site-two-owners"),
+            lambda d: d["provenance"]["tenant"].update(id=None),
+        )
+    )
 
 
 def test_an_import_needs_a_tool_and_a_date():

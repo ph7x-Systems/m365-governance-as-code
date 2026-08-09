@@ -100,10 +100,17 @@ function New-Evidence {
             collector_version = $script:CollectorVersion
             source_system     = 'SharePoint Online'
             source_api        = $SourceApi
-            tenant_id         = $script:TenantHost
+            # A tenant has one identity and any number of addresses. The
+            # directory id is the identity and nothing here has read one yet,
+            # so it is null and says so: an omitted field would claim nothing
+            # was ever meant to be there. The host is an endpoint, already
+            # normalised so the admin centre and a site agree.
+            tenant            = [ordered]@{ id = $null; host = $script:TenantHost }
             # Interactive and device sign-in are both delegated. Recording it
             # is the difference between a partial audit and a misleading one.
             identity_kind     = 'delegated'
+            # How it got here, which is a different question from who read it.
+            acquisition       = 'collected'
             scopes            = @('AllSites.Read')
         }
         coverage       = [ordered]@{

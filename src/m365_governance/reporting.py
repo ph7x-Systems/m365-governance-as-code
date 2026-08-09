@@ -88,7 +88,11 @@ def _provenance_lines(run: Run) -> list[str]:
     if run.rule_source:
         lines.append(f"- Rules: {run.rule_source}")
     identity = prov.get("identity_kind")
-    if identity == "imported":
+    # Keyed on acquisition, not on identity. They were one field, so this
+    # warning was asking who observed the evidence in order to answer how it
+    # got here — and an import that named its collecting identity lost the
+    # warning entirely, which is the one case where it matters most.
+    if prov.get("acquisition") == "imported":
         source = prov.get("import_source", {})
         lines.append(
             f"- **Evidence imported from {source.get('tool', 'another tool')}"
@@ -314,7 +318,7 @@ def to_html(run: Run) -> str:
             f"{_esc(prov.get('source_system', '?'))}.</p>"
         )
         identity = prov.get("identity_kind")
-        if identity == "imported":
+        if prov.get("acquisition") == "imported":
             source = prov.get("import_source", {})
             exported = ", ".join(
                 part

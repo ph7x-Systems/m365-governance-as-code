@@ -19,7 +19,7 @@
   "generator_version": "1.0.0",
   "schemas": {
     "https://ph7x.com/schemas/m365-governance/assessment/1.0.0": {
-      "digest": "a2a7cef7f5b61adcfbc0cb08ba547add034ad9ff0485b2d77dc986909c7bfed4",
+      "digest": "98b3d17996743b8bd982efe18e15c24656cbc6fa495dc5ef025e518351022dd1",
       "path": "schemas/assessment.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/1.0.0": {
@@ -27,7 +27,7 @@
       "path": "schemas/comparison.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
-      "digest": "45b7127e75cf9558103d497005fb1f6437686b199f388e4a82b6db54c426929d",
+      "digest": "cade333cbf3a8626e2fda66a14b5f86299dac0c4801eb3e97182235ed993adfb",
       "path": "schemas/evidence.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/rule/1.0.0": {
@@ -43,5 +43,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "f4823db8177db50183d174a95755aac28d518d67558e071382bfac00d221fe5c"
+  "set_digest": "dfd93748e2b1d1742bcc2d50b14ab7b3484d4b20240faad978ee3533c8b5e3ab"
 }
