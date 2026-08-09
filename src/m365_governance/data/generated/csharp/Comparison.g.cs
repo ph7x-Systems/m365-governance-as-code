@@ -52,9 +52,9 @@ public sealed record Comparison(
 public sealed record Side(
     [property: JsonPropertyName("assessment_id")] string AssessmentId,
     [property: JsonPropertyName("created_at")] string CreatedAt,
-    [property: JsonPropertyName("tenant")] string? Tenant,
     /// <summary>The assessment's canonical digest. Identity that can be verified rather than trusted, and the reason a comparison never carries a path: a path says where a file sat on one machine, not what it held.</summary>
-    [property: JsonPropertyName("canonical_hash")] string CanonicalHash
+    [property: JsonPropertyName("canonical_hash")] string CanonicalHash,
+    [property: JsonPropertyName("tenant")] string? Tenant = null
 );
 public sealed record Diff(
     /// <summary>The engine version that computed it. A diff nobody can reproduce is an opinion about history.</summary>
@@ -69,15 +69,15 @@ public sealed record Change(
     /// <summary>What happened to this resource-and-rule pair between the two sides. Three values because there are only three, and for `added` and `removed` the kind is already the complete observation: there is no earlier state that could have moved.</summary>
     [property: JsonPropertyName("kind")] string Kind,
     /// <summary>What was OBSERVED to differ, and never why. These were called causes, which claimed something the engine cannot know: when evidence and the rule move together, saying which one produced the new outcome needs a counterfactual evaluation that nobody ran. A changed outcome is itself an observation, not an explanation of one.</summary>
-    [property: JsonPropertyName("changes")] IReadOnlyList<string>? Changes,
+    [property: JsonPropertyName("changes")] IReadOnlyList<string>? Changes = null,
     /// <summary>Optional, and absent until somebody actually evaluates causality. Kept apart from `changes` so that observing several things move together never reads as knowing which one mattered. Under `ambiguous`, factors are candidates rather than confirmed causes, and the state is what says so.</summary>
-    [property: JsonPropertyName("attribution")] ChangeAttribution? Attribution
+    [property: JsonPropertyName("attribution")] ChangeAttribution? Attribution = null
 );
 public sealed record ChangeAttribution(
     /// <summary>`ambiguous` is a real answer and probably the common one: two things moved and the comparison cannot separate them. `not-evaluated` says nobody tried, which is a different sentence. `established` is a claim, and a claim carries what and how or it is not one.</summary>
     [property: JsonPropertyName("state")] string State,
     /// <summary>What the attribution points at. `outcome` is deliberately not a value: the outcome is the effect, and listing it here would put the result among its own causes.</summary>
-    [property: JsonPropertyName("factors")] IReadOnlyList<string>? Factors,
+    [property: JsonPropertyName("factors")] IReadOnlyList<string>? Factors = null,
     /// <summary>How it was established. Re-evaluating the older evidence against the newer rule is a method; noticing that both moved is not.</summary>
-    [property: JsonPropertyName("method")] string? Method
+    [property: JsonPropertyName("method")] string? Method = null
 );

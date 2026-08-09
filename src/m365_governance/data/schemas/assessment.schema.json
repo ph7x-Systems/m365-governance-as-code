@@ -38,25 +38,14 @@
           "$ref": "#/$defs/manifest"
         },
         "run_set": {
-          "type": "object",
-          "description": "The evaluation at tenant scale, as the engine emits it. Structure owned by the run-set schema rather than restated here.",
-          "required": [
-            "runs"
-          ],
-          "properties": {
-            "runs": {
-              "type": "array",
-              "items": {
-                "type": "object"
-              }
-            }
-          }
+          "$ref": "https://ph7x.com/schemas/m365-governance/run-set/1.0.0",
+          "description": "The evaluation at tenant scale. Referenced rather than restated: the previous version said the structure was owned by the run-set schema and then described an object with one key, so a consumer generated a type that could not hold a real run set."
         },
         "evidence": {
           "type": "array",
-          "description": "Every evidence document the run set was evaluated from. Kept whole: a finding whose evidence was discarded cannot be re-checked, and re-checking is the point.",
+          "description": "Every evidence document the run set was evaluated from, whole. A finding whose evidence was discarded cannot be re-checked, and re-checking is the point.",
           "items": {
-            "type": "object"
+            "$ref": "https://ph7x.com/schemas/m365-governance/evidence/1.2.0"
           }
         },
         "versions": {

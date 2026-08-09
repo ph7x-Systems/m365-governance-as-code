@@ -59,14 +59,16 @@ GENERATOR_VERSION = "1.0.0"
 #: six digests by eye.
 CONTRACT_VERSION = "1.0.0"
 
-#: The aggregates a consumer imports. Evidence and rule schemas describe this
-#: engine's INPUTS, which no external consumer constructs, so generating them
-#: would ship types nobody builds.
+#: The aggregates a consumer imports, and everything they contain. Evidence is
+#: here because an assessment carries the documents it was evaluated from: a
+#: consumer does not construct evidence, and it certainly reads it. The rule
+#: schema stays out, because nothing a consumer opens contains one.
 GENERATE = (
     "run.schema.json",
     "run-set.schema.json",
     "assessment.schema.json",
     "comparison.schema.json",
+    "evidence.schema.json",
 )
 
 #: Constructs that decide the SHAPE. The generator handles these.
@@ -82,6 +84,8 @@ SHAPE = {
     "$id",
     "title",
     "description",
+    # Annotation, and it changes nothing a type can carry.
+    "$comment",
     "additionalProperties",
     "minimum",
     "minLength",
@@ -93,7 +97,20 @@ SHAPE = {
 
 #: Constructs that constrain VALUES. No C# type expresses them, so they are
 #: reported in the generated header instead of being silently lost.
-CONSTRAINT = {"if", "then", "else", "allOf", "anyOf", "oneOf", "not", "const"}
+CONSTRAINT = {
+    "if",
+    "then",
+    "else",
+    "allOf",
+    "anyOf",
+    "oneOf",
+    "not",
+    "const",
+    # A dictionary that must not be empty is a value constraint. A C#
+    # dictionary type cannot say it, so the generated header reports it
+    # instead of the model pretending to enforce it.
+    "minProperties",
+}
 
 PRIMITIVE = {
     "string": "string",
@@ -212,16 +229,31 @@ def record(name: str, node: dict, nested: list, defs: dict | None = None) -> str
     members = []
     for prop, schema in node.get("properties", {}).items():
         kind = type_of(schema, name + pascal(prop), nested, defs)
-        if prop not in required and not kind.endswith("?"):
+        optional = prop not in required
+        if optional and not kind.endswith("?"):
             kind += "?"
-        doc = schema.get("description", "")
-        members.append((prop, kind, doc))
-    for i, (prop, kind, doc) in enumerate(members):
+        members.append((prop, kind, schema.get("description", ""), optional))
+
+    # AN OPTIONAL PROPERTY NEEDS A DEFAULT, not just a nullable type.
+    #
+    # `RespectRequiredConstructorParameters` makes every parameter without a
+    # default required, whatever its nullability, so a nullable-but-defaultless
+    # parameter is still demanded at deserialisation. That made an optional
+    # `import_source` refuse a real evidence document, and it means the earlier
+    # proof that "required is enforced" was really proving that everything was.
+    #
+    # C# then insists defaults come last, so the required members are emitted
+    # first. The order of a record's parameters is not part of the contract;
+    # the JSON property names are.
+    members.sort(key=lambda m: m[3])
+    for i, (prop, kind, doc, optional) in enumerate(members):
         comma = "," if i < len(members) - 1 else ""
         if doc:
             lines.append(f"    /// <summary>{doc.replace('<', '&lt;')}</summary>")
+        default = " = null" if optional else ""
         lines.append(
-            f'    [property: JsonPropertyName("{prop}")] {kind} {pascal(prop)}{comma}'
+            f'    [property: JsonPropertyName("{prop}")] '
+            f"{kind} {pascal(prop)}{default}{comma}"
         )
     lines.append(");")
     return "\n".join(lines)
@@ -240,7 +272,11 @@ def render(path: Path) -> str:
 
     not_enforced = sorted(constraints_in(document, set()))
     digest = hashlib.sha256(path.read_bytes()).hexdigest()
-    title = pascal(document.get("title", path.stem))
+    # From the `$id`, not the title. A title is prose and can say "Evidence
+    # document", while a cross-file `$ref` resolves the same schema to
+    # `Evidence`. Two names for one type is a build error waiting for the
+    # first reference, and that is exactly how this was found.
+    title = pascal(document["$id"].rstrip("/").rsplit("/", 2)[-2])
 
     defs = document.get("$defs", {})
     pending: list = [(title, document)]

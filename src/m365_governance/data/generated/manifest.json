@@ -12,13 +12,14 @@
   "generated": [
     "Assessment.g.cs",
     "Comparison.g.cs",
+    "Evidence.g.cs",
     "Run.g.cs",
     "RunSet.g.cs"
   ],
   "generator_version": "1.0.0",
   "schemas": {
     "https://ph7x.com/schemas/m365-governance/assessment/1.0.0": {
-      "digest": "394b25489ecd7b97d1c1c498c7ae2fc7888da868abe947462d4303b6b1111fc9",
+      "digest": "0eec13d430d684869ac82f6395fedf16c2faa65029f213f155db4d44d0a771ee",
       "path": "schemas/assessment.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/1.0.0": {
@@ -42,5 +43,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "e96def11488766427ca6c1b629d99662c186ccb0a1c020126f588202cdbe473e"
+  "set_digest": "33e62920d0fd3bfaaf6e0ea51f8eeb3fd96041aaaeaaedc0449ef81ea49fffd0"
 }
