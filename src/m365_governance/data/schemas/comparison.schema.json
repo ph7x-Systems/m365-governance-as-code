@@ -84,8 +84,7 @@
         "rule",
         "before",
         "after",
-        "kind",
-        "causes"
+        "kind"
       ],
       "properties": {
         "resource": {
@@ -109,21 +108,72 @@
             "removed",
             "changed"
           ],
-          "description": "What happened to this resource-and-rule pair between the two sides. Deliberately three values: what changed is a different question from why, and answering both in one field forces a simultaneous change to hide one of its halves."
+          "description": "What happened to this resource-and-rule pair between the two sides. Three values because there are only three, and for `added` and `removed` the kind is already the complete observation: there is no earlier state that could have moved."
         },
-        "causes": {
+        "changes": {
           "type": "array",
-          "minItems": 1,
           "uniqueItems": true,
-          "description": "Why the two sides differ, and more than one may be true at once. A run where the tenant moved AND the rule was reissued has both causes, and a model that made them exclusive would report a rule change as tenant drift or the reverse.",
+          "description": "What was OBSERVED to differ, and never why. These were called causes, which claimed something the engine cannot know: when evidence and the rule move together, saying which one produced the new outcome needs a counterfactual evaluation that nobody ran. A changed outcome is itself an observation, not an explanation of one.",
           "items": {
             "type": "string",
             "enum": [
-              "evidence-changed",
-              "outcome-changed",
-              "rule-version-changed"
+              "evidence",
+              "outcome",
+              "rule-version"
             ]
           }
+        },
+        "attribution": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Optional, and absent until somebody actually evaluates causality. Kept apart from `changes` so that observing several things move together never reads as knowing which one mattered.",
+          "required": [
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": [
+                "established",
+                "ambiguous",
+                "not-evaluated"
+              ],
+              "description": "`ambiguous` is a real answer and the common one: two things moved and the comparison cannot separate them. `not-evaluated` says nobody tried, which is different again."
+            },
+            "factors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "changed"
+          }
+        },
+        "required": [
+          "kind"
+        ]
+      },
+      "then": {
+        "required": [
+          "changes"
+        ],
+        "properties": {
+          "changes": {
+            "minItems": 1
+          }
+        }
+      },
+      "else": {
+        "not": {
+          "required": [
+            "changes"
+          ]
         }
       }
     },
