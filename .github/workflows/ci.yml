@@ -35,6 +35,15 @@ jobs:
           pip install -e .
           pip install -r requirements-dev.txt
 
+      # The full contract measures the PnP surface against a committed
+      # baseline, so the module has to be here. Without it the detector cannot
+      # tell whether anything moved, and "could not check" is not "nothing
+      # changed": the contract refuses to pass on a silence.
+      - name: PnP.PowerShell, for the surface and drift gates
+        if: matrix.python-version == '3.13'
+        shell: pwsh
+        run: Install-Module PnP.PowerShell -RequiredVersion 3.3.0 -Force -Scope CurrentUser -AllowClobber
+
       - name: ./tools/release-check.sh
         # The wheel and clean-install gates answer a question that does not
         # depend on the interpreter, and pwsh is only present on one entry, so

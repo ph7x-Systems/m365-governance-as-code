@@ -87,14 +87,34 @@ def test_a_different_evaluation_is_a_different_assessment():
     )
 
 
-def test_the_manifest_is_not_hashed_by_the_digests_it_is_described_by():
-    """It carries the id, and the id derives from those digests. Hashing it
-    there would ask the identity to contain itself."""
-    assert "manifest" not in built()["canonical"]["hashes"]["canonical_parts"]
+def test_the_manifest_is_covered_except_for_what_cannot_be():
+    """`tenant`, `created_at` and `identity_kind` are facts about what was
+    assessed, so changing one has to be detectable. An earlier version left the
+    whole manifest out of the digests and a workspace test found the hole: an
+    assessment could be relabelled as belonging to a different tenant and still
+    verify."""
+    assert "manifest" in built()["canonical"]["hashes"]["canonical_parts"]
+
+    moves = (
+        ("tenant", "somebody-elses.sharepoint.com", True),
+        ("created_at", "2020-01-01T00:00:00Z", True),
+        ("identity_kind", "application", True),
+        # A label is what a person calls it. Renaming is not producing a
+        # different thing, so it is outside the digest and outside identity.
+        ("label", "A better name", False),
+    )
+    for field, value, expected in moves:
+        document = built(label="Original")
+        document["canonical"]["manifest"][field] = value
+        caught = any("manifest" in problem for problem in assessment.verify(document))
+        assert caught is expected, f"changing {field} to {value!r}: caught={caught}"
 
 
 def test_a_label_never_changes_the_identity():
-    """What somebody calls it is not what it is."""
+    """What somebody calls it is not what it is, so it is left out of the
+    digest alongside the id. Including it would give the same evaluation a new
+    identity because somebody typed a better name, and every earlier reference
+    would stop resolving."""
     assert (
         built()["canonical"]["manifest"]["assessment_id"]
         == built(label="Anything at all")["canonical"]["manifest"]["assessment_id"]

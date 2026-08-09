@@ -32,10 +32,25 @@ from .results import RunSet
 
 SCHEMA_VERSION = "1.0"
 
-#: Which members of `canonical` are hashed. `manifest` is excluded because it
-#: carries the `assessment_id`, and that id derives from these digests: hashing
-#: it here would ask the identity to contain itself.
-HASHED = ("run_set", "evidence", "versions")
+#: Which members of `canonical` are hashed.
+HASHED = ("run_set", "evidence", "versions", "manifest")
+
+#: The two manifest fields left out of the manifest's own digest.
+#:
+#: `assessment_id` is the id, and the id derives from that digest: including it
+#: would ask the identity to contain itself.
+#:
+#: `label` is what a person calls it, and renaming something is not producing a
+#: different thing. Including it would give the same evaluation a new identity
+#: because somebody typed a better name, and every earlier reference to it
+#: would stop resolving.
+#:
+#: THE FIRST VERSION LEFT THE WHOLE MANIFEST OUT, and a test found what that
+#: cost: `tenant`, `created_at` and `identity_kind` could all be changed
+#: without anything noticing, so an assessment could be relabelled as
+#: belonging to a different tenant and still verify. Those three are facts
+#: about what was assessed. A label is not, and the difference is the line.
+NOT_IN_ITS_OWN_DIGEST = ("assessment_id", "label")
 
 
 def _digest(value: Any) -> str:
@@ -61,6 +76,13 @@ def _digest(value: Any) -> str:
         value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
     ).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
+
+
+def _hashable(value: Any, name: str) -> Any:
+    """The part as it is hashed. Only the manifest differs from itself."""
+    if name != "manifest":
+        return value
+    return {k: v for k, v in value.items() if k not in NOT_IN_ITS_OWN_DIGEST}
 
 
 def build(
@@ -106,23 +128,23 @@ def build(
         },
     }
 
-    parts = {name: _digest(canonical[name]) for name in HASHED}
-    combined = hashlib.sha256(
-        "".join(f"{name}:{parts[name]}" for name in sorted(parts)).encode()
-    ).hexdigest()
-
     manifest = {
-        # Derived, not chosen. An id somebody picked would let two different
-        # assessments claim to be one, and two exports of the same one disagree.
-        "assessment_id": combined,
         "created_at": created_at,
         "tenant": tenant,
         "identity_kind": identity_kind,
     }
     if label:
         manifest["label"] = label
-
     canonical["manifest"] = manifest
+
+    parts = {name: _digest(_hashable(canonical[name], name)) for name in HASHED}
+    combined = hashlib.sha256(
+        "".join(f"{name}:{parts[name]}" for name in sorted(parts)).encode()
+    ).hexdigest()
+
+    # Derived, not chosen. An id somebody picked would let two different
+    # assessments claim to be one, and two exports of the same one disagree.
+    manifest["assessment_id"] = combined
     canonical["hashes"] = {
         "algorithm": "sha256",
         "canonical_parts": parts,
@@ -147,7 +169,7 @@ def verify(assessment: dict) -> list[str]:
         if name not in canonical:
             problems.append(f"canonical is missing {name}")
             continue
-        actual = _digest(canonical[name])
+        actual = _digest(_hashable(canonical[name], name))
         if stored.get(name) != actual:
             problems.append(f"{name} does not match its digest")
 

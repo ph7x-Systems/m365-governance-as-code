@@ -143,7 +143,7 @@
         },
         "canonical_parts": {
           "type": "object",
-          "description": "Part name to its digest, for every required member of `canonical` except `hashes` and `manifest`. The manifest is excluded because it carries the `assessment_id`, and that id derives from these digests: hashing it here would ask the identity to contain itself.",
+          "description": "Part name to its digest, for every required member of `canonical` except `hashes`. The manifest IS covered, minus its `assessment_id`: that field is the id and the id derives from these digests, so including it would ask the identity to contain itself. Leaving the whole manifest out, which an earlier version did, let `tenant`, `created_at` and `identity_kind` be changed without anything noticing.",
           "additionalProperties": {
             "type": "string",
             "pattern": "^[a-f0-9]{64}$"
