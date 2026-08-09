@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import copy
 import json
+from pathlib import Path
 
 from conftest import ROOT, evidence, rule, sabotage
 from m365_governance.engine import evaluate, evaluate_rule
@@ -287,3 +288,38 @@ def test_a_validation_leaves_a_fixture_with_no_tenant_in_it():
     assert "fixtures/sharepoint" in script, "the run leaves no fixture behind"
     assert "contoso" in script, "the fixture must carry a placeholder tenant"
     assert "y75hx" not in script, "a real tenant name reached a tracked file"
+
+
+def test_the_public_repository_names_no_private_consumer():
+    """A public engine must not know who consumes it.
+
+    Naming a particular private product here makes an open repository depend on
+    knowing about a closed one, and the next consumer arrives to find the
+    engine shaped around somebody else. It was worse than a comment in one
+    place: `consumed_by` is SHIPPED TEXT, so a customer's evidence carried the
+    name of a product they do not have.
+
+    The generator's own docstring already says this. This is the part that
+    fails when somebody forgets.
+    """
+    root = Path(__file__).resolve().parents[1]
+    offenders = []
+    for folder in ("src", "tools", "docs"):
+        for path in (root / folder).rglob("*"):
+            if path.suffix not in {
+                ".py",
+                ".sh",
+                ".md",
+                ".json",
+                ".yaml",
+                ".psm1",
+                ".ps1",
+            }:
+                continue
+            text = path.read_text(encoding="utf-8", errors="ignore")
+            if "Workbench" in text:
+                offenders.append(str(path.relative_to(root)))
+
+    assert not offenders, (
+        "the public repository names a private consumer in: " + ", ".join(offenders)
+    )

@@ -385,7 +385,7 @@ def to_dict(before: Run, after: Run) -> dict:
         # The same shape as every other resource reference in the product,
         # `type` included. Emitting a narrower one here would make the diff the
         # only document whose resource a consumer has to special-case, and the
-        # Workbench found it by refusing to parse it.
+        # A consumer found it by refusing to parse it.
         "resource": {
             **identity.ref(after.resource or before.resource),
             "display_name": after.resource.get("display_name")

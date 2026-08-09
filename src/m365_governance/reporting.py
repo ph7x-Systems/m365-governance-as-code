@@ -18,7 +18,7 @@ from .results import Outcome, Run, RunSet
 
 #: The order a report groups its findings in — DERIVED, never written here.
 #:
-#: This was a hand-written list, and the Workbench held a different one:
+#: This was a hand-written list, and a consumer surface held a different one:
 #: `pass` came before `not-applicable` there, and an engine error was nowhere
 #: in it at all. Two surfaces of one product, each internally consistent,
 #: disagreeing about what a reader should see first. Neither was wrong on its
@@ -194,7 +194,7 @@ def _attention_lines(run: Run) -> list[str]:
     """What the engine says needs a person, and why.
 
     THE SAME SENTENCE THE WORKBENCH SHOWS, from the same field. The two
-    surfaces used to answer this separately — the Workbench decided from counts
+    surfaces used to answer this separately — one decided from counts
     that `fail > 0` meant act, and the command line never asked the question at
     all — so a report and a window over one run could lead with different
     things and neither was wrong on its own terms.
