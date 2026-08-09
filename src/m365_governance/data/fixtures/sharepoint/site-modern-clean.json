@@ -26,6 +26,8 @@
   "resource": {
     "id": "contoso,site,comms",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Communication Site",
     "url": "https://contoso.sharepoint.com/sites/comms"
   },

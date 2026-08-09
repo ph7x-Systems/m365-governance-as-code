@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,group-unlabelled",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "All Company",
     "url": "https://contoso.sharepoint.com/sites/allcompany"
   },

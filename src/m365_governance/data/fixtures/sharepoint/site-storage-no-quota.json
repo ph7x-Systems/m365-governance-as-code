@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,unlimited",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Unlimited",
     "url": "https://contoso.sharepoint.com/sites/unlimited"
   },

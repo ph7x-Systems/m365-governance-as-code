@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,marketing-public",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Marketing Public",
     "url": "https://contoso.sharepoint.com/sites/marketing-public"
   },

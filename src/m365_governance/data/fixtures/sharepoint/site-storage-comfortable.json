@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,team-a",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Team A",
     "url": "https://contoso.sharepoint.com/sites/team-a"
   },

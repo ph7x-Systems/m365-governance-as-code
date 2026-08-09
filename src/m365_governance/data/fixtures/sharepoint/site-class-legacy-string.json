@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,legacy-string",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Archive 2022",
     "url": "https://contoso.sharepoint.com/sites/archive-2022"
   },

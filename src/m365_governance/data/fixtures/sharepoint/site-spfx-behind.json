@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,spfx-behind",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Portal",
     "url": "https://contoso.sharepoint.com/sites/spfx-behind"
   },

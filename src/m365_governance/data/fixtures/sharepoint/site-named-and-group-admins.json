@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,finance-ops",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Finance Ops",
     "url": "https://contoso.sharepoint.com/sites/finance-ops"
   },

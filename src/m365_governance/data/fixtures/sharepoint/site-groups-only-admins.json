@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,operations",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Operations",
     "url": "https://contoso.sharepoint.com/sites/operations"
   },

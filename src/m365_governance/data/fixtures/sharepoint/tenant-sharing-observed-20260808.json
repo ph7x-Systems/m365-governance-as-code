@@ -24,6 +24,8 @@
   "resource": {
     "id": "https://contoso-admin.sharepoint.com",
     "type": "tenant",
+    "scope": "tenant",
+    "parent": null,
     "display_name": "https://contoso-admin.sharepoint.com",
     "url": "https://contoso-admin.sharepoint.com"
   },

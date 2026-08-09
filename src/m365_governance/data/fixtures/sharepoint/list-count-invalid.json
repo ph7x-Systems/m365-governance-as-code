@@ -26,6 +26,8 @@
   "resource": {
     "id": "contoso,list,imported",
     "type": "list",
+    "scope": "container",
+    "parent": "contoso,site,documents-host",
     "display_name": "Imported",
     "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
   },

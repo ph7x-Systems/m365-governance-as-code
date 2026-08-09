@@ -26,6 +26,8 @@
   "resource": {
     "id": "contoso,site,spfx-bad",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Root",
     "url": "https://contoso.sharepoint.com/sites/spfx-bad"
   },

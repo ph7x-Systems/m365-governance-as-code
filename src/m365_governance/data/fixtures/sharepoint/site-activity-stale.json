@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,stale",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Training Boost",
     "url": "https://contoso.sharepoint.com/sites/stale"
   },

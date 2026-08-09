@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,spfx-ok",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Training",
     "url": "https://contoso.sharepoint.com/sites/spfx-ok"
   },

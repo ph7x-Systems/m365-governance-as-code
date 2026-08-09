@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,archive-store",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Archive Store",
     "url": "https://contoso.sharepoint.com/sites/archive-store"
   },

@@ -186,7 +186,9 @@
       "additionalProperties": false,
       "required": [
         "id",
-        "type"
+        "type",
+        "scope",
+        "parent"
       ],
       "properties": {
         "id": {
@@ -202,8 +204,26 @@
         },
         "url": {
           "type": "string"
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "tenant",
+            "collection",
+            "container",
+            "item"
+          ],
+          "description": "How far this resource's own settings reach. Deliberately about governance reach rather than a product's menu structure, so it holds across workloads: a SharePoint site, an Exchange mailbox and a Team are all `collection`; a list, a folder and a channel are all `container`. A model naming SharePoint's levels would need a second model at the second workload."
+        },
+        "parent": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The id of the resource that contains this one, or null where nothing does. Null is a real answer for a tenant and a defect anywhere else, which is why the field is required: an optional containment field is one that gets omitted, and then the relationship goes back into prose."
         }
-      }
+      },
+      "description": "What was observed, and where it sits. Containment is two explicit fields and never a substring of an identifier: an id is opaque by design, so reading a parent out of it would make every consumer parse a grammar that varies by workload."
     },
     "collectionState": {
       "enum": [

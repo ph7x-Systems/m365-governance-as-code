@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,marketing",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Marketing",
     "url": "https://contoso.sharepoint.com/sites/Marketing"
   },

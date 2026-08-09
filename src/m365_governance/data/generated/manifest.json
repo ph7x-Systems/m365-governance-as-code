@@ -27,7 +27,7 @@
       "path": "schemas/comparison.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
-      "digest": "b51cfa3692db26746c1d78a022ccb0f8c39dae1fe190451d6b87310c0185aa29",
+      "digest": "45b7127e75cf9558103d497005fb1f6437686b199f388e4a82b6db54c426929d",
       "path": "schemas/evidence.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/rule/1.0.0": {
@@ -43,5 +43,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "ddc78b9882ec106a83e9bdc00f87b86641468e54c7821910328222a3772006c6"
+  "set_digest": "82fb975eda164f23279599eae105908d464ab031aff904af7589fe351ccceaf9"
 }

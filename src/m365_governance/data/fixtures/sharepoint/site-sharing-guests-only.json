@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,legal-sharing",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Legal",
     "url": "https://contoso.sharepoint.com/sites/legal-sharing"
   },

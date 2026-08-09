@@ -238,3 +238,27 @@ def test_the_audit_lists_the_same_properties_as_the_guard():
     assert len(printed) == 2, "the audit no longer prints the documented list"
     block = printed[1].split("```")[1]
     assert set(block.split()) == set(UNPOPULATED_BY_ENUMERATION)
+
+
+#: Every resource block the collector writes. Containment is not optional in
+#: the schema, so a mode that forgets it produces evidence the engine refuses
+#: at runtime, on a tenant, after somebody waited for a collection.
+RESOURCE_BLOCK = re.compile(r"id\s*=\s*[^;]+;\s*type\s*=\s*'(\w+)'", re.MULTILINE)
+
+
+def test_every_resource_the_collector_writes_declares_its_containment():
+    """`scope` and `parent` are required by evidence.schema.json.
+
+    A resource without them is a resource whose place in the estate lives in
+    prose, which is the thing the model was changed to stop.
+    """
+    source = COLLECTOR.read_text(encoding="utf-8")
+    blocks = [m for m in RESOURCE_BLOCK.finditer(source)]
+    assert len(blocks) >= 8, "the resource blocks moved; this test found almost none"
+
+    for match in blocks:
+        # The two fields follow the type on the next lines of the same literal.
+        window = source[match.end() : match.end() + 220]
+        kind = match.group(1)
+        assert "scope" in window, f"a {kind} resource is written without a scope"
+        assert "parent" in window, f"a {kind} resource is written without a parent"

@@ -27,6 +27,8 @@
   "resource": {
     "id": "contoso,site,unknown-sharing",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Unknown Sharing",
     "url": "https://contoso.sharepoint.com/sites/unknown-sharing"
   },

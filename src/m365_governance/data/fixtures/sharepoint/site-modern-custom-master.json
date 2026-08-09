@@ -26,6 +26,8 @@
   "resource": {
     "id": "contoso,site,branded",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Branded Intranet",
     "url": "https://contoso.sharepoint.com/sites/branded"
   },

@@ -26,6 +26,8 @@
   "resource": {
     "id": "contoso,site,archive-2019",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Archive 2019",
     "url": "https://contoso.sharepoint.com/sites/Archive2019"
   },

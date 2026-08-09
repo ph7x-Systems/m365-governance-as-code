@@ -24,6 +24,8 @@
   "resource": {
     "id": "contoso,site,partners",
     "type": "site",
+    "scope": "collection",
+    "parent": "https://contoso-admin.sharepoint.com",
     "display_name": "Partners",
     "url": "https://contoso.sharepoint.com/sites/partners"
   },

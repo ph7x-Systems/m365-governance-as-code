@@ -49,7 +49,7 @@ facts: { ... }
 
 `facts` is the only part that varies by resource type. Everything else is
 identical so that a report can describe how any evidence was gathered without
-knowing what it is about.
+knowing what it is about. The `resource` block is section 15.
 
 ---
 
@@ -407,3 +407,49 @@ called `exclude` because excluding is the dangerous version: a document
 library over a hard product limit is over it whoever created it, and
 SharePoint calling it a catalog is not a reason for a governance report to
 stay silent about it.
+
+---
+
+## 15. Resource: what was observed, and where it sits
+
+```yaml
+resource:
+  id: https://contoso.sharepoint.com/sites/finance
+  type: site                                          # what the product calls it
+  scope: collection                                   # how far its settings reach
+  parent: https://contoso-admin.sharepoint.com        # or null
+  display_name: Finance
+  url: https://contoso.sharepoint.com/sites/finance
+```
+
+**`id` is opaque.** It identifies and nothing else. It is not parsed, not split
+on a separator, and never read for a parent: the moment one consumer learns
+that the text before `::` is the site, every consumer has to learn a grammar,
+and the grammar is different in the next workload.
+
+**`scope` is governance reach, not the product's menu.** A SharePoint site, an
+Exchange mailbox and a Team are all `collection`. A list, a folder and a
+channel are all `container`. That is the whole point of not calling it
+`site_level`: a model named after one product's hierarchy needs a second model
+at the second product, and then a report that spans both can no longer say what
+a finding applies to.
+
+| `scope`      | what it means                              | SharePoint today |
+|--------------|--------------------------------------------|------------------|
+| `tenant`     | settings that reach the whole estate       | tenant           |
+| `collection` | a unit of ownership with its own settings  | site             |
+| `container`  | something inside a collection              | list, library    |
+| `item`       | a single object                            | — |
+
+`type` stays alongside it, because a report that says `container` to a
+SharePoint administrator is worse than one that says `list`. `type` is what to
+print; `scope` is what to reason with.
+
+**`parent` is required, and `null` is a real answer.** A tenant has nothing
+above it. Everything else does, and an optional containment field is one that
+gets omitted — at which point the relationship goes back into prose, and
+"this list is in that site" is knowable only by a human reading two URLs.
+
+It is required rather than derived for the same reason the id is opaque:
+deriving it would mean parsing, and parsing an identifier is a workload-specific
+rule pretending to be a general one.
