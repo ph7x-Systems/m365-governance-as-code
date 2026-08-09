@@ -12,16 +12,24 @@ from __future__ import annotations
 
 import json
 
+from . import attention
 from .results import Outcome, Run, RunSet
 
-_ORDER = [
-    Outcome.FAIL,
-    Outcome.INVALID_EVIDENCE,
-    Outcome.UNKNOWN,
-    Outcome.ERROR,
-    Outcome.NOT_APPLICABLE,
-    Outcome.PASS,
-]
+#: The order a report groups its findings in — DERIVED, never written here.
+#:
+#: This was a hand-written list, and the Workbench held a different one:
+#: `pass` came before `not-applicable` there, and an engine error was nowhere
+#: in it at all. Two surfaces of one product, each internally consistent,
+#: disagreeing about what a reader should see first. Neither was wrong on its
+#: own terms, which is what made it invisible.
+#:
+#: Ties keep the enumeration's own order, so the sequence is stable across runs
+#: rather than depending on how a dictionary happened to iterate.
+_OUTCOMES = list(Outcome)
+_ORDER = sorted(
+    Outcome,
+    key=lambda o: (attention.rank_of_outcome(o.value), _OUTCOMES.index(o)),
+)
 
 _LABEL = {
     Outcome.PASS: "Pass",
@@ -60,6 +68,10 @@ def to_markdown(run: Run) -> str:
     lines.extend(_provenance_lines(run))
     lines.extend(_coverage_lines(run))
     lines.append("")
+    # Before the counts, because what needs a person is the question somebody
+    # opens a governance report with, and a table of six numbers does not
+    # answer it.
+    lines.extend(_attention_lines(run))
     lines.extend(_summary_lines(run))
     lines.append("")
 
@@ -160,6 +172,42 @@ def _coverage_lines(run: Run) -> list[str]:
         lines.append(
             f"  - `{block}` — {info.get('state', '?')}: {info.get('detail', '')}"
         )
+    return lines
+
+
+#: How each state reads at the top of a report. Wording only — WHICH state a
+#: run is in is the engine's judgement, arriving on the document, and this maps
+#: it to a sentence rather than working it out again.
+_ATTENTION_LABEL = {
+    "act": "Something here is outside what the vendor documents.",
+    "review": "Nothing is outside a documented requirement. Some findings are "
+    "worth weighing.",
+    "observe": "Part of this could not be answered, so the report describes "
+    "less than the resource.",
+    "none": "Everything asked was read, and nothing failed.",
+    "not-evaluated": "No judgement was formed here.",
+}
+
+
+def _attention_lines(run: Run) -> list[str]:
+    """What the engine says needs a person, and why.
+
+    THE SAME SENTENCE THE WORKBENCH SHOWS, from the same field. The two
+    surfaces used to answer this separately — the Workbench decided from counts
+    that `fail > 0` meant act, and the command line never asked the question at
+    all — so a report and a window over one run could lead with different
+    things and neither was wrong on its own terms.
+    """
+    judged = run.to_dict()["attention"]
+    lines = [
+        "## Attention",
+        "",
+        f"**{_ATTENTION_LABEL.get(judged['state'], judged['state'])}**",
+        "",
+    ]
+    # The reasons, never a bare verdict.
+    lines.extend(f"- {because}" for because in judged["because"])
+    lines.append("")
     return lines
 
 

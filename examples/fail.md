@@ -8,6 +8,12 @@
 - Rules: shipped with this version
 - Identity: application, scopes: Sites.Read.All
 
+## Attention
+
+**Something here is outside what the vendor documents.**
+
+- 1 of 3 findings failed against something the vendor documents
+
 ## Summary
 
 3 rules evaluated. **1 produced an answer.**
@@ -16,10 +22,10 @@
 |---|---|
 | Fail | 1 |
 | Invalid evidence | 0 |
-| Unknown | 2 |
 | Error | 0 |
-| Not applicable | 0 |
+| Unknown | 2 |
 | Pass | 0 |
+| Not applicable | 0 |
 
 2 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 

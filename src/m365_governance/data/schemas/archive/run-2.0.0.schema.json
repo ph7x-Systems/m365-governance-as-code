@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/run/3.0.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/run/2.0.0",
   "title": "Run",
   "description": "One evaluation of one resource, exactly as the engine emits it today. This describes `Run.to_dict()` and nothing more: where the current output is awkward, the awkwardness is documented rather than corrected, because a schema that describes what the code should do cannot validate what it does. Normalisation is a later, deliberate step with its own compatibility decision.",
   "type": "object",
@@ -15,8 +15,7 @@
     "set_aside",
     "rule_source",
     "counts",
-    "results",
-    "attention"
+    "results"
   ],
   "properties": {
     "provenance": {
@@ -58,11 +57,8 @@
     },
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/run/3.0.0",
+      "const": "https://ph7x.com/schemas/m365-governance/run/2.0.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
-    },
-    "attention": {
-      "$ref": "#/$defs/run_attention"
     }
   },
   "$defs": {
@@ -135,8 +131,7 @@
         "sources",
         "remediation",
         "message_degraded",
-        "engine_detail",
-        "attention"
+        "engine_detail"
       ],
       "properties": {
         "rule_id": {
@@ -213,9 +208,6 @@
         "engine_detail": {
           "type": "string",
           "description": "Why the engine could not do what the rule asked. Empty when nothing went wrong, which is the ordinary case."
-        },
-        "attention": {
-          "$ref": "#/$defs/attention"
         }
       }
     },
@@ -255,121 +247,6 @@
             "null"
           ],
           "description": "Why the fact is in the state it is in."
-        }
-      }
-    },
-    "attention": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "Whether a person has to look, and what made that true. NOT the outcome: `fail` against a convention is a defensible different choice, and a pass that leaves something unresolved can still be the line worth reading. NOT the severity: severity is the rule author's standing claim about what is at stake if the rule is violated, written once against no tenant, and it reads the same whether the evidence was complete, partial or absent. Published here because a viewer that worked this out would be a second authority on governance, agreeing until the day it did not.",
-      "required": [
-        "state",
-        "rank",
-        "because"
-      ],
-      "properties": {
-        "state": {
-          "enum": [
-            "act",
-            "review",
-            "observe",
-            "none",
-            "not-evaluated"
-          ],
-          "description": "`act` is a documented violation: the tenant is outside something the vendor wrote down. `review` is decided and not normative — a choice to weigh. `observe` is the engine reaching no answer, and it covers both an absent reading and an untrustworthy one, which stay apart in `rank` and `because`. `none` is decided with nothing following. `not-evaluated` is NOT `none`: it says no judgement was formed at all, and collapsing the two would make an unranked result indistinguishable from a clean one."
-        },
-        "rank": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "The published order, ascending. Ordering carries governance meaning, so it belongs to the engine rather than to whoever draws the list: 0 a documented violation; 1 evidence read and not trusted, above an absent reading because a malformed value looks like data while an absence announces itself; 2 evidence not read at all, above a decided non-normative matter because a gap undermines every other answer on the page; 3 decided and worth weighing; 4 nothing follows; 5 no judgement. Finer than `state` on purpose — it is what keeps unknown and invalid evidence apart in the one place a reader actually perceives them."
-        },
-        "because": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": "The observable facts that produced the state. Never empty: a verdict with no reasons behind it is the message this product exists to stop shipping."
-        }
-      }
-    },
-    "run_attention": {
-      "type": "object",
-      "additionalProperties": false,
-      "description": "What the run as a whole needs. NOT a sum of its results: a slice the collector could not read produces no result at all, so a run whose every rule passed can still be a run that saw almost nothing. Counting only results would report that as clean.",
-      "required": [
-        "state",
-        "rank",
-        "because",
-        "counts",
-        "unobserved"
-      ],
-      "properties": {
-        "state": {
-          "enum": [
-            "act",
-            "review",
-            "observe",
-            "none",
-            "not-evaluated"
-          ],
-          "description": "`act` is a documented violation: the tenant is outside something the vendor wrote down. `review` is decided and not normative — a choice to weigh. `observe` is the engine reaching no answer, and it covers both an absent reading and an untrustworthy one, which stay apart in `rank` and `because`. `none` is decided with nothing following. `not-evaluated` is NOT `none`: it says no judgement was formed at all, and collapsing the two would make an unranked result indistinguishable from a clean one."
-        },
-        "rank": {
-          "type": "integer",
-          "minimum": 0,
-          "description": "The published order, ascending. Ordering carries governance meaning, so it belongs to the engine rather than to whoever draws the list: 0 a documented violation; 1 evidence read and not trusted, above an absent reading because a malformed value looks like data while an absence announces itself; 2 evidence not read at all, above a decided non-normative matter because a gap undermines every other answer on the page; 3 decided and worth weighing; 4 nothing follows; 5 no judgement. Finer than `state` on purpose — it is what keeps unknown and invalid evidence apart in the one place a reader actually perceives them."
-        },
-        "because": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string",
-            "minLength": 1
-          },
-          "description": "The observable facts that produced the state. Never empty: a verdict with no reasons behind it is the message this product exists to stop shipping."
-        },
-        "counts": {
-          "type": "object",
-          "additionalProperties": false,
-          "description": "How many results reached each state.",
-          "required": [
-            "act",
-            "review",
-            "observe",
-            "none",
-            "not-evaluated"
-          ],
-          "properties": {
-            "act": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "review": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "observe": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "none": {
-              "type": "integer",
-              "minimum": 0
-            },
-            "not-evaluated": {
-              "type": "integer",
-              "minimum": 0
-            }
-          }
-        },
-        "unobserved": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "The requested areas the collector could not read, by name. Present and empty when everything asked for arrived, so a consumer never has to tell an empty answer from an absent field."
         }
       }
     }

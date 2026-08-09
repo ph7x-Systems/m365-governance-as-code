@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/run/2.0.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/run/3.0.0",
   "provenance": {
     "collected_at": "2026-08-05T14:02:11Z",
     "collector": "spo-collector",
@@ -81,7 +81,14 @@
       "sources": [],
       "remediation": "Find out what it was for before deciding anything. The cheapest outcome is usually to archive it, which keeps the content and takes it out of every list somebody has to read; deleting is a decision that needs an owner, and a site in this state often no longer has one.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-CLASS-001",
@@ -123,7 +130,14 @@
       ],
       "remediation": "Decide first whether the tenant is using container labels at all. If it is not, every site will fail this rule and the finding to act on is the tenant decision, not the site. If it is, the deployment model Microsoft publishes works outward from the sites that matter most rather than through the list in order, and this rule set can produce that list but cannot rank it.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-CLASS-002",
@@ -167,7 +181,14 @@
       ],
       "remediation": "Nothing on the site needs changing. Either the identity that collected the evidence cannot read label definitions, in which case collect again with one that can, or the label was deleted in Purview and the sites still carry its id, in which case the label is the thing to fix and it will be carrying more sites than this one.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-CLASS-003",
@@ -217,7 +238,14 @@
       ],
       "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-MODERN-001",
@@ -259,7 +287,14 @@
       ],
       "remediation": "Read Microsoft's guide before turning anything off. The feature is not the work: the page layouts, the master pages and the content that depends on them are, and disabling the feature without moving them first breaks pages rather than modernising them.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-MODERN-003",
@@ -288,7 +323,14 @@
       "sources": [],
       "remediation": "Find out what it does before deciding anything. A custom master page is sometimes a logo and sometimes a navigation system, and the two are different projects.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-MODERN-004",
@@ -317,7 +359,14 @@
       "sources": [],
       "remediation": "Find the file and read it before removing the setting. A stylesheet that hides an element somebody relies on is a support call, not a cleanup.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SHARE-001",
@@ -359,7 +408,14 @@
       ],
       "remediation": "Decide whether this site needs it. Where it does, the controls Microsoft provides are expiry and view-only permission on Anyone links, and both are set per site. Where it does not, a more restrictive capability removes the option without removing external sharing.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SHARE-002",
@@ -403,7 +459,14 @@
       ],
       "remediation": "Set the default to something more restrictive, per site, and leave the Anyone link available for the people who need it. Microsoft's own page describes exactly this arrangement.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SITE-001",
@@ -432,7 +495,14 @@
       "sources": [],
       "remediation": "Assign a second accountable owner, and review ownership when people change role. A second owner who does not know they are one is not a second owner: the point is that somebody else can act, not that a field has two values.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "review",
+        "rank": 4,
+        "because": [
+          "it passed, and the rule records something the pass does not settle"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SITE-002",
@@ -461,7 +531,14 @@
       "sources": [],
       "remediation": "Name at least one person alongside the groups, and tell them. The point is not the field: it is that somebody knows the site is theirs to decide about.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SITE-003",
@@ -506,7 +583,14 @@
       "sources": [],
       "remediation": "Raise the quota, or move content out. Which one is right depends on whether the site is growing because it is being used or because nothing has ever been removed from it, and that is a question the numbers here do not answer.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SPFX-001",
@@ -535,7 +619,29 @@
       "sources": [],
       "remediation": "Find out why before upgrading anything. A package that was uploaded and never claimed is sometimes an oversight and sometimes a rollback that nobody wrote down.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     }
-  ]
+  ],
+  "attention": {
+    "state": "observe",
+    "rank": 2,
+    "because": [
+      "12 finding(s) reached no answer"
+    ],
+    "counts": {
+      "act": 0,
+      "review": 1,
+      "observe": 12,
+      "none": 0,
+      "not-evaluated": 0
+    },
+    "unobserved": []
+  }
 }

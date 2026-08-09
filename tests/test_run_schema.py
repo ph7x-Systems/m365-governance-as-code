@@ -21,6 +21,7 @@ import pytest
 from referencing import Registry, Resource
 
 from conftest import DATA
+from m365_governance.registry import contract
 
 SCHEMAS = DATA / "schemas"
 FIXTURES = sorted((DATA / "fixtures" / "sharepoint").glob("*.json"))
@@ -73,7 +74,11 @@ def test_the_schemas_are_reachable_from_each_other():
     check quietly validates nothing at all."""
     schema = validator("run-set.schema.json")
     empty = {
-        "$schema": "https://ph7x.com/schemas/m365-governance/run-set/2.0.0",
+        # From the registry, never written out again here. A literal version in
+        # a test is a second representation of the one thing this contract is
+        # strictest about, and it goes stale silently: the test keeps passing
+        # against the version it names while the engine emits another.
+        "$schema": contract("run-set"),
         "resources": 0,
         "by_class": {},
         "set_aside": 0,

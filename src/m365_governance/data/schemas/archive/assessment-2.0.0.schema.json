@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/assessment/3.0.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/assessment/2.0.0",
   "title": "Assessment",
   "description": "What a person means by 'I assessed a tenant': the transferable aggregate. A RunSet alone cannot be handed over because it does not carry what produced it. The canonical half is archived and verified; the derived half is thrown away and rebuilt, and a report that cannot be regenerated from the canonical half is a second original rather than a projection. A diff is deliberately absent: it relates two assessments and belongs to a Comparison.",
   "type": "object",
@@ -19,7 +19,7 @@
     },
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/assessment/3.0.0",
+      "const": "https://ph7x.com/schemas/m365-governance/assessment/2.0.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     }
   },
@@ -39,7 +39,7 @@
           "$ref": "#/$defs/manifest"
         },
         "run_set": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/run-set/3.0.0",
+          "$ref": "https://ph7x.com/schemas/m365-governance/run-set/2.0.0",
           "description": "The evaluation at tenant scale. Referenced rather than restated: the previous version said the structure was owned by the run-set schema and then described an object with one key, so a consumer generated a type that could not hold a real run set."
         },
         "evidence": {

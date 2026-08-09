@@ -8,6 +8,12 @@
 - Rules: shipped with this version
 - Identity: application, scopes: Sites.Read.All
 
+## Attention
+
+**Part of this could not be answered, so the report describes less than the resource.**
+
+- 3 finding(s) reached no answer
+
 ## Summary
 
 3 rules evaluated. **0 produced an answer.**
@@ -16,10 +22,10 @@
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 1 |
-| Unknown | 2 |
 | Error | 0 |
-| Not applicable | 0 |
+| Unknown | 2 |
 | Pass | 0 |
+| Not applicable | 0 |
 
 3 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 

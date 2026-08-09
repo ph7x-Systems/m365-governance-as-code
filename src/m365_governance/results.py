@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from . import attention as attention_module
 from . import registry
 
 
@@ -91,7 +92,7 @@ class Result:
     engine_detail: str = ""
 
     def to_dict(self) -> dict:
-        return {
+        document = {
             "rule_id": self.rule_id,
             "title": self.title,
             "rule_version": self.rule_version,
@@ -118,6 +119,12 @@ class Result:
             "message_degraded": self.message_degraded,
             "engine_detail": self.engine_detail,
         }
+        # Derived from the block above rather than from the dataclass, so the
+        # judgement is made from exactly the facts a consumer receives. Anything
+        # it could read that a reader cannot would be a judgement nobody can
+        # check.
+        document["attention"] = attention_module.for_result(document)
+        return document
 
     @classmethod
     def from_dict(cls, data: dict) -> Result:
@@ -202,6 +209,7 @@ class Run:
         )
 
     def to_dict(self) -> dict:
+        results = [r.to_dict() for r in self.results]
         return {
             "$schema": registry.contract("run"),
             "provenance": self.provenance,
@@ -212,7 +220,8 @@ class Run:
             "set_aside": self.set_aside,
             "rule_source": self.rule_source,
             "counts": self.counts(),
-            "results": [r.to_dict() for r in self.results],
+            "results": results,
+            "attention": attention_module.for_run(results, self.coverage),
         }
 
 
