@@ -10,6 +10,17 @@
     capabilities inside it name every site, library or item the author told it
     to read.
 
+    The field names come from Microsoft's declarative agent manifest schema
+    1.8, which is a stronger provenance than the module's types alone: the
+    four identifier fields are `site_id`, `web_id`, `list_id` and `unique_id`,
+    and the URL form carries only `url`.
+
+    TWO DOCUMENTED PROPERTIES THIS CANNOT REPORT, because PnP does not surface
+    them on the source item: `search_associated_sites`, which makes a source
+    pointed at a hub reach every site associated with it, and `part_id` for
+    OneNote. Both are governance-relevant and neither is observable from here.
+    Recorded so nobody reads their absence as their absence from the agent.
+
     TWO THINGS THIS DELIBERATELY DOES NOT DO.
 
     It does not report who may use an agent. That is the file's permissions,
@@ -131,9 +142,17 @@ function Get-AgentFacts {
     $facts.agents['source_count'] = New-ScalarFact -Value $totalSources `
         -RawField 'Get-PnPCopilotAgent'
 
-    # An agent with no declared source answers from the site it lives in and
-    # from nothing else. That is an observation rather than a defect, and a
-    # report that omits it stops distinguishing the two cases.
+    # AN AGENT THAT DECLARES NO SOURCE IS THE WIDEST ONE, NOT THE NARROWEST.
+    #
+    # This comment said the opposite, and the manifest schema says otherwise in
+    # one sentence: if both `items_by_sharepoint_ids` and `items_by_url` are
+    # omitted, the agent can access every OneDrive and SharePoint source in the
+    # organisation that the asking user can see.
+    #
+    # So zero here is the value that deserves attention, and reading it as
+    # "scoped to this site" is the mistake this count exists to prevent.
+    # Whether an agent authored through the SharePoint UI can even reach that
+    # state is unproven and is one of the things the sandbox run must settle.
     $withoutSources = @($inventory | Where-Object { $_.source_count -eq 0 }).Count
     $facts.agents['agents_without_declared_sources'] =
         New-ScalarFact -Value $withoutSources -RawField 'Get-PnPCopilotAgent'
