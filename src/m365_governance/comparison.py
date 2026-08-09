@@ -29,7 +29,7 @@ from __future__ import annotations
 from typing import Any
 
 from . import assessment as assessment_module
-from . import diffing, registry
+from . import diffing, identity, registry
 from .results import RunSet
 
 
@@ -125,7 +125,11 @@ def _changes(before: dict, after: dict) -> list[dict[str, Any]]:
     # Sorted, because a comparison of the same two assessments has to produce
     # the same bytes and dictionary order is not a guarantee anybody should
     # rely on for that.
-    return sorted(found, key=lambda c: (c["resource"], c["rule"]))
+    # Sorted by the identity key rather than by the reference object: a dict
+    # has no order, and a comparison of the same two assessments has to produce
+    # the same bytes. The key is a tuple of the three identifying fields, which
+    # is comparable without anyone inventing a separator to join them with.
+    return sorted(found, key=lambda c: (identity.key(c["resource"]), c["rule"]))
 
 
 def build(before: dict, after: dict, *, engine_version: str) -> dict:

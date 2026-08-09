@@ -272,3 +272,48 @@ def test_a_reference_missing_any_field_is_not_a_reference(field):
 
     with pytest.raises(KeyError):
         identity.ref(resource)
+
+
+def test_a_comparison_over_several_resources_orders_deterministically():
+    """The defect a one-resource example could never show.
+
+    `comparison` sorted its changes by the resource itself. That worked for as
+    long as every comparison held ONE resource: a single-element sort never
+    compares anything. The first comparison with two resources raised
+    `'<' not supported between instances of 'dict' and 'dict'` — in the
+    consumer's fixture refresh, not here.
+
+    Identity is a tuple of three fields, which is comparable without anyone
+    inventing a separator to join them with.
+    """
+
+    changes = [
+        {
+            "resource": {"workload": "sharepoint", "type": "site", "native_id": "b"},
+            "rule": "R2",
+            "kind": "changed",
+        },
+        {
+            "resource": {"workload": "sharepoint", "type": "site", "native_id": "a"},
+            "rule": "R1",
+            "kind": "changed",
+        },
+        {
+            "resource": {"workload": "teams", "type": "team", "native_id": "a"},
+            "rule": "R1",
+            "kind": "changed",
+        },
+    ]
+    ordered = sorted(changes, key=lambda c: (identity.key(c["resource"]), c["rule"]))
+
+    assert [identity.key(c["resource"]) + (c["rule"],) for c in ordered] == [
+        ("sharepoint", "site", "a", "R1"),
+        ("sharepoint", "site", "b", "R2"),
+        ("teams", "team", "a", "R1"),
+    ]
+    # And the module really uses that key rather than the reference object.
+    source = (ROOT / "src" / "m365_governance" / "comparison.py").read_text(
+        encoding="utf-8"
+    )
+    assert 'identity.key(c["resource"])' in source
+    assert 'key=lambda c: (c["resource"]' not in source
