@@ -436,3 +436,61 @@ def test_the_schema_publishes_exactly_the_five_states_the_engine_knows():
         rank = schema["$defs"][name]["properties"]["rank"]
         assert rank["minimum"] == 0
         assert rank["maximum"] == len(attention.TIERS) - 1
+
+
+# ── `basis: opinion` is ours, and it never borrows a vendor's authority ────
+
+
+def test_the_two_contracts_agree_on_what_a_basis_can_be():
+    """They did not.
+
+    The rule contract has allowed five basis types for as long as it has had
+    the enum. The run contract's description listed four and said outright that
+    an opinion was not one — so a rule could be authored that the document
+    carrying its result declared impossible. Nothing failed, because a
+    description is prose and prose validates nothing.
+    """
+    schemas = ROOT / "src" / "m365_governance" / "data" / "schemas"
+    rule = json.loads((schemas / "rule.schema.json").read_text(encoding="utf-8"))
+    run = json.loads((schemas / "run.schema.json").read_text(encoding="utf-8"))
+
+    allowed = rule["$defs"]["basis"]["properties"]["type"]["enum"]
+    described = run["$defs"]["result"]["properties"]["basis"]["description"]
+
+    assert "opinion" in allowed
+    for kind in allowed:
+        assert kind in described, f"the run contract does not mention {kind}"
+    assert "An opinion is not one" not in described
+
+
+def test_an_opinion_never_reaches_act_however_the_rule_is_worded():
+    """The reconciliation that matters.
+
+    `opinion` is ours. A failure against it is pH7x disagreeing with a choice,
+    not the tenant being outside anything a vendor wrote down — so it must
+    never be published as a documented violation, whatever severity or wording
+    the rule carries.
+    """
+    for severity in ("low", "medium", "high", "critical"):
+        judged = attention.for_result(
+            result(outcome="fail", basis="opinion", severity=severity)
+        )
+        assert judged["state"] == "review"
+        assert judged["rank"] == attention.RANK["decided-non-normative"]
+
+    assert "opinion" not in attention.NORMATIVE
+
+
+def test_an_opinion_is_attributed_where_it_is_read():
+    """A report is read by somebody who did not write it.
+
+    The gloss said "our position, stated as ours", which does not say whose —
+    and beside four bases that are Microsoft's, an unattributed fifth reads as
+    theirs.
+    """
+    from m365_governance import reporting
+
+    gloss = reporting._BASIS_GLOSS["opinion"]
+
+    assert "pH7x" in gloss
+    assert gloss != "our position, stated as ours"

@@ -167,7 +167,7 @@
         },
         "basis": {
           "type": "string",
-          "description": "The rule's basis type as a bare string: requirement, documented-limit, documented-guidance or convention. An opinion is not one."
+          "description": "The rule's basis type as a bare string: requirement, documented-limit, documented-guidance, convention or opinion. This said an opinion was NOT one, while the rule contract has allowed five for as long as it has had the enum — so a rule could be authored that this document declared impossible. `opinion` is pH7x's own position and carries no vendor authority: it is why attention never reaches `act` from it, however the rule is worded."
         },
         "severity": {
           "type": "string"

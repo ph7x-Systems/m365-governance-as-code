@@ -48,7 +48,10 @@ _BASIS_GLOSS = {
         "Microsoft recommends this; the product permits the alternative"
     ),
     "convention": "widely held practice, not documented as a rule",
-    "opinion": "our position, stated as ours",
+    # Named rather than implied. A report is read by somebody who did not
+    # write it, and "our position" does not say whose — beside four bases
+    # that are Microsoft's, an unattributed one reads as theirs.
+    "opinion": "pH7x's own position, and no vendor's",
 }
 
 
