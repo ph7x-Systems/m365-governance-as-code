@@ -6,6 +6,8 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from . import registry
+
 
 class Outcome(StrEnum):
     PASS = "pass"
@@ -201,6 +203,7 @@ class Run:
 
     def to_dict(self) -> dict:
         return {
+            "$schema": registry.contract("run"),
             "provenance": self.provenance,
             "coverage": self.coverage,
             "resource": self.resource,
@@ -240,7 +243,6 @@ class RunSet:
 
     runs: list[Run]
     coverage: dict = field(default_factory=dict)
-    schema_version: str = "1.0"
 
     def __post_init__(self) -> None:
         ids = [run.resource.get("id", "") for run in self.runs]
@@ -283,7 +285,10 @@ class RunSet:
 
     def to_dict(self) -> dict:
         return {
-            "run_schema_version": self.schema_version,
+            # The exact contract this document claims. It replaces
+            # `run_schema_version: "1.0"`, a second version maintained by hand
+            # in a form that could not express the one in the schema's own $id.
+            "$schema": registry.contract("run-set"),
             "resources": len(self.runs),
             "by_class": self.by_class(),
             "set_aside": sum(1 for run in self.runs if run.set_aside),
@@ -297,5 +302,4 @@ class RunSet:
         return cls(
             runs=[Run.from_dict(run) for run in data.get("runs", [])],
             coverage=data.get("run_coverage", {}),
-            schema_version=data.get("run_schema_version", "1.0"),
         )

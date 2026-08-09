@@ -429,13 +429,17 @@ def build_manifest() -> dict:
     # document, and it is why nothing here duplicates a definition to avoid a
     # cross-file reference.
     schemas = {}
-    for path in sorted(SCHEMAS.glob("*.json")):
+    # `rglob`, so the archive is in the manifest. A superseded contract is not
+    # modelled — a consumer needs a type for what it produces today — but it
+    # has to resolve, or an archived document arrives at a registry that has
+    # never heard of the contract it declares.
+    for path in sorted(SCHEMAS.rglob("*.json")):
         document = json.loads(path.read_text(encoding="utf-8"))
         uri = document["$id"]
         if uri in schemas:
             raise Unsupported(f"two schemas claim the same $id: {uri}")
         schemas[uri] = {
-            "path": f"schemas/{path.name}",
+            "path": f"schemas/{path.relative_to(SCHEMAS).as_posix()}",
             "digest": hashlib.sha256(path.read_bytes()).hexdigest(),
         }
     check_closure(schemas)

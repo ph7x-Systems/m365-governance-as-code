@@ -73,7 +73,7 @@ def test_the_schemas_are_reachable_from_each_other():
     check quietly validates nothing at all."""
     schema = validator("run-set.schema.json")
     empty = {
-        "run_schema_version": "1.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/run-set/2.0.0",
         "resources": 0,
         "by_class": {},
         "set_aside": 0,

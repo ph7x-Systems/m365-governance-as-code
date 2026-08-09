@@ -162,7 +162,7 @@ def test_the_diff_has_a_model_and_not_only_markdown():
     before, after = _two_runs()
     document = json.loads(diffing.to_json(before, after))
 
-    assert document["diff_schema_version"] == "1.0"
+    assert document["$schema"].endswith("/comparison/2.0.0")
     assert document["counts"]["rules_differing"] == 2
     assert document["counts"]["outcome_changed"] == 2
     assert document["counts"]["regressions"] == 0

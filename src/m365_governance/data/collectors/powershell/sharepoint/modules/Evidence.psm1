@@ -93,7 +93,12 @@ function New-Evidence {
         throw 'Initialize-Evidence was not called: an envelope has no provenance.'
     }
     return [ordered]@{
-        schema_version = '1.0'
+        # The exact contract this document claims. Inside a schema document
+        # `$schema` names the JSON Schema dialect; inside an instance it is an
+        # ordinary property, and this is where the two conventions are kept
+        # apart. It replaces `schema_version = '1.0'`, a second version that
+        # could not express the one in the schema's own $id.
+        '$schema'      = 'https://ph7x.com/schemas/m365-governance/evidence/2.0.0'
         provenance     = [ordered]@{
             collected_at      = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
             collector         = $script:CollectorName

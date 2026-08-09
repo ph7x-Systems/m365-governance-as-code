@@ -28,9 +28,8 @@ import hashlib
 import json
 from typing import Any
 
+from . import registry
 from .results import RunSet
-
-SCHEMA_VERSION = "1.0"
 
 #: Which members of `canonical` are hashed.
 HASHED = ("run_set", "evidence", "versions", "manifest")
@@ -289,7 +288,7 @@ def build(
         "canonical_hash": combined,
     }
 
-    return {"schema_version": SCHEMA_VERSION, "canonical": canonical}
+    return {"$schema": registry.contract("assessment"), "canonical": canonical}
 
 
 def verify(assessment: dict) -> list[str]:

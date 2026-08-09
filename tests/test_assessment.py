@@ -9,14 +9,13 @@ from __future__ import annotations
 
 import json
 
-import jsonschema
 import pytest
-from referencing import Registry, Resource
 
 from conftest import DATA
 from m365_governance import assessment
 from m365_governance.engine import evaluate
 from m365_governance.loader import load_rules
+from m365_governance.registry import SchemaRegistry
 from m365_governance.results import RunSet
 
 FIXTURES = DATA / "fixtures" / "sharepoint"
@@ -43,26 +42,18 @@ def built(**overrides) -> dict:
     )
 
 
-def validator() -> jsonschema.Draft202012Validator:
-    documents = {}
-    for path in SCHEMAS.glob("*.json"):
-        document = json.loads(path.read_text(encoding="utf-8"))
-        documents[document["$id"]] = document
-    registry = Registry().with_resources(
-        (uri, Resource.from_contents(document)) for uri, document in documents.items()
-    )
-    root = documents["https://ph7x.com/schemas/m365-governance/assessment/1.0.0"]
-    return jsonschema.Draft202012Validator(root, registry=registry)
+def contracts() -> SchemaRegistry:
+    return SchemaRegistry.load(SCHEMAS)
 
 
 def test_the_committed_sample_matches_its_schema():
-    errors = sorted(validator().iter_errors(json.loads(SAMPLE.read_text())), key=str)
-    assert not errors, errors[0].message
+    problems = contracts().problems(json.loads(SAMPLE.read_text()))
+    assert not problems, problems[0]
 
 
 def test_what_the_engine_builds_matches_its_schema():
-    errors = sorted(validator().iter_errors(built()), key=str)
-    assert not errors, errors[0].message
+    problems = contracts().problems(built())
+    assert not problems, problems[0]
 
 
 def test_the_identity_is_derived_and_not_assigned():

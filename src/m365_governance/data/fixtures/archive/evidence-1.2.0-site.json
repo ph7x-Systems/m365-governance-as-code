@@ -1,17 +1,13 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0",
+  "schema_version": "1.0",
   "provenance": {
     "collected_at": "2026-08-05T14:02:11Z",
     "collector": "spo-collector",
     "collector_version": "0.1.0",
     "source_system": "SharePoint Online",
     "source_api": "Microsoft Graph v1.0",
-    "tenant": {
-      "id": null,
-      "host": "contoso.sharepoint.com"
-    },
+    "tenant_id": "00000000-0000-0000-0000-000000000000",
     "identity_kind": "application",
-    "acquisition": "collected",
     "scopes": [
       "Sites.Read.All"
     ]
@@ -26,12 +22,10 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "contoso,site,projects",
+    "id": "contoso,site,finance",
     "type": "site",
-    "scope": "collection",
-    "parent": "contoso.sharepoint.com",
-    "display_name": "Projects",
-    "url": "https://contoso.sharepoint.com/sites/Projects"
+    "display_name": "Finance",
+    "url": "https://contoso.sharepoint.com/sites/Finance"
   },
   "facts": {
     "owners": {
@@ -40,19 +34,15 @@
         {
           "principal_id": "user-1",
           "principal_type": "user"
-        }
-      ],
-      "groups": [
+        },
         {
-          "principal_id": "group-1",
-          "principal_type": "group",
-          "expansion": {
-            "status": "not-attempted"
-          }
+          "principal_id": "user-2",
+          "principal_type": "user"
         }
       ],
-      "expansion_complete": false,
-      "minimum_count": 1
+      "groups": [],
+      "expansion_complete": true,
+      "effective_count": 2
     }
   }
 }

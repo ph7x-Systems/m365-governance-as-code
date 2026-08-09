@@ -18,30 +18,34 @@
   ],
   "generator_version": "1.0.0",
   "schemas": {
-    "https://ph7x.com/schemas/m365-governance/assessment/1.0.0": {
-      "digest": "98b3d17996743b8bd982efe18e15c24656cbc6fa495dc5ef025e518351022dd1",
+    "https://ph7x.com/schemas/m365-governance/assessment/2.0.0": {
+      "digest": "3efe94f4e1a2939d261c58b7d9de6fa11f04d7935687d03eae15917274afe1c7",
       "path": "schemas/assessment.schema.json"
     },
-    "https://ph7x.com/schemas/m365-governance/comparison/1.0.0": {
-      "digest": "7cd6447c1f5c6248717c5c08642680ff8e19bebbb583aaff5d20ee8872ed19df",
+    "https://ph7x.com/schemas/m365-governance/comparison/2.0.0": {
+      "digest": "6cc9c814c35da2ef6b0f5937df4952b63e197e38e3ef689dd17aec630cda61af",
       "path": "schemas/comparison.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
-      "digest": "cade333cbf3a8626e2fda66a14b5f86299dac0c4801eb3e97182235ed993adfb",
+      "digest": "b51cfa3692db26746c1d78a022ccb0f8c39dae1fe190451d6b87310c0185aa29",
+      "path": "schemas/archive/evidence-1.2.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/evidence/2.0.0": {
+      "digest": "e9b9695910c275cc918db4d57628077e657a2de62a0dba43d63834813a203f8d",
       "path": "schemas/evidence.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/rule/1.0.0": {
-      "digest": "7d6cd962ff0a776162099224cbeb562efd942ab19d229eb6484632bb1be4375d",
+      "digest": "8c3a17f97163c703c434f95bc3b79c85e50d120312cf61797374eb8815c184ee",
       "path": "schemas/rule.schema.json"
     },
-    "https://ph7x.com/schemas/m365-governance/run-set/1.0.0": {
-      "digest": "cd5cc119cdd3cc5a1b15167ef67ee2edec824af4e279773ea37e46d016edc7a5",
+    "https://ph7x.com/schemas/m365-governance/run-set/2.0.0": {
+      "digest": "5af7e3b98b0c0b61f575616f42475c68ecc0df25b7c276bd9e9a31a13f81fe2b",
       "path": "schemas/run-set.schema.json"
     },
-    "https://ph7x.com/schemas/m365-governance/run/1.0.0": {
-      "digest": "bef2cb5b67b01c8b0be53dc191fc439bfb078cdbabcc41760b470f5e3b6d384f",
+    "https://ph7x.com/schemas/m365-governance/run/2.0.0": {
+      "digest": "4429315261d9a7c0126041b2101a4f4b2c328b4f4d5b7b1863feeff1a10aca78",
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "dfd93748e2b1d1742bcc2d50b14ab7b3484d4b20240faad978ee3533c8b5e3ab"
+  "set_digest": "e87fdcf6803746ff78a6c0be9a4589abf75e6af8d5a37cc9016b45209305291e"
 }

@@ -72,8 +72,10 @@ def main() -> int:
             shutil.rmtree(target)
         target.mkdir(parents=True)
 
-    for path in sorted(SCHEMAS.glob("*.json")):
-        shutil.copy2(path, out / "schemas" / path.name)
+    for path in sorted(SCHEMAS.rglob("*.json")):
+        target = out / "schemas" / path.relative_to(SCHEMAS)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
     for path in sorted((GENERATED / "csharp").glob("*.g.cs")):
         shutil.copy2(path, out / "csharp" / path.name)
     shutil.copy2(manifest_path, out / "manifest.json")

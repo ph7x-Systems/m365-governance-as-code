@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
+from . import registry
 from .results import EvidenceUsed, Outcome, Result, Run, RunSet
 
 #: Movements worth leading with. A pass turning into anything else is the top
@@ -366,7 +367,7 @@ def _change_to_dict(change: RuleChange) -> dict:
 def to_dict(before: Run, after: Run) -> dict:
     changes = compare(before, after)
     return {
-        "diff_schema_version": "1.0",
+        "$schema": registry.contract("comparison"),
         "scope": "run",
         # The same shape as every other resource reference in the product,
         # `type` included. Emitting a narrower one here would make the diff the
@@ -406,7 +407,7 @@ def many_to_dict(before: RunSet, after: RunSet) -> dict:
         for run in list(before.runs) + list(after.runs)
     }
     return {
-        "diff_schema_version": "1.0",
+        "$schema": registry.contract("comparison"),
         "scope": "run-set",
         "counts": {
             "resources": len(resources),

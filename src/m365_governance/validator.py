@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -221,4 +222,36 @@ def validate_rules(directory: Path) -> list[Problem]:
 
 
 def validate_evidence_document(data: dict, location: str) -> list[Problem]:
-    return validate_structure(data, "evidence.schema.json", location)
+    """Validated against the contract the **document** declares.
+
+    Not against whichever evidence schema this engine happens to ship. A newer
+    version reading an older document would be reinterpreting it rather than
+    checking it, and the reinterpretation would arrive looking like a finding
+    about somebody's tenant.
+    """
+    from . import registry as registry_module
+
+    contracts = _registry()
+    try:
+        problems = contracts.problems(data)
+    except registry_module.Undeclared as exc:
+        return [Problem(2, "schema", location, str(exc))]
+    except registry_module.UnknownContract as exc:
+        return [Problem(2, "schema", location, str(exc))]
+
+    return [
+        Problem(
+            2,
+            "schema",
+            f"{location}#{problem.split(':', 1)[0]}",
+            problem.split(": ", 1)[-1],
+        )
+        for problem in problems
+    ]
+
+
+@lru_cache(maxsize=1)
+def _registry():
+    from . import registry as registry_module
+
+    return registry_module.SchemaRegistry.load(SCHEMA_DIR)
