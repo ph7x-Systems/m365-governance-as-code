@@ -97,7 +97,8 @@ def _build_parser() -> argparse.ArgumentParser:
     collect.add_argument(
         "--client-id",
         required=True,
-        help="an Entra ID app registration. Mandatory since PnP 2.99",
+        help="an Entra ID app registration. Required: PnP.PowerShell has "
+        "shipped no application of its own since 2.12.0",
     )
     collect.add_argument("--output", type=Path, required=True)
     collect.add_argument("--site-url")

@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Collects SharePoint Online facts and emits normalised evidence JSON.
 
@@ -60,11 +60,28 @@
 .PARAMETER ClientId
     The application (client) id of an Entra ID app registration.
 
-    Mandatory, and it is the thing that breaks a first run. Since
-    PnP.PowerShell 2.99 the module ships with no multi-tenant application of
-    its own, so a connection without a client id fails before it reaches the
-    network: "Please specify a valid client id for an Entra ID App
-    Registration". Verified against 3.3.0.
+    Required by this script, and it is the thing that breaks a first run.
+    PnP.PowerShell removed its own multi-tenant application in 2.12.0 — the
+    release notes give the reason as the deprecation and shutdown of the PnP
+    Management Shell — so a connection with no client id anywhere fails before
+    it reaches the network: "Please specify a valid client id for an Entra ID
+    App Registration".
+
+    The module itself does not demand it on every call: it accepts a default,
+    configured by a cmdlet or by an environment variable, and the article below
+    names both. This script is NOT naming that cmdlet, because a read-only
+    collector is checked for mutating verbs by a regex, and a regex cannot tell
+    a mention from a call — loosening it to allow one is how a real write slips
+    in.
+
+    It asks for the id explicitly anyway: evidence has to say which identity
+    observed it, and a value read from an ambient environment variable is one
+    nobody can name afterwards.
+
+    Sources, both checked 2026-08-09:
+    https://github.com/pnp/powershell/blob/dev/CHANGELOG.md
+    https://pnp.github.io/powershell/articles/defaultclientid.html
+    Verified against 3.3.0.
 
 .PARAMETER DeviceLogin
     Authenticate with a device code instead of opening a browser.
