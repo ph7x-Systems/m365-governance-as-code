@@ -48,6 +48,7 @@
       }
     },
     "$schema": {
+      "type": "string",
       "const": "https://ph7x.com/schemas/m365-governance/run-set/2.0.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     }

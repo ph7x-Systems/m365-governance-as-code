@@ -19,15 +19,15 @@
   ],
   "properties": {
     "provenance": {
-      "type": "object",
-      "description": "Carried through from the evidence document unchanged. Owned by the evidence schema; not restated here, so that one definition moves at a time."
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0#/$defs/provenance",
+      "description": "Referenced rather than restated, so one definition moves at a time — and so a consumer gets a type. It said `type: object` with no properties, which accepted `{}`: a run could carry no provenance at all and validate."
     },
     "coverage": {
-      "type": "object",
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0#/$defs/coverage",
       "description": "Also from the evidence. Note the name: a RunSet calls the same idea `run_coverage`, and the two envelopes disagree. Recorded, not fixed."
     },
     "resource": {
-      "type": "object",
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0#/$defs/resource",
       "description": "The full resource block from the evidence, with display name and url. Each result inside carries a narrower copy holding only id and type."
     },
     "resource_class": {
@@ -56,6 +56,7 @@
       }
     },
     "$schema": {
+      "type": "string",
       "const": "https://ph7x.com/schemas/m365-governance/run/2.0.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     }
@@ -193,7 +194,8 @@
           "type": "array",
           "description": "The rule's normative sources. Empty for a convention, which is the honest value rather than an omission.",
           "items": {
-            "type": "object"
+            "type": "object",
+            "description": "The citation shape belongs to the rule contract, which is authored rather than serialised and is not modelled. Referencing it here would name a type no generated file emits, so a consumer receives a source as raw JSON until the rule contract is modelled too."
           }
         },
         "remediation": {

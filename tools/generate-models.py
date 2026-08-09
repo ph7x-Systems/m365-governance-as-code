@@ -195,6 +195,18 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
             # `ProvenanceTenant`. It compiled nowhere and the generator was
             # perfectly happy. Refusing is the fix; the schema says what it
             # shares by naming it.
+            # A reference into a schema nothing models names a type no file
+            # will ever emit. It generates cleanly and fails at the consumer's
+            # compiler, which is a long way from here: `run` referenced the
+            # rule contract's `source`, and `Source` existed in no generated
+            # file because rules are authored rather than serialised.
+            owner = url.rstrip("/").rsplit("/", 2)[-2]
+            if f"{owner}.schema.json" not in GENERATE:
+                raise Unsupported(
+                    f"{name}: {ref} points into {owner}, which is not modelled, "
+                    "so the type it names would never be emitted"
+                )
+
             parts = fragment.strip("/").split("/")
             if len(parts) != 2:
                 raise Unsupported(
@@ -209,6 +221,14 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
         if len(branches) == 1:
             inner = type_of(branches[0], name, nested, defs)
             return inner if inner.endswith("?") else inner + "?"
+
+    if "enum" in node and "type" not in node:
+        values = node["enum"]
+        if values and all(isinstance(v, str) for v in values):
+            # An enum of strings is a string. Without this the generator has no
+            # `type` to read, falls back to "some JSON", and a consumer gets a
+            # JsonElement for a field with five possible values.
+            return "string"
 
     declared = node.get("type")
     if isinstance(declared, list):
