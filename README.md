@@ -25,8 +25,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `1.0.0-beta.1`. Sixteen rules, a ten-mode collector validated
-against a live tenant, seven profiles, ten commands and 350 tests at 91 per
+**Status:** `1.0.0-beta.1`. 18 rules, a ten-mode collector validated
+against a live tenant, 8 profiles, ten commands and 350 tests at 91 per
 cent coverage. Beta because the model has stopped moving: the outcomes, the
 resolution order, the basis types and the evidence schema are frozen, and
 [docs/MILESTONE-A.md](docs/MILESTONE-A.md) records what closing SharePoint

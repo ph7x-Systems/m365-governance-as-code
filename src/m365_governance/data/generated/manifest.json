@@ -35,7 +35,7 @@
       "path": "schemas/rule.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/run-set/1.0.0": {
-      "digest": "4309f231a2128d08369e2980bdfca388e32312375eed2b5cd10887878cede195",
+      "digest": "cd5cc119cdd3cc5a1b15167ef67ee2edec824af4e279773ea37e46d016edc7a5",
       "path": "schemas/run-set.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/run/1.0.0": {
@@ -43,5 +43,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "cab64ae4cab4c5c512c4f924a6a32d7d92bde813b6fffaba7d6b467c5466ab75"
+  "set_digest": "ddc78b9882ec106a83e9bdc00f87b86641468e54c7821910328222a3772006c6"
 }

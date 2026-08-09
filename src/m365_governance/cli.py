@@ -314,12 +314,47 @@ def _rule_source(args) -> Source:
     return resolve("rules", getattr(args, "rules", None))
 
 
+class ProfileNotFound(SystemExit):
+    """A profile nobody can resolve. Never a silent full evaluation."""
+
+
 def _profile_source(args) -> Source:
+    """A packaged name first, then a path, and an error if neither.
+
+    THIS FAILED OPEN AND IT WAS PROVEN. `--profile sharing` was read as a
+    relative path, the path did not exist, the selection was skipped, and every
+    rule ran: thirteen instead of two, eleven of them reporting `unknown` about
+    facts nobody asked for. `unknown` is this product's most trusted state, and
+    producing it from a bug is worse than an error.
+
+    The same mistake was printed by the tool itself after a collection, and
+    reached a consumer's fixture generator, so two fixtures documented as
+    different scenarios were byte-identical in rule set.
+
+    A selection contract must be total. An unresolvable name stops the run and
+    names what exists.
+    """
     supplied = getattr(args, "profile", None)
-    if supplied is not None:
-        return Source(path=Path(supplied), origin="external")
-    return Source(
-        path=resolve("profiles", None).path / "default.yaml", origin="package"
+    packaged = resolve("profiles", None).path
+
+    if supplied is None:
+        return Source(path=packaged / "default.yaml", origin="package")
+
+    by_name = packaged / f"{supplied}.yaml"
+    if by_name.exists():
+        return Source(path=by_name, origin="package")
+
+    as_path = Path(supplied)
+    if as_path.exists():
+        return Source(path=as_path, origin="external")
+
+    known = ", ".join(sorted(p.stem for p in packaged.glob("*.yaml")))
+    raise ProfileNotFound(
+        f"\nno profile {str(supplied)!r}.\n"
+        f"  packaged profiles: {known}\n"
+        f"  or give a path to a profile file.\n"
+        f"Refusing to run: evaluating every rule instead of the ones you asked "
+        f"for would report facts nobody requested as `unknown`.\n"
     )
 
 

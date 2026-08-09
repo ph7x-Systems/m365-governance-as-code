@@ -35,7 +35,7 @@
     "set_aside": {
       "type": "integer",
       "minimum": 0,
-      "description": "How many runs were set aside rather than evaluated."
+      "description": "How many runs a profile moved BELOW THE FOLD. Not how many were skipped: their findings are evaluated, counted and printed, just lower down. This said 'set aside rather than evaluated', which is the opposite of what the engine does, and a consumer implementing the contract as written would report evaluated resources as unevaluated."
     },
     "counts": {
       "$ref": "https://ph7x.com/schemas/m365-governance/run/1.0.0#/$defs/counts"
