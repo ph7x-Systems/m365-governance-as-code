@@ -325,21 +325,36 @@ def test_a_sibling_module_does_not_unload_evidence_from_its_caller():
         pytest.skip("pwsh is not installed; only collection needs it")
 
     modules = COLLECTOR.parent / "modules"
-    ordem = ["Evidence", "Connection", "Sites", "Sharing", "Permissions",
-             "Modernity", "Activity", "Classification", "Spfx", "Agents"]
+    ordem = [
+        "Evidence",
+        "Connection",
+        "Sites",
+        "Sharing",
+        "Permissions",
+        "Modernity",
+        "Activity",
+        "Classification",
+        "Spfx",
+        "Agents",
+    ]
     guiao = (
-        "$m = '" + str(modules) + "'; "
+        "$m = '"
+        + str(modules)
+        + "'; "
         + "".join(f"Import-Module (Join-Path $m '{n}.psm1') -Force; " for n in ordem)
         + "@('Initialize-Evidence','New-ScalarFact','New-AbsentFact','New-Evidence',"
-          "'Write-Evidence','Resolve-FailureState','New-TenantIdentity') "
-          "| ForEach-Object { "
-          "if (-not (Get-Command $_ -ErrorAction SilentlyContinue)) { $_ } }"
+        "'Write-Evidence','Resolve-FailureState','New-TenantIdentity') "
+        "| ForEach-Object { "
+        "if (-not (Get-Command $_ -ErrorAction SilentlyContinue)) { $_ } }"
     )
     saida = subprocess.run(
         ["pwsh", "-NoProfile", "-Command", guiao],
-        capture_output=True, text=True, check=True,
+        capture_output=True,
+        text=True,
+        check=True,
     ).stdout.split()
     assert not saida, (
         "importing the collector's modules in its own order left these helpers "
         f"unavailable: {saida}. A nested `Import-Module ... -Force` unloads the "
-        "caller's copy; drop the -Force.")
+        "caller's copy; drop the -Force."
+    )

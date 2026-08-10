@@ -211,7 +211,8 @@ def test_a_pinned_runtime_reads_its_licence_at_the_pinned_ref(source):
     if not source.get("pinned_version"):
         pytest.fail(
             f"{source['id']}: used as a runtime dependency without recording which "
-            "version. A licence is a licence for a version, not for a project.")
+            "version. A licence is a licence for a version, not for a project."
+        )
 
     for campo in ("license_source", "contribution_terms"):
         url = source.get(campo)
@@ -221,10 +222,12 @@ def test_a_pinned_runtime_reads_its_licence_at_the_pinned_ref(source):
         assert not branch, (
             f"{source['id']}: {campo} reads the licence at `{branch}`, which moves. "
             f"Pin it to {source['pinned_tag']} — the ref that matches the version "
-            "the collector requires.")
+            "the collector requires."
+        )
         assert source["pinned_tag"] in url or source["pinned_commit"] in url, (
             f"{source['id']}: {campo} is pinned to neither {source['pinned_tag']} "
-            f"nor {source['pinned_commit']}")
+            f"nor {source['pinned_commit']}"
+        )
 
 
 @pytest.mark.parametrize("source", SOURCES, ids=lambda s: s["id"])
@@ -236,6 +239,8 @@ def test_what_is_not_shipped_says_so(source):
     assert source.get("shipped") is False, (
         f"{source['id']}: a runtime dependency that is shipped is redistribution, "
         "and redistribution needs the licence notice travelling with it. Say so "
-        "here and audit the wheel, the installer and the third-party notices.")
+        "here and audit the wheel, the installer and the third-party notices."
+    )
     assert source.get("installed_by"), (
-        f"{source['id']}: nobody is recorded as installing it")
+        f"{source['id']}: nobody is recorded as installing it"
+    )
