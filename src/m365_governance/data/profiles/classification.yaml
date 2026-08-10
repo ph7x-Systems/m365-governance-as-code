@@ -1,0 +1,26 @@
+# Pairs with `Get-SpoEvidence.ps1 -Mode Classification`.
+#
+# Three rules that read the same four facts and answer three different
+# questions, which is why they are one profile and not three runs.
+#
+# THE OVERLAP BETWEEN 001 AND 003 IS DELIBERATE. A group-connected site with no
+# label fails both: 001 because nothing on it records what it holds, 003 because
+# the label on a group-connected site also governs the group's privacy, guest
+# access and the default sharing link. The first is about knowledge, the second
+# about the controls that read that knowledge and find nothing. Collapsing them
+# would lose the second reason, and reporting only the second would let an
+# unlabelled standalone site through.
+#
+# 002 cannot overlap with either: it only ever evaluates a site that HAS a
+# label, and asks whether anybody can say which one.
+
+name: classification
+description: >
+  What each site records about the kind of content it holds, and whether that
+  record can still be read. Evaluate against evidence collected with
+  `-Mode Classification`.
+
+rules:
+  - SPO-CLASS-001
+  - SPO-CLASS-002
+  - SPO-CLASS-003

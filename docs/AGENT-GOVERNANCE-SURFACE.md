@@ -245,6 +245,38 @@ is a second module, a second connection model and a licensing prerequisite for
 the reader — a product decision with a cost, and the SAM-gated half of this
 domain waits behind it.
 
+## Deferred, and what it takes to resume
+
+**Updated 2026-08-10.** A tenant run reached a site, enumerated agents and
+returned zero. The call works. The agent object was never exercised, so
+everything the model says about an agent's shape is still unproven, and the
+`New` > `Agent` surface was not offered on the site that was read. Why it was
+not offered is not established.
+
+So `SPO-AGENT-001` is a **candidate, not a rule**. There is no YAML, no profile,
+no fixture and no generated model for it, and that is deliberate: a rule with a
+fixture somebody invented is a rule that passes its own tests and nothing else.
+
+The slice resumes when all five of these are true. Not four.
+
+| | |
+|---|---|
+| 1 | a **non-production** tenant that can create agents in SharePoint |
+| 2 | edit permission on the validation site, held by the running identity |
+| 3 | **Agent A** saved with explicit sources — one folder, one file, instructions present |
+| 4 | **Agent B** attempted with no source at all, and the result recorded either way: saved, refused with the exact visible message, or the last source impossible to remove |
+| 5 | `tools/validate-agents.ps1` rerun against that site, and its output committed |
+
+The fourth is the one the rule turns on. If the interface refuses to save an
+agent with no source, that refusal is worth more than any fixture: it would mean
+the documented state — both source properties omitted — cannot be reached
+through the SharePoint experience at all, and a rule that fails agents for
+reaching it would be failing them for something they cannot do.
+
+Production is not an acceptable substitute for condition 1. Creating validation
+agents in a tenant that holds customer data to prove a governance rule would be
+the exact behaviour this product exists to argue against.
+
 ## References
 
 - [Manage access to agents in SharePoint](https://learn.microsoft.com/sharepoint/manage-access-agents-in-sharepoint)

@@ -169,23 +169,28 @@ if ($facts.agents['inventory'].state -eq 'observed') {
         Say "| ``$($a.file)`` | $($a.type) | $named | $($a.has_instructions) | $($a.source_count) | $byUrl | $byId |"
     }
     Say ""
-    Say "Derived facts: count $($facts.agents['count'].value), total sources $($facts.agents['source_count'].value), agents declaring none $($facts.agents['agents_without_declared_sources'].value)."
+    Say "Derived facts: count $($facts.agents['count'].value), total sources $($facts.agents['source_count'].value)."
     Say ""
 
-    # The reading that inverts the obvious one, and the reason this run exists.
-    $wide = [int] $facts.agents['agents_without_declared_sources'].value
-    if ($wide -gt 0) {
-        Say "**$wide agent(s) declare no source at all.** The declarative agent"
-        Say "manifest schema states that omitting both source arrays lets the agent"
-        Say "reach every OneDrive and SharePoint source in the organisation that the"
-        Say "asking user can already see. **These are the widest agents here, not the"
-        Say "narrowest**, and this run has now shown the SharePoint interface can"
-        Say "produce that state."
+    # WHAT THIS RUN CANNOT TELL YOU FROM A COUNT.
+    #
+    # This block used to read `agents_without_declared_sources` and announce
+    # that zero-source agents are the widest ones. The manifest sentence behind
+    # that is true; the count is not evidence for it, because an absent
+    # capability, omitted properties, empty arrays and an unreadable definition
+    # all arrive as zero. So the run reports the number of agents that declared
+    # no source AS A NUMBER, and says plainly which question it does not answer.
+    $semFontes = @($inventory | Where-Object { $_.source_count -eq 0 }).Count
+    if ($semFontes -gt 0) {
+        Say "**$semFontes agent(s) returned no sources at all.** That is a count, not a"
+        Say "state: an absent OneDriveAndSharePoint capability, omitted source properties,"
+        Say "empty arrays and a definition that could not be read all arrive here as zero."
+        Say "Section 1 above has the raw properties; read those before concluding anything."
     }
     else {
-        Say "No agent declares zero sources. **That is not proof the state is"
-        Say "impossible**: it is proof that nothing in this site reached it. Try"
-        Say "creating one with no source selected; if the interface refuses, that"
+        Say "Every agent read here returned at least one source. **That is not proof the"
+        Say "no-source state is impossible**: it is proof that nothing in this site reached"
+        Say "it. Try creating one with no source selected; if the interface refuses, that"
         Say "refusal is the finding and is worth more than the fixture."
     }
 }
@@ -313,9 +318,6 @@ if (@($inventory).Count -gt 0) {
                 inventory = New-ScalarFact -Value $sanitised -RawField 'Get-PnPCopilotAgent'
                 count     = New-ScalarFact -Value @($sanitised).Count -RawField 'Get-PnPCopilotAgent'
                 source_count = New-ScalarFact -Value ($facts.agents['source_count'].value) -RawField 'Get-PnPCopilotAgent'
-                agents_without_declared_sources = New-ScalarFact `
-                    -Value ($facts.agents['agents_without_declared_sources'].value) `
-                    -RawField 'Get-PnPCopilotAgent'
             }
         }
     }

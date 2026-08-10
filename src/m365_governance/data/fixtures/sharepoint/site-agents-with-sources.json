@@ -115,14 +115,6 @@
           "field": "Get-PnPCopilotAgent",
           "value": 2
         }
-      },
-      "agents_without_declared_sources": {
-        "state": "observed",
-        "value": 1,
-        "raw": {
-          "field": "Get-PnPCopilotAgent",
-          "value": 1
-        }
       }
     }
   }
