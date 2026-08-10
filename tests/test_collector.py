@@ -304,3 +304,42 @@ def test_the_tenant_is_the_tenant_and_not_whatever_was_connected_to():
     ).stdout.split()
 
     assert answers == list(TENANT_OF.values())
+
+
+def test_a_sibling_module_does_not_unload_evidence_from_its_caller():
+    """`Import-Module -Force` on an already-loaded module REMOVES it first, and
+    the removal reaches the caller's scope.
+
+    Every collector module imports Evidence.psm1. When those nested imports
+    carried `-Force`, importing the second module unloaded the Evidence that
+    `Get-SpoEvidence.ps1` had just imported, and the orchestrator lost
+    `Initialize-Evidence` before it could call it. Every mode failed against
+    every tenant with "The term 'Initialize-Evidence' is not recognized",
+    which is a shipped collector that cannot collect.
+
+    A source check would have missed the point: this is about what the loaded
+    session holds, so the test loads the modules the way the collector does
+    and asks the session.
+    """
+    if not shutil.which("pwsh"):
+        pytest.skip("pwsh is not installed; only collection needs it")
+
+    modules = COLLECTOR.parent / "modules"
+    ordem = ["Evidence", "Connection", "Sites", "Sharing", "Permissions",
+             "Modernity", "Activity", "Classification", "Spfx", "Agents"]
+    guiao = (
+        "$m = '" + str(modules) + "'; "
+        + "".join(f"Import-Module (Join-Path $m '{n}.psm1') -Force; " for n in ordem)
+        + "@('Initialize-Evidence','New-ScalarFact','New-AbsentFact','New-Evidence',"
+          "'Write-Evidence','Resolve-FailureState','New-TenantIdentity') "
+          "| ForEach-Object { "
+          "if (-not (Get-Command $_ -ErrorAction SilentlyContinue)) { $_ } }"
+    )
+    saida = subprocess.run(
+        ["pwsh", "-NoProfile", "-Command", guiao],
+        capture_output=True, text=True, check=True,
+    ).stdout.split()
+    assert not saida, (
+        "importing the collector's modules in its own order left these helpers "
+        f"unavailable: {saida}. A nested `Import-Module ... -Force` unloads the "
+        "caller's copy; drop the -Force.")

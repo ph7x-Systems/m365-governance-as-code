@@ -14,7 +14,19 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1') -Force
+# NO `-Force` HERE, AND IT IS NOT A STYLE CHOICE.
+#
+# `-Force` on a module that is already loaded REMOVES it first, and the removal
+# takes it out of the caller's scope too. `Get-SpoEvidence.ps1` imports Evidence
+# and then imports this module; with `-Force` the second import unloaded the
+# first, and the orchestrator lost `Initialize-Evidence`, `New-ScalarFact` and
+# every other helper it had just imported. Every mode failed at the first call,
+# on any tenant, with "The term 'Initialize-Evidence' is not recognized".
+#
+# Without `-Force` an already-loaded Evidence is reused and the caller keeps
+# its own. Standalone import of this file still works: nothing is loaded yet,
+# so the import happens normally.
+Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1')
 
 function Get-ActivityFacts {
     # TenantSiteError says why the tenant record is absent. It is mandatory

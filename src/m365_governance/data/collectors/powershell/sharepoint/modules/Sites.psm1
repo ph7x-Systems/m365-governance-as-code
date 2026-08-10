@@ -14,7 +14,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1')  # sem -Force: ver Activity.psm1
 
 function Get-SiteInventoryFacts {
     param($TenantSite)
