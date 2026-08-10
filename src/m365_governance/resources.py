@@ -40,7 +40,7 @@ from importlib.resources import files
 from pathlib import Path
 
 #: The subdirectories of `m365_governance.data`, and what each holds.
-BUNDLED = ("rules", "profiles", "schemas", "collectors", "fixtures")
+BUNDLED = ("rules", "profiles", "schemas", "collectors", "fixtures", "generated")
 
 
 @dataclass(frozen=True)

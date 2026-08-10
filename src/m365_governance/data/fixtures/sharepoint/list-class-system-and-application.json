@@ -1,13 +1,17 @@
 {
-  "schema_version": "1.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
   "provenance": {
     "collected_at": "2026-08-05T14:02:11Z",
     "collector": "spo-collector",
     "collector_version": "0.1.0",
     "source_system": "SharePoint Online",
     "source_api": "Microsoft Graph v1.0",
-    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
     "identity_kind": "application",
+    "acquisition": "collected",
     "scopes": [
       "Sites.Read.All"
     ]
@@ -24,8 +28,19 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "contoso,list,site-pages",
+    "workload": "sharepoint",
     "type": "list",
+    "native_id": "contoso,list,site-pages",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "container",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "site",
+      "native_id": "contoso,site,documents-host"
+    },
     "display_name": "Site Pages",
     "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
   },

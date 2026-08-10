@@ -7,21 +7,31 @@ The commands split into three kinds, and the split is worth keeping:
 
   read the repository   list-rules, show-rule, doctor
   read the evidence     stats
-  produce a result      validate, evaluate, report, diff
+  produce a result      validate, evaluate, assess, report, diff
+  check one that came    verify
 
-Only the last kind reaches a conclusion, and only `evaluate` reaches a new one.
-`report` and `diff` re-read conclusions somebody already stored, which is why
-they never need rules: a stored report carries what it was decided from.
+Only the third kind reaches a conclusion, and only `evaluate` and `assess`
+reach a new one. `report` and `diff` re-read conclusions somebody already
+stored, which is why they never need rules: a stored report carries what it
+was decided from.
+
+`assess` is `evaluate` plus everything needed to hand the result to somebody
+else: the evidence it was decided from, the versions that decided it, and
+digests over all of it. `verify` is the other side of that, and it is
+deliberately a separate command, because checking something that arrived must
+not require the thing that made it.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import shutil
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
-from . import __version__, collecting, diffing, explaining
+from . import __version__, assessment, collecting, comparison, explaining, reporting
 from . import doctor as doctor_module
 from . import inspect as inspect_module
 from .engine import evaluate
@@ -34,7 +44,7 @@ from .reporting import (
     to_json,
     to_markdown,
 )
-from .resources import Source, resolve
+from .resources import Source, packaged, resolve
 from .results import DuplicateResource, Outcome, Run, RunSet
 from .validator import validate_evidence_document, validate_rules
 
@@ -87,7 +97,8 @@ def _build_parser() -> argparse.ArgumentParser:
     collect.add_argument(
         "--client-id",
         required=True,
-        help="an Entra ID app registration. Mandatory since PnP 2.99",
+        help="an Entra ID app registration. Required: PnP.PowerShell has "
+        "shipped no application of its own since 2.12.0",
     )
     collect.add_argument("--output", type=Path, required=True)
     collect.add_argument("--site-url")
@@ -156,6 +167,42 @@ def _build_parser() -> argparse.ArgumentParser:
         ),
     )
 
+    assess = sub.add_parser(
+        "assess",
+        help="evaluate evidence and write an assessment that can be handed over",
+    )
+    assess.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
+    assess.add_argument("--evidence", type=Path, required=True)
+    assess.add_argument("--profile", type=Path, default=None, help=PROFILE_HELP)
+    assess.add_argument(
+        "--label",
+        default=None,
+        help=(
+            "what to call it. Never used to identify anything: renaming an "
+            "assessment does not produce a different one"
+        ),
+    )
+    assess.add_argument(
+        "--created-at",
+        default=None,
+        help=(
+            "the timestamp to record, as ISO 8601. Defaults to now. Supply it "
+            "to rebuild an assessment byte for byte"
+        ),
+    )
+    assess.add_argument(
+        "--out",
+        type=Path,
+        default=None,
+        help="where to write it. Omit to write to stdout",
+    )
+
+    verify = sub.add_parser(
+        "verify",
+        help="check an assessment that arrived, without the engine that made it",
+    )
+    verify.add_argument("assessment", type=Path)
+
     report = sub.add_parser(
         "report", help="re-render a stored report, without evaluating anything"
     )
@@ -165,17 +212,25 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     diff = sub.add_parser(
-        "diff", help="what changed between two runs, and whether the rule moved too"
+        "diff", help="what changed between two assessments, and what it does not say"
     )
-    diff.add_argument("before", type=Path)
-    diff.add_argument("after", type=Path)
-    diff.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
+    diff.add_argument("before", type=Path, help="an assessment, from `assess`")
+    diff.add_argument("after", type=Path, help="an assessment, from `assess`")
     diff.add_argument("--format", choices=("markdown", "json"), default="markdown")
     diff.add_argument(
         "--fail-on-regression",
         action="store_true",
         help="exit non-zero when any rule left `pass`",
     )
+    contracts = sub.add_parser(
+        "contracts",
+        help="write the contract bundle a consumer vendors: schemas, models, "
+        "samples and a manifest",
+    )
+    contracts.add_argument(
+        "--out", required=True, type=Path, help="a directory to write into"
+    )
+
     return parser
 
 
@@ -389,7 +444,18 @@ def _set_aside_classes(profile_path: Path) -> set[str]:
     return set(load_profile(profile_path).get("set_aside_classes") or [])
 
 
-def _cmd_evaluate(args) -> int:
+class _Refused(Exception):
+    """Something was already printed to stderr and the command is over."""
+
+
+def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
+    """Every evidence document under `--evidence`, evaluated.
+
+    Shared by `evaluate` and `assess` so the two cannot disagree about what a
+    run is. The documents come back alongside the runs because an assessment
+    carries the evidence whole, and reading it a second time from disk would
+    let the two halves describe different bytes.
+    """
     problems = validate_rules(_rule_source(args).path)
     if problems:
         print(
@@ -397,14 +463,13 @@ def _cmd_evaluate(args) -> int:
             "Run `m365-governance validate`.",
             file=sys.stderr,
         )
-        return 2
+        raise _Refused
 
     rules = _load_rules_for(args)
     aside = _set_aside_classes(_profile_source(args).path)
 
-    documents = _evidence_documents(args.evidence)
-    runs = []
-    for path in documents:
+    runs, documents = [], []
+    for path in _evidence_documents(args.evidence):
         data = load_evidence(path).data
         problems = validate_evidence_document(data, str(path))
         if problems:
@@ -416,11 +481,20 @@ def _cmd_evaluate(args) -> int:
                 f"about the resource.",
                 file=sys.stderr,
             )
-            return 2
+            raise _Refused
         run = evaluate(rules, data)
         run.set_aside = run.resource_class in aside
         run.rule_source = _rule_source(args).describe()
         runs.append(run)
+        documents.append(data)
+    return runs, documents
+
+
+def _cmd_evaluate(args) -> int:
+    try:
+        runs, _ = _evaluate_all(args)
+    except _Refused:
+        return 2
 
     # The shape follows what was asked for, not how many files happened to be
     # there. A directory with one document in it today and three tomorrow must
@@ -451,6 +525,97 @@ def _cmd_evaluate(args) -> int:
     return 0
 
 
+def _cmd_assess(args) -> int:
+    """Evaluate, and package the result so somebody else can check it.
+
+    The difference from `evaluate` is not the format. An assessment carries the
+    evidence it was decided from, the versions that decided it, and digests
+    over all of it, so a person who receives one can establish that nothing
+    moved without having this engine or trusting whoever sent it.
+    """
+    try:
+        runs, documents = _evaluate_all(args)
+    except _Refused:
+        return 2
+    if not runs:
+        print(f"{args.evidence}: no evidence documents", file=sys.stderr)
+        return 2
+
+    # From the clock only here, at the boundary. `build` takes it as a value so
+    # that the same inputs produce the same bytes: an assessment whose digest
+    # moved because time passed would be unverifiable by construction, and
+    # `--created-at` is what makes rebuilding one possible.
+    created_at = args.created_at or datetime.now(UTC).isoformat(
+        timespec="seconds"
+    ).replace("+00:00", "Z")
+
+    try:
+        document = assessment.build(
+            RunSet(runs),
+            documents,
+            engine_version=__version__,
+            created_at=created_at,
+            label=args.label,
+        )
+    except assessment.Mismatch as exc:
+        # Not a traceback and not a finding: the manifest would have said
+        # something this evidence does not support, and the caller needs the
+        # sentence rather than the stack.
+        print(f"refusing to assemble an assessment: {exc}", file=sys.stderr)
+        return 2
+
+    text = json.dumps(document, indent=2, ensure_ascii=False) + "\n"
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_text(text, encoding="utf-8")
+        manifest = document["canonical"]["manifest"]
+        print(f"{manifest['assessment_id']}  {args.out}", file=sys.stderr)
+    else:
+        sys.stdout.write(text)
+    return 0
+
+
+def _cmd_verify(args) -> int:
+    """What is wrong with an assessment that arrived, or nothing.
+
+    Deliberately its own command. Verifying is what somebody does to a document
+    they received, and a check that needed the producer would only ever be
+    telling them what the producer already believes.
+    """
+    document = load_evidence(args.assessment).data
+    if "canonical" not in document:
+        print(
+            f"{args.assessment}: not an assessment. `verify` checks the "
+            f"document `assess` writes; to re-render a report use `report`.",
+            file=sys.stderr,
+        )
+        return 2
+
+    problems = assessment.verify(document)
+    if problems:
+        for problem in problems:
+            print(problem, file=sys.stderr)
+        print(f"\n{args.assessment} does not verify.", file=sys.stderr)
+        return 1
+
+    manifest = document["canonical"]["manifest"]
+    print(f"{manifest['assessment_id']}")
+    tenant = manifest["tenant"]
+    print(f"  tenant     {tenant['host']}")
+    if tenant["id"]:
+        print(f"  directory  {tenant['id']}")
+    identity = manifest["identity"]
+    print(f"  identity   {identity['summary']}: {', '.join(identity['kinds']) or '—'}")
+    acquired = manifest["acquisition"]
+    print(f"  acquired   {', '.join(acquired['kinds'])}")
+    print(f"  created    {manifest['created_at']}")
+    if manifest.get("label"):
+        print(f"  label      {manifest['label']}")
+    print(f"  resources  {document['canonical']['run_set']['resources']}")
+    print(f"  evidence   {len(document['canonical']['evidence'])} documents")
+    return 0
+
+
 def _read_run_or_set(path: Path, rules_dir: Path) -> Run | RunSet:
     """A stored run, a stored run set, or an evidence document evaluated now.
 
@@ -461,6 +626,11 @@ def _read_run_or_set(path: Path, rules_dir: Path) -> Run | RunSet:
     tenant scale, where the archive is a whole estate rather than one site.
     """
     data = load_evidence(path).data
+    # An assessment carries its run set inside the canonical half. Comparing
+    # two of them is comparing what they concluded, and unwrapping here means
+    # `diff` never learns a second shape.
+    if "canonical" in data:
+        return RunSet.from_dict(data["canonical"]["run_set"])
     if "runs" in data:
         return RunSet.from_dict(data)
     if "results" in data:
@@ -475,6 +645,11 @@ def _read_run_or_set(path: Path, rules_dir: Path) -> Run | RunSet:
 
 def _cmd_report(args) -> int:
     data = load_evidence(args.report).data
+    # An assessment is rendered from its canonical half, never from anything
+    # stored under `derived`: a report that could not be regenerated from what
+    # was archived would be a second original rather than a projection.
+    if "canonical" in data:
+        data = data["canonical"]["run_set"]
     # A run set carries `runs`; a single run carries `results`. `report` renders
     # whichever `evaluate` wrote, in whichever format is asked for now.
     if "runs" in data:
@@ -492,44 +667,93 @@ def _cmd_report(args) -> int:
 
 
 def _cmd_diff(args) -> int:
-    rules_path = _rule_source(args).path
-    before = _read_run_or_set(args.before, rules_path)
-    after = _read_run_or_set(args.after, rules_path)
+    """What changed between two assessments.
 
-    # A run and a run set are not comparable: one is a resource, the other an
-    # estate, and pretending would either hide every other resource or invent
-    # one. Refuse rather than guess.
-    if isinstance(before, RunSet) != isinstance(after, RunSet):
-        print(
-            "cannot diff a single resource against a run set. Compare a run "
-            "with a run, or a run set with a run set.",
-            file=sys.stderr,
+    A COMPARISON RELATES TWO STATES AND BELONGS TO NEITHER, which is why it is
+    its own document rather than a section of an assessment. It names each side
+    by identity and digest and embeds neither: a comparison carrying both would
+    duplicate the canonical truth it describes, and the copy is what somebody
+    edits.
+
+    It takes assessments and not runs. A run is an evaluation; an assessment is
+    the thing somebody archived, and only an assessment can be named by an
+    identity that verifies. Comparing what a run-level diff compares is still
+    how this is computed underneath — it just is not a document anybody keeps.
+    """
+    documents = {}
+    for side, path in (("before", args.before), ("after", args.after)):
+        data = load_evidence(path).data
+        if "canonical" not in data:
+            print(
+                f"{path}: not an assessment. `diff` compares two assessments, "
+                f"which `assess` writes; a stored run is not one.",
+                file=sys.stderr,
+            )
+            return 2
+        documents[side] = data
+
+    try:
+        document = comparison.build(
+            documents["before"], documents["after"], engine_version=__version__
         )
+    except comparison.Incomparable as exc:
+        print(f"refusing to compare: {exc}", file=sys.stderr)
         return 2
 
-    # Markdown is what a person reads; JSON is what everything else reads. Both
-    # are projections of one comparison, so they cannot disagree about what
-    # changed.
-    as_json = args.format == "json"
-    if isinstance(before, RunSet):
-        sys.stdout.write(
-            diffing.many_to_json(before, after)
-            if as_json
-            else diffing.many_to_markdown(before, after)
-        )
-        changes = [
-            rc for change in diffing.compare_sets(before, after) for rc in change.rules
-        ]
+    if args.format == "json":
+        sys.stdout.write(json.dumps(document, indent=2, ensure_ascii=False) + "\n")
     else:
-        sys.stdout.write(
-            diffing.to_json(before, after)
-            if as_json
-            else diffing.to_markdown(before, after)
-        )
-        changes = diffing.compare(before, after)
+        sys.stdout.write(reporting.comparison_to_markdown(document))
 
-    if args.fail_on_regression and diffing.regressions(changes):
-        return 1
+    if args.fail_on_regression:
+        # A regression is leaving `pass`, and only the engine's own outcomes
+        # decide that. Nothing here re-reads evidence to form a second opinion.
+        left = [
+            change
+            for change in document["diff"]["changes"]
+            if change["before"] == "pass" and change["after"] != "pass"
+        ]
+        if left:
+            return 1
+    return 0
+
+
+def _cmd_contracts(args) -> int:
+    """Write the vendored bundle from THIS INSTALLATION.
+
+    WHY A COMMAND AND NOT A DOCUMENT IN THE REPOSITORY. A consumer that had to
+    clone this repository to obtain the contract could only be as current as
+    whoever last remembered to copy it, and nothing could answer "is this
+    bundle current?" by any automated means. The bundle now ships in the wheel,
+    so `pip install` and this command are enough — and the version it declares
+    is the engine's own, which moves when the engine is released.
+    """
+    root = packaged("generated")
+    manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+
+    out = args.out
+    out.mkdir(parents=True, exist_ok=True)
+    for sub in ("schemas", "csharp"):
+        target = out / sub
+        if target.exists():
+            shutil.rmtree(target)
+        target.mkdir(parents=True)
+
+    data = packaged("schemas").parent
+    for entry in manifest["schemas"].values():
+        source = data / entry["path"]
+        target = out / entry["path"]
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+
+    for model in sorted((root / "csharp").glob("*.g.cs")):
+        shutil.copy2(model, out / "csharp" / model.name)
+    shutil.copy2(root / "manifest.json", out / "manifest.json")
+
+    print(
+        f"contract {manifest['contract_version']} written to {out}: "
+        f"{len(manifest['schemas'])} schemas, {len(manifest['generated'])} models"
+    )
     return 0
 
 
@@ -542,8 +766,11 @@ _COMMANDS = {
     "stats": _cmd_stats,
     "validate": _cmd_validate,
     "evaluate": _cmd_evaluate,
+    "assess": _cmd_assess,
+    "verify": _cmd_verify,
     "report": _cmd_report,
     "diff": _cmd_diff,
+    "contracts": _cmd_contracts,
 }
 
 

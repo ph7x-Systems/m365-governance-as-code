@@ -8,11 +8,12 @@ testing: `list-rules`, `show-rule`, `doctor` and `stats` never evaluate, and
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 
 from conftest import DATA, FIXTURES, ROOT, evidence
-from m365_governance import diffing, doctor, inspect
+from m365_governance import doctor, inspect, registry
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
 from m365_governance.reporting import to_html, to_markdown
@@ -262,102 +263,174 @@ def test_html_carries_the_delegated_warning_at_the_top():
 # ---------------------------------------------------------------------------
 
 
-def test_diff_reports_the_movement_and_the_evidence_behind_it(capsys):
-    code, out, _ = run(
-        capsys,
-        "diff",
-        str(FIXTURES / "site-two-owners.json"),
-        str(FIXTURES / "site-one-owner.json"),
-        "--rules",
-        str(RULES),
+def assessment_of(tmp_path, name, when) -> Path:
+    """One assessment of one fixture, written where the CLI can read it."""
+    folder = tmp_path / name
+    folder.mkdir(parents=True)
+    (folder / f"{name}.json").write_text(
+        (FIXTURES / f"{name}.json").read_text(encoding="utf-8"), encoding="utf-8"
+    )
+    out = tmp_path / f"{name}-assessment.json"
+    code = main(
+        [
+            "assess",
+            "--evidence",
+            str(folder),
+            "--created-at",
+            when,
+            "--out",
+            str(out),
+        ]
     )
     assert code == 0
-    assert "pass → fail" in out
-    assert "`owners.count` | 2 | 1" in out
+    return out
 
 
-def test_diff_is_quiet_when_nothing_moved(capsys):
-    code, out, _ = run(
-        capsys,
-        "diff",
-        str(FIXTURES / "site-two-owners.json"),
-        str(FIXTURES / "site-two-owners.json"),
-        "--rules",
-        str(RULES),
+def sharing_pair(tmp_path) -> tuple[Path, Path]:
+    """The same tenant before and after somebody turned Anyone links off."""
+    return (
+        assessment_of(
+            tmp_path, "tenant-sharing-default-anyone-and-edit", "2026-07-01T09:00:00Z"
+        ),
+        assessment_of(tmp_path, "tenant-sharing-mitigated", "2026-08-01T09:00:00Z"),
     )
-    assert code == 0
-    assert "Nothing changed" in out
 
 
-def test_diff_says_when_the_rule_moved_and_not_only_the_estate():
-    """The question an audit asks is whether the estate changed or we did."""
-    before = _run_for("site-one-owner")
-    after = _run_for("site-one-owner")
-    after.results[0].rule_version = "9.9"
+def test_diff_compares_two_assessments_and_names_neither_by_path(capsys, tmp_path):
+    """A comparison relates two states and belongs to neither, so it names each
+    side by identity and digest. A path says where a file sat on one machine,
+    not what it held."""
+    before, after = sharing_pair(tmp_path)
+    code, out, err = run(capsys, "diff", str(before), str(after), "--format", "json")
+    assert code == 0, err
 
-    text = diffing.to_markdown(before, after)
-    assert "The rule changed too" in text
-    assert "may be the rule rather than the estate" in text
+    document = json.loads(out)
+    # From the registry: a literal version here is a second
+    # representation that goes stale in silence.
+    assert document["$schema"] == registry.contract("comparison")
+    assert len(document["before"]["canonical_hash"]) == 64
+    assert document["before"]["assessment_id"] != document["after"]["assessment_id"]
+    # Named, never embedded: a comparison carrying both would duplicate the
+    # canonical truth it describes, and the copy is what somebody edits.
+    assert "canonical" not in document["before"]
+    assert "runs" not in json.dumps(document["before"])
 
 
-def test_diff_does_not_call_a_disappeared_rule_a_pass():
-    before = _run_for("site-one-owner")
-    after = _run_for("site-one-owner")
-    after.results = []
+def test_diff_records_what_was_observed_and_never_why(capsys, tmp_path):
+    before, after = sharing_pair(tmp_path)
+    _, out, _ = run(capsys, "diff", str(before), str(after), "--format", "json")
 
-    text = diffing.to_markdown(before, after)
-    assert "A rule that stopped running is not a rule that passed" in text
+    changes = json.loads(out)["diff"]["changes"]
+    assert changes, "two different assessments produced no changes"
+    for change in changes:
+        assert change["kind"] in ("added", "removed", "changed")
+        if change["kind"] != "changed":
+            continue
+        assert set(change["changes"]) <= {"evidence", "outcome", "rule-version"}
+        # Nothing here evaluates causality, so nothing here may claim it.
+        assert change["attribution"]["state"] in ("ambiguous", "not-evaluated")
+        assert change["attribution"]["state"] != "established"
 
 
-def test_diff_can_fail_a_pipeline_on_a_regression(capsys):
-    code, _, _ = run(
-        capsys,
-        "diff",
-        str(FIXTURES / "site-two-owners.json"),
-        str(FIXTURES / "site-one-owner.json"),
-        "--rules",
-        str(RULES),
-        "--fail-on-regression",
+def test_the_same_assessment_twice_is_an_empty_comparison(capsys, tmp_path):
+    """A legitimate question with an empty answer. Producing it proves the
+    comparison is derived rather than assembled from expectations."""
+    before, _ = sharing_pair(tmp_path)
+    _, out, _ = run(capsys, "diff", str(before), str(before), "--format", "json")
+    assert json.loads(out)["diff"]["changes"] == []
+
+
+def test_a_comparison_is_reproducible(capsys, tmp_path):
+    """Given the same two assessments it produces the same bytes. Nothing is
+    read from the clock and nothing from the installation."""
+    before, after = sharing_pair(tmp_path)
+    _, first, _ = run(capsys, "diff", str(before), str(after), "--format", "json")
+    _, second, _ = run(capsys, "diff", str(before), str(after), "--format", "json")
+    assert first == second
+
+
+def test_diff_refuses_two_tenants(capsys, tmp_path):
+    """A comparison relates two states of one estate. Across two, every count
+    in it would be a sum over organisations nobody manages together.
+
+    Built rather than forged: editing the manifest would break its digest, and
+    the refusal would arrive for that earlier reason instead.
+    """
+    before, _ = sharing_pair(tmp_path)
+
+    folder = tmp_path / "elsewhere"
+    folder.mkdir()
+    document = json.loads(
+        (FIXTURES / "tenant-sharing-mitigated.json").read_text(encoding="utf-8")
     )
-    assert code == 1
+    document["provenance"]["tenant"]["host"] = "fabrikam.sharepoint.com"
+    (folder / "evidence.json").write_text(json.dumps(document), encoding="utf-8")
 
-
-def test_a_regression_into_unknown_also_fails(capsys):
-    """Leaving `pass` for `unknown` is a regression: the answer was lost."""
-    code, _, _ = run(
-        capsys,
-        "diff",
-        str(FIXTURES / "site-two-owners.json"),
-        str(FIXTURES / "site-owners-not-collected.json"),
-        "--rules",
-        str(RULES),
-        "--fail-on-regression",
+    after = tmp_path / "fabrikam.json"
+    assert (
+        main(
+            [
+                "assess",
+                "--evidence",
+                str(folder),
+                "--created-at",
+                "2026-08-01T09:00:00Z",
+                "--out",
+                str(after),
+            ]
+        )
+        == 0
     )
-    assert code == 1
 
-
-def test_diff_accepts_a_stored_report_on_either_side(capsys, tmp_path):
-    stored = tmp_path / "before.json"
-    stored.write_text(json.dumps(_run_for("site-two-owners").to_dict()))
-
-    code, out, _ = run(
-        capsys,
-        "diff",
-        str(stored),
-        str(FIXTURES / "site-one-owner.json"),
-        "--rules",
-        str(RULES),
-    )
-    assert code == 0
-    assert "pass → fail" in out
-
-
-def test_diff_rejects_a_file_that_is_neither(capsys, tmp_path):
-    junk = tmp_path / "junk.json"
-    junk.write_text('{"hello": "world"}')
-    code, _, err = run(capsys, "diff", str(junk), str(junk), "--rules", str(RULES))
+    code, _, err = run(capsys, "diff", str(before), str(after))
     assert code == 2
-    assert "neither a report" in err
+    assert "different tenants" in err
+
+
+def test_diff_refuses_an_assessment_that_does_not_verify(capsys, tmp_path):
+    before, after = sharing_pair(tmp_path)
+    document = json.loads(after.read_text())
+    document["canonical"]["versions"]["engine"] = "forged"
+    after.write_text(json.dumps(document), encoding="utf-8")
+
+    code, _, err = run(capsys, "diff", str(before), str(after))
+    assert code == 2
+    assert "does not verify" in err
+
+
+def test_diff_refuses_a_stored_run(capsys, tmp_path):
+    """It compares assessments. A run is an evaluation; an assessment is the
+    thing somebody archived, and only that can be named by an identity that
+    verifies."""
+    stored = tmp_path / "run.json"
+    stored.write_text(
+        json.dumps(_run_for("site-one-owner").to_dict()), encoding="utf-8"
+    )
+
+    code, _, err = run(capsys, "diff", str(stored), str(stored))
+    assert code == 2
+    assert "not an assessment" in err
+
+
+def test_a_regression_fails_a_pipeline(capsys, tmp_path):
+    """Leaving `pass` is the definition, and the engine's own outcomes decide
+    it: nothing re-reads evidence to form a second opinion."""
+    before, after = sharing_pair(tmp_path)
+
+    # Mitigated to permissive is the direction that matters.
+    code, _, _ = run(capsys, "diff", str(after), str(before), "--fail-on-regression")
+    assert code == 1
+
+    code, _, _ = run(capsys, "diff", str(before), str(after), "--fail-on-regression")
+    assert code == 0
+
+
+def test_the_markdown_says_what_it_does_not_say(capsys, tmp_path):
+    before, after = sharing_pair(tmp_path)
+    _, out, _ = run(capsys, "diff", str(before), str(after))
+    assert "What changed" in out
+    assert "why is not established" in out
+    assert "re-evaluated" in out
 
 
 # ---------------------------------------------------------------------------
@@ -630,12 +703,13 @@ def test_no_command_asks_for_support(capsys):
             "--format",
             "html",
         ],
+        # `diff` needs two assessments, so its refusal is what this reads.
+        # A message printed when somebody used a command wrongly is exactly
+        # where a request for support would end up.
         [
             "diff",
             str(FIXTURES / "site-two-owners.json"),
             str(FIXTURES / "site-one-owner.json"),
-            "--rules",
-            str(RULES),
         ],
     ]
     for argv in invocations:
@@ -1080,3 +1154,116 @@ def test_content_is_never_assigned_by_absence():
                 assert block[name]["state"] == "observed", (
                     f"{fixture} was called content while {name} was not observed"
                 )
+
+
+# ---------------------------------------------------------------------------
+# assess and verify: the two halves of handing a result to somebody else
+# ---------------------------------------------------------------------------
+
+
+def three_resources(tmp_path):
+    """An evidence directory with three distinct resources in it.
+
+    Distinct on purpose: the whole fixture set describes the same site many
+    times over, and a run set refuses two documents about one resource rather
+    than averaging them.
+    """
+    folder = tmp_path / "evidence"
+    folder.mkdir(parents=True)
+    for name in ("site-agents-with-sources", "site-spfx-current", "list-class-content"):
+        (folder / f"{name}.json").write_text(
+            (FIXTURES / f"{name}.json").read_text(encoding="utf-8"), encoding="utf-8"
+        )
+    return folder
+
+
+def assessed(capsys, tmp_path, *extra) -> dict:
+    out = tmp_path / "assessment.json"
+    code, _, err = run(
+        capsys,
+        "assess",
+        "--evidence",
+        str(three_resources(tmp_path)),
+        "--created-at",
+        "2026-08-09T10:00:00Z",
+        "--out",
+        str(out),
+        *extra,
+    )
+    assert code == 0, err
+    return json.loads(out.read_text(encoding="utf-8"))
+
+
+def test_assess_writes_something_verify_accepts(capsys, tmp_path):
+    document = assessed(capsys, tmp_path)
+    path = tmp_path / "assessment.json"
+
+    code, out, err = run(capsys, "verify", str(path))
+    assert code == 0, err
+    assert document["canonical"]["manifest"]["assessment_id"] in out
+    assert "contoso.sharepoint.com" in out
+
+
+def test_the_same_inputs_produce_the_same_assessment(capsys, tmp_path):
+    """`--created-at` exists for this. An identity that moved because time
+    passed would make an assessment unverifiable by construction, and nobody
+    could rebuild one to check a claim about it."""
+    first = assessed(capsys, tmp_path)
+    second = assessed(capsys, tmp_path / "again")
+    assert (
+        first["canonical"]["manifest"]["assessment_id"]
+        == second["canonical"]["manifest"]["assessment_id"]
+    )
+
+
+def test_verify_refuses_an_assessment_that_was_edited(capsys, tmp_path):
+    assessed(capsys, tmp_path)
+    path = tmp_path / "assessment.json"
+    document = json.loads(path.read_text(encoding="utf-8"))
+    document["canonical"]["manifest"]["tenant"] = "somebody-elses.sharepoint.com"
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    code, _, err = run(capsys, "verify", str(path))
+    assert code == 1
+    assert "digest" in err
+
+
+def test_verify_says_what_a_report_is_rather_than_crashing(capsys, tmp_path):
+    """A stored run is not an assessment, and telling somebody which command
+    they wanted costs one sentence."""
+    stored = tmp_path / "run.json"
+    stored.write_text(json.dumps(_run_for("site-spfx-current").to_dict()), "utf-8")
+
+    code, _, err = run(capsys, "verify", str(stored))
+    assert code == 2
+    assert "report" in err
+
+
+def test_the_manifest_cannot_claim_a_tenant_the_evidence_denies(capsys, tmp_path):
+    """Two collections of two different tenants in one directory. The refusal
+    is the point: every count in one summary would be a sum across estates
+    nobody manages together."""
+    folder = three_resources(tmp_path)
+    stray = json.loads((FIXTURES / "site-modern-clean.json").read_text())
+    stray["provenance"]["tenant"]["host"] = "fabrikam.sharepoint.com"
+    (folder / "stray.json").write_text(json.dumps(stray), encoding="utf-8")
+
+    code, _, err = run(capsys, "assess", "--evidence", str(folder))
+    assert code == 2
+    assert "more than one host" in err
+
+
+def test_an_assessment_renders_and_compares_like_what_it_carries(capsys, tmp_path):
+    """`report` and `diff` take one because an assessment is what somebody was
+    sent. Neither reads anything under `derived`: a report that could not be
+    regenerated from the canonical half would be a second original."""
+    assessed(capsys, tmp_path)
+    path = str(tmp_path / "assessment.json")
+
+    code, out, err = run(capsys, "report", path)
+    assert code == 0, err
+    assert "3 resources observed" in out
+
+    code, out, err = run(capsys, "diff", path, path)
+    assert code == 0, err
+    assert "Nothing changed" in out

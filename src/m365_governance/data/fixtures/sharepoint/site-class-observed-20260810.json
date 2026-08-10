@@ -1,0 +1,109 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-10T19:20:25Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "classification"
+    ],
+    "completed": [
+      "classification"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "https://contoso.sharepoint.com/sites/allcompany",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "All Company",
+    "url": "https://contoso.sharepoint.com/sites/allcompany"
+  },
+  "facts": {
+    "classification": {
+      "label_applied": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "SensitivityLabelInfo.Id",
+          "value": false
+        }
+      },
+      "label_id": {
+        "state": "missing",
+        "detail": "No sensitivity label is applied to this site, so there is no id to report."
+      },
+      "label_name": {
+        "state": "missing",
+        "detail": "No sensitivity label is applied, so there is no name to resolve."
+      },
+      "label_resolved": {
+        "state": "missing",
+        "detail": "No label is applied, so there is nothing to resolve."
+      },
+      "classification_set": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "Classification",
+          "value": false
+        }
+      },
+      "site_classification": {
+        "state": "missing",
+        "detail": "No classification string is set on this site."
+      },
+      "group_connected": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "GroupId",
+          "value": true
+        }
+      },
+      "group_id": {
+        "state": "observed",
+        "value": "2c8f1e40-0000-4000-8000-00000000cc01",
+        "raw": {
+          "field": "GroupId",
+          "value": "2c8f1e40-0000-4000-8000-00000000cc01"
+        }
+      },
+      "teams_connected": {
+        "state": "not-supported",
+        "detail": "IsTeamsConnected is a property of the tenant record, and this mode reads the site. See group_connected, which is observable without administrative rights."
+      },
+      "classified": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "SensitivityLabelInfo.Id or Classification",
+          "value": false
+        }
+      }
+    }
+  }
+}

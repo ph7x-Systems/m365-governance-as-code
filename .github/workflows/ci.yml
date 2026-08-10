@@ -9,6 +9,27 @@ permissions:
   contents: read
 
 jobs:
+  dco:
+    # Every commit in the pull request carries a Developer Certificate of
+    # Origin sign-off. A policy in CONTRIBUTING.md that nothing checks is a
+    # policy the first contributor discovers by not following it.
+    #
+    # It names the commits that are missing it. "DCO check failed" with nothing
+    # behind it is the message this project exists to stop shipping.
+    name: Signed off under the DCO
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The whole range, not a shallow clone: a shallow one cannot see the
+          # commits being merged and would pass by inspecting nothing.
+          fetch-depth: 0
+      - name: Every commit is signed off
+        run: ./tools/dco-check.sh
+          "${{ github.event.pull_request.base.sha }}"
+          "${{ github.event.pull_request.head.sha }}"
+
   contract:
     name: Release contract
     runs-on: ubuntu-latest

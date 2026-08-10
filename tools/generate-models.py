@@ -54,15 +54,36 @@ OUT = ROOT / "src" / "m365_governance" / "data" / "generated" / "csharp"
 #: without the contract changing, and the diff then means nothing.
 GENERATOR_VERSION = "1.0.0"
 
-#: The contract as a whole. Moves when any schema moves, so a consumer can say
-#: which contract it was built against in one string rather than by comparing
-#: six digests by eye.
-CONTRACT_VERSION = "1.0.0"
+
+def _contract_version() -> str:
+    """The engine's own version, and not a second one kept beside it.
+
+    THIS WAS A FROZEN CONSTANT, and its comment claimed it moved when any
+    schema moved. It did not: `run`, `run-set` and `assessment` went from 2.0.0
+    to 3.0.0 and this stayed at 1.0.0, so a consumer comparing it across a
+    BREAKING contract change would have seen no change at all — which is
+    exactly the question it exists to answer.
+
+    A hand-maintained number beside the package version is the second
+    representation this repository has removed everywhere else. The bundle is
+    published as part of the engine's release, so the engine's version is what
+    identifies it. `set_digest` still answers the narrower question of whether
+    these exact bytes are the same.
+    """
+    sys.path.insert(0, str(ROOT / "src"))
+    import m365_governance
+
+    return m365_governance.__version__
+
 
 #: The aggregates a consumer imports, and everything they contain. Evidence is
 #: here because an assessment carries the documents it was evaluated from: a
-#: consumer does not construct evidence, and it certainly reads it. The rule
-#: schema stays out, because nothing a consumer opens contains one.
+#: consumer does not construct evidence, and it certainly reads it.
+#:
+#: The rule schema stays out, because nothing a consumer opens IS one. A run
+#: does carry a citation the rule contract defines, and that shape is adopted
+#: by name rather than by modelling the whole authoring contract — see
+#: `adopt`. Being referenced is not the same as being consumed.
 GENERATE = (
     "run.schema.json",
     "run-set.schema.json",
@@ -87,7 +108,6 @@ SHAPE = {
     # Annotation, and it changes nothing a type can carry.
     "$comment",
     "additionalProperties",
-    "minimum",
     "minLength",
     "minItems",
     "uniqueItems",
@@ -110,6 +130,12 @@ CONSTRAINT = {
     # dictionary type cannot say it, so the generated header reports it
     # instead of the model pretending to enforce it.
     "minProperties",
+    # And a bounded integer is the same kind of claim. `minimum` used to sit
+    # among the SHAPE keywords, which said an `int` enforced it — it does not,
+    # and the generated header was quietly missing one of the things it exists
+    # to list. `maximum` arriving is what exposed it.
+    "minimum",
+    "maximum",
 }
 
 PRIMITIVE = {
@@ -164,6 +190,42 @@ def unknown_in(node, found: set[str]) -> set[str]:
     return found
 
 
+def adopt(owner: str, target: str, name: str, nested: list) -> str:
+    """Emit a shape defined by a schema this generator does not model.
+
+    Bounded on purpose: the shape must be self-contained. A def that refers on
+    to further defs would have to be resolved against the OTHER file's `$defs`,
+    and everything here resolves `#/$defs/...` against the document being
+    rendered — so it would quietly name types from the wrong contract. Refusing
+    that is the same rule as before, kept where it still applies.
+    """
+    source = SCHEMAS / f"{owner}.schema.json"
+    if not source.is_file():
+        raise Unsupported(
+            f"{name}: {owner} is not modelled and {source.name} is not here "
+            "either, so nothing can emit the type it names"
+        )
+
+    resolved = (
+        json.loads(source.read_text(encoding="utf-8")).get("$defs", {}).get(target)
+    )
+    if resolved is None:
+        raise Unsupported(f"{name}: {owner} has no $defs/{target} to adopt")
+    if refs_in(resolved, set()):
+        raise Unsupported(
+            f"{name}: {owner}#/$defs/{target} refers on to other defs, which "
+            "would resolve against the wrong contract. Flatten it or model "
+            f"{owner} properly."
+        )
+    if "properties" not in resolved:
+        # Not a record. Inline whatever it actually is, exactly as a local
+        # `$ref` to a non-object def already does.
+        return type_of(resolved, name, nested)
+
+    nested.append((pascal(target), resolved))
+    return pascal(target)
+
+
 def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> str:
     """The C# type for one property, queuing nested records as it goes."""
     if "$ref" in node:
@@ -188,7 +250,39 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
         # `$defs` type defined once is visible to all of them.
         url, _, fragment = ref.partition("#")
         if fragment.startswith("/$defs/"):
-            return pascal(fragment.rsplit("/", 1)[1])
+            # Only a `$defs` entry, never a pointer into one. A deeper pointer
+            # names a type by its last segment while the target file emits it
+            # by parent and key, so `#/$defs/provenance/properties/tenant`
+            # produced a reference to `Tenant` against a record called
+            # `ProvenanceTenant`. It compiled nowhere and the generator was
+            # perfectly happy. Refusing is the fix; the schema says what it
+            # shares by naming it.
+            owner = url.rstrip("/").rsplit("/", 2)[-2]
+
+            parts = fragment.strip("/").split("/")
+            if len(parts) != 2:
+                raise Unsupported(
+                    f"{name}: cross-file reference {ref} points inside a def. "
+                    "Give the shared shape its own $defs entry."
+                )
+
+            # A reference into a schema nothing models used to be refused,
+            # because it named a type no file would ever emit: it generated
+            # cleanly and failed at the consumer's compiler, a long way from
+            # here. `run` referenced the rule contract's `source`, and `Source`
+            # existed in no generated file because rules are authored rather
+            # than serialised.
+            #
+            # REFUSING WAS THE WRONG HALF OF THE FIX. The objection was that
+            # nothing emitted the type, so the answer is to emit it. A run
+            # carries citations to a consumer whether or not the contract that
+            # defines them is itself deserialised, and the alternative was a
+            # consumer parsing a citation out of raw JSON by hand — which is
+            # the one thing a generated model exists to stop.
+            if f"{owner}.schema.json" not in GENERATE:
+                return adopt(owner, parts[1], name, nested)
+
+            return pascal(parts[1])
         return pascal(url.rstrip("/").rsplit("/", 2)[-2])
 
     if "oneOf" in node:
@@ -196,6 +290,14 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
         if len(branches) == 1:
             inner = type_of(branches[0], name, nested, defs)
             return inner if inner.endswith("?") else inner + "?"
+
+    if "enum" in node and "type" not in node:
+        values = node["enum"]
+        if values and all(isinstance(v, str) for v in values):
+            # An enum of strings is a string. Without this the generator has no
+            # `type` to read, falls back to "some JSON", and a consumer gets a
+            # JsonElement for a field with five possible values.
+            return "string"
 
     declared = node.get("type")
     if isinstance(declared, list):
@@ -213,6 +315,19 @@ def type_of(node: dict, name: str, nested: list, defs: dict | None = None) -> st
         if "properties" in node:
             nested.append((pascal(name), node))
             return pascal(name)
+
+        # A map: no fixed keys, and every value the same shape. The keys are
+        # data — a slice name, a rule id, a resource class — so there is
+        # nothing to name a property after, and that is not a reason to hand a
+        # consumer raw JSON. `coverage.unavailable` reached a viewer as an
+        # opaque element and the viewer would have had to parse the contract by
+        # hand to read it, which is the one thing a generated model exists to
+        # stop.
+        extra = node.get("additionalProperties")
+        if isinstance(extra, dict) and extra:
+            value = type_of(extra, f"{name}_entry", nested, defs)
+            return f"IReadOnlyDictionary<string, {value}>"
+
         return "JsonElement"
 
     if declared in PRIMITIVE:
@@ -416,13 +531,17 @@ def build_manifest() -> dict:
     # document, and it is why nothing here duplicates a definition to avoid a
     # cross-file reference.
     schemas = {}
-    for path in sorted(SCHEMAS.glob("*.json")):
+    # `rglob`, so the archive is in the manifest. A superseded contract is not
+    # modelled — a consumer needs a type for what it produces today — but it
+    # has to resolve, or an archived document arrives at a registry that has
+    # never heard of the contract it declares.
+    for path in sorted(SCHEMAS.rglob("*.json")):
         document = json.loads(path.read_text(encoding="utf-8"))
         uri = document["$id"]
         if uri in schemas:
             raise Unsupported(f"two schemas claim the same $id: {uri}")
         schemas[uri] = {
-            "path": f"schemas/{path.name}",
+            "path": f"schemas/{path.relative_to(SCHEMAS).as_posix()}",
             "digest": hashlib.sha256(path.read_bytes()).hexdigest(),
         }
     check_closure(schemas)
@@ -441,7 +560,7 @@ def build_manifest() -> dict:
             "itself opportunistically against whatever engine happened to be on",
             "the machine would be reproducible only on that machine.",
         ],
-        "contract_version": CONTRACT_VERSION,
+        "contract_version": _contract_version(),
         "generator_version": GENERATOR_VERSION,
         "generated": sorted(
             pascal(n.replace(".schema.json", "")) + ".g.cs" for n in GENERATE

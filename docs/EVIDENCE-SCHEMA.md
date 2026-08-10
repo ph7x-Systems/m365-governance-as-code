@@ -49,7 +49,7 @@ facts: { ... }
 
 `facts` is the only part that varies by resource type. Everything else is
 identical so that a report can describe how any evidence was gathered without
-knowing what it is about.
+knowing what it is about. The `resource` block is section 15.
 
 ---
 
@@ -62,8 +62,11 @@ provenance:
   collector_version: 1.0.0
   source_system: SharePoint Online
   source_api: Microsoft Graph v1.0
-  tenant_id: 00000000-0000-0000-0000-000000000000
-  identity_kind: application            # application | delegated
+  tenant:
+    id: null                            # the directory identity, when observed
+    host: contoso.sharepoint.com        # an address, not the identity
+  identity_kind: application            # application | delegated | not-established
+  acquisition: collected                # collected | imported
   scopes:
     - Sites.Read.All
 ```
@@ -73,7 +76,55 @@ seen. A delegated run sees what one person sees, and a report built from it
 must not be read as a tenant-wide statement. This field is the difference
 between a partial audit and a misleading one.
 
-### `imported`, the third kind
+`not-established` is the third identity, and it means the evidence does not say
+who observed it. Common in an import, and an honest answer rather than a
+missing one.
+
+### Identity and acquisition are two questions
+
+**Who observed this** and **how did it get here** are not the same question,
+and they were one field. `identity_kind` accepted `imported`, which answers the
+second while occupying the first, with two consequences:
+
+- an import that *did* record its collecting identity could not say so. It was
+  flattened to `imported` and the identity was thrown away;
+- the schema's conditional rules — which require `scopes` on a live run and
+  `import_source` on an import — were keyed on identity in order to decide a
+  question about acquisition.
+
+So there are two fields. `identity_kind` is an authentication identity and says
+`not-established` when nothing recorded one. `acquisition` is `collected` or
+`imported` and governs `scopes` and `import_source`.
+
+### A tenant is not a hostname
+
+A tenant has one identity and any number of addresses. The admin centre, the
+primary host and every multi-geo satellite are all addresses of one
+organisation, and treating an address as the identity is what made one tenant
+read as two: the collector recorded whichever host it connected to, so evidence
+gathered through the admin centre could not be assembled with evidence gathered
+through a site.
+
+```yaml
+tenant:
+  id: null
+  host: contoso.sharepoint.com
+```
+
+`id` is the directory identity and is canonical whenever it can be observed.
+**No collection path for it has been proven on a tenant**, so today it is
+`null` — and it is required so that `null` says *nobody read this* rather than
+the field saying nothing at all.
+
+`host` is normalised from the admin form Microsoft documents as
+`{prefix}-admin`, so one tenant reached two ways produces one value. That
+normalisation is a **compatibility mechanism** for as long as the id is
+unobserved, not a definition of a tenant. A multi-geo satellite keeps its own
+host and is never folded into the primary on the strength of a shared prefix:
+two hosts with no id refuse to become one assessment, and the refusal says that
+collecting the directory id is what would settle it.
+
+### `imported` evidence
 
 Evidence does not always come from a collector we wrote. A migration tool
 exports an inventory, somebody sends a CSV, and the facts in it are perfectly
@@ -86,7 +137,11 @@ provenance:
   collector: sharegate-import-adapter
   collector_version: 0.1.0
   source_system: ShareGate
-  identity_kind: imported
+  tenant:
+    id: null
+    host: contoso.sharepoint.com
+  identity_kind: not-established        # this export does not name its collector
+  acquisition: imported
   import_source:
     tool: ShareGate Desktop
     version: "24.1"
@@ -94,7 +149,8 @@ provenance:
     exported_by: migration-team@contoso.com
 ```
 
-An import carries **no `scopes`**, and the schema forbids them. Writing
+An import carries **no `scopes`**, and the schema forbids them, keyed on
+`acquisition`. Writing
 `scopes: []` would read as "no permissions were needed" rather than "this does
 not apply", and those are opposite claims. For the same reason a live run may
 not carry an `import_source`: the two are exclusive, and a document that
@@ -249,8 +305,9 @@ provenance:
   collector_version: 1.0.0
   source_system: SharePoint Online
   source_api: Microsoft Graph v1.0
-  tenant_id: 00000000-0000-0000-0000-000000000000
+  tenant: {id: null, host: contoso.sharepoint.com}
   identity_kind: application
+  acquisition: collected
   scopes: [Sites.Read.All]
 coverage:
   requested: [owners, permissions]
@@ -259,6 +316,8 @@ coverage:
 resource:
   id: contoso.sharepoint.com,7c1f...,9ab2...
   type: site
+  scope: collection
+  parent: contoso.sharepoint.com
   display_name: Finance
   url: https://contoso.sharepoint.com/sites/Finance
 facts:
@@ -407,3 +466,49 @@ called `exclude` because excluding is the dangerous version: a document
 library over a hard product limit is over it whoever created it, and
 SharePoint calling it a catalog is not a reason for a governance report to
 stay silent about it.
+
+---
+
+## 15. Resource: what was observed, and where it sits
+
+```yaml
+resource:
+  id: https://contoso.sharepoint.com/sites/finance
+  type: site                                          # what the product calls it
+  scope: collection                                   # how far its settings reach
+  parent: https://contoso-admin.sharepoint.com        # or null
+  display_name: Finance
+  url: https://contoso.sharepoint.com/sites/finance
+```
+
+**`id` is opaque.** It identifies and nothing else. It is not parsed, not split
+on a separator, and never read for a parent: the moment one consumer learns
+that the text before `::` is the site, every consumer has to learn a grammar,
+and the grammar is different in the next workload.
+
+**`scope` is governance reach, not the product's menu.** A SharePoint site, an
+Exchange mailbox and a Team are all `collection`. A list, a folder and a
+channel are all `container`. That is the whole point of not calling it
+`site_level`: a model named after one product's hierarchy needs a second model
+at the second product, and then a report that spans both can no longer say what
+a finding applies to.
+
+| `scope`      | what it means                              | SharePoint today |
+|--------------|--------------------------------------------|------------------|
+| `tenant`     | settings that reach the whole estate       | tenant           |
+| `collection` | a unit of ownership with its own settings  | site             |
+| `container`  | something inside a collection              | list, library    |
+| `item`       | a single object                            | — |
+
+`type` stays alongside it, because a report that says `container` to a
+SharePoint administrator is worse than one that says `list`. `type` is what to
+print; `scope` is what to reason with.
+
+**`parent` is required, and `null` is a real answer.** A tenant has nothing
+above it. Everything else does, and an optional containment field is one that
+gets omitted — at which point the relationship goes back into prose, and
+"this list is in that site" is knowable only by a human reading two URLs.
+
+It is required rather than derived for the same reason the id is opaque:
+deriving it would mean parsing, and parsing an identifier is a workload-specific
+rule pretending to be a general one.

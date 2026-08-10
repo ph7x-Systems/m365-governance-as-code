@@ -6,6 +6,9 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from . import attention as attention_module
+from . import identity, registry
+
 
 class Outcome(StrEnum):
     PASS = "pass"
@@ -71,8 +74,8 @@ class Result:
     rule_id: str
     rule_version: str
     schema_version: str
-    resource_id: str
-    resource_type: str
+    #: The resource this result is about, as a structured reference.
+    resource_ref: dict
     outcome: Outcome
     message: str
     basis_type: str
@@ -89,12 +92,12 @@ class Result:
     engine_detail: str = ""
 
     def to_dict(self) -> dict:
-        return {
+        document = {
             "rule_id": self.rule_id,
             "title": self.title,
             "rule_version": self.rule_version,
             "schema_version": self.schema_version,
-            "resource": {"id": self.resource_id, "type": self.resource_type},
+            "resource": dict(self.resource_ref),
             "outcome": self.outcome.value,
             "message": self.message,
             "basis": self.basis_type,
@@ -116,6 +119,12 @@ class Result:
             "message_degraded": self.message_degraded,
             "engine_detail": self.engine_detail,
         }
+        # Derived from the block above rather than from the dataclass, so the
+        # judgement is made from exactly the facts a consumer receives. Anything
+        # it could read that a reader cannot would be a judgement nobody can
+        # check.
+        document["attention"] = attention_module.for_result(document)
+        return document
 
     @classmethod
     def from_dict(cls, data: dict) -> Result:
@@ -132,8 +141,7 @@ class Result:
             title=data.get("title", ""),
             rule_version=data.get("rule_version", ""),
             schema_version=data.get("schema_version", ""),
-            resource_id=resource.get("id", "<unknown>"),
-            resource_type=resource.get("type", "<unknown>"),
+            resource_ref=identity.ref(resource),
             outcome=Outcome(data["outcome"]),
             message=data.get("message", ""),
             basis_type=data.get("basis", "<unknown>"),
@@ -200,7 +208,9 @@ class Run:
         )
 
     def to_dict(self) -> dict:
+        results = [r.to_dict() for r in self.results]
         return {
+            "$schema": registry.contract("run"),
             "provenance": self.provenance,
             "coverage": self.coverage,
             "resource": self.resource,
@@ -209,7 +219,8 @@ class Run:
             "set_aside": self.set_aside,
             "rule_source": self.rule_source,
             "counts": self.counts(),
-            "results": [r.to_dict() for r in self.results],
+            "results": results,
+            "attention": attention_module.for_run(results, self.coverage),
         }
 
 
@@ -240,17 +251,19 @@ class RunSet:
 
     runs: list[Run]
     coverage: dict = field(default_factory=dict)
-    schema_version: str = "1.0"
 
     def __post_init__(self) -> None:
-        ids = [run.resource.get("id", "") for run in self.runs]
-        duplicates = sorted(
-            {resource_id for resource_id in ids if ids.count(resource_id) > 1}
-        )
+        keys = [identity.key(run.resource) for run in self.runs]
+        duplicates = sorted({k for k in keys if keys.count(k) > 1})
         if duplicates:
-            joined = ", ".join(duplicates)
+            # Assembled for the message only. Comparison above is structural;
+            # nothing reads this string back.
+            joined = ", ".join(
+                identity.readable(dict(zip(identity.FIELDS, k, strict=False)))
+                for k in duplicates
+            )
             raise DuplicateResource(
-                f"a run set contains duplicate resource ids: {joined}"
+                f"a run set describes the same resource twice: {joined}"
             )
 
     def counts(self) -> dict[str, int]:
@@ -283,7 +296,10 @@ class RunSet:
 
     def to_dict(self) -> dict:
         return {
-            "run_schema_version": self.schema_version,
+            # The exact contract this document claims. It replaces
+            # `run_schema_version: "1.0"`, a second version maintained by hand
+            # in a form that could not express the one in the schema's own $id.
+            "$schema": registry.contract("run-set"),
             "resources": len(self.runs),
             "by_class": self.by_class(),
             "set_aside": sum(1 for run in self.runs if run.set_aside),
@@ -297,5 +313,4 @@ class RunSet:
         return cls(
             runs=[Run.from_dict(run) for run in data.get("runs", [])],
             coverage=data.get("run_coverage", {}),
-            schema_version=data.get("run_schema_version", "1.0"),
         )

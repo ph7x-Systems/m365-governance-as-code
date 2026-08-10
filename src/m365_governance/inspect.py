@@ -231,7 +231,8 @@ def stats(path: Path) -> str:
     out.append(f"  identity          {identity}")
     if identity == "delegated":
         out.append("                    this run saw what one person sees")
-    if identity == "imported":
+    out.append(f"  acquisition       {provenance.get('acquisition', '?')}")
+    if provenance.get("acquisition") == "imported":
         source = provenance.get("import_source", {})
         out.append(
             f"  export tool       {source.get('tool', '?')} "

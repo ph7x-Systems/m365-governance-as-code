@@ -1,3 +1,5 @@
+![Microsoft 365 Governance as Code, by pH7x Systems](docs/banner.png)
+
 # Microsoft 365 Governance as Code
 
 
@@ -197,7 +199,7 @@ the source, and how the rule can pass while the problem survives.
 | `validate` | Every rule against the schemas and the invariants |
 | `evaluate` | Rules against evidence: one document or a directory of them. Markdown, JSON or self-contained HTML |
 | `report RUN.json` | Re-render a stored run in another format, without evaluating again |
-| `diff BEFORE AFTER` | What moved between two runs, and whether the rule moved too |
+| `diff BEFORE AFTER` | What moved between two assessments, and what that does not establish |
 
 `diff` is the one a periodic audit needs:
 
@@ -372,9 +374,17 @@ Verified by running it, delegated, against a live tenant on 2026-08-06:
 | List item count | `Get-PnPList` | read on the site |
 | Permission inheritance | `Get-PnPList -Includes HasUniqueRoleAssignments` | read on the site |
 
-`-ClientId` is mandatory. Since PnP.PowerShell 2.99 the module ships with no
-application of its own, so a connection without one fails before it reaches
-the network. Register an Entra ID app, or use one your tenant already has.
+`-ClientId` is required by this collector. PnP.PowerShell removed its own
+multi-tenant application in [2.12.0](https://github.com/pnp/powershell/blob/dev/CHANGELOG.md),
+so a connection with no client id anywhere fails before it reaches the network.
+Register an Entra ID app, or use one your tenant already has.
+
+The module accepts a
+[default client id](https://pnp.github.io/powershell/articles/defaultclientid.html)
+instead — `Set-PnPManagedAppId`, or `ENTRAID_APP_ID` / `ENTRAID_CLIENT_ID` /
+`AZURE_CLIENT_ID`. This collector still asks for it explicitly, because
+evidence has to say which identity observed it and an ambient environment
+variable is one nobody can name afterwards.
 
 An interactive sign-in produces `identity_kind: delegated`, and every report
 built from it says so: that run saw what one person sees, and nothing in it

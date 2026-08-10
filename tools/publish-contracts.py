@@ -6,7 +6,9 @@
     <dir>/manifest.json     contract version, a digest per schema, one over the set
     <dir>/schemas/*.json    the schemas themselves
     <dir>/csharp/*.g.cs     the generated models
-    <dir>/samples/*.json    documents this engine really emitted
+    <dir>/samples/*.json    runs this engine really emitted
+    <dir>/assessments/*.json  whole assessments, digests and all
+    <dir>/comparisons/*.json  what changed between two of them
 
 WHY SAMPLES TRAVEL WITH IT. A contract a consumer cannot exercise is a contract
 it can only agree with in principle. The samples are produced by evaluating
@@ -65,14 +67,16 @@ def main() -> int:
             return 1
 
     out = args.out
-    for sub in ("schemas", "csharp", "samples"):
+    for sub in ("schemas", "csharp", "samples", "assessments", "comparisons"):
         target = out / sub
         if target.exists():
             shutil.rmtree(target)
         target.mkdir(parents=True)
 
-    for path in sorted(SCHEMAS.glob("*.json")):
-        shutil.copy2(path, out / "schemas" / path.name)
+    for path in sorted(SCHEMAS.rglob("*.json")):
+        target = out / "schemas" / path.relative_to(SCHEMAS)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, target)
     for path in sorted((GENERATED / "csharp").glob("*.g.cs")):
         shutil.copy2(path, out / "csharp" / path.name)
     shutil.copy2(manifest_path, out / "manifest.json")
@@ -105,6 +109,36 @@ def main() -> int:
             done.stdout, encoding="utf-8"
         )
         written += 1
+    # An assessment is the only artefact whose identity is derived from its own
+    # bytes, so a consumer that never received one cannot have tested the part
+    # of the contract that matters most. This one used to be copied across by
+    # hand, which held until the first schema change and then quietly held a
+    # document whose digests described an older engine.
+    assessments = sorted(
+        (ROOT / "src" / "m365_governance" / "data" / "fixtures" / "assessment").glob(
+            "*.json"
+        )
+    )
+    if not assessments:
+        print("  ✗ no assessment fixtures to publish")
+        return 1
+    for path in assessments:
+        shutil.copy2(path, out / "assessments" / f"assessment-{path.name}")
+
+    # A comparison is the one document that relates two others, so a consumer
+    # that never received one cannot have exercised how two archives are read
+    # together.
+    comparisons = sorted(
+        (ROOT / "src" / "m365_governance" / "data" / "fixtures" / "comparison").glob(
+            "*.json"
+        )
+    )
+    if not comparisons:
+        print("  ✗ no comparison fixtures to publish")
+        return 1
+    for path in comparisons:
+        shutil.copy2(path, out / "comparisons" / f"comparison-{path.name}")
+
     if written < 20:
         print(f"  ✗ only {written} samples produced, which is fewer than this")
         print("    engine has fixtures. A bundle with almost no samples lets a")
@@ -114,7 +148,8 @@ def main() -> int:
     print(
         f"  ✓ contract {manifest['contract_version']} published to {out}: "
         f"{len(manifest['schemas'])} schemas, {len(manifest['generated'])} models, "
-        f"{written} samples"
+        f"{written} samples, {len(assessments)} assessments, "
+        f"{len(comparisons)} comparisons"
     )
     return 0
 

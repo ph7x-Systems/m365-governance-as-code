@@ -58,7 +58,7 @@ class Slice:
     #: one. Microsoft publishes nothing about how many agents an organisation
     #: should have or where they should live, so a threshold would be invented
     #: and a pass would mean nothing. The inventory is still worth collecting:
-    #: the consumer is the report and the Workbench, and `consumed_by` names it
+    #: the consumer is the report and any viewer, and `consumed_by` names it
     #: so that "no rule" never reads as "nobody looked".
     produces_findings: bool = True
     consumed_by: str = "governance rules"
@@ -74,7 +74,10 @@ SLICES = {
             needs_tenant=False,
             profile="default",
             produces_findings=False,
-            consumed_by="the agent inventory in a report, and the Workbench",
+            # SHIPPED TEXT. It named a particular private product, which put
+            # that product's name into evidence a customer receives from a
+            # public engine.
+            consumed_by="the agent inventory in a report, and any viewer",
             describes="the Copilot agents in one site, and the sources each declares",
             shaped_like="site-agents-with-sources",
         ),

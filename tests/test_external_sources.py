@@ -182,3 +182,65 @@ def test_the_scan_actually_finds_things():
     """A completeness check that silently matches nothing passes forever. This
     is the test that notices."""
     assert len(mentions()) >= 2
+
+
+#: Branches move. A licence read from one is a licence for whatever that branch
+#: says tomorrow, which is not a record of anything.
+MOVABLE = ("dev", "main", "master", "develop", "trunk", "HEAD", "latest")
+
+
+def _branch_in(url: str) -> str | None:
+    """The ref in a GitHub blob or tree URL, when it is a movable branch."""
+    m = re.search(r"/(?:blob|tree|raw)/([^/]+)/", url or "")
+    if not m:
+        return None
+    return m.group(1) if m.group(1) in MOVABLE else None
+
+
+@pytest.mark.parametrize("source", SOURCES, ids=lambda s: s["id"])
+def test_a_pinned_runtime_reads_its_licence_at_the_pinned_ref(source):
+    """A dependency the collector requires at an exact version must have its
+    licence read at that version.
+
+    The PnP record pointed at `blob/dev/LICENSE` while the collector required
+    3.3.0. Those are two different documents the moment upstream relicenses,
+    and the register would have kept saying MIT with a straight face.
+    """
+    if "runtime-dependency" not in source["intended_use"]:
+        return
+    if not source.get("pinned_version"):
+        pytest.fail(
+            f"{source['id']}: used as a runtime dependency without recording which "
+            "version. A licence is a licence for a version, not for a project."
+        )
+
+    for campo in ("license_source", "contribution_terms"):
+        url = source.get(campo)
+        if not url or not url.startswith("http"):
+            continue
+        branch = _branch_in(url)
+        assert not branch, (
+            f"{source['id']}: {campo} reads the licence at `{branch}`, which moves. "
+            f"Pin it to {source['pinned_tag']} — the ref that matches the version "
+            "the collector requires."
+        )
+        assert source["pinned_tag"] in url or source["pinned_commit"] in url, (
+            f"{source['id']}: {campo} is pinned to neither {source['pinned_tag']} "
+            f"nor {source['pinned_commit']}"
+        )
+
+
+@pytest.mark.parametrize("source", SOURCES, ids=lambda s: s["id"])
+def test_what_is_not_shipped_says_so(source):
+    """The distribution boundary is the whole reason a runtime dependency does
+    not need its notice carried. If that ever changes, it changes here first."""
+    if "runtime-dependency" not in source["intended_use"]:
+        return
+    assert source.get("shipped") is False, (
+        f"{source['id']}: a runtime dependency that is shipped is redistribution, "
+        "and redistribution needs the licence notice travelling with it. Say so "
+        "here and audit the wheel, the installer and the third-party notices."
+    )
+    assert source.get("installed_by"), (
+        f"{source['id']}: nobody is recorded as installing it"
+    )

@@ -2,11 +2,17 @@
 
 # Governance report: Documents
 
-- Resource: `contoso,list,documents` (list)
+- Resource: `<unknown>` (list)
 - Collected: 2026-08-05T14:02:11Z by `spo-collector` 0.1.0
 - Source: SharePoint Online via Microsoft Graph v1.0
 - Rules: shipped with this version
 - Identity: application, scopes: Sites.Read.All
+
+## Attention
+
+**Part of this could not be answered, so the report describes less than the resource.**
+
+- 2 finding(s) reached no answer
 
 ## Summary
 
@@ -16,10 +22,10 @@
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 2 |
 | Error | 0 |
-| Not applicable | 0 |
+| Unknown | 2 |
 | Pass | 1 |
+| Not applicable | 0 |
 
 2 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 

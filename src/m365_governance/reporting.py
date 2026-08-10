@@ -12,16 +12,25 @@ from __future__ import annotations
 
 import json
 
+from . import attention
+from . import identity as identity_module
 from .results import Outcome, Run, RunSet
 
-_ORDER = [
-    Outcome.FAIL,
-    Outcome.INVALID_EVIDENCE,
-    Outcome.UNKNOWN,
-    Outcome.ERROR,
-    Outcome.NOT_APPLICABLE,
-    Outcome.PASS,
-]
+#: The order a report groups its findings in — DERIVED, never written here.
+#:
+#: This was a hand-written list, and a consumer surface held a different one:
+#: `pass` came before `not-applicable` there, and an engine error was nowhere
+#: in it at all. Two surfaces of one product, each internally consistent,
+#: disagreeing about what a reader should see first. Neither was wrong on its
+#: own terms, which is what made it invisible.
+#:
+#: Ties keep the enumeration's own order, so the sequence is stable across runs
+#: rather than depending on how a dictionary happened to iterate.
+_OUTCOMES = list(Outcome)
+_ORDER = sorted(
+    Outcome,
+    key=lambda o: (attention.rank_of_outcome(o.value), _OUTCOMES.index(o)),
+)
 
 _LABEL = {
     Outcome.PASS: "Pass",
@@ -39,7 +48,10 @@ _BASIS_GLOSS = {
         "Microsoft recommends this; the product permits the alternative"
     ),
     "convention": "widely held practice, not documented as a rule",
-    "opinion": "our position, stated as ours",
+    # Named rather than implied. A report is read by somebody who did not
+    # write it, and "our position" does not say whose — beside four bases
+    # that are Microsoft's, an unattributed one reads as theirs.
+    "opinion": "pH7x's own position, and no vendor's",
 }
 
 
@@ -50,7 +62,7 @@ def to_json(run: Run) -> str:
 def to_markdown(run: Run) -> str:
     lines: list[str] = []
     resource = run.resource
-    name = resource.get("display_name") or resource.get("id", "<unknown>")
+    name = identity_module.label(resource)
 
     lines.append(f"# Governance report: {name}")
     lines.append("")
@@ -60,6 +72,10 @@ def to_markdown(run: Run) -> str:
     lines.extend(_provenance_lines(run))
     lines.extend(_coverage_lines(run))
     lines.append("")
+    # Before the counts, because what needs a person is the question somebody
+    # opens a governance report with, and a table of six numbers does not
+    # answer it.
+    lines.extend(_attention_lines(run))
     lines.extend(_summary_lines(run))
     lines.append("")
 
@@ -87,8 +103,12 @@ def _provenance_lines(run: Run) -> list[str]:
     ]
     if run.rule_source:
         lines.append(f"- Rules: {run.rule_source}")
-    identity = prov.get("identity_kind")
-    if identity == "imported":
+    identity_kind = prov.get("identity_kind")
+    # Keyed on acquisition, not on identity. They were one field, so this
+    # warning was asking who observed the evidence in order to answer how it
+    # got here — and an import that named its collecting identity lost the
+    # warning entirely, which is the one case where it matters most.
+    if prov.get("acquisition") == "imported":
         source = prov.get("import_source", {})
         lines.append(
             f"- **Evidence imported from {source.get('tool', 'another tool')}"
@@ -108,14 +128,14 @@ def _provenance_lines(run: Run) -> list[str]:
         stale = _export_gap(prov)
         if stale:
             lines.append(f"- **{stale}**")
-    elif identity == "delegated":
+    elif identity_kind == "delegated":
         lines.append(
             "- **Identity: delegated.** This run saw what one person sees. "
             "Nothing here may be read as a tenant-wide statement."
         )
     else:
         scopes = ", ".join(prov.get("scopes", [])) or "none recorded"
-        lines.append(f"- Identity: {identity or '?'}, scopes: {scopes}")
+        lines.append(f"- Identity: {identity_kind or '?'}, scopes: {scopes}")
     return lines
 
 
@@ -156,6 +176,42 @@ def _coverage_lines(run: Run) -> list[str]:
         lines.append(
             f"  - `{block}` — {info.get('state', '?')}: {info.get('detail', '')}"
         )
+    return lines
+
+
+#: How each state reads at the top of a report. Wording only — WHICH state a
+#: run is in is the engine's judgement, arriving on the document, and this maps
+#: it to a sentence rather than working it out again.
+_ATTENTION_LABEL = {
+    "act": "Something here is outside what the vendor documents.",
+    "review": "Nothing is outside a documented requirement. Some findings are "
+    "worth weighing.",
+    "observe": "Part of this could not be answered, so the report describes "
+    "less than the resource.",
+    "none": "Everything asked was read, and nothing failed.",
+    "not-evaluated": "No judgement was formed here.",
+}
+
+
+def _attention_lines(run: Run) -> list[str]:
+    """What the engine says needs a person, and why.
+
+    THE SAME SENTENCE THE WORKBENCH SHOWS, from the same field. The two
+    surfaces used to answer this separately — one decided from counts
+    that `fail > 0` meant act, and the command line never asked the question at
+    all — so a report and a window over one run could lead with different
+    things and neither was wrong on its own terms.
+    """
+    judged = run.to_dict()["attention"]
+    lines = [
+        "## Attention",
+        "",
+        f"**{_ATTENTION_LABEL.get(judged['state'], judged['state'])}**",
+        "",
+    ]
+    # The reasons, never a bare verdict.
+    lines.extend(f"- {because}" for because in judged["because"])
+    lines.append("")
     return lines
 
 
@@ -289,7 +345,7 @@ def to_html(run: Run) -> str:
     a different shade is the green box under a new name.
     """
     resource = run.resource
-    name = resource.get("display_name") or resource.get("id", "<unknown>")
+    name = identity_module.label(resource)
     counts = run.counts()
     answered = counts[Outcome.PASS.value] + counts[Outcome.FAIL.value]
     total = len(run.results)
@@ -301,7 +357,7 @@ def to_html(run: Run) -> str:
         f"<title>Governance report: {_esc(name)}</title>",
         f"<style>{_CSS}</style></head><body><main>",
         f"<h1>Governance report: {_esc(name)}</h1>",
-        f'<p class="meta">{_esc(resource.get("id", ""))} '
+        f'<p class="meta">{_esc(identity_module.readable(resource))} '
         f"({_esc(resource.get('type', '?'))})</p>",
     ]
 
@@ -313,8 +369,8 @@ def to_html(run: Run) -> str:
             f"{_esc(prov.get('collector_version', ''))}, from "
             f"{_esc(prov.get('source_system', '?'))}.</p>"
         )
-        identity = prov.get("identity_kind")
-        if identity == "imported":
+        identity_kind = prov.get("identity_kind")
+        if prov.get("acquisition") == "imported":
             source = prov.get("import_source", {})
             exported = ", ".join(
                 part
@@ -337,7 +393,7 @@ def to_html(run: Run) -> str:
             gap = _export_gap(prov)
             if gap:
                 parts.append(f'<p class="warn"><strong>{_esc(gap)}</strong></p>')
-        elif identity == "delegated":
+        elif identity_kind == "delegated":
             parts.append(
                 '<p class="warn"><strong>Identity: delegated.</strong> This run '
                 "saw what one person sees. Nothing here may be read as a "
@@ -566,7 +622,7 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
             lines.append("")
             continue
         for run in interesting:
-            name = run.resource.get("display_name") or run.resource.get("id", "?")
+            name = identity_module.label(run.resource)
             klass = f" · {run.resource_class}" if run.resource_class else ""
             lines.append(f"### {_esc_md(name)}{klass}")
             lines.append("")
@@ -691,7 +747,7 @@ def many_to_html(value: list[Run] | RunSet) -> str:
             parts.append(f"<p>{len(selected)} resources, nothing but passes.</p>")
             continue
         for run in interesting:
-            name = run.resource.get("display_name") or run.resource.get("id", "?")
+            name = identity_module.label(run.resource)
             klass = f" · {run.resource_class}" if run.resource_class else ""
             parts.append(f"<h3>{_esc(name)}{_esc(klass)}</h3>")
             for result in run.results:
@@ -701,3 +757,87 @@ def many_to_html(value: list[Run] | RunSet) -> str:
 
     parts.append("</main></body></html>")
     return "\n".join(parts) + "\n"
+
+
+# ---------------------------------------------------------------------------
+# a comparison, for a person
+# ---------------------------------------------------------------------------
+
+
+def comparison_to_markdown(document: dict) -> str:
+    """One comparison, rendered.
+
+    A projection and never a second opinion: every line here is read out of the
+    document, including which changes there are and what each one means. If
+    this rendering and the JSON ever disagreed, one of them would be computing
+    something, and a reader would have no way to tell which.
+    """
+    before, after = document["before"], document["after"]
+    diff = document["diff"]
+    changes = diff["changes"]
+
+    lines = [
+        "# What changed",
+        "",
+        f"- Tenant: {before['tenant']['host']}",
+        f"- Before: {before['created_at']}  `{before['assessment_id'][:12]}`",
+        f"- After:  {after['created_at']}  `{after['assessment_id'][:12]}`",
+        f"- Produced by: {diff['produced_by']}",
+        "",
+    ]
+
+    if not changes:
+        lines += [
+            "Nothing changed. Every resource and rule that appears in one "
+            "assessment appears in the other with the same outcome, the same "
+            "rule version and the same evidence.",
+            "",
+        ]
+        return "\n".join(lines)
+
+    kinds = {"changed": [], "added": [], "removed": []}
+    for change in changes:
+        kinds[change["kind"]].append(change)
+
+    lines += [f"{len(changes)} changes.", ""]
+
+    for kind, heading in (
+        ("changed", "Changed"),
+        ("added", "Newly evaluated"),
+        ("removed", "No longer evaluated"),
+    ):
+        if not kinds[kind]:
+            continue
+        lines += [f"## {heading}", ""]
+        for change in kinds[kind]:
+            movement = (
+                f"{change['before']} → {change['after']}"
+                if kind == "changed"
+                else (change["after"] or change["before"])
+            )
+            lines.append(
+                f"- **{change['rule']}** on `{change['resource']}`: {movement}"
+            )
+            if change.get("changes"):
+                lines.append(f"  - observed to differ: {', '.join(change['changes'])}")
+            state = change.get("attribution", {}).get("state")
+            if state == "ambiguous":
+                factors = ", ".join(change["attribution"]["factors"])
+                lines.append(
+                    f"  - **why is not established**: {factors} both moved, and "
+                    "nothing here evaluated which one produced the outcome"
+                )
+            elif state == "not-evaluated":
+                lines.append(
+                    "  - **why is not established**: nobody evaluated causality"
+                )
+        lines.append("")
+
+    lines += [
+        "> **What this does not say.** These are observations about two "
+        "recorded states. Which change produced which outcome is a separate "
+        "question, and answering it needs the older evidence re-evaluated "
+        "against the newer rule — which nothing here did.",
+        "",
+    ]
+    return "\n".join(lines)

@@ -128,7 +128,7 @@ This is not caution. It is the only pattern that has caught anything here:
 
 | | |
 |---|---|
-| **PnP** | `Connect-PnPOnline` has required `-ClientId` since 2.99. The collector as first written could never have connected to anything. |
+| **PnP** | Microsoft removed the shared PnP Management Shell application on 9 September 2024, so callers now bring their own application registration — directly or through a supported configured default. This collector requires an explicit `-ClientId` because evidence has to name the application that observed it, and a value read from an ambient environment variable is one nobody can name afterwards. The claim this table used to make, "required since 2.99", cited a release that does not exist. |
 | **SharePoint** | `SharingCapability` is not a property of a site. `Get-PnPSite -Includes` rejects it outright; it is a tenant property *about* a site. |
 | **SharePoint** | `DefaultSharingLinkType: None` means "inherits the tenant", not "no default". The rule that read it as a value would have passed 53 sites knowing nothing. |
 | **SARIF** | Asked in prose, a summary of the specification offered `redirect` and `hotspot` as permitted `result.kind` values. The schema's enum contains neither. |
@@ -143,6 +143,45 @@ fact with no source and no date fails it too: an unattributed fact is
 indistinguishable from a remembered one.
 
 ---
+
+## Licence and sign-off
+
+**Inbound equals outbound.** Everything you contribute is licensed under the
+same [MIT Licence](LICENSE) this project is released under. There is no
+separate grant, and nothing you send is licensed to us on terms the rest of the
+project does not already have.
+
+**There is no CLA, and there will not be one.** A contributor licence agreement
+asks you to assign or license rights beyond the project's own licence, usually
+to a company. That would make this repository's licence and its contributors'
+obligations two different things. Inbound=outbound keeps them one thing.
+
+**Sign your commits off under the [DCO 1.1](DCO.txt).** The Developer
+Certificate of Origin is a statement that you have the right to send what you
+sent — not a transfer of anything. Add the line with `git commit -s`:
+
+```
+Signed-off-by: Your Name <your.email@example.com>
+```
+
+The name and address must be real and must be the ones you commit under. CI
+refuses a pull request whose commits are not signed off, and it names the
+commits rather than failing with a tick nobody can act on.
+
+If you forget, `git rebase --signoff` from the merge base fixes a branch — the
+refusal prints the exact command.
+
+**History from before the policy is not reopened.** The rule applies to commits
+a pull request introduces, measured from the merge base, and everything
+reachable from the commit that adopted it is left alone. Rewriting published
+history would change every hash on the default branch, break every link and
+clone that refers to them, and re-certify years of work retroactively — which
+is the opposite of what a certificate means.
+
+**Nobody signs for anybody else.** A sign-off by someone other than the author
+is a certificate about work the signer did not write, and the gate refuses it.
+If a commit on your branch is not yours, its author adds the sign-off; a
+maintainer will not add one on their behalf.
 
 ## Pull requests
 

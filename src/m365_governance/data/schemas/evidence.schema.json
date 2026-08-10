@@ -1,22 +1,18 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/evidence/1.2.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
   "title": "Evidence document",
   "description": "What a collector is allowed to hand to the engine. Structure only. See docs/EVIDENCE-SCHEMA.md.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version",
+    "$schema",
     "provenance",
     "coverage",
     "resource",
     "facts"
   ],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+$"
-    },
     "provenance": {
       "$ref": "#/$defs/provenance"
     },
@@ -28,6 +24,11 @@
     },
     "facts": {
       "$ref": "#/$defs/factsMap"
+    },
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     }
   },
   "$defs": {
@@ -39,7 +40,9 @@
         "collector",
         "collector_version",
         "source_system",
-        "identity_kind"
+        "identity_kind",
+        "acquisition",
+        "tenant"
       ],
       "properties": {
         "collected_at": {
@@ -62,17 +65,13 @@
           "type": "string",
           "minLength": 3
         },
-        "tenant_id": {
-          "type": "string",
-          "minLength": 1
-        },
         "identity_kind": {
           "enum": [
             "application",
             "delegated",
-            "imported"
+            "not-established"
           ],
-          "$comment": "A delegated run sees what one person sees. An imported one was not produced here at all: we did not choose its scope, we do not know what the exporting identity could read, and we cannot reproduce it. This field is the difference between a partial audit and a misleading one."
+          "description": "Which authentication identity observed this. A delegated run sees what one person sees, and the difference changes what an empty result means. `not-established` is for evidence that does not carry the identity that produced it, which is common in an import: an export that does not name its collecting identity leaves this unknown, and unknown is what it must say. It used to also accept `imported`, which answered a different question — how the evidence got here, not who observed it — and hid the fact that an import's identity is usually simply not recorded."
         },
         "scopes": {
           "type": "array",
@@ -82,28 +81,34 @@
         },
         "import_source": {
           "$ref": "#/$defs/importSource"
+        },
+        "acquisition": {
+          "enum": [
+            "collected",
+            "imported"
+          ],
+          "description": "How this evidence reached the engine. `collected` means a collector in this system read it; `imported` means it came from a tool we did not write, whose collection completeness cannot be verified here. Separate from identity because they answer different questions and an import can perfectly well preserve the identity that collected it."
+        },
+        "tenant": {
+          "$ref": "#/$defs/tenant"
         }
       },
       "allOf": [
         {
-          "$comment": "A live run knows which API it used, which tenant it read, and with what permissions.",
+          "$comment": "A collected run knows which API it used and with what permissions. Keyed on acquisition and not on identity: the two were one field, so the rule that governs scopes was riding on the answer to a different question.",
           "if": {
             "properties": {
-              "identity_kind": {
-                "enum": [
-                  "application",
-                  "delegated"
-                ]
+              "acquisition": {
+                "const": "collected"
               }
             },
             "required": [
-              "identity_kind"
+              "acquisition"
             ]
           },
           "then": {
             "required": [
               "source_api",
-              "tenant_id",
               "scopes"
             ],
             "not": {
@@ -114,15 +119,15 @@
           }
         },
         {
-          "$comment": "An import has no scopes, and writing `scopes: []` would read as 'no permissions were needed' rather than 'this does not apply'. It carries who exported it instead.",
+          "$comment": "An import has no scopes of ours, and writing `scopes: []` would read as 'no permissions were needed' rather than 'this does not apply'. It carries who exported it instead.",
           "if": {
             "properties": {
-              "identity_kind": {
+              "acquisition": {
                 "const": "imported"
               }
             },
             "required": [
-              "identity_kind"
+              "acquisition"
             ]
           },
           "then": {
@@ -185,17 +190,52 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "id",
-        "type"
+        "workload",
+        "type",
+        "native_id",
+        "tenant",
+        "scope",
+        "parent"
       ],
       "properties": {
-        "id": {
+        "workload": {
           "type": "string",
-          "minLength": 1
+          "minLength": 2,
+          "description": "The namespace that owns the identifier. Without it two workloads can name the same string and mean different things: a Team and a site can share a URL, and an Exchange mailbox and a OneDrive can share an address."
         },
         "type": {
           "type": "string",
           "minLength": 2
+        },
+        "native_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The identifier the platform itself uses, carried whole and never taken apart. A URL, a GUID, a path, something containing colons — all lossless, because nothing here reads inside it."
+        },
+        "tenant": {
+          "$ref": "#/$defs/tenant",
+          "description": "The tenant this resource belongs to, so identity is self-contained rather than inferred from the document it arrived in. Canonical when the directory identity is observable; the host is an endpoint until then."
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "tenant",
+            "collection",
+            "container",
+            "item"
+          ],
+          "description": "How far this resource's own settings reach. Deliberately about governance reach rather than a product's menu structure, so it holds across workloads: a SharePoint site, an Exchange mailbox and a Team are all `collection`; a list, a folder and a channel are all `container`. A model naming SharePoint's levels would need a second model at the second workload."
+        },
+        "parent": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/resource_ref"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The resource that contains this one, as a reference that resolves inside the assessment. Null ONLY for a tenant, which is the single root. Required-and-nullable rather than optional: an omitted containment field is one that gets forgotten, and the relationship goes back into prose. Containment only — a relationship that is not containment stays a graph relationship and is not forced in here."
         },
         "display_name": {
           "type": "string"
@@ -203,7 +243,8 @@
         "url": {
           "type": "string"
         }
-      }
+      },
+      "description": "What was read, and which thing it was. Identity is STRUCTURED: an explicit workload, an explicit type, an opaque native identifier and the tenant. It used to be one string with a comma convention nobody validated (`contoso,site,archived`), which meant containment lived in a substring and a URL."
     },
     "collectionState": {
       "enum": [
@@ -504,6 +545,56 @@
         },
         "detail": {
           "type": "string"
+        }
+      }
+    },
+    "tenant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "host"
+      ],
+      "description": "Which tenant this is about. Two fields because a tenant has one canonical identity and any number of endpoints: the admin centre, the primary host and every multi-geo satellite are all addresses of the same organisation, and treating an address as the identity is what made one tenant read as two.",
+      "properties": {
+        "id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The directory identity, canonical when it can be observed. Required and nullable rather than optional: null says nobody read it, and an omitted field says nothing at all. No collection path for it has been proven on a tenant yet, so today it is null and the host carries the identity."
+        },
+        "host": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The SharePoint host, which is an endpoint rather than an identity. Normalised from the admin centre form documented by Microsoft as `{prefix}-admin`, so one tenant reached two ways produces one value. That normalisation is a compatibility mechanism for as long as the directory id is unobserved, not the definition of a tenant: a multi-geo satellite still carries its own host and is not silently folded into the primary."
+        }
+      }
+    },
+    "resource_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "A reference to one resource, by the three things that identify it. STRUCTURED, never a parsed string. The audit proposed `<service>:<type>:<native-id>` and it does not survive contact with real identifiers: a site's native id IS its URL, so splitting on a colon yields `https` as the first field. Escaping would be a grammar nobody validates, and every consumer would re-implement the parser — the second authority this contract exists to remove. Comparison here is structural equality, and a native id is a value rather than syntax.",
+      "required": [
+        "workload",
+        "type",
+        "native_id"
+      ],
+      "properties": {
+        "workload": {
+          "type": "string",
+          "minLength": 2,
+          "description": "The namespace that owns the identifier. Without it two workloads can name the same string and mean different things: a Team and a site can share a URL, and an Exchange mailbox and a OneDrive can share an address."
+        },
+        "type": {
+          "type": "string",
+          "minLength": 2,
+          "description": "The resource type within that workload."
+        },
+        "native_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The identifier the platform itself uses, carried whole and never taken apart. A URL, a GUID, a path, something containing colons — all lossless, because nothing here reads inside it."
         }
       }
     }

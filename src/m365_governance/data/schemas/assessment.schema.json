@@ -1,25 +1,26 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/assessment/1.0.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/assessment/4.0.0",
   "title": "Assessment",
   "description": "What a person means by 'I assessed a tenant': the transferable aggregate. A RunSet alone cannot be handed over because it does not carry what produced it. The canonical half is archived and verified; the derived half is thrown away and rebuilt, and a report that cannot be regenerated from the canonical half is a second original rather than a projection. A diff is deliberately absent: it relates two assessments and belongs to a Comparison.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version",
+    "$schema",
     "canonical"
   ],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+$"
-    },
     "canonical": {
       "$ref": "#/$defs/canonical"
     },
     "derived": {
       "$ref": "#/$defs/derived",
       "description": "Optional by design. An assessment with nothing derived is complete; an assessment with nothing canonical is not an assessment."
+    },
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/assessment/4.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     }
   },
   "$defs": {
@@ -38,14 +39,14 @@
           "$ref": "#/$defs/manifest"
         },
         "run_set": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/run-set/1.0.0",
+          "$ref": "https://ph7x.com/schemas/m365-governance/run-set/4.0.0",
           "description": "The evaluation at tenant scale. Referenced rather than restated: the previous version said the structure was owned by the run-set schema and then described an object with one key, so a consumer generated a type that could not hold a real run set."
         },
         "evidence": {
           "type": "array",
           "description": "Every evidence document the run set was evaluated from, whole. A finding whose evidence was discarded cannot be re-checked, and re-checking is the point.",
           "items": {
-            "$ref": "https://ph7x.com/schemas/m365-governance/evidence/1.2.0"
+            "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0"
           }
         },
         "versions": {
@@ -63,7 +64,8 @@
         "assessment_id",
         "created_at",
         "tenant",
-        "identity_kind"
+        "identity",
+        "acquisition"
       ],
       "properties": {
         "assessment_id": {
@@ -76,21 +78,62 @@
           "format": "date-time"
         },
         "tenant": {
-          "type": "string",
-          "minLength": 1,
-          "description": "Which tenant this describes. An assessment that does not say is not archivable, because nobody can tell later what it was about."
-        },
-        "identity_kind": {
-          "type": "string",
-          "enum": [
-            "delegated",
-            "application"
-          ],
-          "description": "Which identity observed it. A delegated run sees what one person sees, and the difference changes what an empty result means."
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/tenant",
+          "description": "Which tenant this describes, read from the evidence rather than supplied. An assessment that does not say is not archivable, because nobody can tell later what it was about; one that says something the documents underneath it contradict is worse, because the digests then prove that contradiction unchanged."
         },
         "label": {
           "type": "string",
           "description": "What a person calls it. Optional, and never used to identify anything."
+        },
+        "identity": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "summary",
+            "kinds"
+          ],
+          "description": "A summary across the evidence, which is a different kind of thing from the identity that observed one document. This field used to hold an identity kind and answer with `mixed`, which is not an identity anybody can authenticate as.",
+          "properties": {
+            "summary": {
+              "enum": [
+                "single",
+                "multiple",
+                "not-established"
+              ],
+              "description": "`multiple` is never the reassuring answer: part of the archive is tenant-wide and part is one person's view, and the reader resolves that per document rather than by averaging. `not-established` means no document named the identity that produced it."
+            },
+            "kinds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The distinct identity kinds observed, sorted. Empty only when the summary is `not-established`."
+            }
+          }
+        },
+        "acquisition": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "summary",
+            "kinds"
+          ],
+          "description": "How the evidence reached the engine, summarised the same way. An archive that mixes collected and imported evidence has one half whose completeness this engine can speak to and one half whose it cannot.",
+          "properties": {
+            "summary": {
+              "enum": [
+                "single",
+                "multiple"
+              ]
+            },
+            "kinds": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            }
+          }
         }
       }
     },

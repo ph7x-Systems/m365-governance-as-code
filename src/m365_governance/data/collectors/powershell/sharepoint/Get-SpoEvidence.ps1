@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Collects SharePoint Online facts and emits normalised evidence JSON.
 
@@ -60,11 +60,28 @@
 .PARAMETER ClientId
     The application (client) id of an Entra ID app registration.
 
-    Mandatory, and it is the thing that breaks a first run. Since
-    PnP.PowerShell 2.99 the module ships with no multi-tenant application of
-    its own, so a connection without a client id fails before it reaches the
-    network: "Please specify a valid client id for an Entra ID App
-    Registration". Verified against 3.3.0.
+    Required by this script, and it is the thing that breaks a first run.
+    PnP.PowerShell removed its own multi-tenant application in 2.12.0 — the
+    release notes give the reason as the deprecation and shutdown of the PnP
+    Management Shell — so a connection with no client id anywhere fails before
+    it reaches the network: "Please specify a valid client id for an Entra ID
+    App Registration".
+
+    The module itself does not demand it on every call: it accepts a default,
+    configured by a cmdlet or by an environment variable, and the article below
+    names both. This script is NOT naming that cmdlet, because a read-only
+    collector is checked for mutating verbs by a regex, and a regex cannot tell
+    a mention from a call — loosening it to allow one is how a real write slips
+    in.
+
+    It asks for the id explicitly anyway: evidence has to say which identity
+    observed it, and a value read from an ambient environment variable is one
+    nobody can name afterwards.
+
+    Sources, both checked 2026-08-09:
+    https://github.com/pnp/powershell/blob/dev/CHANGELOG.md
+    https://pnp.github.io/powershell/articles/defaultclientid.html
+    Verified against 3.3.0.
 
 .PARAMETER DeviceLogin
     Authenticate with a device code instead of opening a browser.
@@ -219,7 +236,10 @@ switch ($Mode) {
         }
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts $result.facts -Requested @('owners') `
@@ -232,7 +252,10 @@ switch ($Mode) {
         $tenant = Get-PnPTenant
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $TenantUrl; type = 'tenant'
+                    workload = 'sharepoint'; type = 'tenant'
+                    native_id = $TenantHost
+                    tenant = (New-TenantIdentity)
+                    scope = 'tenant'; parent = $null
                     display_name = $TenantUrl; url = $TenantUrl
                 }) `
                 -Facts (Get-TenantSharingFacts -Tenant $tenant) `
@@ -255,7 +278,10 @@ switch ($Mode) {
         $site = Get-PnPTenantSite -Identity $SiteUrl
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $site.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SharingFacts -Site $site) -Requested @('sharing') `
@@ -268,7 +294,10 @@ switch ($Mode) {
             IsSystemList, IsCatalog, IsApplicationList, BaseTemplate, Hidden
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = "$SiteUrl::$ListTitle"; type = 'list'
+                    workload = 'sharepoint'; type = 'list'
+                    native_id = "$SiteUrl::$ListTitle"
+                    tenant = (New-TenantIdentity)
+                    scope = 'container'; parent = [ordered]@{ workload = 'sharepoint'; type = 'site'; native_id = $SiteUrl }
                     display_name = $ListTitle; url = $SiteUrl
                 }) `
                 -Facts (Get-ListPermissionFacts -List $list `
@@ -291,7 +320,10 @@ switch ($Mode) {
             $file = Join-Path $OutputPath ((Get-SafeName "$($TenantHost)-$($list.Title)") + '.json')
             Write-Evidence -Path $file -Evidence (New-Evidence `
                     -Resource ([ordered]@{
-                        id = "$SiteUrl::$($list.Title)"; type = 'list'
+                        workload = 'sharepoint'; type = 'list'
+                        native_id = "$SiteUrl::$($list.Title)"
+                        tenant = (New-TenantIdentity)
+                        scope = 'container'; parent = [ordered]@{ workload = 'sharepoint'; type = 'site'; native_id = $SiteUrl }
                         display_name = [string] $list.Title; url = $SiteUrl
                     }) `
                     -Facts (Get-ListPermissionFacts -List $list `
@@ -307,7 +339,10 @@ switch ($Mode) {
             CustomMasterUrl, AlternateCssUrl
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ModernityFacts -Web $web) `
@@ -320,7 +355,10 @@ switch ($Mode) {
         $site = Get-PnPSite -Includes SensitivityLabelId, SensitivityLabelInfo, Classification, GroupId
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ClassificationFacts -Site $site) `
@@ -341,7 +379,10 @@ switch ($Mode) {
         }
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-ActivityFacts -Web $web -TenantSite $tenantSite `
@@ -363,7 +404,10 @@ switch ($Mode) {
             'identity cannot open return the same empty result.')
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts $facts -Requested @('agents', 'enumeration') `
@@ -376,7 +420,10 @@ switch ($Mode) {
         $web = Get-PnPWeb
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SpfxCatalogFacts -Scope $scope) `
@@ -387,7 +434,10 @@ switch ($Mode) {
         $web = Get-PnPWeb
         Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                 -Resource ([ordered]@{
-                    id = $SiteUrl; type = 'site'
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                     display_name = [string] $web.Title; url = $SiteUrl
                 }) `
                 -Facts (Get-SpfxPageFacts -MaxPages $MaxPages `
@@ -410,7 +460,10 @@ switch ($Mode) {
             $file = Join-Path $OutputPath ((Get-SafeName $tenantSite.Url) + '.json')
             Write-Evidence -Path $file -Evidence (New-Evidence `
                     -Resource ([ordered]@{
-                        id = [string] $tenantSite.Url; type = 'site'
+                        workload = 'sharepoint'; type = 'site'
+                        native_id = [string] $tenantSite.Url
+                        tenant = (New-TenantIdentity)
+                        scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
                         display_name = [string] $tenantSite.Title
                         url = [string] $tenantSite.Url
                     }) `

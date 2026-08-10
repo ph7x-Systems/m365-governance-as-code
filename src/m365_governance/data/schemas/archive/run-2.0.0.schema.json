@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/run/2.0.0",
+  "title": "Run",
+  "description": "One evaluation of one resource, exactly as the engine emits it today. This describes `Run.to_dict()` and nothing more: where the current output is awkward, the awkwardness is documented rather than corrected, because a schema that describes what the code should do cannot validate what it does. Normalisation is a later, deliberate step with its own compatibility decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "provenance",
+    "coverage",
+    "resource",
+    "resource_class",
+    "class_reason",
+    "set_aside",
+    "rule_source",
+    "counts",
+    "results"
+  ],
+  "properties": {
+    "provenance": {
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0#/$defs/provenance",
+      "description": "Referenced rather than restated, so one definition moves at a time — and so a consumer gets a type. It said `type: object` with no properties, which accepted `{}`: a run could carry no provenance at all and validate."
+    },
+    "coverage": {
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0#/$defs/coverage",
+      "description": "Also from the evidence. Note the name: a RunSet calls the same idea `run_coverage`, and the two envelopes disagree. Recorded, not fixed."
+    },
+    "resource": {
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/2.0.0#/$defs/resource",
+      "description": "The full resource block from the evidence, with display name and url. Each result inside carries a narrower copy holding only id and type."
+    },
+    "resource_class": {
+      "type": "string",
+      "description": "A label, never a filter. `unknown` is the ordinary value: today only lists are classified."
+    },
+    "class_reason": {
+      "type": "string",
+      "description": "Why the class is what it is, including why it is `unknown`."
+    },
+    "set_aside": {
+      "type": "boolean",
+      "description": "Whether this resource was set aside rather than evaluated."
+    },
+    "rule_source": {
+      "type": "string",
+      "description": "Which rules evaluated this, in words rather than a path. A free string today."
+    },
+    "counts": {
+      "$ref": "#/$defs/counts"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/result"
+      }
+    },
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/run/2.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
+    }
+  },
+  "$defs": {
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pass",
+        "fail",
+        "unknown",
+        "not-applicable",
+        "invalid-evidence",
+        "error"
+      ],
+      "description": "One key per outcome, always all six, zeros included. A count that disappears when it is zero makes an absent key and a zero look the same.",
+      "properties": {
+        "pass": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "fail": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unknown": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "not-applicable": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "invalid-evidence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "error": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "unknown",
+        "not-applicable",
+        "invalid-evidence",
+        "error"
+      ],
+      "description": "Six values as emitted, and the product speaks of five. `error` is the sixth and it is not a governance answer: it says the evaluation itself failed, which is a different sentence from anything the tenant did. Recorded here because the engine emits it."
+    },
+    "result": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rule_id",
+        "title",
+        "rule_version",
+        "schema_version",
+        "resource",
+        "outcome",
+        "message",
+        "basis",
+        "severity",
+        "evidence_used",
+        "passes_without_resolving",
+        "sources",
+        "remediation",
+        "message_degraded",
+        "engine_detail"
+      ],
+      "properties": {
+        "rule_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "rule_version": {
+          "type": "string",
+          "description": "The version of the rule as it was evaluated. This is what makes a later comparison able to say `rule-version` moved rather than reporting it as tenant drift."
+        },
+        "schema_version": {
+          "type": "string",
+          "description": "The rule schema's version. Note what is missing: the Run document itself carries no version at the top level, only each result does, so a stored run cannot be versioned as a document. An imperfection, described rather than repaired."
+        },
+        "resource": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "type"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            }
+          }
+        },
+        "outcome": {
+          "$ref": "#/$defs/outcome"
+        },
+        "message": {
+          "type": "string",
+          "description": "What the outcome means, in a sentence a person reads."
+        },
+        "basis": {
+          "type": "string",
+          "description": "The rule's basis type as a bare string: requirement, documented-limit, documented-guidance or convention. An opinion is not one."
+        },
+        "severity": {
+          "type": "string"
+        },
+        "evidence_used": {
+          "type": "array",
+          "description": "Every fact the rule read, present or absent, with the bounds where the value was not exact. This is what makes a finding re-checkable, and it is why an assessment keeps its evidence whole.",
+          "items": {
+            "$ref": "#/$defs/evidenceUsed"
+          }
+        },
+        "passes_without_resolving": {
+          "type": "string",
+          "description": "What a pass does NOT settle. Present on every result, including failing ones."
+        },
+        "sources": {
+          "type": "array",
+          "description": "The rule's normative sources. Empty for a convention, which is the honest value rather than an omission.",
+          "items": {
+            "$ref": "https://ph7x.com/schemas/m365-governance/rule/1.0.0#/$defs/source",
+            "description": "The citation, defined once by the rule contract that authors it. It used to be an unnamed object here, on the reasoning that the rule contract is authored rather than serialised and so is not modelled — which left a consumer receiving a citation as raw JSON and taking the title and url out of it by hand. A run carries citations to a consumer whether or not the contract defining them is itself deserialised, so the generator now emits this shape rather than refusing to name it."
+          }
+        },
+        "remediation": {
+          "type": "string"
+        },
+        "message_degraded": {
+          "type": "boolean",
+          "description": "Whether the message had to fall back because the rule could not phrase its own."
+        },
+        "engine_detail": {
+          "type": "string",
+          "description": "Why the engine could not do what the rule asked. Empty when nothing went wrong, which is the ordinary case."
+        }
+      }
+    },
+    "evidenceUsed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "state",
+        "value",
+        "lower_bound",
+        "upper_bound",
+        "detail"
+      ],
+      "description": "All six keys always present, with nulls rather than omissions. An absent key and a null mean different things, and emitting both would make them indistinguishable.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "description": "The evidence state: observed, missing, not-supported, permission-denied, partial or invalid."
+        },
+        "value": {
+          "description": "The exact value where one was observed, and null where it was not. Any JSON type, because a fact can be a number, a string, a boolean or a list."
+        },
+        "lower_bound": {
+          "description": "Set where the value is known to be at least this, which is how a partial expansion still decides a rule."
+        },
+        "upper_bound": {
+          "description": "Set where the value is known to be at most this."
+        },
+        "detail": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Why the fact is in the state it is in."
+        }
+      }
+    }
+  }
+}

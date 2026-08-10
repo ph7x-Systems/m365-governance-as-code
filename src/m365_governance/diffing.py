@@ -14,6 +14,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
+from . import identity, registry
 from .results import EvidenceUsed, Outcome, Result, Run, RunSet
 
 #: Movements worth leading with. A pass turning into anything else is the top
@@ -103,7 +104,7 @@ def to_markdown(before: Run, after: Run) -> str:
     changes = compare(before, after)
     lines: list[str] = ["# What changed", ""]
 
-    resource = after.resource.get("id") or before.resource.get("id", "<unknown>")
+    resource = identity.readable(after.resource or before.resource)
     lines.append(f"- Resource: `{resource}`")
     lines.append(f"- Before: {before.provenance.get('collected_at', '?')}")
     lines.append(f"- After:  {after.provenance.get('collected_at', '?')}")
@@ -219,7 +220,7 @@ def regressions(changes: list[RuleChange]) -> list[RuleChange]:
 class ResourceChange:
     """How one resource moved between two run sets."""
 
-    resource_id: str
+    resource_ref: dict
     display_name: str
     #: `added`, `removed`, `changed`, or `unchanged`.
     kind: str
@@ -237,27 +238,40 @@ def _empty_run(resource: dict) -> Run:
 
 
 def compare_sets(before: RunSet, after: RunSet) -> list[ResourceChange]:
-    old = {run.resource.get("id", ""): run for run in before.runs}
-    new = {run.resource.get("id", ""): run for run in after.runs}
+    old = {identity.key(run.resource): run for run in before.runs}
+    new = {identity.key(run.resource): run for run in after.runs}
 
     out: list[ResourceChange] = []
     for rid in sorted(set(old) | set(new)):
         b, a = old.get(rid), new.get(rid)
         present = a or b
-        name = present.resource.get("display_name") or present.resource.get("id", "?")
+        name = identity.label(present.resource)
         if b is None:
             out.append(
-                ResourceChange(rid, name, "added", compare(_empty_run(a.resource), a))
+                ResourceChange(
+                    identity.ref(a.resource),
+                    name,
+                    "added",
+                    compare(_empty_run(a.resource), a),
+                )
             )
         elif a is None:
             out.append(
-                ResourceChange(rid, name, "removed", compare(b, _empty_run(b.resource)))
+                ResourceChange(
+                    identity.ref(b.resource),
+                    name,
+                    "removed",
+                    compare(b, _empty_run(b.resource)),
+                )
             )
         else:
             rule_changes = compare(b, a)
             out.append(
                 ResourceChange(
-                    rid, name, "changed" if rule_changes else "unchanged", rule_changes
+                    identity.ref(present.resource),
+                    name,
+                    "changed" if rule_changes else "unchanged",
+                    rule_changes,
                 )
             )
     return out
@@ -366,15 +380,14 @@ def _change_to_dict(change: RuleChange) -> dict:
 def to_dict(before: Run, after: Run) -> dict:
     changes = compare(before, after)
     return {
-        "diff_schema_version": "1.0",
+        "$schema": registry.contract("comparison"),
         "scope": "run",
         # The same shape as every other resource reference in the product,
         # `type` included. Emitting a narrower one here would make the diff the
         # only document whose resource a consumer has to special-case, and the
-        # Workbench found it by refusing to parse it.
+        # A consumer found it by refusing to parse it.
         "resource": {
-            "id": after.resource.get("id") or before.resource.get("id", ""),
-            "type": after.resource.get("type") or before.resource.get("type", ""),
+            **identity.ref(after.resource or before.resource),
             "display_name": after.resource.get("display_name")
             or before.resource.get("display_name"),
         },
@@ -399,14 +412,11 @@ def to_dict(before: Run, after: Run) -> dict:
 def many_to_dict(before: RunSet, after: RunSet) -> dict:
     resources = compare_sets(before, after)
     every = [rc for change in resources for rc in change.rules]
-    # ResourceChange carries an id and a name; the type lives on the runs, and
-    # a resource reference without it is not one.
-    types = {
-        run.resource.get("id", ""): run.resource.get("type", "")
-        for run in list(before.runs) + list(after.runs)
-    }
+    # The type used to be looked up from the runs, because a ResourceChange
+    # carried only an id and a name. It carries the whole structured reference
+    # now, so there is nothing left to reunite.
     return {
-        "diff_schema_version": "1.0",
+        "$schema": registry.contract("comparison"),
         "scope": "run-set",
         "counts": {
             "resources": len(resources),
@@ -417,8 +427,7 @@ def many_to_dict(before: RunSet, after: RunSet) -> dict:
         "resources": [
             {
                 "resource": {
-                    "id": r.resource_id,
-                    "type": types.get(r.resource_id, ""),
+                    "resource": dict(r.resource_ref),
                     "display_name": r.display_name,
                 },
                 "kind": r.kind,

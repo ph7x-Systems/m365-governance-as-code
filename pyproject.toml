@@ -35,7 +35,17 @@ where = ["src"]
 "m365_governance.data" = [
   "rules/**/*.yaml",
   "profiles/*.yaml",
-  "schemas/*.json",
+  # Recursive on purpose. `schemas/*.json` matched six files and left the four
+  # ARCHIVED contracts out, so an installed engine could not read a document
+  # declaring one — and refusing it as "unknown" instead of "valid and
+  # unsupported" is the difference between a contract with history and one
+  # that pretends its past never happened.
+  "schemas/**/*.json",
+  # The consumer bundle is part of the release. Without it there is no way to
+  # obtain the contract except by cloning the repository, which is why nothing
+  # could answer "is this bundle current?" by any automated means.
+  "generated/manifest.json",
+  "generated/csharp/*.g.cs",
   "collectors/**/*.ps1",
   # The entry point is useless without them, and a glob that named only .ps1
   # shipped a wheel whose collector could not import its own modules.

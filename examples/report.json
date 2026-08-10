@@ -1,12 +1,17 @@
 {
+  "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
   "provenance": {
     "collected_at": "2026-08-05T14:02:11Z",
     "collector": "spo-collector",
     "collector_version": "0.1.0",
     "source_system": "SharePoint Online",
     "source_api": "Microsoft Graph v1.0",
-    "tenant_id": "00000000-0000-0000-0000-000000000000",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
     "identity_kind": "application",
+    "acquisition": "collected",
     "scopes": [
       "Sites.Read.All"
     ]
@@ -21,8 +26,19 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "contoso,site,hr",
+    "workload": "sharepoint",
     "type": "site",
+    "native_id": "contoso,site,hr",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
     "display_name": "HR",
     "url": "https://contoso.sharepoint.com/sites/HR"
   },
@@ -45,8 +61,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.",
@@ -74,7 +91,14 @@
       "sources": [],
       "remediation": "Find out what it was for before deciding anything. The cheapest outcome is usually to archive it, which keeps the content and takes it out of every list somebody has to read; deleting is a decision that needs an owner, and a site in this state often no longer has one.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-CLASS-001",
@@ -82,8 +106,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.",
@@ -116,7 +141,14 @@
       ],
       "remediation": "Decide first whether the tenant is using container labels at all. If it is not, every site will fail this rule and the finding to act on is the tenant decision, not the site. If it is, the deployment model Microsoft publishes works outward from the sites that matter most rather than through the list in order, and this rule set can produce that list but cannot rank it.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-CLASS-002",
@@ -124,8 +156,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.",
@@ -160,7 +193,14 @@
       ],
       "remediation": "Nothing on the site needs changing. Either the identity that collected the evidence cannot read label definitions, in which case collect again with one that can, or the label was deleted in Purview and the sites still carry its id, in which case the label is the thing to fix and it will be carrying more sites than this one.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-CLASS-003",
@@ -168,8 +208,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "Whether this group-connected site carries a sensitivity label was not established. This is not a pass.",
@@ -210,7 +251,14 @@
       ],
       "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-MODERN-001",
@@ -218,8 +266,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.",
@@ -252,7 +301,14 @@
       ],
       "remediation": "Read Microsoft's guide before turning anything off. The feature is not the work: the page layouts, the master pages and the content that depends on them are, and disabling the feature without moving them first breaks pages rather than modernising them.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-MODERN-003",
@@ -260,8 +316,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.",
@@ -281,7 +338,14 @@
       "sources": [],
       "remediation": "Find out what it does before deciding anything. A custom master page is sometimes a logo and sometimes a navigation system, and the two are different projects.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-MODERN-004",
@@ -289,8 +353,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.",
@@ -310,7 +375,14 @@
       "sources": [],
       "remediation": "Find the file and read it before removing the setting. A stylesheet that hides an element somebody relies on is a support call, not a cleanup.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SHARE-001",
@@ -318,8 +390,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.",
@@ -352,7 +425,14 @@
       ],
       "remediation": "Decide whether this site needs it. Where it does, the controls Microsoft provides are expiry and view-only permission on Anyone links, and both are set per site. Where it does not, a more restrictive capability removes the option without removing external sharing.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SHARE-002",
@@ -360,8 +440,9 @@
       "rule_version": "1.0",
       "schema_version": "2.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.",
@@ -396,7 +477,14 @@
       ],
       "remediation": "Set the default to something more restrictive, per site, and leave the Anyone link available for the people who need it. Microsoft's own page describes exactly this arrangement.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SITE-001",
@@ -404,8 +492,9 @@
       "rule_version": "1.1",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "pass",
       "message": "The site has at least 3 owners.",
@@ -425,7 +514,14 @@
       "sources": [],
       "remediation": "Assign a second accountable owner, and review ownership when people change role. A second owner who does not know they are one is not a second owner: the point is that somebody else can act, not that a field has two values.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "review",
+        "rank": 4,
+        "because": [
+          "it passed, and the rule records something the pass does not settle"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SITE-002",
@@ -433,8 +529,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.",
@@ -454,7 +551,14 @@
       "sources": [],
       "remediation": "Name at least one person alongside the groups, and tell them. The point is not the field: it is that somebody knows the site is theirs to decide about.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SITE-003",
@@ -462,8 +566,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The storage figures for this site were not read, so how full it is remains unknown. This is not a pass.",
@@ -499,7 +604,14 @@
       "sources": [],
       "remediation": "Raise the quota, or move content out. Which one is right depends on whether the site is growing because it is being used or because nothing has ever been removed from it, and that is a question the numbers here do not answer.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     },
     {
       "rule_id": "SPO-SPFX-001",
@@ -507,8 +619,9 @@
       "rule_version": "1.0",
       "schema_version": "1.0",
       "resource": {
-        "id": "contoso,site,hr",
-        "type": "site"
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,hr"
       },
       "outcome": "unknown",
       "message": "The catalog was not read, so whether any solution is behind the version it holds is not known. This is not a pass.",
@@ -528,7 +641,29 @@
       "sources": [],
       "remediation": "Find out why before upgrading anything. A package that was uploaded and never claimed is sometimes an oversight and sometimes a rollback that nobody wrote down.",
       "message_degraded": false,
-      "engine_detail": ""
+      "engine_detail": "",
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "the evidence needed to decide this was not available"
+        ]
+      }
     }
-  ]
+  ],
+  "attention": {
+    "state": "observe",
+    "rank": 3,
+    "because": [
+      "12 finding(s) reached no answer"
+    ],
+    "counts": {
+      "act": 0,
+      "review": 1,
+      "observe": 12,
+      "none": 0,
+      "not-evaluated": 0
+    },
+    "unobserved": []
+  }
 }

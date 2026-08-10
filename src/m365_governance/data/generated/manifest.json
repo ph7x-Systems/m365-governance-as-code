@@ -8,7 +8,7 @@
     "itself opportunistically against whatever engine happened to be on",
     "the machine would be reproducible only on that machine."
   ],
-  "contract_version": "1.0.0",
+  "contract_version": "1.0.0b1",
   "generated": [
     "Assessment.g.cs",
     "Comparison.g.cs",
@@ -18,30 +18,66 @@
   ],
   "generator_version": "1.0.0",
   "schemas": {
-    "https://ph7x.com/schemas/m365-governance/assessment/1.0.0": {
-      "digest": "a093ff6a851000e99d503aa437517bd965960398bbadd6b275b3c0a0b08d67ce",
+    "https://ph7x.com/schemas/m365-governance/assessment/2.0.0": {
+      "digest": "aa8be2d8e5fd257c08654bb8968c7862740fac494cf68cf535fe1c139be20808",
+      "path": "schemas/archive/assessment-2.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/assessment/3.0.0": {
+      "digest": "1b12b9b16ad92b2231ffe6248c0c4ed01fef877cc3aea7825a481e0bb520d0c3",
+      "path": "schemas/archive/assessment-3.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/assessment/4.0.0": {
+      "digest": "bbeeb65ac9cfa1df07bde6cd3f9e5c65fcac43fb633a5809da55ac279a97a706",
       "path": "schemas/assessment.schema.json"
     },
-    "https://ph7x.com/schemas/m365-governance/comparison/1.0.0": {
-      "digest": "7cd6447c1f5c6248717c5c08642680ff8e19bebbb583aaff5d20ee8872ed19df",
+    "https://ph7x.com/schemas/m365-governance/comparison/2.0.0": {
+      "digest": "d49f23278570d66d0f2974a29456e73906fcf32a2548e1b2f420a1b41cca31d2",
+      "path": "schemas/archive/comparison-2.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/comparison/3.0.0": {
+      "digest": "9c2d76d1ae89d8766e572b76e3eddee2eb79a067fdf64a6674906a6bbb504bd2",
       "path": "schemas/comparison.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
       "digest": "b51cfa3692db26746c1d78a022ccb0f8c39dae1fe190451d6b87310c0185aa29",
+      "path": "schemas/archive/evidence-1.2.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/evidence/2.0.0": {
+      "digest": "a666d8b290f972289fac0d35aa64a92f5d8d963c8017d0e59b6343ec1117381e",
+      "path": "schemas/archive/evidence-2.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/evidence/3.0.0": {
+      "digest": "ae3ccd32345293ec7e19d82e65296947d28fd19c9c33e20ea02e607f59b3acc4",
       "path": "schemas/evidence.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/rule/1.0.0": {
-      "digest": "7d6cd962ff0a776162099224cbeb562efd942ab19d229eb6484632bb1be4375d",
+      "digest": "8c3a17f97163c703c434f95bc3b79c85e50d120312cf61797374eb8815c184ee",
       "path": "schemas/rule.schema.json"
     },
-    "https://ph7x.com/schemas/m365-governance/run-set/1.0.0": {
-      "digest": "cd5cc119cdd3cc5a1b15167ef67ee2edec824af4e279773ea37e46d016edc7a5",
+    "https://ph7x.com/schemas/m365-governance/run-set/2.0.0": {
+      "digest": "0e7f0a306a8f10d784222120e18e2dc24a782a351a3aa0400ee9f6c0aa5ab75f",
+      "path": "schemas/archive/run-set-2.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/run-set/3.0.0": {
+      "digest": "915279110af5e466c6237456a2974df29a8f83fece851c7d1808551898efc7e9",
+      "path": "schemas/archive/run-set-3.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/run-set/4.0.0": {
+      "digest": "e62efc8fea4e88c7154150cde4e6f745d02aba3256a47aebe4d4682cddbf9c65",
       "path": "schemas/run-set.schema.json"
     },
-    "https://ph7x.com/schemas/m365-governance/run/1.0.0": {
-      "digest": "bef2cb5b67b01c8b0be53dc191fc439bfb078cdbabcc41760b470f5e3b6d384f",
+    "https://ph7x.com/schemas/m365-governance/run/2.0.0": {
+      "digest": "6207e2886d5d99493ab1104a3a367758d30fa991988eec02d3e43cb6ea699d16",
+      "path": "schemas/archive/run-2.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/run/3.0.0": {
+      "digest": "7077816571e249ebf66bafa9ea7952c718fc4ed6dc0cfaf90e7dfd17da229ef1",
+      "path": "schemas/archive/run-3.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/run/4.0.0": {
+      "digest": "0b2a08c3c277a72da51deb1be253c017d0d2baaa5d25a2ad8b6485f82f2ffe59",
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "ddc78b9882ec106a83e9bdc00f87b86641468e54c7821910328222a3772006c6"
+  "set_digest": "5e71384aaa42474fa74a755c844cce95cddd77c3268f05df3ec38383e7b50a5f"
 }

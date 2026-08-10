@@ -1,0 +1,416 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.0.0",
+  "canonical": {
+    "run_set": {
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.0.0",
+      "resources": 1,
+      "by_class": {
+        "unknown": 1
+      },
+      "set_aside": 0,
+      "counts": {
+        "pass": 0,
+        "fail": 2,
+        "unknown": 0,
+        "not-applicable": 1,
+        "invalid-evidence": 0,
+        "error": 0
+      },
+      "run_coverage": {
+        "state": "not-established",
+        "observed": 1,
+        "expected": null,
+        "detail": "1 resources are stored. The total number the identity was expected to reach was not recorded, so this run does not establish complete coverage."
+      },
+      "runs": [
+        {
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
+          "provenance": {
+            "collected_at": "2026-08-10T19:20:25Z",
+            "collector": "spo-collector",
+            "collector_version": "0.3.0",
+            "source_system": "SharePoint Online",
+            "source_api": "PnP.PowerShell / CSOM",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
+            "identity_kind": "delegated",
+            "acquisition": "collected",
+            "scopes": [
+              "AllSites.Read"
+            ]
+          },
+          "coverage": {
+            "requested": [
+              "classification"
+            ],
+            "completed": [
+              "classification"
+            ],
+            "unavailable": {}
+          },
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "https://contoso.sharepoint.com/sites/allcompany",
+            "tenant": {
+              "id": null,
+              "host": "contoso.sharepoint.com"
+            },
+            "scope": "collection",
+            "parent": {
+              "workload": "sharepoint",
+              "type": "tenant",
+              "native_id": "contoso.sharepoint.com"
+            },
+            "display_name": "All Company",
+            "url": "https://contoso.sharepoint.com/sites/allcompany"
+          },
+          "resource_class": "unknown",
+          "class_reason": "only lists are classified",
+          "set_aside": false,
+          "rule_source": "shipped with this version",
+          "counts": {
+            "pass": 0,
+            "fail": 2,
+            "unknown": 0,
+            "not-applicable": 1,
+            "invalid-evidence": 0,
+            "error": 0
+          },
+          "results": [
+            {
+              "rule_id": "SPO-CLASS-001",
+              "title": "This site carries no sensitivity label and no classification",
+              "rule_version": "1.0",
+              "schema_version": "1.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "https://contoso.sharepoint.com/sites/allcompany"
+              },
+              "outcome": "fail",
+              "message": "This site carries neither a sensitivity label nor a classification string. Nothing recorded on it says what kind of content it holds.",
+              "basis": "documented-guidance",
+              "severity": "low",
+              "evidence_used": [
+                {
+                  "path": "classification.classified",
+                  "state": "observed",
+                  "value": false,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                }
+              ],
+              "passes_without_resolving": "Any label passes. A site labelled Public and a site labelled Highly Confidential are indistinguishable to this rule, and so is a site labelled with whatever came first in the dropdown. It reports that the question was answered, never that the answer was right.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/purview/deploymentmodels/depmod-secure-by-default-step3",
+                  "title": "Secure by default with Microsoft Purview, Step 3: expand to your entire Microsoft 365 data estate",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                },
+                {
+                  "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+                  "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                }
+              ],
+              "remediation": "Decide first whether the tenant is using container labels at all. If it is not, every site will fail this rule and the finding to act on is the tenant decision, not the site. If it is, the deployment model Microsoft publishes works outward from the sites that matter most rather than through the list in order, and this rule set can produce that list but cannot rank it.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "review",
+                "rank": 4,
+                "because": [
+                  "the rule failed against a documented-guidance, which is a choice to weigh rather than a documented violation"
+                ]
+              }
+            },
+            {
+              "rule_id": "SPO-CLASS-002",
+              "title": "This site carries a sensitivity label that could not be resolved to a name",
+              "rule_version": "1.0",
+              "schema_version": "1.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "https://contoso.sharepoint.com/sites/allcompany"
+              },
+              "outcome": "not-applicable",
+              "message": "No sensitivity label is applied to this site, so there is nothing to resolve. Whether it should carry one is SPO-CLASS-001.",
+              "basis": "convention",
+              "severity": "low",
+              "evidence_used": [
+                {
+                  "path": "classification.label_applied",
+                  "state": "observed",
+                  "value": false,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                },
+                {
+                  "path": "classification.label_resolved",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "No label is applied, so there is nothing to resolve."
+                }
+              ],
+              "passes_without_resolving": "A resolved name passes, and a name is a word. It says nothing about what the label is configured to do: privacy, guest access, the default sharing link and conditional access are all label settings this rule never reads. A site labelled Confidential by a label that enforces nothing passes.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+                  "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                }
+              ],
+              "remediation": "Nothing on the site needs changing. Either the identity that collected the evidence cannot read label definitions, in which case collect again with one that can, or the label was deleted in Purview and the sites still carry its id, in which case the label is the thing to fix and it will be carrying more sites than this one.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "none",
+                "rank": 5,
+                "because": [
+                  "the rule does not apply to this resource"
+                ]
+              }
+            },
+            {
+              "rule_id": "SPO-CLASS-003",
+              "title": "This group-connected site carries no sensitivity label",
+              "rule_version": "1.0",
+              "schema_version": "1.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "https://contoso.sharepoint.com/sites/allcompany"
+              },
+              "outcome": "fail",
+              "message": "This site is connected to a Microsoft 365 group and carries no sensitivity label. Privacy and external user access rest on the settings of the group itself, and nothing pins them.",
+              "basis": "convention",
+              "severity": "medium",
+              "evidence_used": [
+                {
+                  "path": "classification.group_connected",
+                  "state": "observed",
+                  "value": true,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                },
+                {
+                  "path": "classification.label_applied",
+                  "state": "observed",
+                  "value": false,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                }
+              ],
+              "passes_without_resolving": "Any label passes, including one configured to set nothing. A label whose protection settings were left empty leaves privacy and guest access exactly where this rule found them and satisfies it completely.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+                  "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                },
+                {
+                  "url": "https://learn.microsoft.com/entra/architecture/8-secure-access-sensitivity-labels",
+                  "title": "Control external access to resources in Microsoft Entra ID with sensitivity labels",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-06"
+                }
+              ],
+              "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "review",
+                "rank": 4,
+                "because": [
+                  "the rule failed against a convention, which is a choice to weigh rather than a documented violation"
+                ]
+              }
+            }
+          ],
+          "attention": {
+            "state": "review",
+            "rank": 4,
+            "because": [
+              "2 finding(s) were decided and are worth weighing"
+            ],
+            "counts": {
+              "act": 0,
+              "review": 2,
+              "observe": 0,
+              "none": 1,
+              "not-evaluated": 0
+            },
+            "unobserved": []
+          }
+        }
+      ]
+    },
+    "evidence": [
+      {
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+        "provenance": {
+          "collected_at": "2026-08-10T19:20:25Z",
+          "collector": "spo-collector",
+          "collector_version": "0.3.0",
+          "source_system": "SharePoint Online",
+          "source_api": "PnP.PowerShell / CSOM",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
+          "identity_kind": "delegated",
+          "acquisition": "collected",
+          "scopes": [
+            "AllSites.Read"
+          ]
+        },
+        "coverage": {
+          "requested": [
+            "classification"
+          ],
+          "completed": [
+            "classification"
+          ],
+          "unavailable": {}
+        },
+        "resource": {
+          "workload": "sharepoint",
+          "type": "site",
+          "native_id": "https://contoso.sharepoint.com/sites/allcompany",
+          "tenant": {
+            "id": null,
+            "host": "contoso.sharepoint.com"
+          },
+          "scope": "collection",
+          "parent": {
+            "workload": "sharepoint",
+            "type": "tenant",
+            "native_id": "contoso.sharepoint.com"
+          },
+          "display_name": "All Company",
+          "url": "https://contoso.sharepoint.com/sites/allcompany"
+        },
+        "facts": {
+          "classification": {
+            "label_applied": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "SensitivityLabelInfo.Id",
+                "value": false
+              }
+            },
+            "label_id": {
+              "state": "missing",
+              "detail": "No sensitivity label is applied to this site, so there is no id to report."
+            },
+            "label_name": {
+              "state": "missing",
+              "detail": "No sensitivity label is applied, so there is no name to resolve."
+            },
+            "label_resolved": {
+              "state": "missing",
+              "detail": "No label is applied, so there is nothing to resolve."
+            },
+            "classification_set": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "Classification",
+                "value": false
+              }
+            },
+            "site_classification": {
+              "state": "missing",
+              "detail": "No classification string is set on this site."
+            },
+            "group_connected": {
+              "state": "observed",
+              "value": true,
+              "raw": {
+                "field": "GroupId",
+                "value": true
+              }
+            },
+            "group_id": {
+              "state": "observed",
+              "value": "2c8f1e40-0000-4000-8000-00000000cc01",
+              "raw": {
+                "field": "GroupId",
+                "value": "2c8f1e40-0000-4000-8000-00000000cc01"
+              }
+            },
+            "teams_connected": {
+              "state": "not-supported",
+              "detail": "IsTeamsConnected is a property of the tenant record, and this mode reads the site. See group_connected, which is observable without administrative rights."
+            },
+            "classified": {
+              "state": "observed",
+              "value": false,
+              "raw": {
+                "field": "SensitivityLabelInfo.Id or Classification",
+                "value": false
+              }
+            }
+          }
+        }
+      }
+    ],
+    "versions": {
+      "engine": "1.0.0b1",
+      "rules": {
+        "SPO-CLASS-001": "1.0",
+        "SPO-CLASS-002": "1.0",
+        "SPO-CLASS-003": "1.0"
+      },
+      "collectors": {
+        "spo-collector": "0.3.0"
+      }
+    },
+    "manifest": {
+      "created_at": "2026-08-10T19:30:00Z",
+      "tenant": {
+        "id": null,
+        "host": "contoso.sharepoint.com"
+      },
+      "identity": {
+        "summary": "single",
+        "kinds": [
+          "delegated"
+        ]
+      },
+      "acquisition": {
+        "summary": "single",
+        "kinds": [
+          "collected"
+        ]
+      },
+      "label": "classification",
+      "assessment_id": "bdd9082a15fee3c842b24293f92738672851b344690b259c487f2e3f7b7c340f"
+    },
+    "hashes": {
+      "algorithm": "sha256",
+      "canonical_parts": {
+        "run_set": "c553bd7c93aa6d6f77dcd7f155a5bd9d59eb9f119ebc24f796647ac57a8e6882",
+        "evidence": "b259b9662c35363790eb2544d9289bd047d1e68bb5b0d0fcb448f5e5d2b29426",
+        "versions": "dccaff1b6d3821df75d2cad0b0512df81947350c439a2103568579a859f626df",
+        "manifest": "eef14b125b03f255739a1238e107724f8b912ad270f064677ce9815a3718dd51"
+      },
+      "canonical_hash": "bdd9082a15fee3c842b24293f92738672851b344690b259c487f2e3f7b7c340f"
+    }
+  }
+}

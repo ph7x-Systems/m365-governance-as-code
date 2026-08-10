@@ -2,13 +2,19 @@
 
 # Governance report: Legal
 
-- Resource: `contoso,site,legal` (site)
+- Resource: `<unknown>` (site)
 - Collected: 2026-08-05T14:02:11Z by `spo-collector` 0.1.0
 - Source: SharePoint Online via Microsoft Graph v1.0
 - Rules: shipped with this version
 - Identity: application, scopes: Sites.Read.All
 - **Not collected:**
   - `owners` — permission-denied: The identity lacks Sites.FullControl.All
+
+## Attention
+
+**Part of this could not be answered, so the report describes less than the resource.**
+
+- 1 requested area(s) were not read: owners
 
 ## Summary
 
@@ -18,10 +24,10 @@
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
-| Unknown | 13 |
 | Error | 0 |
-| Not applicable | 0 |
+| Unknown | 13 |
 | Pass | 0 |
+| Not applicable | 0 |
 
 13 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 

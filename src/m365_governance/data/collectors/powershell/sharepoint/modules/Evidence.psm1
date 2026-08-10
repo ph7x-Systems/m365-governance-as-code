@@ -80,6 +80,23 @@ function Resolve-FailureState {
     return 'missing'
 }
 
+<#
+    The tenant a resource belongs to, in one place.
+
+    Identity is structured now, so every resource carries its own tenant rather
+    than borrowing it from the document it happens to sit in. Written once here
+    because twelve call sites building the same hashtable is twelve chances for
+    one of them to differ.
+#>
+function New-TenantIdentity {
+    [ordered]@{
+        # Null until a collection path for the directory identity is proven on
+        # a tenant. The host is an endpoint, and saying so is the point.
+        id   = $null
+        host = $script:TenantHost
+    }
+}
+
 function New-Evidence {
     param(
         $Resource,
@@ -93,17 +110,29 @@ function New-Evidence {
         throw 'Initialize-Evidence was not called: an envelope has no provenance.'
     }
     return [ordered]@{
-        schema_version = '1.0'
+        # The exact contract this document claims. Inside a schema document
+        # `$schema` names the JSON Schema dialect; inside an instance it is an
+        # ordinary property, and this is where the two conventions are kept
+        # apart. It replaces `schema_version = '1.0'`, a second version that
+        # could not express the one in the schema's own $id.
+        '$schema'      = 'https://ph7x.com/schemas/m365-governance/evidence/3.0.0'
         provenance     = [ordered]@{
             collected_at      = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
             collector         = $script:CollectorName
             collector_version = $script:CollectorVersion
             source_system     = 'SharePoint Online'
             source_api        = $SourceApi
-            tenant_id         = $script:TenantHost
+            # A tenant has one identity and any number of addresses. The
+            # directory id is the identity and nothing here has read one yet,
+            # so it is null and says so: an omitted field would claim nothing
+            # was ever meant to be there. The host is an endpoint, already
+            # normalised so the admin centre and a site agree.
+            tenant            = [ordered]@{ id = $null; host = $script:TenantHost }
             # Interactive and device sign-in are both delegated. Recording it
             # is the difference between a partial audit and a misleading one.
             identity_kind     = 'delegated'
+            # How it got here, which is a different question from who read it.
+            acquisition       = 'collected'
             scopes            = @('AllSites.Read')
         }
         coverage       = [ordered]@{
@@ -142,4 +171,4 @@ function Get-SafeName {
     return ($Value -replace '^https?://', '' -replace '[^A-Za-z0-9._-]', '-').Trim('-')
 }
 
-Export-ModuleMember -Function New-Unavailable, New-ScalarFact, New-AbsentFact, Resolve-FailureState, New-Evidence, Write-Evidence, Get-SafeName, Initialize-Evidence
+Export-ModuleMember -Function New-Unavailable, New-TenantIdentity, New-ScalarFact, New-AbsentFact, Resolve-FailureState, New-Evidence, Write-Evidence, Get-SafeName, Initialize-Evidence

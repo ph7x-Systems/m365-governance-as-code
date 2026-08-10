@@ -28,9 +28,8 @@ import hashlib
 import json
 from typing import Any
 
+from . import identity, registry
 from .results import RunSet
-
-SCHEMA_VERSION = "1.0"
 
 #: Which members of `canonical` are hashed.
 HASHED = ("run_set", "evidence", "versions", "manifest")
@@ -46,10 +45,10 @@ HASHED = ("run_set", "evidence", "versions", "manifest")
 #: would stop resolving.
 #:
 #: THE FIRST VERSION LEFT THE WHOLE MANIFEST OUT, and a test found what that
-#: cost: `tenant`, `created_at` and `identity_kind` could all be changed
+#: cost: `tenant`, `created_at` and the identity summary could all be changed
 #: without anything noticing, so an assessment could be relabelled as
-#: belonging to a different tenant and still verify. Those three are facts
-#: about what was assessed. A label is not, and the difference is the line.
+#: belonging to a different tenant and still verify. Those are facts about what
+#: was assessed. A label is not, and the difference is the line.
 NOT_IN_ITS_OWN_DIGEST = ("assessment_id", "label")
 
 
@@ -85,14 +84,135 @@ def _hashable(value: Any, name: str) -> Any:
     return {k: v for k, v in value.items() if k not in NOT_IN_ITS_OWN_DIGEST}
 
 
+#: Which authentication identity observed something. `not-established` belongs
+#: here because it is a real answer about identity: the evidence did not say.
+#:
+#: `imported` used to sit in this list and does not belong in it. It answers how
+#: the evidence arrived, not who observed it, and putting the two in one field
+#: meant an import could never also say that a delegated identity collected it.
+IDENTITY_KINDS = ("application", "delegated", "not-established")
+
+#: How the evidence reached the engine. Orthogonal to identity, and separate
+#: for the same reason the states above are: an imported document that names
+#: its collecting identity has both answers, and one field could only hold one.
+ACQUISITION_KINDS = ("collected", "imported")
+
+
+class Mismatch(ValueError):
+    """The manifest would have said something the evidence does not support."""
+
+
+def _one_tenant(evidence: list[dict]) -> dict:
+    """Which tenant this evidence is about, or a refusal.
+
+    An assessment is about one tenant. Two tenants in one archive is not a
+    bigger assessment, it is two assessments in a trench coat: every count in
+    the summary would be a sum across estates nobody manages together.
+
+    A TENANT IS NOT A HOSTNAME. It has one directory identity and any number of
+    addresses: the admin centre, the primary host, every multi-geo satellite.
+    So the id decides when it is present, and the host decides only while no id
+    has been observed — which is today, because no collection path for the
+    directory id has been proven on a tenant.
+
+    A multi-geo satellite therefore still reads as a second tenant here, and
+    that is deliberate. Folding two hosts together on the strength of a shared
+    prefix would be inventing an identity nobody read. The refusal is explicit
+    and says what is missing.
+    """
+    tenants = [
+        document.get("provenance", {}).get("tenant") or {} for document in evidence
+    ]
+    ids = {t.get("id") for t in tenants if t.get("id")}
+    hosts = {t.get("host") for t in tenants if t.get("host")}
+
+    if not ids and not hosts:
+        raise Mismatch(
+            "no evidence document says which tenant it is about, so the "
+            "assessment cannot say either"
+        )
+    if len(ids) > 1:
+        raise Mismatch(
+            "this evidence carries more than one directory identity "
+            f"({', '.join(sorted(ids))}), and an assessment is about one tenant"
+        )
+    if not ids and len(hosts) > 1:
+        raise Mismatch(
+            f"this evidence is about more than one host ({', '.join(sorted(hosts))}) "
+            "and none of it carries a directory identity, so nothing establishes "
+            "that they are one tenant. If they are, collect the directory id"
+        )
+    if len(hosts) > 1:
+        # One directory identity and several hosts is the multi-geo case
+        # answered properly: the id settles it and the hosts are addresses.
+        # Which host to record is then a choice, so it is not made — the id is
+        # the identity and the host is dropped to the one the id was read with.
+        hosts = {sorted(hosts)[0]}
+
+    return {"id": sorted(ids)[0] if ids else None, "host": sorted(hosts)[0]}
+
+
+def _summarise(evidence: list[dict], field: str, vocabulary: tuple[str, ...]) -> dict:
+    """What the whole set says about one provenance field.
+
+    A summary and not a value. The manifest used to hold an identity kind and
+    answer `mixed` when the documents disagreed, which is not an identity
+    anybody can authenticate as: it is a statement about a collection of
+    documents wearing the name of a statement about one.
+    """
+    seen = {
+        document.get("provenance", {}).get(field)
+        for document in evidence
+        if document.get("provenance", {}).get(field)
+    }
+    unknown = seen - set(vocabulary)
+    if unknown:
+        raise Mismatch(f"{field} is one of {vocabulary}, not {sorted(unknown)}")
+
+    kinds = sorted(seen)
+    if not kinds:
+        raise Mismatch(
+            f"no evidence document declares its {field}, and the manifest may "
+            "not summarise what nothing states"
+        )
+    if kinds == ["not-established"]:
+        return {"summary": "not-established", "kinds": []}
+    return {"summary": "single" if len(kinds) == 1 else "multiple", "kinds": kinds}
+
+
+def _evaluated_from(run_set: RunSet, evidence: list[dict]) -> None:
+    """Refuse a run set that was not evaluated from this evidence.
+
+    Nothing structural stops a caller passing one tenant's runs and another
+    collection's documents, and the result would verify perfectly: the digests
+    prove nothing moved after the fact, not that the two halves ever belonged
+    together. Every finding would then cite evidence that never produced it.
+    """
+    documented = {
+        identity.key(document["resource"])
+        for document in evidence
+        if document.get("resource")
+    }
+    orphans = sorted(
+        identity.readable(run.resource)
+        for run in run_set.runs
+        if identity.key(run.resource) not in documented
+    )
+    if orphans:
+        raise Mismatch(
+            "the run set evaluated resources this evidence does not contain: "
+            + ", ".join(orphans[:3])
+            + (f" and {len(orphans) - 3} more" if len(orphans) > 3 else "")
+        )
+
+
 def build(
     run_set: RunSet,
     evidence: list[dict],
     *,
     engine_version: str,
-    tenant: str,
-    identity_kind: str,
     created_at: str,
+    tenant: str | None = None,
     label: str | None = None,
 ) -> dict:
     """One assessment, with its identity derived rather than assigned.
@@ -100,11 +220,27 @@ def build(
     `created_at` is passed in rather than read from the clock, so that the same
     inputs produce the same bytes. An assessment whose digest moved because
     time passed would be unverifiable by construction.
+
+    The tenant, the identity summary and the acquisition summary are **read
+    from the evidence**, not accepted from the caller. The first two used to be
+    free strings, which meant the manifest could describe a tenant that appears
+    nowhere in the documents underneath it, and the digests would happily prove
+    that lie unchanged. `tenant` may still be passed, and passing it asserts
+    it: agreement is silence, disagreement is a refusal.
     """
-    if identity_kind not in ("delegated", "application"):
-        raise ValueError(
-            f"identity_kind is delegated or application, not {identity_kind!r}"
+    observed_tenant = _one_tenant(evidence)
+    if tenant is not None and tenant not in (
+        observed_tenant["id"],
+        observed_tenant["host"],
+    ):
+        raise Mismatch(
+            f"the manifest would say {tenant!r} and the evidence was collected "
+            f"from {observed_tenant['host']!r}"
         )
+
+    identity = _summarise(evidence, "identity_kind", IDENTITY_KINDS)
+    acquisition = _summarise(evidence, "acquisition", ACQUISITION_KINDS)
+    _evaluated_from(run_set, evidence)
 
     # Rule and collector versions come from what was actually evaluated, never
     # from what is installed now. Two releases later, "the rule changed" has to
@@ -130,8 +266,9 @@ def build(
 
     manifest = {
         "created_at": created_at,
-        "tenant": tenant,
-        "identity_kind": identity_kind,
+        "tenant": observed_tenant,
+        "identity": identity,
+        "acquisition": acquisition,
     }
     if label:
         manifest["label"] = label
@@ -151,7 +288,7 @@ def build(
         "canonical_hash": combined,
     }
 
-    return {"schema_version": SCHEMA_VERSION, "canonical": canonical}
+    return {"$schema": registry.contract("assessment"), "canonical": canonical}
 
 
 def verify(assessment: dict) -> list[str]:

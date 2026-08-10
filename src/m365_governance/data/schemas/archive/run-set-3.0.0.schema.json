@@ -1,0 +1,56 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/run-set/3.0.0",
+  "title": "RunSet",
+  "description": "An evaluation over more than one resource, exactly as `RunSet.to_dict()` emits it. A directory is a stable input shape whether it holds one document today and fifty tomorrow, so its result is an envelope rather than a bare list. Described as it is: two field names disagree with the Run envelope and that is recorded here rather than corrected.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "resources",
+    "by_class",
+    "set_aside",
+    "counts",
+    "run_coverage",
+    "runs"
+  ],
+  "properties": {
+    "resources": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How many resources were observed. It cannot say how many the identity failed to return, and `run_coverage` is where that limit is recorded rather than inferred."
+    },
+    "by_class": {
+      "type": "object",
+      "description": "Resource class to how many carried it. A label, never a filter.",
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 0
+      }
+    },
+    "set_aside": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How many runs a profile moved BELOW THE FOLD. Not how many were skipped: their findings are evaluated, counted and printed, just lower down. This said 'set aside rather than evaluated', which is the opposite of what the engine does, and a consumer implementing the contract as written would report evaluated resources as unevaluated."
+    },
+    "counts": {
+      "$ref": "https://ph7x.com/schemas/m365-governance/run/3.0.0#/$defs/counts"
+    },
+    "run_coverage": {
+      "type": "object",
+      "description": "The same idea a Run calls `coverage`, under a different name. `expected` is deliberately optional here: counting documents proves how many resources were observed and never how many were missed, so its absence is stored as not-established rather than as complete coverage."
+    },
+    "runs": {
+      "type": "array",
+      "description": "Each run whole. Duplicate resource ids are refused at construction, because two documents describing one resource is a collection defect and not a set of two.",
+      "items": {
+        "$ref": "https://ph7x.com/schemas/m365-governance/run/3.0.0"
+      }
+    },
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/run-set/3.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
+    }
+  }
+}

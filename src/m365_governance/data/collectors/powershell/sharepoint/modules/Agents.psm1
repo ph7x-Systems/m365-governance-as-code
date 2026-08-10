@@ -33,13 +33,20 @@
     evidence document that gets shared is a disclosure this product will not
     make on its own. The count is evidence; the prose is theirs.
 
+    AND IT CONCLUDES NOTHING ABOUT SCOPE. It publishes what it saw: the
+    inventory, the count, the sources as returned and how many there were.
+    Each of those is defensible from a single read. What left is the derived
+    claim about agents "without declared sources", which collapsed four
+    distinguishable states into one number; the note where it used to be says
+    why. No rule consumes these facts today.
+
     The engineering standard for every file here is one document:
     docs/POWERSHELL-STANDARDS.md
 #>
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1') -Force
+Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1')  # sem -Force: ver Activity.psm1
 
 function Get-AgentSourceList {
     <#
@@ -142,20 +149,34 @@ function Get-AgentFacts {
     $facts.agents['source_count'] = New-ScalarFact -Value $totalSources `
         -RawField 'Get-PnPCopilotAgent'
 
-    # AN AGENT THAT DECLARES NO SOURCE IS THE WIDEST ONE, NOT THE NARROWEST.
+    # `agents_without_declared_sources` USED TO BE HERE, AND IS NOT COMING BACK
+    # IN THIS FORM.
     #
-    # This comment said the opposite, and the manifest schema says otherwise in
-    # one sentence: if both `items_by_sharepoint_ids` and `items_by_url` are
-    # omitted, the agent can access every OneDrive and SharePoint source in the
-    # organisation that the asking user can see.
+    # It counted agents whose `source_count` was zero and called that the widest
+    # state, on the strength of one sentence in the manifest schema: if both
+    # `items_by_sharepoint_ids` and `items_by_url` are omitted, the agent can
+    # access every OneDrive and SharePoint source in the organisation.
     #
-    # So zero here is the value that deserves attention, and reading it as
-    # "scoped to this site" is the mistake this count exists to prevent.
-    # Whether an agent authored through the SharePoint UI can even reach that
-    # state is unproven and is one of the things the sandbox run must settle.
-    $withoutSources = @($inventory | Where-Object { $_.source_count -eq 0 }).Count
-    $facts.agents['agents_without_declared_sources'] =
-        New-ScalarFact -Value $withoutSources -RawField 'Get-PnPCopilotAgent'
+    # The sentence is right. The count is not evidence for it. Four different
+    # situations produce zero:
+    #
+    #   1. the OneDriveAndSharePoint capability is absent entirely;
+    #   2. it is present and both source properties are omitted  <- the only
+    #      one that sentence is about;
+    #   3. the properties are present and hold empty arrays;
+    #   4. the definition could not be read.
+    #
+    # A rule built on the count would have failed an agent that says nothing
+    # about SharePoint at all, and one this collector simply did not read.
+    #
+    # The replacement is per-property presence, and it is deliberately NOT
+    # written yet. Whether PnP surfaces an omitted manifest property as a
+    # missing member, a null member or an empty array is a fact about the
+    # module's types, and the tenant run that would have settled it enumerated
+    # zero agents. Writing the model first would mean choosing between three
+    # plausible shapes and finding out afterwards, which is the defect this
+    # file already carries a scar from. The five conditions that let the work
+    # resume are in docs/AGENT-GOVERNANCE-SURFACE.md.
 
     return $facts
 }

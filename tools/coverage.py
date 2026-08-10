@@ -69,8 +69,9 @@ SITE_COLUMNS = ("knowledge", "guide", "analysis", "compass")
 #: *this obligation does not exist here*. Same distinction as `unknown` never
 #: being `pass`.
 
-#: The authorised subject vocabulary of the whole ecosystem: engine, site,
-#: Workbench and the content graph classify against this one list. The prefix
+#: The authorised subject vocabulary. Every consumer of this engine classifies
+#: against this one list, and naming a particular one here would make a public
+#: repository depend on knowing about somebody's private product. The prefix
 #: is an identifier and a heading is not, so the names live here too, and
 #: `unnamed domain` appears if a new prefix arrives without one.
 SUBJECT_VOCABULARY = {

@@ -16,7 +16,7 @@ import shutil
 
 import pytest
 
-from conftest import DATA, FIXTURES, evidence
+from conftest import DATA, FIXTURES, ROOT, evidence
 from m365_governance import diffing
 from m365_governance.cli import main
 from m365_governance.engine import evaluate
@@ -149,7 +149,7 @@ def test_the_command_line_says_which_resource_rather_than_a_traceback(capsys, tm
     shutil.copy(FIXTURES / "site-two-owners.json", tmp_path / "b.json")
     code, _, err = run(capsys, "evaluate", "--evidence", str(tmp_path))
     assert code == 2
-    assert "duplicate resource ids" in err
+    assert "describes the same resource twice" in err
     assert "contoso,site,finance" in err
     assert "Traceback" not in err
 
@@ -251,35 +251,40 @@ def _stored_set(tmp_path, name, *fixtures):
     return path
 
 
-def test_diff_pairs_resources_by_id_and_shows_what_moved(capsys, tmp_path):
-    before = _stored_set(tmp_path, "before", "site-two-owners")
-    after_set = RunSet([_run_for("site-one-owner")])
-    # The same resource, one owner later. Renaming the id is how a fixture
-    # becomes the same site at a different moment.
-    after_set.runs[0].resource["id"] = "contoso,site,finance"
-    after_set.runs[0].resource["display_name"] = "Finance"
-    after = tmp_path / "after.json"
-    after.write_text(json.dumps(after_set.to_dict()))
+def test_the_run_level_comparison_pairs_by_id_and_shows_what_moved():
+    """Driven directly rather than through a command, because it is not one.
 
-    code, out, _ = run(capsys, "diff", str(before), str(after))
-    assert code == 0
-    assert "## Finance" in out
-    assert "pass → fail" in out
-    assert "`owners.count` | 2 | 1" in out
+    A comparison is a relation between two assessments and this is how one is
+    computed underneath. It claims no contract, nothing persists it, and no
+    command emits it: the day it had a public shape was the day two documents
+    described the same idea and only one of them had a schema.
+    """
+    before = RunSet([_run_for("site-two-owners")])
+    after = RunSet([_run_for("site-one-owner")])
+    # The same resource, one owner later. Identity is structured now, so the
+    # native id is the field that makes two documents the same site — and the
+    # display name is deliberately NOT part of it, which is why setting it here
+    # changes what is printed and nothing about what is paired.
+    after.runs[0].resource["native_id"] = before.runs[0].resource["native_id"]
+    after.runs[0].resource["display_name"] = "Finance"
 
-
-def test_diff_names_a_resource_that_appeared_and_one_that_went(capsys, tmp_path):
-    before = _stored_set(tmp_path, "before", "site-two-owners")
-    after = _stored_set(tmp_path, "after", "site-spfx-behind")
-
-    code, out, _ = run(capsys, "diff", str(before), str(after))
-    assert code == 0
-    assert "(new resource)" in out
-    assert "(resource gone)" in out
-    assert "not a resource that passed" in out
+    text = diffing.many_to_markdown(before, after)
+    assert "## Finance" in text
+    assert "pass → fail" in text
+    assert "`owners.count` | 2 | 1" in text
 
 
-def test_diff_still_separates_the_rule_moving_from_the_estate_moving():
+def test_the_run_level_comparison_names_what_appeared_and_what_went():
+    before = RunSet([_run_for("site-two-owners")])
+    after = RunSet([_run_for("site-spfx-behind")])
+
+    text = diffing.many_to_markdown(before, after)
+    assert "(new resource)" in text
+    assert "(resource gone)" in text
+    assert "not a resource that passed" in text
+
+
+def test_the_run_level_comparison_separates_the_rule_moving_from_the_estate():
     """The question an audit asks is whether the estate changed or we did, and
     it does not stop being the question at tenant scale."""
     before = RunSet([_run_for("site-two-owners")])
@@ -291,33 +296,17 @@ def test_diff_still_separates_the_rule_moving_from_the_estate_moving():
     assert "may be the rule rather than the estate" in text
 
 
-def test_a_quiet_diff_says_so(capsys, tmp_path):
-    before = _stored_set(tmp_path, "before", "site-two-owners")
-    code, out, _ = run(capsys, "diff", str(before), str(before))
-    assert code == 0
-    assert "Nothing changed" in out
+def test_the_run_level_comparison_is_reached_by_no_command():
+    """The property that keeps it an implementation detail. If a command grew
+    a way to emit this, it would be a second document describing what a
+    Comparison already describes, and only one of the two would have a
+    contract."""
+    from m365_governance import cli
 
-
-def test_a_regression_anywhere_in_the_set_fails_the_pipeline(capsys, tmp_path):
-    before = _stored_set(tmp_path, "before", "site-two-owners")
-    after_set = RunSet([_run_for("site-one-owner")])
-    after_set.runs[0].resource["id"] = "contoso,site,finance"
-    after = tmp_path / "after.json"
-    after.write_text(json.dumps(after_set.to_dict()))
-
-    code, _, _ = run(capsys, "diff", str(before), str(after), "--fail-on-regression")
-    assert code == 1
-
-
-def test_a_run_and_a_run_set_are_not_comparable(capsys, tmp_path):
-    """One is a resource, the other an estate. Comparing them would either
-    hide every other resource or invent one."""
-    run_set = _stored_set(tmp_path, "set", "site-two-owners")
-    code, _, err = run(
-        capsys, "diff", str(run_set), str(FIXTURES / "site-one-owner.json")
-    )
-    assert code == 2
-    assert "cannot diff a single resource against a run set" in err
+    source = (ROOT / "src" / "m365_governance" / "cli.py").read_text(encoding="utf-8")
+    assert "diffing." not in source, "a command reaches the run-level comparison"
+    assert "comparison.build" in source
+    assert "diff" in cli._COMMANDS
 
 
 # ---------------------------------------------------------------------------

@@ -1,21 +1,17 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/comparison/1.0.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/comparison/3.0.0",
   "title": "Comparison",
   "description": "The relation between two assessments, and the only place a diff belongs. A diff is not part of an assessment: it is a claim about two states, and putting it inside one would make that state carry an assertion about another. This may be cached, exported or shipped inside a delivery package, and it stays derivable in all three cases: given both assessments, the engine reproduces it.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schema_version",
+    "$schema",
     "before",
     "after",
     "diff"
   ],
   "properties": {
-    "schema_version": {
-      "type": "string",
-      "pattern": "^[0-9]+\\.[0-9]+$"
-    },
     "before": {
       "$ref": "#/$defs/side"
     },
@@ -24,6 +20,11 @@
     },
     "diff": {
       "$ref": "#/$defs/diff"
+    },
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/comparison/3.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     }
   },
   "$defs": {
@@ -33,7 +34,8 @@
       "required": [
         "assessment_id",
         "canonical_hash",
-        "created_at"
+        "created_at",
+        "tenant"
       ],
       "description": "Which assessment, by identity rather than by copy. A comparison that embedded both would duplicate the canonical truth it is describing.",
       "properties": {
@@ -46,7 +48,8 @@
           "format": "date-time"
         },
         "tenant": {
-          "type": "string"
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/tenant",
+          "description": "Which tenant both sides are about, copied from the assessments rather than restated. It was a bare string, which put a hostname where an organisation belongs."
         },
         "canonical_hash": {
           "type": "string",
@@ -88,8 +91,8 @@
       ],
       "properties": {
         "resource": {
-          "type": "string",
-          "minLength": 1
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/resource_ref",
+          "description": "The resource whose finding moved, as a reference rather than a string two documents had to spell identically."
         },
         "rule": {
           "type": "string",

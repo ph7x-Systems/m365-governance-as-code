@@ -1,13 +1,17 @@
 {
-  "schema_version": "1.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
   "provenance": {
     "collected_at": "2026-08-08T16:10:58Z",
     "collector": "spo-collector",
     "collector_version": "0.3.0",
     "source_system": "SharePoint Online",
     "source_api": "PnP.PowerShell / SharePoint Admin",
-    "tenant_id": "contoso-admin.sharepoint.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
     "identity_kind": "delegated",
+    "acquisition": "collected",
     "scopes": [
       "AllSites.FullControl"
     ]
@@ -22,8 +26,15 @@
     "unavailable": {}
   },
   "resource": {
-    "id": "https://contoso-admin.sharepoint.com",
+    "workload": "sharepoint",
     "type": "tenant",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "parent": null,
     "display_name": "https://contoso-admin.sharepoint.com",
     "url": "https://contoso-admin.sharepoint.com"
   },

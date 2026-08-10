@@ -238,3 +238,123 @@ def test_the_audit_lists_the_same_properties_as_the_guard():
     assert len(printed) == 2, "the audit no longer prints the documented list"
     block = printed[1].split("```")[1]
     assert set(block.split()) == set(UNPOPULATED_BY_ENUMERATION)
+
+
+#: Every resource block the collector writes. Containment is not optional in
+#: the schema, so a mode that forgets it produces evidence the engine refuses
+#: at runtime, on a tenant, after somebody waited for a collection.
+RESOURCE_BLOCK = re.compile(r"workload = 'sharepoint'; type = '([a-z]+)'\n")
+
+
+def test_every_resource_the_collector_writes_declares_its_containment():
+    """Containment is not optional in the schema.
+
+    A mode that forgets it produces evidence the engine refuses at runtime, on
+    a tenant, after somebody waited for a collection.
+    """
+    source = COLLECTOR.read_text(encoding="utf-8")
+    blocks = list(RESOURCE_BLOCK.finditer(source))
+    assert len(blocks) >= 8, "the resource blocks moved; this test found almost none"
+
+    for match in blocks:
+        # The remaining fields follow the type on the next lines of the same
+        # literal. The window grew when identity became structured: a resource
+        # now carries its own native id and tenant before it reaches `scope`.
+        window = source[match.end() : match.end() + 420]
+        kind = match.group(1)
+        for field in ("native_id", "tenant", "scope", "parent"):
+            assert field in window, f"a {kind} resource is written without {field}"
+
+
+#: url -> the tenant it belongs to. The admin centre lives on its own host, and
+#: recording that host as the tenant meant two modes on one tenant produced two
+#: tenant identities: evidence that could never be assembled into one
+#: assessment. Microsoft documents the admin form as `{prefix}-admin`.
+#:
+#: https://learn.microsoft.com/sharepoint/dev/spfx/set-up-your-developer-tenant
+TENANT_OF = {
+    "https://contoso-admin.sharepoint.com": "contoso.sharepoint.com",
+    "https://contoso.sharepoint.com/sites/finance": "contoso.sharepoint.com",
+    # Every cloud keeps the shape and changes the suffix, so only the first
+    # label is touched.
+    "https://contoso-admin.sharepoint.us": "contoso.sharepoint.us",
+    # `-admin` is a suffix on the first label and not a substring anywhere.
+    "https://admin-portal.sharepoint.com": "admin-portal.sharepoint.com",
+    # A KNOWN LIMIT, asserted so it is a decision rather than a surprise: a
+    # multi-geo satellite is returned as itself, because the documented mapping
+    # covers the admin centre and nothing else. Resolving it needs the
+    # directory id, and no collection path for that has been proven yet.
+    "https://contoso-emea.sharepoint.com/sites/x": "contoso-emea.sharepoint.com",
+}
+
+
+def test_the_tenant_is_the_tenant_and_not_whatever_was_connected_to():
+    if not shutil.which("pwsh"):
+        pytest.skip("pwsh is not installed; only collection needs it")
+
+    module = COLLECTOR.parent / "modules" / "Connection.psm1"
+    script = f"Import-Module '{module}' -Force; " + "; ".join(
+        f"Get-TenantHost -Url '{url}'" for url in TENANT_OF
+    )
+    answers = subprocess.run(
+        ["pwsh", "-NoProfile", "-Command", script],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+
+    assert answers == list(TENANT_OF.values())
+
+
+def test_a_sibling_module_does_not_unload_evidence_from_its_caller():
+    """`Import-Module -Force` on an already-loaded module REMOVES it first, and
+    the removal reaches the caller's scope.
+
+    Every collector module imports Evidence.psm1. When those nested imports
+    carried `-Force`, importing the second module unloaded the Evidence that
+    `Get-SpoEvidence.ps1` had just imported, and the orchestrator lost
+    `Initialize-Evidence` before it could call it. Every mode failed against
+    every tenant with "The term 'Initialize-Evidence' is not recognized",
+    which is a shipped collector that cannot collect.
+
+    A source check would have missed the point: this is about what the loaded
+    session holds, so the test loads the modules the way the collector does
+    and asks the session.
+    """
+    if not shutil.which("pwsh"):
+        pytest.skip("pwsh is not installed; only collection needs it")
+
+    modules = COLLECTOR.parent / "modules"
+    ordem = [
+        "Evidence",
+        "Connection",
+        "Sites",
+        "Sharing",
+        "Permissions",
+        "Modernity",
+        "Activity",
+        "Classification",
+        "Spfx",
+        "Agents",
+    ]
+    guiao = (
+        "$m = '"
+        + str(modules)
+        + "'; "
+        + "".join(f"Import-Module (Join-Path $m '{n}.psm1') -Force; " for n in ordem)
+        + "@('Initialize-Evidence','New-ScalarFact','New-AbsentFact','New-Evidence',"
+        "'Write-Evidence','Resolve-FailureState','New-TenantIdentity') "
+        "| ForEach-Object { "
+        "if (-not (Get-Command $_ -ErrorAction SilentlyContinue)) { $_ } }"
+    )
+    saida = subprocess.run(
+        ["pwsh", "-NoProfile", "-Command", guiao],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
+    assert not saida, (
+        "importing the collector's modules in its own order left these helpers "
+        f"unavailable: {saida}. A nested `Import-Module ... -Force` unloads the "
+        "caller's copy; drop the -Force."
+    )
