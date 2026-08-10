@@ -12,6 +12,21 @@
         pwsh tools/validate-agents.ps1 -SiteUrl  https://<tenant>.sharepoint.com/sites/<site> `
                                        -ClientId <your app id>
 
+    AND, WHERE A BROWSER CANNOT COME BACK. `-Interactive` needs a browser that
+    can hand a token back to this process. In a terminal that has no session to
+    hand back to, it waits for something that will never arrive. PnP documents
+    the device code flow for exactly that case, so it is a switch here rather
+    than a workaround somebody has to invent under pressure:
+
+        pwsh tools/validate-agents.ps1 -SiteUrl  https://<tenant>.sharepoint.com/sites/<site> `
+                                       -ClientId <your app id> `
+                                       -DeviceLogin
+
+    It prints a URL and a code; you sign in on any device and the run
+    continues. Both forms pass `-ValidateConnection`, so a connection that
+    cannot reach the site fails here and not four steps later inside a read.
+    https://pnp.github.io/powershell/articles/authentication.html
+
     HOW IT PROVES IT. It reads the agents twice. Once raw, from
     `Get-PnPCopilotAgent`, walking the object with reflection so that a
     property the model expects and the object does not have shows up as
@@ -34,8 +49,10 @@
     collection path, and mixing it in here would widen the scope of a
     validation whose value is being narrow.
 
-    READ-ONLY, and interactive rather than a device code, for the same reasons
-    as validate-sandbox.ps1.
+    READ-ONLY. This line used to say "interactive rather than a device code",
+    and that was a preference written as a rule: the device code flow is the
+    documented answer for a terminal a browser cannot return to, and pretending
+    otherwise cost a run that never connected.
 
     Writes docs/SANDBOX-AGENTS.md and, when at least one agent was read, a
     sanitised fixture beside the others. Nothing is concluded here.
@@ -46,7 +63,8 @@ param(
     [Parameter(Mandatory = $true)] [string] $ClientId,
     [Parameter()] [string] $OutputPath = "docs/SANDBOX-AGENTS.md",
     [Parameter()] [string] $FixturePath =
-    "src/m365_governance/data/fixtures/sharepoint/site-agents-observed.json"
+    "src/m365_governance/data/fixtures/sharepoint/site-agents-observed.json",
+    [Parameter()] [switch] $DeviceLogin
 )
 
 Set-StrictMode -Version Latest
@@ -61,12 +79,22 @@ Import-Module (Join-Path $modules 'Agents.psm1') -Force
 
 Say "# Agent inventory, against a tenant"
 Say ""
-Say "Run on $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm')) UTC, interactive and read-only."
+# The document says HOW it connected, because "interactive" was printed
+# unconditionally and would now be false on a device-code run. A record that
+# misstates its own method is the kind of detail nobody checks twice.
+$how = if ($DeviceLogin) { 'device login' } else { 'interactive' }
+Say "Run on $((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd HH:mm')) UTC, $how and read-only."
 Say "The site is not named here: this repository is public, and a URL is an identifier whether or not it is data."
 Say ""
 
-Write-Host "Connecting. A browser will open." -ForegroundColor Cyan
-Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId $ClientId
+if ($DeviceLogin) {
+    Write-Host "Connecting with device login. Follow the printed URL and code." -ForegroundColor Cyan
+    Connect-PnPOnline -Url $SiteUrl -DeviceLogin -ClientId $ClientId -ValidateConnection
+}
+else {
+    Write-Host "Connecting. A browser will open." -ForegroundColor Cyan
+    Connect-PnPOnline -Url $SiteUrl -Interactive -ClientId $ClientId -ValidateConnection
+}
 
 # ── 1. the raw object, walked rather than assumed ────────────────────────────
 #
