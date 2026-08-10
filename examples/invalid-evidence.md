@@ -4,7 +4,7 @@
 
 - Resource: `<unknown>` (list)
 - Collected: 2026-08-05T14:02:11Z by `spo-collector` 0.1.0
-- Source: SharePoint Online via Microsoft Graph v1.0
+- Source: SharePoint Online via PnP.PowerShell / CSOM
 - Rules: shipped with this version
 - Identity: application, scopes: Sites.Read.All
 

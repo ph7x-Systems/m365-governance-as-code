@@ -31,7 +31,7 @@
             "collector": "spo-collector",
             "collector_version": "0.1.0",
             "source_system": "SharePoint Online",
-            "source_api": "Microsoft Graph v1.0",
+            "source_api": "PnP.PowerShell / CSOM",
             "tenant": {
               "id": null,
               "host": "contoso.sharepoint.com"
@@ -1614,7 +1614,7 @@
           "collector": "spo-collector",
           "collector_version": "0.1.0",
           "source_system": "SharePoint Online",
-          "source_api": "Microsoft Graph v1.0",
+          "source_api": "PnP.PowerShell / CSOM",
           "tenant": {
             "id": null,
             "host": "contoso.sharepoint.com"
@@ -1984,17 +1984,17 @@
           "collected"
         ]
       },
-      "assessment_id": "7ae83e0ddaf35db851647874579bcf05361b77f25052b0110c2b820af2dcd2f7"
+      "assessment_id": "204008b0bb86c6a3bd1d8e411d9bf26dd340c37469afdc34f5daac21d0894ecb"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "07161931f0becacee3d12e4f657e2604273b0ef7d3afc9298b816d2fe8bf91f5",
-        "evidence": "79a4c1b0b1ca88297930932f4f6433fbad1f0d954e5308fb27683e022f8bee4a",
+        "run_set": "a47379d3bede3e5d79156f54a7d0bfbf842fee4b06abd98028aee5d06b269538",
+        "evidence": "f28860a02a4b822eeb6353e9c356f3bd004046109959f71b6990782d9b0fe79f",
         "versions": "bdb473969bfdc85c1f3dcb3f4bfd2186e8794d5835beea7d434d762c98a05955",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "7ae83e0ddaf35db851647874579bcf05361b77f25052b0110c2b820af2dcd2f7"
+      "canonical_hash": "204008b0bb86c6a3bd1d8e411d9bf26dd340c37469afdc34f5daac21d0894ecb"
     }
   }
 }

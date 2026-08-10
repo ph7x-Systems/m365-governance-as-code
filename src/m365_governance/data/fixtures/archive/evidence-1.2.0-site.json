@@ -5,7 +5,7 @@
     "collector": "spo-collector",
     "collector_version": "0.1.0",
     "source_system": "SharePoint Online",
-    "source_api": "Microsoft Graph v1.0",
+    "source_api": "PnP.PowerShell / CSOM",
     "tenant_id": "00000000-0000-0000-0000-000000000000",
     "identity_kind": "application",
     "scopes": [
