@@ -128,7 +128,7 @@ This is not caution. It is the only pattern that has caught anything here:
 
 | | |
 |---|---|
-| **PnP** | `Connect-PnPOnline` has required `-ClientId` since 2.99. The collector as first written could never have connected to anything. |
+| **PnP** | Microsoft removed the shared PnP Management Shell application on 9 September 2024, so callers now bring their own application registration — directly or through a supported configured default. This collector requires an explicit `-ClientId` because evidence has to name the application that observed it, and a value read from an ambient environment variable is one nobody can name afterwards. The claim this table used to make, "required since 2.99", cited a release that does not exist. |
 | **SharePoint** | `SharingCapability` is not a property of a site. `Get-PnPSite -Includes` rejects it outright; it is a tenant property *about* a site. |
 | **SharePoint** | `DefaultSharingLinkType: None` means "inherits the tenant", not "no default". The rule that read it as a value would have passed 53 sites knowing nothing. |
 | **SARIF** | Asked in prose, a summary of the specification offered `redirect` and `hotspot` as permitted `result.kind` values. The schema's enum contains neither. |

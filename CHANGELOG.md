@@ -872,5 +872,11 @@ Both collector paths ran, produced evidence that validates against the schema,
 and returned findings through the engine.
 
 Two defects were found by that run and fixed. Neither was visible offline:
-`Connect-PnPOnline` requires a client id since PnP 2.99, and a CSOM property
-read through the context returns null without raising.
+`Connect-PnPOnline` needs a client id this collector supplies explicitly, and a
+CSOM property read through the context returns null without raising.
+
+> Corrected on 2026-08-10: this entry said "since PnP 2.99". No such release
+> exists — the changelog goes 2.12.0, then 3.x — and the shared PnP Management
+> Shell application was removed on 9 September 2024. The entry is corrected in
+> place rather than rewritten silently, because a released note that quietly
+> changes its facts is worth less than one that says what it got wrong.
