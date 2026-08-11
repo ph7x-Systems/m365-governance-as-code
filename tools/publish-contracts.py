@@ -81,6 +81,16 @@ def main() -> int:
         shutil.copy2(path, out / "csharp" / path.name)
     shutil.copy2(manifest_path, out / "manifest.json")
 
+    # The fixture registry travels with the bundle: the samples below are
+    # produced from fixtures, and `may_be_presented_as_tenant_observation`
+    # is the field a consumer reads to keep a construction from being shown
+    # as a tenant reading. A consumer vendored this file by hand first;
+    # a bundle that omitted it failed the consumer's drift gate, correctly.
+    shutil.copy2(
+        ROOT / "src" / "m365_governance" / "data" / "fixture-registry.json",
+        out / "fixture-registry.json",
+    )
+
     # Real output, not hand-written examples. Every fixture that evaluates
     # becomes a sample, so the consumer exercises the contract against what the
     # engine actually produces.
