@@ -61,7 +61,7 @@ provenance:
   collector: spo-site-collector
   collector_version: 1.0.0
   source_system: SharePoint Online
-  source_api: Microsoft Graph v1.0
+  source_api: PnP.PowerShell / CSOM
   tenant:
     id: null                            # the directory identity, when observed
     host: contoso.sharepoint.com        # an address, not the identity
@@ -304,7 +304,7 @@ provenance:
   collector: spo-site-collector
   collector_version: 1.0.0
   source_system: SharePoint Online
-  source_api: Microsoft Graph v1.0
+  source_api: PnP.PowerShell / CSOM
   tenant: {id: null, host: contoso.sharepoint.com}
   identity_kind: application
   acquisition: collected

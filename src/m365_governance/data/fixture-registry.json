@@ -1,422 +1,423 @@
 {
  "_leiame": [
-  "O QUE CADA FIXTURE E, e o que se pode dizer dela em publico.",
+  "WHAT EACH FIXTURE IS, and what may be said about it in public.",
   "",
-  "Vive FORA dos documentos de evidencia de proposito. `acquisition` responde a",
-  "como evidencia real entrou num Assessment -- `collected` ou `imported` -- e",
-  "acrescentar-lhe `synthetic` deixaria um Assessment de producao validar",
-  "evidencia construida. Sao duas perguntas: uma e sobre a evidencia, a outra e",
-  "sobre para que serve aquele ficheiro neste repositorio.",
+  "This lives OUTSIDE the evidence documents on purpose. `acquisition`",
+  "answers how real evidence reached an Assessment -- `collected` or",
+  "`imported` -- and adding `synthetic` to it would let a production",
+  "Assessment validate constructed evidence. They are two questions: one is",
+  "about the evidence, the other is about what that file is for in this",
+  "repository.",
   "",
-  "Existe porque a pagina do produto apresentava a `list-over-limit.json` com",
-  "`Collected` e uma data, e lia-se como uma leitura feita a um tenant. E uma",
-  "construcao. O resultado que o Engine produz dela e verdadeiro; a evidencia",
-  "nao foi observada em lado nenhum.",
+  "It exists because the product page presented `list-over-limit.json` with",
+  "`Collected` and a date, and it read as a reading taken from a tenant. It",
+  "is a construction. The result the Engine produces from it is true; the",
+  "evidence was never observed anywhere.",
   "",
-  "`may_be_presented_as_tenant_observation` e o campo que os consumidores lem.",
-  "Nenhuma fixture sintetica o pode ter a `true`."
+  "`may_be_presented_as_tenant_observation` is the field consumers read.",
+  "No synthetic fixture may carry it as `true`."
  ],
  "fixtures": [
   {
    "path": "fixtures/archive/evidence-1.2.0-site.json",
    "origin": "synthetic",
-   "purpose": "sem proveniencia de tenant; construida para exercitar um caminho",
+   "purpose": "no tenant provenance; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/assessment/classification.json",
    "origin": "synthetic",
-   "purpose": "sem proveniencia de tenant; construida para exercitar um caminho",
+   "purpose": "no tenant provenance; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/assessment/three-resources.json",
    "origin": "synthetic",
-   "purpose": "sem proveniencia de tenant; construida para exercitar um caminho",
+   "purpose": "no tenant provenance; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/comparison/sharing-mitigated.json",
    "origin": "synthetic",
-   "purpose": "sem proveniencia de tenant; construida para exercitar um caminho",
+   "purpose": "no tenant provenance; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-catalog-over-hard-limit.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-class-application.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-class-catalog.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-class-content.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-class-system-and-application.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-class-system.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-class-unknown.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-count-invalid.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-count-not-collected.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-inheritance-not-collected.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-over-limit.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-scopes-counted-in-part.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-scopes-not-counted.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-scopes-over-hard-limit.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-scopes-over-recommended.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-scopes-within-recommended.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-unique-permissions.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/list-within-limit.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-activity-archived.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-activity-locked.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-activity-not-read.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-activity-recent.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-activity-stale.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-agents-with-sources.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-group-unlabelled.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-invalid.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-label-invalid.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-label-unresolved.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-labelled.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-legacy-string.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-not-read.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-class-observed-20260810.json",
    "origin": "sanitized-observation",
-   "purpose": "evidencia lida de um site real a 2026-08-10, com o tenant, o URL e o GUID do grupo substituidos",
+   "purpose": "evidence read from a real site on 2026-08-10, with the tenant, the URL and the group GUID replaced",
    "may_be_presented_as_tenant_observation": true
   },
   {
    "path": "fixtures/sharepoint/site-class-unlabelled.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-delegated-identity.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-groups-only-admins.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-imported-inventory.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-modern-clean.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-modern-custom-master.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-modern-not-read.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-modern-publishing-on.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-modern-subsite-default-master.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-named-and-group-admins.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-one-owner.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-owners-not-collected.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-partial-expansion-decides.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-partial-expansion-undecided.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-sharing-anyone-default-anyone.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-sharing-anyone-default-direct.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-sharing-guests-only.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-sharing-inherits-tenant-default.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-sharing-not-collected.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-spfx-behind.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-spfx-current.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-spfx-no-catalog.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-spfx-pages-unreconciled.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-storage-comfortable.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-storage-nearly-full.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-storage-no-quota.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/site-two-owners.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/tenant-sharing-default-anyone-and-edit.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/tenant-sharing-internal-only.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/tenant-sharing-mitigated.json",
    "origin": "synthetic",
-   "purpose": "host de exemplo `contoso.sharepoint.com`; construida para exercitar um caminho",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
    "path": "fixtures/sharepoint/tenant-sharing-observed-20260808.json",
    "origin": "sanitized-observation",
-   "purpose": "citada num registo de corrida contra um tenant, com o tenant retirado",
+   "purpose": "cited in the record of a run against a tenant, with the tenant removed",
    "may_be_presented_as_tenant_observation": true
   }
  ]

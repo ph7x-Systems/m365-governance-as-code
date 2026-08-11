@@ -360,37 +360,38 @@ def test_a_sibling_module_does_not_unload_evidence_from_its_caller():
     )
 
 
-def test_nenhuma_fixture_afirma_uma_api_que_o_colector_nao_usa():
-    """`source_api` diz por onde a evidência foi lida. Não é decoração.
+def test_no_fixture_claims_an_api_the_collector_never_uses():
+    """`source_api` says which path the evidence was read through. It is not
+    decoration.
 
-    Vinte e sete fixtures diziam `Microsoft Graph v1.0`. Este colector nunca
-    passou pelo Graph: lê listas com `Get-PnPList` e objectos CSOM, e o
-    `Evidence.psm1` tem `PnP.PowerShell / CSOM` como valor por omissão. A
-    afirmação era falsa e viajava dentro de documentos de evidência — que é o
-    sítio onde uma afirmação falsa custa mais, porque é o sítio onde o produto
-    pede para ser acreditado.
+    Twenty-seven fixtures said `Microsoft Graph v1.0`. This collector has
+    never gone through Graph: it reads lists with `Get-PnPList` and CSOM
+    objects, and `Evidence.psm1` carries `PnP.PowerShell / CSOM` as the
+    default. The claim was false and travelled inside evidence documents,
+    which is where a false claim costs the most, because it is where the
+    product asks to be believed.
 
-    O portão liga cada `source_api` publicado a um caminho de recolha que este
-    produto tem. Uma fixture que queira afirmar outro tem de o acrescentar aqui
-    e, antes disso, ao colector.
+    The gate ties every published `source_api` to a collection path this
+    product has. A fixture that wants to claim another one has to add it
+    here and, before that, to the collector.
     """
     import json
 
-    caminhos = set()
-    modulos = COLLECTOR.parent / "modules"
-    # O orquestrador também declara caminhos — o de administração está lá e não
-    # nos módulos. Ler só os módulos dava um portão que acusava evidência
-    # verdadeira.
-    for f in [COLLECTOR, *modulos.glob("*.psm1")]:
+    paths = set()
+    modules = COLLECTOR.parent / "modules"
+    # The orchestrator declares paths too: the admin one lives there and not
+    # in the modules. Reading only the modules produced a gate that accused
+    # true evidence.
+    for f in [COLLECTOR, *modules.glob("*.psm1")]:
         for m in re.finditer(r"-SourceApi\s+'([^']+)'", f.read_text(encoding="utf-8")):
-            caminhos.add(m.group(1))
-    evid = (modulos / "Evidence.psm1").read_text(encoding="utf-8")
-    padrao = re.search(r"\[string\]\s*\$SourceApi\s*=\s*'([^']+)'", evid)
-    if padrao:
-        caminhos.add(padrao.group(1))
-    assert caminhos, "o colector não declara nenhum caminho de recolha"
+            paths.add(m.group(1))
+    evid = (modules / "Evidence.psm1").read_text(encoding="utf-8")
+    default = re.search(r"\[string\]\s*\$SourceApi\s*=\s*'([^']+)'", evid)
+    if default:
+        paths.add(default.group(1))
+    assert paths, "the collector declares no collection path at all"
 
-    maus = []
+    bad = []
     for p in sorted((DATA / "fixtures").rglob("*.json")):
         try:
             d = json.loads(p.read_text(encoding="utf-8"))
@@ -398,80 +399,82 @@ def test_nenhuma_fixture_afirma_uma_api_que_o_colector_nao_usa():
             continue
         for doc in d if isinstance(d, list) else [d]:
             api = (doc.get("provenance") or {}).get("source_api")
-            if api and api not in caminhos:
-                maus.append(f"{p.name}: diz `{api}`")
-    assert not maus, (
-        "fixtures que afirmam uma API que nenhum colector deste produto usa:\n  "
-        + "\n  ".join(sorted(set(maus))[:12])
-        + f"\n  os caminhos que existem: {sorted(caminhos)}"
+            if api and api not in paths:
+                bad.append(f"{p.name}: says `{api}`")
+    assert not bad, (
+        "fixtures claiming an API no collector of this product uses:\n  "
+        + "\n  ".join(sorted(set(bad))[:12])
+        + f"\n  the paths that exist: {sorted(paths)}"
     )
 
 
 REGISTO = DATA / "fixture-registry.json"
 
 
-def test_cada_fixture_entregue_esta_classificada_uma_vez():
-    """O que um ficheiro É não se infere do nome nem do host.
+def test_every_shipped_fixture_is_classified_once():
+    """What a file IS cannot be inferred from its name or its host.
 
-    A página do produto apresentava `list-over-limit.json` com `Collected` e uma
-    data, e lia-se como uma leitura feita a um tenant às 14:02. É uma
-    construção. O resultado que o Engine produz dela é verdadeiro; a evidência
-    não foi observada em lado nenhum, e a diferença entre as duas coisas é o
-    que este produto vende.
+    The product page presented `list-over-limit.json` with `Collected` and a
+    date, and it read as a reading taken from a tenant at 14:02. It is a
+    construction. The result the Engine produces from it is true; the
+    evidence was never observed anywhere, and the difference between those
+    two things is what this product sells.
     """
     import json
 
     doc = json.loads(REGISTO.read_text(encoding="utf-8"))
-    entradas = {f["path"]: f for f in doc["fixtures"]}
-    no_disco = {str(p.relative_to(DATA)) for p in (DATA / "fixtures").rglob("*.json")}
+    entries = {f["path"]: f for f in doc["fixtures"]}
+    on_disk = {str(p.relative_to(DATA)) for p in (DATA / "fixtures").rglob("*.json")}
 
-    assert len(entradas) == len(doc["fixtures"]), "há caminhos repetidos no registo"
-    sem_entrada = sorted(no_disco - set(entradas))
-    assert not sem_entrada, (
-        f"fixtures entregues e não classificadas: {sem_entrada[:6]}. "
-        "Classifique-as: o que um ficheiro é não se infere."
+    assert len(entries) == len(doc["fixtures"]), "the registry repeats a path"
+    unclassified = sorted(on_disk - set(entries))
+    assert not unclassified, (
+        f"shipped fixtures with no classification: {unclassified[:6]}. "
+        "Classify them: what a file is cannot be inferred."
     )
-    fantasmas = sorted(set(entradas) - no_disco)
-    assert not fantasmas, f"o registo nomeia ficheiros que não existem: {fantasmas[:6]}"
+    ghosts = sorted(set(entries) - on_disk)
+    assert not ghosts, f"the registry names files that do not exist: {ghosts[:6]}"
 
-    for caminho, f in entradas.items():
-        assert f["origin"] in ("synthetic", "sanitized-observation", "observed"), (
-            caminho
-        )
-        assert f.get("purpose"), f"{caminho}: classificada sem dizer para que serve"
+    for path, f in entries.items():
+        assert f["origin"] in ("synthetic", "sanitized-observation", "observed"), path
+        assert f.get("purpose"), f"{path}: classified without saying what it is for"
         if f["origin"] == "synthetic":
             assert f["may_be_presented_as_tenant_observation"] is False, (
-                f"{caminho}: é uma construção e está autorizada a passar por "
-                "observação de um tenant"
+                f"{path}: it is a construction and it is authorised to pass as "
+                "a tenant observation"
             )
 
 
-def test_o_exemplo_publico_esta_classificado_e_e_uma_construcao():
-    """Nomeado, porque é o que o site publica. Se um dia deixar de existir ou
-    mudar de classificação, isto falha pelo nome em vez de em silêncio."""
+def test_the_public_example_is_classified_and_is_a_construction():
+    """Named, because it is what the site publishes. If it ever leaves the
+    registry or changes classification, this fails by name instead of in
+    silence."""
     import json
 
     doc = json.loads(REGISTO.read_text(encoding="utf-8"))
-    alvo = "fixtures/sharepoint/list-over-limit.json"
-    f = next((x for x in doc["fixtures"] if x["path"].replace("\\", "/") == alvo), None)
-    assert f, f"{alvo} saiu do registo, e é a fixture que o site publica"
+    target = "fixtures/sharepoint/list-over-limit.json"
+    f = next(
+        (x for x in doc["fixtures"] if x["path"].replace("\\", "/") == target),
+        None,
+    )
+    assert f, f"{target} left the registry, and it is the fixture the site publishes"
     assert f["origin"] == "synthetic", (
-        f"{alvo} está classificada como {f['origin']}: o host é contoso.sharepoint.com"
+        f"{target} is classified as {f['origin']}: the host is contoso.sharepoint.com"
     )
     assert f["may_be_presented_as_tenant_observation"] is False
 
 
-def test_o_esquema_da_evidencia_nao_conhece_fixtures():
-    """`acquisition` responde a como evidência REAL entrou num Assessment.
-    Acrescentar-lhe `synthetic` deixava um Assessment de produção validar
-    evidência construída, e o contrato passava a não distinguir as duas."""
+def test_the_evidence_schema_knows_nothing_about_fixtures():
+    """`acquisition` answers how REAL evidence reached an Assessment. Adding
+    `synthetic` to it would let a production Assessment validate constructed
+    evidence, and the contract would stop telling the two apart."""
     import json
 
-    esquema = json.loads(
+    schema = json.loads(
         (DATA / "schemas" / "evidence.schema.json").read_text(encoding="utf-8")
     )
-    texto = json.dumps(esquema)
-    assert "synthetic" not in texto, (
-        "`synthetic` entrou no esquema de evidência. É metadado do repositório, "
-        "não uma forma de a evidência chegar."
+    text = json.dumps(schema)
+    assert "synthetic" not in text, (
+        "`synthetic` entered the evidence schema. It is repository metadata, "
+        "not a way for evidence to arrive."
     )
