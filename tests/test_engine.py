@@ -266,6 +266,45 @@ def test_inheriting_the_tenant_default_is_never_a_pass():
     assert not result.outcome.is_answer
 
 
+@pytest.mark.parametrize(
+    ("fixture", "expected"),
+    [
+        ("site-sharing-default-permission-edit", Outcome.FAIL),
+        ("site-sharing-default-permission-view", Outcome.PASS),
+        # `None` is how the site says it sets no permission of its own. The
+        # tenant's default is a tenant fact, so at site scope the honest
+        # answer is that the rule has nothing to read here.
+        ("site-sharing-default-permission-inherits", Outcome.NOT_APPLICABLE),
+        ("site-sharing-anyone-default-direct", Outcome.PASS),
+        # The required path in permission-denied state: never read as safe.
+        ("site-sharing-not-collected", Outcome.UNKNOWN),
+    ],
+)
+def test_default_link_permission_rule_on_real_enum_values(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SHARE-005"), evidence(fixture)).outcome is expected
+
+
+@pytest.mark.parametrize(
+    ("fixture", "expected"),
+    [
+        # The case SPO-CLASS-001's limitations describe in writing: the
+        # string satisfies "is it classified" and enforces nothing.
+        ("site-class-legacy-string", Outcome.FAIL),
+        ("site-class-string-and-label", Outcome.PASS),
+        # No string: there is nothing doing a label's job, whatever the
+        # label situation is. That question belongs to 001.
+        ("site-class-labelled", Outcome.NOT_APPLICABLE),
+        ("site-class-group-unlabelled", Outcome.NOT_APPLICABLE),
+    ],
+)
+def test_legacy_classification_rule_reads_the_written_gap(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-CLASS-004"), evidence(fixture)).outcome is expected
+
+
 # ---------------------------------------------------------------------------
 # the organisation level: a different resource, not a bigger site
 # ---------------------------------------------------------------------------

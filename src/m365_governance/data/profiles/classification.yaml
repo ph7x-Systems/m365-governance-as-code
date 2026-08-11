@@ -1,7 +1,10 @@
 # Pairs with `Get-SpoEvidence.ps1 -Mode Classification`.
 #
-# Three rules that read the same four facts and answer three different
-# questions, which is why they are one profile and not three runs.
+# Four rules that read the same facts and answer four different questions,
+# which is why they are one profile and not four runs. 004 productises the
+# limitation 001 writes down: a classification string is enough to pass 001,
+# and it is the older mechanism; 004 is the rule that reads exactly that
+# case and says whose job the string is doing.
 #
 # THE OVERLAP BETWEEN 001 AND 003 IS DELIBERATE. A group-connected site with no
 # label fails both: 001 because nothing on it records what it holds, 003 because
@@ -24,3 +27,4 @@ rules:
   - SPO-CLASS-001
   - SPO-CLASS-002
   - SPO-CLASS-003
+  - SPO-CLASS-004

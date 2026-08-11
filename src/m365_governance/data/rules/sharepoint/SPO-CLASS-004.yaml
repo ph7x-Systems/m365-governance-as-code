@@ -1,0 +1,119 @@
+# Documented guidance. Microsoft's own note on the site-classification page
+# says to use sensitivity labels instead, and the Teams documentation explains
+# why in one sentence: classifications are text strings with no policies
+# attached. This rule productises a limitation SPO-CLASS-001 already records
+# in writing: "the string is a word and the label is a configuration."
+
+schema_version: "2.0"
+id: SPO-CLASS-004
+version: "1.0"
+title: A classification string is doing a label's job
+description: >
+  The site carries a classic classification string and no sensitivity label.
+  The string satisfies every rule that asks whether the site is classified,
+  and it enforces nothing: no privacy setting, no external-access control, no
+  default sharing link. It is the older mechanism, still answering a question
+  the newer one was built to act on.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/sharepoint/dev/solution-guidance/modern-experience-site-classification
+      title: SharePoint "modern" sites classification
+      publisher: Microsoft
+      checked_at: "2026-08-11"
+    - url: https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites
+      title: Use sensitivity labels to protect collaborative workspaces
+      publisher: Microsoft
+      checked_at: "2026-08-11"
+  rationale: >
+    The classification page opens with Microsoft's own note: "You can now use
+    sensitivity labels instead of sites classification to help protect your
+    SharePoint sites." The Teams documentation states the difference plainly:
+    classifications "are text strings that can be associated with a Microsoft
+    365 group but don't have any actual policies associated with them", while
+    label policies "are automatically enforced end-to-end", and it points to
+    the procedure for converting classification values to labels.
+
+    It is guidance rather than a requirement: the classification mechanism
+    still works, nothing forces the conversion, and an organisation with its
+    own enforcement tooling built on the strings may reasonably keep them.
+
+severity:
+  default: low
+  rationale: >
+    Rated as mechanism debt rather than exposure. The string does not open
+    anything by itself; what it does is occupy the place where an enforcing
+    control should be, and let every "is it classified" check keep passing
+    while it does.
+  configurable: true
+
+applicability:
+  operator: equals
+  evidence: classification.classification_set
+  value: true
+
+evidence_requirements:
+  - path: classification.classification_set
+    type: boolean
+    required: true
+  - path: classification.label_applied
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: classification.label_applied
+  value: false
+
+outcomes:
+  pass:
+    message: >
+      This site carries a classification string and a sensitivity label. The
+      string is legacy metadata; the label is the control.
+  fail:
+    message: >
+      This site is classified by a classic string and carries no sensitivity
+      label. The string satisfies classification checks and enforces nothing:
+      no privacy setting, no external-access control, no default sharing
+      link comes with it.
+  unknown:
+    message: >
+      Whether a sensitivity label sits behind this site's classification
+      string was not read. The evidence beside this finding says why. This
+      is not a pass.
+  not_applicable:
+    message: >
+      This site carries no classic classification string, so there is no
+      string doing a label's job here. Whether the site should carry a label
+      at all is SPO-CLASS-001's question.
+  invalid_evidence:
+    message: >
+      The classification facts were returned in a form this rule cannot
+      evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Convert the classification value to a sensitivity label with the settings
+  the string was standing in for, following Microsoft's conversion procedure
+  for classic classifications, and then retire the string. The label carries
+  privacy, external access and sharing defaults; the string carries a word.
+
+limitations:
+  passes_without_resolving: >
+    Any label passes. A site whose label carries none of the protections the
+    old string was meant to imply passes this rule exactly like one whose
+    label enforces all of them: the rule reads that a label is applied, never
+    what the label does.
+  other:
+    - >
+      Where the tenant has not enabled sensitivity labels for containers, no
+      site can carry one, and every classified-by-string site fails. The rule
+      cannot see that tenant setting: this evidence describes a site.
+    - >
+      The rule does not read what the string says. A site classified
+      "Public" and one classified "Highly Confidential" fail identically,
+      because in both cases the enforcement the string implies does not
+      exist.

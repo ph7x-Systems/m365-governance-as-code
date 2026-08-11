@@ -12,22 +12,22 @@
 
 **Part of this could not be answered, so the report describes less than the resource.**
 
-- 12 finding(s) reached no answer
+- 14 finding(s) reached no answer
 
 ## Summary
 
-13 rules evaluated. **1 produced an answer.**
+15 rules evaluated. **1 produced an answer.**
 
 | Outcome | Count |
 |---|---|
 | Fail | 0 |
 | Invalid evidence | 0 |
 | Error | 0 |
-| Unknown | 12 |
+| Unknown | 14 |
 | Pass | 1 |
 | Not applicable | 0 |
 
-12 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
+14 rules could not be decided. That is not compliance: missing evidence is a fact about collection, not about the resource.
 
 ## Unknown
 
@@ -67,6 +67,16 @@ Whether this group-connected site carries a sensitivity label was not establishe
 - Evidence: `classification.group_connected` = <missing>, `classification.label_applied` = <missing>
 - Source: [Use sensitivity labels to protect collaborative workspaces (groups and sites)](https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites) — checked 2026-08-06
 - Source: [Control external access to resources in Microsoft Entra ID with sensitivity labels](https://learn.microsoft.com/entra/architecture/8-secure-access-sensitivity-labels) — checked 2026-08-06
+
+### SPO-CLASS-004 v1.0
+
+Whether a sensitivity label sits behind this site's classification string was not read. The evidence beside this finding says why. This is not a pass.
+
+- Basis: **documented-guidance** — Microsoft recommends this; the product permits the alternative
+- Severity: low
+- Evidence: `classification.classification_set` = <missing>, `classification.label_applied` = <missing>
+- Source: [SharePoint "modern" sites classification](https://learn.microsoft.com/sharepoint/dev/solution-guidance/modern-experience-site-classification) — checked 2026-08-11
+- Source: [Use sensitivity labels to protect collaborative workspaces](https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites) — checked 2026-08-11
 
 ### SPO-MODERN-001 v1.0
 
@@ -112,6 +122,16 @@ What a person gets when they press Share and change nothing is not settled here:
 - Severity: medium
 - Evidence: `sharing.capability` = <missing>, `sharing.effective_default_link_type` = <missing>
 - Source: [Change the default sharing link type for a site](https://learn.microsoft.com/sharepoint/change-default-sharing-link) — checked 2026-08-06
+
+### SPO-SHARE-005 v1.0
+
+What the default link lets its holder do is not settled here: the setting was not read. The evidence beside this finding says why. This is not a pass.
+
+- Basis: **convention** — widely held practice, not documented as a rule
+- Severity: medium
+- Evidence: `sharing.default_link_permission` = <missing>
+- Source: [Change the default sharing link type for a site](https://learn.microsoft.com/sharepoint/change-default-sharing-link) — checked 2026-08-11
+- Source: [Plan sharing and collaboration options in SharePoint and OneDrive](https://learn.microsoft.com/sharepoint/collaboration-options) — checked 2026-08-11
 
 ### SPO-SITE-002 v1.0
 

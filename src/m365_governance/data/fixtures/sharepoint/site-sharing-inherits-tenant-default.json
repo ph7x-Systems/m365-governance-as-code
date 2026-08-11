@@ -63,6 +63,14 @@
       "effective_default_link_type": {
         "state": "missing",
         "detail": "The site sets no default of its own and follows the tenant. The tenant setting was not read by this collection."
+      },
+      "default_link_permission": {
+        "state": "observed",
+        "value": "None",
+        "raw": {
+          "field": "DefaultLinkPermission",
+          "value": "None"
+        }
       }
     }
   }

@@ -12,7 +12,7 @@
       "counts": {
         "pass": 2,
         "fail": 0,
-        "unknown": 27,
+        "unknown": 31,
         "not-applicable": 0,
         "invalid-evidence": 0,
         "error": 0
@@ -315,7 +315,7 @@
           "counts": {
             "pass": 0,
             "fail": 0,
-            "unknown": 13,
+            "unknown": 15,
             "not-applicable": 0,
             "invalid-evidence": 0,
             "error": 0
@@ -516,6 +516,64 @@
                 }
               ],
               "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "observe",
+                "rank": 3,
+                "because": [
+                  "the evidence needed to decide this was not available"
+                ]
+              }
+            },
+            {
+              "rule_id": "SPO-CLASS-004",
+              "title": "A classification string is doing a label's job",
+              "rule_version": "1.0",
+              "schema_version": "2.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
+              },
+              "outcome": "unknown",
+              "message": "Whether a sensitivity label sits behind this site's classification string was not read. The evidence beside this finding says why. This is not a pass.",
+              "basis": "documented-guidance",
+              "severity": "low",
+              "evidence_used": [
+                {
+                  "path": "classification.classification_set",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                },
+                {
+                  "path": "classification.label_applied",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                }
+              ],
+              "passes_without_resolving": "Any label passes. A site whose label carries none of the protections the old string was meant to imply passes this rule exactly like one whose label enforces all of them: the rule reads that a label is applied, never what the label does.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/dev/solution-guidance/modern-experience-site-classification",
+                  "title": "SharePoint \"modern\" sites classification",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                },
+                {
+                  "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+                  "title": "Use sensitivity labels to protect collaborative workspaces",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                }
+              ],
+              "remediation": "Convert the classification value to a sensitivity label with the settings the string was standing in for, following Microsoft's conversion procedure for classic classifications, and then retire the string. The label carries privacy, external access and sharing defaults; the string carries a word.",
               "message_degraded": false,
               "engine_detail": "",
               "attention": {
@@ -742,6 +800,56 @@
                 }
               ],
               "remediation": "Set the default to something more restrictive, per site, and leave the Anyone link available for the people who need it. Microsoft's own page describes exactly this arrangement.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "observe",
+                "rank": 3,
+                "because": [
+                  "the evidence needed to decide this was not available"
+                ]
+              }
+            },
+            {
+              "rule_id": "SPO-SHARE-005",
+              "title": "The default sharing link should not hand out edit",
+              "rule_version": "1.0",
+              "schema_version": "2.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,finance"
+              },
+              "outcome": "unknown",
+              "message": "What the default link lets its holder do is not settled here: the setting was not read. The evidence beside this finding says why. This is not a pass.",
+              "basis": "convention",
+              "severity": "medium",
+              "evidence_used": [
+                {
+                  "path": "sharing.default_link_permission",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                }
+              ],
+              "passes_without_resolving": "A view default stops nobody from choosing edit on purpose. Somebody who selects edit on every share produces the same links on a site that passes this rule as on one that fails it, and the rule reads only the default.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/change-default-sharing-link",
+                  "title": "Change the default sharing link type for a site",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                },
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/collaboration-options",
+                  "title": "Plan sharing and collaboration options in SharePoint and OneDrive",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                }
+              ],
+              "remediation": "Set the site's default link permission to view and leave edit available for the people who choose it. The setting is on the same admin page as the default link type, and Microsoft documents both together.",
               "message_degraded": false,
               "engine_detail": "",
               "attention": {
@@ -926,7 +1034,7 @@
             "counts": {
               "act": 0,
               "review": 0,
-              "observe": 13,
+              "observe": 15,
               "none": 0,
               "not-evaluated": 0
             },
@@ -986,7 +1094,7 @@
           "counts": {
             "pass": 1,
             "fail": 0,
-            "unknown": 12,
+            "unknown": 14,
             "not-applicable": 0,
             "invalid-evidence": 0,
             "error": 0
@@ -1187,6 +1295,64 @@
                 }
               ],
               "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "observe",
+                "rank": 3,
+                "because": [
+                  "the evidence needed to decide this was not available"
+                ]
+              }
+            },
+            {
+              "rule_id": "SPO-CLASS-004",
+              "title": "A classification string is doing a label's job",
+              "rule_version": "1.0",
+              "schema_version": "2.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
+              },
+              "outcome": "unknown",
+              "message": "Whether a sensitivity label sits behind this site's classification string was not read. The evidence beside this finding says why. This is not a pass.",
+              "basis": "documented-guidance",
+              "severity": "low",
+              "evidence_used": [
+                {
+                  "path": "classification.classification_set",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                },
+                {
+                  "path": "classification.label_applied",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                }
+              ],
+              "passes_without_resolving": "Any label passes. A site whose label carries none of the protections the old string was meant to imply passes this rule exactly like one whose label enforces all of them: the rule reads that a label is applied, never what the label does.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/dev/solution-guidance/modern-experience-site-classification",
+                  "title": "SharePoint \"modern\" sites classification",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                },
+                {
+                  "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+                  "title": "Use sensitivity labels to protect collaborative workspaces",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                }
+              ],
+              "remediation": "Convert the classification value to a sensitivity label with the settings the string was standing in for, following Microsoft's conversion procedure for classic classifications, and then retire the string. The label carries privacy, external access and sharing defaults; the string carries a word.",
               "message_degraded": false,
               "engine_detail": "",
               "attention": {
@@ -1424,6 +1590,56 @@
               }
             },
             {
+              "rule_id": "SPO-SHARE-005",
+              "title": "The default sharing link should not hand out edit",
+              "rule_version": "1.0",
+              "schema_version": "2.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,spfx-ok"
+              },
+              "outcome": "unknown",
+              "message": "What the default link lets its holder do is not settled here: the setting was not read. The evidence beside this finding says why. This is not a pass.",
+              "basis": "convention",
+              "severity": "medium",
+              "evidence_used": [
+                {
+                  "path": "sharing.default_link_permission",
+                  "state": "missing",
+                  "value": null,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": "not present in the evidence"
+                }
+              ],
+              "passes_without_resolving": "A view default stops nobody from choosing edit on purpose. Somebody who selects edit on every share produces the same links on a site that passes this rule as on one that fails it, and the rule reads only the default.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/change-default-sharing-link",
+                  "title": "Change the default sharing link type for a site",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                },
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/collaboration-options",
+                  "title": "Plan sharing and collaboration options in SharePoint and OneDrive",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                }
+              ],
+              "remediation": "Set the site's default link permission to view and leave edit available for the people who choose it. The setting is on the same admin page as the default link type, and Microsoft documents both together.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "observe",
+                "rank": 3,
+                "because": [
+                  "the evidence needed to decide this was not available"
+                ]
+              }
+            },
+            {
               "rule_id": "SPO-SITE-001",
               "title": "A site should have at least two owners",
               "rule_version": "1.1",
@@ -1592,12 +1808,12 @@
             "state": "observe",
             "rank": 3,
             "because": [
-              "12 finding(s) reached no answer"
+              "14 finding(s) reached no answer"
             ],
             "counts": {
               "act": 0,
               "review": 1,
-              "observe": 12,
+              "observe": 14,
               "none": 0,
               "not-evaluated": 0
             },
@@ -1948,6 +2164,7 @@
         "SPO-CLASS-001": "1.0",
         "SPO-CLASS-002": "1.0",
         "SPO-CLASS-003": "1.0",
+        "SPO-CLASS-004": "1.0",
         "SPO-LIST-001": "2.0",
         "SPO-LIST-002": "1.0",
         "SPO-LIST-003": "1.0",
@@ -1956,6 +2173,7 @@
         "SPO-MODERN-004": "1.0",
         "SPO-SHARE-001": "1.0",
         "SPO-SHARE-002": "1.0",
+        "SPO-SHARE-005": "1.0",
         "SPO-SITE-001": "1.1",
         "SPO-SITE-002": "1.0",
         "SPO-SITE-003": "1.0",
@@ -1984,17 +2202,17 @@
           "collected"
         ]
       },
-      "assessment_id": "204008b0bb86c6a3bd1d8e411d9bf26dd340c37469afdc34f5daac21d0894ecb"
+      "assessment_id": "b236857076c5117a2c0c0903a3e2161c3782b3301a9357b55556653c329d45b9"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "a47379d3bede3e5d79156f54a7d0bfbf842fee4b06abd98028aee5d06b269538",
+        "run_set": "b797667a7de13b702e57f0b63113488667ef2567729addb09ae33d5d2bf93c80",
         "evidence": "f28860a02a4b822eeb6353e9c356f3bd004046109959f71b6990782d9b0fe79f",
-        "versions": "bdb473969bfdc85c1f3dcb3f4bfd2186e8794d5835beea7d434d762c98a05955",
+        "versions": "61c0b6bf9c9151655f0ca0473f6bbe40551a79c83b3cc33b52d51b57aae2d45c",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "204008b0bb86c6a3bd1d8e411d9bf26dd340c37469afdc34f5daac21d0894ecb"
+      "canonical_hash": "b236857076c5117a2c0c0903a3e2161c3782b3301a9357b55556653c329d45b9"
     }
   }
 }

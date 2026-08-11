@@ -235,6 +235,12 @@
    "may_be_presented_as_tenant_observation": true
   },
   {
+   "path": "fixtures/sharepoint/site-class-string-and-label.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
    "path": "fixtures/sharepoint/site-class-unlabelled.json",
    "origin": "synthetic",
    "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -328,6 +334,24 @@
    "path": "fixtures/sharepoint/site-sharing-anyone-default-direct.json",
    "origin": "synthetic",
    "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-default-permission-edit.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-default-permission-inherits.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-default-permission-view.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
    "may_be_presented_as_tenant_observation": false
   },
   {
