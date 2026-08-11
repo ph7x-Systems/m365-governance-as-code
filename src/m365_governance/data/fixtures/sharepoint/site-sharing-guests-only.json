@@ -67,6 +67,14 @@
           "field": "DefaultSharingLinkType",
           "value": "Direct"
         }
+      },
+      "default_link_permission": {
+        "state": "observed",
+        "value": "View",
+        "raw": {
+          "field": "DefaultLinkPermission",
+          "value": "View"
+        }
       }
     }
   }

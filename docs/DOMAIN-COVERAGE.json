@@ -50,11 +50,13 @@
         "site-class-labelled",
         "site-class-legacy-string",
         "site-class-observed-20260810",
+        "site-class-string-and-label",
         "site-class-unlabelled"
       ],
       "guide": [
         "ch13",
-        "ch2"
+        "ch2",
+        "ch4"
       ],
       "knowledge": [
         "001",
@@ -70,12 +72,14 @@
       "rules": [
         "SPO-CLASS-001",
         "SPO-CLASS-002",
-        "SPO-CLASS-003"
+        "SPO-CLASS-003",
+        "SPO-CLASS-004"
       ],
       "tests": [
         "001",
         "002",
-        "003"
+        "003",
+        "004"
       ]
     },
     "LIST": {
@@ -108,7 +112,8 @@
       "guide": [
         "ch13",
         "ch2",
-        "ch3"
+        "ch3",
+        "ch4"
       ],
       "knowledge": [
         "001",
@@ -190,6 +195,9 @@
       "fixtures": [
         "site-sharing-anyone-default-anyone",
         "site-sharing-anyone-default-direct",
+        "site-sharing-default-permission-edit",
+        "site-sharing-default-permission-inherits",
+        "site-sharing-default-permission-view",
         "site-sharing-guests-only",
         "site-sharing-inherits-tenant-default",
         "tenant-sharing-default-anyone-and-edit",
@@ -218,13 +226,15 @@
         "SPO-SHARE-001",
         "SPO-SHARE-002",
         "SPO-SHARE-003",
-        "SPO-SHARE-004"
+        "SPO-SHARE-004",
+        "SPO-SHARE-005"
       ],
       "tests": [
         "001",
         "002",
         "003",
-        "004"
+        "004",
+        "005"
       ]
     },
     "SITE": {

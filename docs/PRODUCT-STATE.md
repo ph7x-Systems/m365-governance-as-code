@@ -13,14 +13,14 @@ to point at it.
 | Domain | Rules | Collector | Profiles | Fixtures | Tests | Knowledge | Guide | Analysis | Compass | Complete |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **Activity** (`ACTIVITY`) | 1 | 2 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
-| **Classification** (`CLASS`) | 3 | 1 | 2 | 7 | 3 | 3 | 2 | — | 1 | yes |
+| **Classification** (`CLASS`) | 4 | 1 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
 | **Modernity** (`MODERN`) | 3 | 2 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
-| **Permissions** (`LIST`) | 3 | 3 | 2 | 14 | 3 | 3 | 3 | — | 1 | yes |
+| **Permissions** (`LIST`) | 3 | 3 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
 | **SPFx** (`SPFX`) | 1 | 2 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
-| **Sharing** (`SHARE`) | 4 | 3 | 3 | 7 | 4 | 4 | 3 | — | 4 | yes |
+| **Sharing** (`SHARE`) | 5 | 3 | 3 | 10 | 5 | 4 | 3 | — | 4 | yes |
 | **Sites and storage** (`SITE`) | 3 | 4 | 3 | 9 | 3 | 3 | 3 | — | 1 | yes |
 
-**18 rules across 7 domains.** 4 complete, 3 not.
+**20 rules across 7 domains.** 4 complete, 3 not.
 
 ## The Domain Completion Gate
 

@@ -1,0 +1,110 @@
+# A convention. Microsoft permits an edit default, documents the setting on
+# its own page, and frames the choice as one of the oversharing controls; it
+# does not write "make it view" in plain words, so this claim is ours and
+# says so.
+
+schema_version: "2.0"
+id: SPO-SHARE-005
+version: "1.0"
+title: The default sharing link should not hand out edit
+description: >
+  Beside the default link's audience there is a second default: what the link
+  lets its holder do. This site's default link grants edit. Everyone who
+  presses Share and changes nothing hands out the ability to change the
+  file, and the recipient's copy of that ability survives every later
+  conversation about who wrote what.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: convention
+  sources:
+    - url: https://learn.microsoft.com/sharepoint/change-default-sharing-link
+      title: Change the default sharing link type for a site
+      publisher: Microsoft
+      checked_at: "2026-08-11"
+    - url: https://learn.microsoft.com/sharepoint/collaboration-options
+      title: Plan sharing and collaboration options in SharePoint and OneDrive
+      publisher: Microsoft
+      checked_at: "2026-08-11"
+  rationale: >
+    Microsoft lists "choose if the default sharing link allows recipients to
+    edit the files" among the options for "reducing the risk of oversharing",
+    and its guidance on default link types notes that the defaults "provide a
+    safe baseline" precisely because "typically, users don't change the
+    settings before sharing". The product permits the edit default and
+    documents how to set it, so preferring view is our convention: a default
+    is exercised by the people who are not thinking about it, and the
+    reversible reading beats the writable one for that population.
+
+severity:
+  default: medium
+  rationale: >
+    Rated for how often it applies rather than how bad one instance is, the
+    same arithmetic as the default link type: a default is exercised by
+    everybody who shares without thinking, which over a year is most sharing.
+  configurable: true
+
+applicability:
+  operator: not-equals
+  evidence: sharing.default_link_permission
+  value: "None"
+
+evidence_requirements:
+  - path: sharing.default_link_permission
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: sharing.default_link_permission
+  value: Edit
+
+outcomes:
+  pass:
+    message: >
+      The default link on this site grants {sharing.default_link_permission}.
+      A person who presses Share and changes nothing hands out reading, not
+      writing.
+  fail:
+    message: >
+      The default link on this site grants edit. A person who presses Share
+      and changes nothing hands out the ability to change the file, to
+      whoever the link's audience is.
+  unknown:
+    message: >
+      What the default link lets its holder do is not settled here: the
+      setting was not read. The evidence beside this finding says why. This
+      is not a pass.
+  not_applicable:
+    message: >
+      This site sets no default link permission of its own and follows the
+      tenant. What the tenant hands out is a tenant fact, and this evidence
+      describes a site.
+  invalid_evidence:
+    message: >
+      The default link permission was returned in a form this rule cannot
+      evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Set the site's default link permission to view and leave edit available
+  for the people who choose it. The setting is on the same admin page as the
+  default link type, and Microsoft documents both together.
+
+limitations:
+  passes_without_resolving: >
+    A view default stops nobody from choosing edit on purpose. Somebody who
+    selects edit on every share produces the same links on a site that
+    passes this rule as on one that fails it, and the rule reads only the
+    default.
+  other:
+    - >
+      A site that follows the tenant is not-applicable here, and the
+      tenant's own default permission is not gathered by this collection.
+      At the tenant level, only the anonymous-link permission has a rule
+      (SPO-SHARE-004), because it is the one Microsoft's guidance names.
+    - >
+      The default applies to libraries using the modern experience, the same
+      boundary Microsoft documents for the default link type, so sharing
+      done through older clients is outside what this rule describes.

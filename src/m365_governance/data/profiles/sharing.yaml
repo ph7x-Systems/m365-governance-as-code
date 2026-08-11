@@ -1,9 +1,11 @@
 # Pairs with `collect sharing`.
 #
-# The two rules here have different bases on purpose. Allowing Anyone links is
+# The rules here have different bases on purpose. Allowing Anyone links is
 # a convention: Microsoft permits it, documents it, and an organisation may
 # want it. Making the Anyone link the default is documented guidance, because
-# Microsoft writes the recommendation in plain words on its own page.
+# Microsoft writes the recommendation in plain words on its own page. And the
+# default link handing out edit is a convention again: Microsoft frames the
+# choice among its oversharing controls without writing "make it view".
 #
 # A profile that averaged them would destroy that distinction, so a profile
 # never averages anything.
@@ -16,3 +18,4 @@ description: >
 rules:
   - SPO-SHARE-001
   - SPO-SHARE-002
+  - SPO-SHARE-005

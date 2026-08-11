@@ -28,7 +28,7 @@
   "resource": {
     "workload": "sharepoint",
     "type": "site",
-    "native_id": "contoso,site,partners",
+    "native_id": "contoso,site,inheriting",
     "tenant": {
       "id": null,
       "host": "contoso.sharepoint.com"
@@ -39,8 +39,8 @@
       "type": "tenant",
       "native_id": "contoso.sharepoint.com"
     },
-    "display_name": "Partners",
-    "url": "https://contoso.sharepoint.com/sites/partners"
+    "display_name": "Inheriting",
+    "url": "https://contoso.sharepoint.com/sites/inheriting"
   },
   "facts": {
     "sharing": {
@@ -70,10 +70,10 @@
       },
       "default_link_permission": {
         "state": "observed",
-        "value": "View",
+        "value": "None",
         "raw": {
           "field": "DefaultLinkPermission",
-          "value": "View"
+          "value": "None"
         }
       }
     }
