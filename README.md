@@ -128,8 +128,13 @@ Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
 ## Install
 
 ```bash
-pip install m365-governance-as-code
+pip install m365-governance-as-code==1.0.0b1
 ```
+
+The `==` is not optional yet. `1.0.0b1` is a pre-release under PEP 440, and pip
+skips pre-releases unless a version is pinned or `--pre` is given, so plain
+`pip install m365-governance-as-code` resolves to nothing until there is a
+stable release.
 
 The rules, profiles, schemas and the collector ship inside the package, so an
 installed copy works from any directory. Nothing resolves against a checkout.
@@ -166,15 +171,19 @@ which of the two it used.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pip install m365-governance-as-code   # 1. install
+pip install m365-governance-as-code==1.0.0b1   # 1. install
 m365-governance doctor                # 2. is anything broken here
 m365-governance list-rules            # 3. what ships with this version
 m365-governance show-rule SPO-LIST-001
 m365-governance evaluate --evidence <an-evidence-file.json>
 ```
 
-Example evidence ships with the package. `m365-governance doctor` prints where
-it lives.
+Example evidence ships with the package. `doctor` confirms it is there, in the
+`packaged content` line, but does not print the path. This does:
+
+```bash
+python -c "import m365_governance, pathlib; print(pathlib.Path(m365_governance.__file__).parent / 'data' / 'fixtures')"
+```
 
 `explain unknown` is the one to run second. The project rests on six words
 being different from each other, and the difference between "we could not read
