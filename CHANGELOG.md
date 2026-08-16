@@ -8,6 +8,36 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 1.0.0b3
+
+A correctness fix, not a cosmetic one. `1.0.0b2` reported the wrong version of
+itself, and signed its assessments with it.
+
+`__version__` was a literal in `m365_governance/__init__.py`, beside the one in
+`pyproject.toml`. Bumping the packaging version to `1.0.0b2` left the literal at
+`1.0.0b1`, so the wheel was named for one version and the program answered with
+another. Nothing caught it: the publish workflow compares the built filename to
+the release tag, and those agreed. The drift was between the filename and the
+running program.
+
+The naming half is cosmetic. The other half is not. That value travels into
+every assessment as `engine_version`, so an assessment produced by `1.0.0b2`
+states that `1.0.0b1` decided it. In an engine whose whole claim is that a
+conclusion can be traced back to what produced it, a version that lies is not a
+typo. The generated contract manifest carried the same stale number, so a
+consumer comparing contract versions across the two releases saw no change.
+
+- `__version__` is now read from the installed distribution metadata, which
+  comes from `pyproject.toml`. One source, and no way to bump one without the
+  other.
+- `tests/test_version.py` compares the packaging version with what the program
+  reports, both by import and through `--version` as a user would run it, and
+  refuses to let the not-installed fallback pass as a real version.
+- The contract manifest is regenerated.
+
+`1.0.0b2` stays in the history as a release with a known defect. It is not
+withdrawn and its number is not reused.
+
 ## 1.0.0b2
 
 The first release whose project page is right. Nothing in the engine changed.
