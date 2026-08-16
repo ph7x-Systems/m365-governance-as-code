@@ -128,7 +128,7 @@ Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
 ## Install
 
 ```bash
-pip install m365-governance-as-code==1.0.0b1
+pip install m365-governance-as-code==1.0.0b2
 ```
 
 The `==` is not optional yet. `1.0.0b1` is a pre-release under PEP 440, and pip
@@ -171,7 +171,7 @@ which of the two it used.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pip install m365-governance-as-code==1.0.0b1   # 1. install
+pip install m365-governance-as-code==1.0.0b2   # 1. install
 m365-governance doctor                # 2. is anything broken here
 m365-governance list-rules            # 3. what ships with this version
 m365-governance show-rule SPO-LIST-001
