@@ -144,29 +144,58 @@ means a multi-geo satellite reads as a second tenant and two hosts of one
 organisation cannot be folded together without inventing something. The id is
 what settles it.
 
-### needs-tenant-validation
+### Run against a real tenant, 2026-08-16
 
-Documentation proves the cmdlet exists and what it accepts. **Only a run proves
-it returns a value**, which is the standing rule here and the reason this is
-recorded rather than implemented into a rule:
+The tenant is not named here: this repository is public, and a host name is an
+identifier whether or not it is data.
+
+| Address given | Result |
+|---|---|
+| `https://<tenant>.sharepoint.com` | a GUID |
+| `https://<tenant>-admin.sharepoint.com` | **the same GUID** |
+| `https://<tenant>.sharepoint.com/sites/<a-site>` | **the same GUID** |
+| a host that does not exist | a named failure, not a null |
+
+**The path returns a value, and no authentication was involved.** Not a device
+code, not an interactive prompt, not a client id. It cost none of the owner's
+session time, which is why it could be run at all.
+
+**And the mechanism matters more than the value.** The failure names it:
 
 ```text
-Run it interactively against a real tenant, and check:
-
-    Get-PnPTenantId -TenantUrl https://<tenant>.sharepoint.com
-    Get-PnPTenantId                     (with a connection open)
-
-A GUID from both, equal        → the path is proven, and `tenant.id` can stop
-                                 being null.
-A value from one and not the
-other                          → the form that works is the collection path,
-                                 and the other is not.
-Neither                        → the field stays null and this entry stays
-                                 open, which is the honest outcome.
+Exception while invoking endpoint
+https://login.microsoftonline.com/<prefix>.onmicrosoft.com/.well-known/openid-configuration
 ```
 
-**Owner-only**, like every tenant validation here: it needs interactive access
-this machine's executor does not have, and never a device code.
+It is public OpenID discovery, keyed on the prefix taken out of the hostname.
+So this is an **authoritative resolution from an address**, and it is not an
+observation by the identity that collected anything.
+
+### What that settles, and what it does not
+
+**Settled: two addresses of one organisation can be proven to be one.** The
+admin centre, the primary host and a site path all resolve to the same
+directory. Multi-geo stops being a case where the engine has to invent
+something or refuse: the authority answers.
+
+**Not settled: whether this may stamp `tenant.id` in evidence provenance.**
+Provenance records what a collection observed, and this is a lookup somebody
+could perform without ever reaching the tenant. The two forms answer different
+questions:
+
+```text
+Get-PnPTenantId -TenantUrl <url>     which directory owns this address
+Get-PnPTenantId  (connected)         which directory this session is in
+```
+
+Writing the first into provenance would put an unauthenticated resolution where
+a reader expects an observation. That is a **contract decision** — whether the
+tenant block gains a field saying how the id was established, or whether only
+the connected form may populate it — and it belongs to the owner rather than to
+this audit.
+
+**Still owner-only:** the connected form. It needs an interactive session, and
+never a device code.
 
 **What it unblocks.** Any consumer that authenticates has to be able to say
 which organisation it is actually looking at, and it may not derive that from a
