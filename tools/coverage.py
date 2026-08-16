@@ -152,11 +152,11 @@ def collector_modes() -> dict[str, str]:
     sys.path.insert(0, str(ROOT / "src"))
     from m365_governance import collecting  # noqa: PLC0415
 
-    # Uma fatia que não produz achados não alimenta domínio nenhum, e incluí-la
-    # aqui punha a `agents` a contar como modo de collector de TODOS os sete:
-    # usa o perfil `default`, que seleciona todas as regras, portanto pertencia
-    # a toda a gente. Um número que sobe em sete linhas por causa de uma fatia
-    # que não avalia nada é cobertura inventada.
+    # A slice that produces no findings feeds no domain, and including it here
+    # counted `agents` as the collector mode for ALL seven: it uses the
+    # `default` profile, which selects every rule, so it belonged to everybody.
+    # A number that rises by seven rows because of a slice that evaluates
+    # nothing is invented coverage.
     return {
         s.name: (s.mode, s.profile)
         for s in collecting.SLICES.values()

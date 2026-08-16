@@ -13,7 +13,7 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
-Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1')  # sem -Force: ver Activity.psm1
+Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1')  # no -Force: see Activity.psm1
 
 function Get-OwnerFacts {
     try {

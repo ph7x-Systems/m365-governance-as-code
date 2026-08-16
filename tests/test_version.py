@@ -7,9 +7,11 @@ program answered with another.
 
 The naming half is cosmetic. The other half is not. This value travels into
 every assessment as `engine_version`, so an assessment produced by one build
-stated that a different build had decided it. In an engine whose whole claim is
-that a conclusion can be traced back to what produced it, a version that lies
-is not a typo.
+stated that a different build had decided it. The engine version is part of the
+canonical content the digest is taken over, so the digest was honest about its
+content and the content was not honest about what made it. In an engine whose
+whole claim is that a conclusion can be traced back to what produced it, a
+version that lies is not a typo.
 
 Nothing caught it. The publish workflow compares the built filename to the
 release tag, which agreed; the drift was between the filename and the running
@@ -27,53 +29,53 @@ import pytest
 
 from m365_governance import __version__
 
-RAIZ = pathlib.Path(__file__).resolve().parents[1]
+ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
-def _versao_declarada() -> str:
-    """A versão em pyproject.toml, lida sem um analisador de TOML.
+def _packaged_version() -> str:
+    """The version in pyproject.toml, read without a TOML parser.
 
-    Deliberadamente literal: este teste existe para comparar duas fontes, e
-    lê-las as duas pela mesma biblioteca poria as duas de acordo por
-    construção.
+    Deliberately literal. This file exists to compare two sources, and reading
+    both through the same library would put them in agreement by construction.
     """
-    texto = (RAIZ / "pyproject.toml").read_text(encoding="utf-8")
-    m = re.search(r'^version\s*=\s*"([^"]+)"', texto, re.M)
-    assert m, "pyproject.toml não declara version"
+    text = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    m = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    assert m, "pyproject.toml declares no version"
     return m.group(1)
 
 
-def test_a_versao_do_programa_e_a_versao_empacotada():
-    declarada = _versao_declarada()
-    assert __version__ == declarada, (
-        f"o pacote declara {declarada!r} e o programa responde {__version__!r}. "
-        f"Esta é a versão que vai para `engine_version` de cada assessment: "
-        f"divergirem faz um documento afirmar que outra build o decidiu."
+def test_the_program_reports_the_version_it_was_packaged_as():
+    packaged = _packaged_version()
+    assert __version__ == packaged, (
+        f"the package declares {packaged!r} and the program answers "
+        f"{__version__!r}. This is the value that goes into `engine_version` "
+        f"on every assessment: when they differ, a document states that a "
+        f"different build decided it."
     )
 
 
-def test_a_linha_de_comandos_responde_a_mesma_versao():
-    """Pela mesma via que um utilizador usa, e não pela importação."""
+def test_the_command_line_reports_the_same_version():
+    """Through the path a user takes, not through an import."""
     r = subprocess.run(
         [sys.executable, "-m", "m365_governance.cli", "--version"],
         capture_output=True,
         text=True,
-        cwd=RAIZ,
+        cwd=ROOT,
     )
     assert r.returncode == 0, r.stderr
-    assert r.stdout.strip() == _versao_declarada(), (
-        f"`--version` respondeu {r.stdout.strip()!r} e o pacote declara "
-        f"{_versao_declarada()!r}"
+    assert r.stdout.strip() == _packaged_version(), (
+        f"`--version` answered {r.stdout.strip()!r} and the package declares "
+        f"{_packaged_version()!r}"
     )
 
 
-def test_a_versao_nao_e_a_de_um_pacote_nao_instalado():
-    """A alternativa quando não há distribuição a que perguntar não pode
-    passar por uma versão real: um `0.0.0+unknown` num relatório é uma
-    admissão, e é isso que deve ser."""
+def test_the_fallback_never_passes_for_a_real_version():
+    """With no distribution to ask, `__version__` falls back. That fallback
+    must not read as a released version: `0.0.0+unknown` in a report is an
+    admission, and an admission is what it should be."""
     if __version__ == "0.0.0+unknown":
         pytest.fail(
-            "o pacote não está instalado, por isso `__version__` é a "
-            "alternativa. Corra `pip install -e .` antes da suíte: um "
-            "assessment produzido assim não diz que motor o decidiu."
+            "the package is not installed, so `__version__` is the fallback. "
+            "Run `pip install -e .` before the suite: an assessment produced "
+            "this way does not say which engine decided it."
         )
