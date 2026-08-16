@@ -83,3 +83,39 @@ jobs:
           path: dist/
 
       - uses: pypa/gh-action-pypi-publish@release/v1
+
+  # THE UPLOAD IS NOT THE RELEASE. Everything above proves the artefact this
+  # repository built; this proves the artefact a stranger downloads, which is a
+  # different thing reached by a different path. Twice now a version has
+  # uploaded cleanly and been wrong on arrival: 1.0.0b2 shipped an install
+  # command that resolved to nothing, and 1.0.0b4 shipped one naming the
+  # previous version. Both project pages were frozen at upload.
+  prove:
+    name: Installable from the public index
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # PyPI's index takes a moment to serve a version its API already knows
+      # about. Retrying is the honest way to wait for it; assuming is not.
+      - name: Wait for the index to serve it
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          for attempt in 1 2 3 4 5 6; do
+            if pip download --no-deps --dest /tmp/probe \
+                 "m365-governance-as-code==$version" >/dev/null 2>&1; then
+              echo "served after $attempt attempt(s)"
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "the index did not serve $version within two minutes" >&2
+          exit 1
+
+      - name: ./tools/post-release-check.sh
+        run: ./tools/post-release-check.sh "${GITHUB_REF_NAME#v}"

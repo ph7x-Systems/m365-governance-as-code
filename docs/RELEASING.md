@@ -34,7 +34,12 @@ environment allows can reach PyPI.
    pull request like anything else. `main` is protected.
 2. Create a **GitHub Release** with the tag `v<version>`, targeting `main`.
    Mark it as a pre-release when the version is one.
-3. That is all. `publish.yml` runs on `release: published` and nothing else.
+3. Run `./tools/post-release-check.sh`. **Until it passes, the version is
+   uploaded rather than released.**
+4. The site follows in the same slice: install pins, the pages that describe
+   changed behaviour, a page for any new contract. A published version with a
+   manual describing the previous one is the documentation lying about the
+   product.
 
 **Create the release with its tag in one act.** A tag pushed on its own
 triggers nothing, and leaves a tag with no release behind it. A tag can also be
@@ -67,16 +72,43 @@ The same applies to the install command. While the only version is a
 pre-release, `pip install m365-governance-as-code` resolves to nothing, because
 pip skips pre-releases unless a version is pinned or `--pre` is given.
 
-## After publishing
+## After publishing, and the release is not done until this passes
 
 ```bash
-pip install m365-governance-as-code==<version>
-m365-governance --version
-m365-governance doctor
+./tools/post-release-check.sh <version>
 ```
 
-Then open the project page and check the banner renders and the sidebar links
-resolve, including the documentation link.
+**A successful upload proves the file arrived. It proves nothing about whether
+anybody can install and run it.** `release-check.sh` proves the wheel this
+repository builds; this proves the wheel a stranger downloads, which is a
+different artefact reached by a different path.
+
+The gate creates a throwaway environment, installs **from the public index**,
+and refuses unless every one of these holds:
+
+- the installed program reports the version that was released;
+- `doctor` says the installation is sound;
+- it evaluates packaged evidence and decides something;
+- `list-rules`, `explain` and `validate` run;
+- the contract bundle is in the wheel.
+
+Then it destroys the environment. Nothing accumulates.
+
+**`pip install` on its own is not the test, and on many machines it is not even
+possible.** A modern Python refuses to install an application into the system
+environment:
+
+```text
+error: externally-managed-environment
+```
+
+That is [PEP 668](https://peps.python.org/pep-0668/), enforced by Homebrew's
+Python, Debian's and Ubuntu's. The README therefore gives `pipx`, which is the
+recommended way to install a Python **application**, and this gate uses a
+disposable virtual environment for the same reason.
+
+Finally, open the project page and check the banner renders and the sidebar
+links resolve, including the documentation link.
 
 The first successful upload creates the project on PyPI, and the pending
 publisher becomes an ordinary one on its own.

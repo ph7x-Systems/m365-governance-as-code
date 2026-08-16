@@ -40,8 +40,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `1.0.0-beta.1`. 18 rules, a ten-mode collector validated
-against a live tenant, 8 profiles, ten commands and 350 tests at 91 per
+**Status:** `1.0.0b4`. 20 rules, a twelve-mode collector validated
+against a live tenant, 9 profiles, 13 commands and 802 tests at 90 per
 cent coverage. Beta because the model has stopped moving: the outcomes, the
 resolution order, the basis types and the evidence schema are frozen, and
 [docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md) records what closing SharePoint
@@ -141,12 +141,32 @@ Details in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governanc
 ## Install
 
 ```bash
-pip install m365-governance-as-code==1.0.0b3
+pipx install m365-governance-as-code==1.0.0b4
 ```
 
-The `==` is not optional yet. `1.0.0b1` is a pre-release under PEP 440, and pip
+`pipx` and not `pip`, and it is not a preference. This is a command-line
+application rather than a library you import, and a modern Python refuses to
+install one into the system environment:
+
+```text
+error: externally-managed-environment
+```
+
+That is [PEP 668](https://peps.python.org/pep-0668/), enforced by Homebrew's
+Python, Debian's and Ubuntu's. `pipx` puts the application in an environment of
+its own and the command on your PATH. Install it with `brew install pipx`,
+`apt install pipx` or `python3 -m pip install --user pipx`.
+
+If you would rather manage the environment yourself:
+
+```bash
+python3 -m venv .venv
+./.venv/bin/pip install m365-governance-as-code==1.0.0b4
+```
+
+The `==` is not optional yet. `1.0.0b4` is a pre-release under PEP 440, and pip
 skips pre-releases unless a version is pinned or `--pre` is given, so plain
-`pip install m365-governance-as-code` resolves to nothing until there is a
+`pipx install m365-governance-as-code` resolves to nothing until there is a
 stable release.
 
 The rules, profiles, schemas and the collector ship inside the package, so an
@@ -184,7 +204,7 @@ which of the two it used.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pip install m365-governance-as-code==1.0.0b3   # 1. install
+pipx install m365-governance-as-code==1.0.0b4  # 1. install
 m365-governance doctor                # 2. is anything broken here
 m365-governance list-rules            # 3. what ships with this version
 m365-governance show-rule SPO-LIST-001
