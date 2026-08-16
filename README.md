@@ -40,8 +40,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `1.0.0b4`. 20 rules, a twelve-mode collector validated
-against a live tenant, 9 profiles, 13 commands and 802 tests at 90 per
+**Status:** `1.0.0b5`. 20 rules, a thirteen-mode collector validated
+against a live tenant, 9 profiles, 14 commands and 823 tests at 90 per
 cent coverage. Beta because the model has stopped moving: the outcomes, the
 resolution order, the basis types and the evidence schema are frozen, and
 [docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md) records what closing SharePoint
@@ -141,10 +141,18 @@ Details in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governanc
 ## Install
 
 ```bash
-pipx install m365-governance-as-code==1.0.0b4
+brew install pipx        # macOS. Ubuntu 23.04+/Debian 12+: sudo apt install pipx
+pipx ensurepath          # then open a new shell
+
+pipx install m365-governance-as-code==1.0.0b5
 ```
 
-`pipx` and not `pip`, and it is not a preference. This is a command-line
+`pipx ensurepath` is not optional, and skipping it looks like a broken install:
+pipx gives each application a directory of its own, and that directory is not on
+your PATH until this puts it there. Without it you install successfully and then
+get `command not found: m365-governance`.
+
+`pipx` and not `pip`, and it is not a preference either. This is a command-line
 application rather than a library you import, and a modern Python refuses to
 install one into the system environment:
 
@@ -153,18 +161,17 @@ error: externally-managed-environment
 ```
 
 That is [PEP 668](https://peps.python.org/pep-0668/), enforced by Homebrew's
-Python, Debian's and Ubuntu's. `pipx` puts the application in an environment of
-its own and the command on your PATH. Install it with `brew install pipx`,
-`apt install pipx` or `python3 -m pip install --user pipx`.
+Python, Debian's and Ubuntu's — including for installing pipx itself, which is
+why the distribution package is the way in rather than `pip install --user`.
 
 If you would rather manage the environment yourself:
 
 ```bash
 python3 -m venv .venv
-./.venv/bin/pip install m365-governance-as-code==1.0.0b4
+./.venv/bin/pip install m365-governance-as-code==1.0.0b5
 ```
 
-The `==` is not optional yet. `1.0.0b4` is a pre-release under PEP 440, and pip
+The `==` is not optional yet. `1.0.0b5` is a pre-release under PEP 440, and pip
 skips pre-releases unless a version is pinned or `--pre` is given, so plain
 `pipx install m365-governance-as-code` resolves to nothing until there is a
 stable release.
@@ -204,7 +211,7 @@ which of the two it used.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pipx install m365-governance-as-code==1.0.0b4  # 1. install
+pipx install m365-governance-as-code==1.0.0b5  # 1. install (see Install)
 m365-governance doctor                # 2. is anything broken here
 m365-governance list-rules            # 3. what ships with this version
 m365-governance show-rule SPO-LIST-001

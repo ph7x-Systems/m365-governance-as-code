@@ -8,7 +8,12 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
-## Unreleased
+## 1.0.0b5
+
+Two commands' worth of honesty about reaching a tenant, and the release gate
+that should have existed before `1.0.0b4` went out.
+
+### `connect`: the other half of `doctor`
 
 `connect`: the other half of `doctor`, and the measurement defect it exposed.
 
@@ -47,9 +52,7 @@ moment a comment explained why `Get-PnPTenantId` was *not* being called, the
 published document said it was. It reads the syntax tree now, which is what the
 read-only gate has always done to the same files, and a test freezes it.
 
-## Unreleased — the release gate
-
-The gate that was missing after the upload, and the two defects that proved it
+### The gate that was missing after the upload, and the two defects that proved it
 was missing.
 
 **A successful upload proves the file arrived. It proves nothing about whether
