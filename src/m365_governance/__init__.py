@@ -1,6 +1,7 @@
 """Microsoft 365 governance checks that show their work."""
 
-from importlib.metadata import PackageNotFoundError, version as _version
+from importlib.metadata import PackageNotFoundError
+from importlib.metadata import version as _version
 
 # READ, NOT WRITTEN DOWN TWICE.
 #
