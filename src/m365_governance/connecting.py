@@ -38,6 +38,17 @@ from .collecting import COLLECTOR, _now, _run
 #: pick the wrong line.
 ESTABLISHED = re.compile(r"^CONNECTION (\{.*\})\s*$")
 
+#: What the collector prints for the OTHER question, before any sign-in.
+#:
+#: TWO QUESTIONS, AND ONE FIELD WOULD ANSWER NEITHER WELL. Which directory owns
+#: an address is answerable from public OpenID discovery, by anybody, without a
+#: token — measured, not assumed. Which directory a session is operating in is
+#: only answerable by the session. A GUID the whole world can obtain without
+#: reaching the tenant is not evidence that a collection looked at that tenant,
+#: and putting both in one field would make a lookup indistinguishable from an
+#: observation.
+RESOLVED = re.compile(r"^RESOLVED (\{.*\})\s*$")
+
 
 class Reach(StrEnum):
     """How the attempt to reach a tenant ended.
@@ -73,6 +84,10 @@ class Connection:
     #: What was asked: the addresses and the application registration.
     requested: dict[str, Any] = field(default_factory=dict)
 
+    #: Which directory owns the address, from public discovery. Present even
+    #: when the sign-in failed, because resolving an address needs no session.
+    address: dict[str, Any] = field(default_factory=dict)
+
     #: What the session said about itself. Empty unless `reach` is established.
     established: dict[str, Any] = field(default_factory=dict)
 
@@ -85,7 +100,27 @@ class Connection:
     @property
     def host(self) -> str | None:
         """The address that answered. NOT the identity of the organisation."""
-        return self.established.get("host")
+        return self.established.get("host") or self.address.get("host")
+
+    @property
+    def resolved_tenant_id(self) -> str | None:
+        """Which directory owns the address. Authoritative, and not observed.
+
+        From public discovery, so it is true of the address and says nothing
+        about which directory a session operated in. It is what lets two hosts
+        of one organisation be proven to be one, and it is not evidence that
+        anybody reached either of them.
+        """
+        return self.address.get("resolved_tenant_id")
+
+    @property
+    def observed_tenant_id(self) -> str | None:
+        """Which directory the session operated in. None until a session says.
+
+        Null today: nothing reads it from the session yet, and the resolved
+        value may not stand in for it. The two answer different questions.
+        """
+        return self.established.get("observed_tenant_id")
 
     @property
     def identity(self) -> str:
@@ -139,7 +174,8 @@ def connect(
     elapsed = time.monotonic() - started
 
     lines = out.splitlines()
-    established = _established(lines)
+    established = _one(lines, ESTABLISHED)
+    address = _one(lines, RESOLVED)
 
     if cancelled:
         reach = Reach.CANCELLED
@@ -168,15 +204,16 @@ def connect(
             "client_id": client_id,
             "device_login": device_login,
         },
+        address=address,
         established=established,
         output=lines,
         because=_because(reach, returncode, cancelled, established, lines),
     )
 
 
-def _established(lines: list[str]) -> dict[str, Any]:
-    """The connection line, parsed. Empty when there is not exactly one."""
-    found = [m.group(1) for m in (ESTABLISHED.match(line) for line in lines) if m]
+def _one(lines: list[str], pattern: re.Pattern[str]) -> dict[str, Any]:
+    """The one line matching, parsed. Empty when there is not exactly one."""
+    found = [m.group(1) for m in (pattern.match(line) for line in lines) if m]
     if len(found) != 1:
         return {}
     try:
@@ -223,13 +260,34 @@ def _because(
 
 
 def describe(connection: Connection) -> str:
-    """The report a person reads. One screen, and no invented certainty."""
+    """The report a person reads. Two questions, kept apart on the page.
+
+    THE LAYOUT IS THE POINT. Address resolution and the authenticated session
+    are printed as separate blocks because they are separate claims, and a
+    reader who saw one GUID under one heading would reasonably conclude that
+    the session had been observed in that directory. It has not.
+    """
     out = [f"{connection.reach.upper()}  after {connection.seconds:.1f}s", ""]
 
+    out.append("Address resolution")
+    if connection.resolved_tenant_id:
+        out += [
+            f"  {connection.address.get('host')}",
+            f"  owned by  {connection.resolved_tenant_id}",
+            "",
+            "  Public discovery, and no session was involved. Authoritative for",
+            "  the address: two hosts that resolve here to one directory ARE one",
+            "  organisation. It says nothing about who signed in.",
+        ]
+    else:
+        detail = connection.address.get("detail") or "the address was not resolved"
+        out.append(f"  not resolved: {detail}")
+
+    out += ["", "Authenticated session"]
     if connection.reach is Reach.ESTABLISHED:
         out += [
-            f"  host       {connection.host}",
             f"  identity   {connection.identity}",
+            f"  observed   {connection.observed_tenant_id or 'not established'}",
             f"  client id  {connection.established.get('client_id')}",
             f"  connection {connection.established.get('connection_type')}",
         ]
@@ -238,12 +296,12 @@ def describe(connection: Connection) -> str:
             out.append(f"  scopes     {', '.join(sorted(scopes))}")
         out += [
             "",
-            "  The organisation this address belongs to is NOT established.",
-            "  A host is an endpoint; the identity is the directory id, and no",
-            "  collection path for it is proven on a tenant yet.",
+            "  WHICH DIRECTORY THIS SESSION OPERATED IN IS NOT ESTABLISHED, and",
+            "  the resolved id above does not stand in for it: that one is a",
+            "  lookup anybody can perform without reaching this tenant.",
         ]
     else:
-        out.append("  nothing was collected and nothing was written.")
+        out.append("  none. Nothing was collected and nothing was written.")
 
     out += ["", "Because:"]
     out += [f"  {reason}" for reason in connection.because]

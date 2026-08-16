@@ -30,6 +30,32 @@ rather than a consent problem.
   `cancelled`. A tenant that answered and would not have us is a different
   sentence from one that never answered, and collapsing them sends a person to
   check their network when the answer was consent.
+- **Two questions, and one field would answer neither.** `connect` reports
+  *address resolution* and *the authenticated session* as separate blocks:
+
+  ```text
+  Address resolution
+    <host>  owned by  <directory id>
+    Public discovery, and no session was involved.
+
+  Authenticated session
+    identity   delegated
+    observed   not established
+  ```
+
+  Which directory owns an address is answerable by anybody, from public OpenID
+  discovery, without a token — measured against a real tenant with an empty
+  MSAL cache, and separately against the endpoint itself with no authorization
+  header. Which directory a session operated in is answerable only by the
+  session. **A GUID the whole world can obtain without reaching a tenant is not
+  evidence that a collection looked at it**, so `resolved_tenant_id` and
+  `observed_tenant_id` are separate and the second is null.
+
+  The address resolves *before* the sign-in and is reported whatever the
+  sign-in does: a tenant that refuses us still has an address, and somebody
+  diagnosing a consent problem is helped by knowing which directory they were
+  actually pointed at.
+
 - **It never says which organisation answered.** A host is an endpoint; the
   identity is the directory id, and no collection path for it is proven on a
   tenant. So a successful sign-in reports the address and

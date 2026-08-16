@@ -111,6 +111,53 @@ function Connect-Collector {
     return Get-TenantHost -Url $connectUrl
 }
 
+function Resolve-TenantAddress {
+    <#
+        .SYNOPSIS
+        Which directory owns an address. A different question from who is signed in.
+
+        .DESCRIPTION
+        `Get-PnPTenantId -TenantUrl` is documented as not requiring an active
+        connection, and it does not: measured against a real tenant with an
+        empty MSAL cache, no prior connection and no client id, and separately
+        against the discovery endpoint itself with no authorization header at
+        all.
+
+        SO THIS RESOLVES AN ADDRESS AND OBSERVES NOTHING. It answers "which
+        directory owns this host", authoritatively, from public OpenID
+        discovery. It does not answer "which directory is this session
+        operating in", which only an authenticated session can answer.
+
+        The two must not be one field. A GUID anybody in the world can obtain
+        without ever reaching the tenant is not evidence that a collection
+        looked at that tenant.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string] $Url
+    )
+
+    try {
+        [ordered]@{
+            host             = Get-TenantHost -Url $Url
+            resolved_tenant_id = [string] (Get-PnPTenantId -TenantUrl $Url)
+            how              = 'public-discovery'
+            detail           = $null
+        }
+    }
+    catch {
+        # A host that does not exist fails here, named, rather than resolving to
+        # nothing. Reported rather than thrown: the sign-in may still be worth
+        # attempting, and a caller deserves both answers.
+        [ordered]@{
+            host             = Get-TenantHost -Url $Url
+            resolved_tenant_id = $null
+            how              = 'public-discovery'
+            detail           = [string] $_.Exception.Message
+        }
+    }
+}
+
 function Get-ConnectionFacts {
     <#
         .SYNOPSIS
@@ -155,8 +202,12 @@ function Get-ConnectionFacts {
         identity_kind    = 'delegated'
         connection_type  = [string] $connection.ConnectionType
         scopes           = @($connection.Scopes)
-        tenant_directory = $null
+        # WHICH DIRECTORY THIS SESSION IS OPERATING IN, and null until something
+        # reads it from the session itself. Deliberately NOT the value that
+        # resolving the address returns: that one is authoritative about the
+        # address and says nothing about who signed in.
+        observed_tenant_id = $null
     }
 }
 
-Export-ModuleMember -Function Connect-Collector, Get-TenantHost, Get-ConnectionFacts
+Export-ModuleMember -Function Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress

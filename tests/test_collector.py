@@ -481,17 +481,21 @@ def test_the_evidence_schema_knows_nothing_about_fixtures():
     )
 
 
-def test_a_cmdlet_named_in_a_comment_is_not_a_cmdlet_the_collector_calls():
+def test_a_cmdlet_named_in_a_comment_is_not_a_cmdlet_that_is_called(tmp_path):
     """The measured surface is parsed, never grepped.
 
     A regular expression over the source counts every mention. The moment a
     comment explained why `Get-PnPTenantId` was NOT being called, the
     measurement said it was, and `docs/OBSERVABLE-SURFACE.md` published a
-    collection path that does not exist.
+    collection path that did not exist.
 
     That document is the engine's own coverage question asked of itself, so a
-    false positive there is the product overstating what it reads -- which is
-    the failure it exists to make impossible everywhere else.
+    false positive there is the product overstating what it reads.
+
+    MEASURED AGAINST A FILE WRITTEN FOR THIS, not against the real collector.
+    The first version of this test asserted that one particular cmdlet stayed
+    uncalled, and it broke within the hour when the collector started calling
+    it: a test about a mechanism should not depend on today's inventory.
     """
     import importlib.util
 
@@ -501,20 +505,22 @@ def test_a_cmdlet_named_in_a_comment_is_not_a_cmdlet_the_collector_calls():
     surface = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(surface)
 
-    called = surface.used()
+    (tmp_path / "sample.psm1").write_text(
+        """
+        function Test-Reading {
+            # Get-PnPCommented is named here and never called.
+            <#
+                .DESCRIPTION
+                Get-PnPInHelpBlock is named here and never called either.
+            #>
+            Get-PnPReallyCalled -Identity 'x'
+        }
+        """,
+        encoding="utf-8",
+    )
+
+    called = surface.used(tmp_path)
     if not called:
         pytest.skip("pwsh is not installed, and the AST needs it")
 
-    source = "".join(
-        p.read_text(encoding="utf-8")
-        for p in (DATA / "collectors").rglob("*")
-        if p.suffix in {".ps1", ".psm1"}
-    )
-
-    # The cmdlet the collector deliberately does not call, and says so.
-    assert "Get-PnPTenantId" in source
-    assert "Get-PnPTenantId" not in called
-
-    # And the ones it really does call are still there.
-    assert "Get-PnPConnection" in called
-    assert "Get-PnPWeb" in called
+    assert called == {"Get-PnPReallyCalled"}

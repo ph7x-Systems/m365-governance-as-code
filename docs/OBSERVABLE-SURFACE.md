@@ -6,8 +6,8 @@ What can be read against what is read. The engine's coverage question asked of i
 
 - PnP.PowerShell **3.3.0**
 - **283** read-only cmdlets available
-- **13** called by the collector
-- **270** not called
+- **14** called by the collector
+- **269** not called
 
 > **This is a list of candidates, not a backlog.** A cmdlet appearing here is a surface somebody *could* read. Whether it should become evidence, and whether a rule can be written on it, is the rule contract's question, and that starts with a documented basis. **A cmdlet is not a reason.**
 
@@ -30,6 +30,7 @@ Two standing rules apply to everything below, and they are twins:
 - `Get-PnPSite`
 - `Get-PnPSiteCollectionAdmin`
 - `Get-PnPTenant`
+- `Get-PnPTenantId`
 - `Get-PnPTenantSite`
 - `Get-PnPWeb`
 
@@ -96,14 +97,13 @@ Two standing rules apply to everything below, and they are twins:
 
 ### Tenant configuration
 
-19 cmdlets.
+18 cmdlets.
 
 - `Get-PnPTenantAppCatalogUrl`
 - `Get-PnPTenantCdnEnabled`
 - `Get-PnPTenantCdnOrigin`
 - `Get-PnPTenantCdnPolicies`
 - `Get-PnPTenantDeletedSite`
-- `Get-PnPTenantId`
 - `Get-PnPTenantInfo`
 - `Get-PnPTenantInstance`
 - `Get-PnPTenantInternalSetting`
