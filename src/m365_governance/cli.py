@@ -450,8 +450,16 @@ def _cmd_connect(args) -> int:
                     "seconds": round(established.seconds, 3),
                     "exit_code": established.returncode,
                     "requested": established.requested,
-                    "established": established.established,
+                    # Two questions, two objects, deliberately. `address` is a
+                    # public lookup and `session` is what signing in proved; one
+                    # field would make the first indistinguishable from the
+                    # second, and a consumer would stamp a resolution where a
+                    # reader expects an observation.
+                    "address": established.address,
+                    "session": established.established,
                     "identity": established.identity,
+                    "resolved_tenant_id": established.resolved_tenant_id,
+                    "observed_tenant_id": established.observed_tenant_id,
                     "because": established.because,
                 },
                 indent=2,

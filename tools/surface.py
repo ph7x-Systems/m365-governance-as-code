@@ -93,7 +93,7 @@ $names | Where-Object { $_ } | Sort-Object -Unique
 """
 
 
-def used() -> set[str]:
+def used(root: Path | None = None) -> set[str]:
     """What the collector actually calls, from its own syntax tree.
 
     PARSED, NOT GREPPED, and the difference is a claim this document makes
@@ -101,6 +101,11 @@ def used() -> set[str]:
     the moment a comment explained why `Get-PnPTenantId` was NOT being called,
     the measurement said it was, and the published surface asserted a
     collection path that does not exist.
+
+    `root` exists so the reading itself can be tested against a file written
+    for the purpose. A test that depended on a particular cmdlet staying
+    uncalled in the real collector breaks the day somebody calls it -- which
+    happened within the hour.
 
     The AST is already how the read-only gate proves there is no write path, so
     this is the same reading applied to the same files. A cmdlet named inside a
@@ -116,7 +121,7 @@ def used() -> set[str]:
             "pwsh",
             "-NoProfile",
             "-Command",
-            _AST_SCRIPT.replace("<ROOT>", str(COLLECTORS)),
+            _AST_SCRIPT.replace("<ROOT>", str(root or COLLECTORS)),
         ],
         capture_output=True,
         text=True,

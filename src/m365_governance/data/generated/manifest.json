@@ -8,7 +8,7 @@
     "itself opportunistically against whatever engine happened to be on",
     "the machine would be reproducible only on that machine."
   ],
-  "contract_version": "1.0.0b4",
+  "contract_version": "1.0.0b5",
   "generated": [
     "Assessment.g.cs",
     "Collection.g.cs",

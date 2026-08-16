@@ -211,6 +211,19 @@ foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions
     Import-Module (Join-Path $Modules "$module.psm1") -Force
 }
 
+# --- resolve the address, which needs no session -----------------------------
+#
+# Before the sign-in, and printed whatever the sign-in does. Which directory
+# owns an address is answerable from public discovery; which directory a session
+# operates in is not, and running them in this order is what keeps the two
+# apart in the output as well as in the code.
+
+if ($Mode -eq 'Connect') {
+    $addressUrl = if ($TenantUrl) { $TenantUrl } else { $SiteUrl }
+    $resolved = Resolve-TenantAddress -Url $addressUrl
+    Write-Host ('RESOLVED ' + ($resolved | ConvertTo-Json -Depth 4 -Compress))
+}
+
 # --- connect (read-only) -----------------------------------------------------
 
 $TenantHost = Connect-Collector -Mode $Mode -ClientId $ClientId -SiteUrl $SiteUrl `

@@ -32,7 +32,7 @@ SESSION = {
     "identity_kind": "delegated",
     "connection_type": "TenantAdmin",
     "scopes": ["AllSites.FullControl", "User.Read"],
-    "tenant_directory": None,
+    "observed_tenant_id": None,
 }
 
 
@@ -58,6 +58,17 @@ def _attempt(**kwargs) -> Connection:
 
 def _established(**overrides) -> str:
     return "CONNECTION " + json.dumps({**SESSION, **overrides}, separators=(",", ":"))
+
+
+def _resolved(tenant_id: str | None = "fcea8c52-d8bb-4836-8ef1-a3ab74265d08", **over):
+    body = {
+        "host": "contoso.sharepoint.com",
+        "resolved_tenant_id": tenant_id,
+        "how": "public-discovery",
+        "detail": None,
+        **over,
+    }
+    return "RESOLVED " + json.dumps(body, separators=(",", ":"))
 
 
 # ---------------------------------------------------------------------------
@@ -135,17 +146,17 @@ def test_connecting_never_says_which_organisation_answered():
     """
     attempt = _attempt(engine=_engine([_established()]))
 
-    assert attempt.established["tenant_directory"] is None
+    assert attempt.observed_tenant_id is None
     assert attempt.host == "contoso.sharepoint.com"
     assert any("directory identity was not read" in r for r in attempt.because)
 
 
-def test_the_report_says_the_organisation_is_not_established():
-    text = describe(_attempt(engine=_engine([_established()])))
+def test_the_report_says_the_session_directory_is_not_established():
+    text = describe(_attempt(engine=_engine([_resolved(), _established()])))
 
     assert "identity   delegated" in text
-    assert "is NOT established" in text
-    assert "a host is an endpoint" in text.lower()
+    assert "observed   not established" in text
+    assert "IS NOT ESTABLISHED" in text
 
 
 def test_a_failed_attempt_reports_not_established_rather_than_nothing():
@@ -279,7 +290,8 @@ def test_connect_reports_json_for_a_consumer(monkeypatch, capsys):
     assert code == 0
     assert reported["reach"] == "established"
     assert reported["identity"] == "delegated"
-    assert reported["established"]["tenant_directory"] is None
+    assert reported["observed_tenant_id"] is None
+    assert reported["session"]
     assert reported["because"]
 
 
@@ -303,3 +315,58 @@ def test_connect_exits_one_when_it_could_not_reach(monkeypatch, capsys):
 
     assert code == 1
     assert "REFUSED" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# two questions, and one field would answer neither
+# ---------------------------------------------------------------------------
+
+
+def test_resolving_an_address_is_not_observing_a_session():
+    """The distinction the whole command is shaped around.
+
+    Which directory owns an address is answerable from public discovery, by
+    anybody, without a token. Which directory a session operated in is only
+    answerable by the session. A GUID the whole world can obtain without
+    reaching the tenant is not evidence that a collection looked at it.
+    """
+    attempt = _attempt(engine=_engine([_resolved(), _established()]))
+
+    assert attempt.resolved_tenant_id == "fcea8c52-d8bb-4836-8ef1-a3ab74265d08"
+    assert attempt.observed_tenant_id is None
+
+
+def test_an_address_resolves_even_when_the_sign_in_fails():
+    """Resolution needs no session, so a refusal does not remove the answer.
+
+    A tenant that would not have us still has an address, and somebody
+    diagnosing a consent problem is helped by knowing which directory they were
+    actually pointed at.
+    """
+    attempt = _attempt(
+        engine=_engine([_resolved(), "AADSTS65001: consent has not been granted"], 1)
+    )
+
+    assert attempt.reach is Reach.REFUSED
+    assert attempt.resolved_tenant_id == "fcea8c52-d8bb-4836-8ef1-a3ab74265d08"
+
+
+def test_a_host_that_does_not_exist_says_so_rather_than_resolving_to_nothing():
+    attempt = _attempt(
+        engine=_engine([_resolved(None, detail="no such tenant"), "gone"], 1)
+    )
+
+    assert attempt.resolved_tenant_id is None
+    assert "no such tenant" in describe(attempt)
+
+
+def test_the_report_keeps_the_two_answers_under_separate_headings():
+    """A reader who saw one GUID under one heading would conclude the session
+    had been observed in that directory. It has not."""
+    text = describe(_attempt(engine=_engine([_resolved(), _established()])))
+
+    assert "Address resolution" in text
+    assert "Authenticated session" in text
+    assert text.index("Address resolution") < text.index("Authenticated session")
+    assert "observed   not established" in text
+    assert "does not stand in for it" in text
