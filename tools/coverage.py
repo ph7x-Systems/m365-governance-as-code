@@ -152,11 +152,11 @@ def collector_modes() -> dict[str, str]:
     sys.path.insert(0, str(ROOT / "src"))
     from m365_governance import collecting  # noqa: PLC0415
 
-    # Uma fatia que não produz achados não alimenta domínio nenhum, e incluí-la
-    # aqui punha a `agents` a contar como modo de collector de TODOS os sete:
-    # usa o perfil `default`, que seleciona todas as regras, portanto pertencia
-    # a toda a gente. Um número que sobe em sete linhas por causa de uma fatia
-    # que não avalia nada é cobertura inventada.
+    # A slice that produces no findings feeds no domain, and including it here
+    # counted `agents` as the collector mode for ALL seven: it uses the
+    # `default` profile, which selects every rule, so it belonged to everybody.
+    # A number that rises by seven rows because of a slice that evaluates
+    # nothing is invented coverage.
     return {
         s.name: (s.mode, s.profile)
         for s in collecting.SLICES.values()
@@ -237,9 +237,24 @@ def site_surfaces() -> dict:
     # gap it hides: the queue stops asking for work that is genuinely missing.
     # Requiring an id in a chapter would also have forced rule numbers into a
     # book to turn a cell green.
-    articles = SITE / "src" / "knowledge"
-    if not articles.is_dir():
-        return {"state": "missing", "detail": f"{articles} does not exist"}
+    # TWO TREES, AND THE SECOND ONE WAS INVISIBLE FOR A WHILE.
+    #
+    # The relations live in frontmatter, and the frontmatter moved. On
+    # 2026-08-15 the site took nine articles out of `src/knowledge/` and into
+    # `src/manual/`, where the product's own documentation now lives. All nine
+    # declare `next_guide: [4]`, and this function stopped seeing any of them.
+    #
+    # The matrix did not error. It closed four rows that are open, which the
+    # note above calls out as worse than the gap it hides: the queue stops
+    # asking for work that is genuinely missing. A tool that reads one
+    # directory by name is a tool that lies the day the directory changes.
+    trees = [SITE / "src" / "knowledge", SITE / "src" / "manual"]
+    presentes = [d for d in trees if d.is_dir()]
+    if not presentes:
+        return {
+            "state": "missing",
+            "detail": f"neither {trees[0]} nor {trees[1]} exists",
+        }
 
     knowledge, guide, analysis, compass, by_slug = (
         defaultdict(set),
@@ -248,7 +263,7 @@ def site_surfaces() -> dict:
         defaultdict(set),
         defaultdict(set),
     )
-    for path in sorted(articles.rglob("*.md")):
+    for path in sorted(p for d in presentes for p in d.rglob("*.md")):
         text = path.read_text(encoding="utf-8", errors="ignore")
         head = text.split("---", 2)[1] if text.startswith("---") else ""
 
