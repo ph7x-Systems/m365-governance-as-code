@@ -1,5 +1,9 @@
 [build-system]
-requires = ["setuptools>=68"]
+# 77 and not 68: `license = "MIT"` with `license-files` is PEP 639, and
+# setuptools grew it in 77. Left at 68, a clean build environment could
+# resolve a version that does not understand the field and either fail or
+# quietly drop the licence from the metadata.
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,15 +12,34 @@ version = "1.0.0b1"
 description = "Microsoft 365 governance checks that show their work."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file = "LICENSE" }
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [{ name = "pH7x Systems", email = "support@ph7x.com" }]
 keywords = ["microsoft-365", "sharepoint", "governance", "policy-as-code"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: System Administrators",
+  "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
+  # The versions CI actually runs the suite against. A classifier claiming a
+  # version nothing tests is a promise the project has not made.
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: System :: Systems Administration",
 ]
 dependencies = ["PyYAML>=6.0", "jsonschema>=4.20"]
+
+# The links PyPI shows beside the description. Worth setting before the first
+# release rather than after: the sidebar is most of what somebody deciding
+# whether to try this will read, and a version number is spent the moment it
+# is used, deleted or not.
+[project.urls]
+Homepage = "https://ph7x.com/tools/m365-governance-as-code/"
+Documentation = "https://ph7x.com/tools/m365-governance-as-code/docs/"
+Repository = "https://github.com/ph7x-Systems/m365-governance-as-code"
+Issues = "https://github.com/ph7x-Systems/m365-governance-as-code/issues"
+Changelog = "https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/CHANGELOG.md"
 
 [project.scripts]
 m365-governance = "m365_governance.cli:main"
