@@ -12,10 +12,13 @@ is the whole reason the two halves are separate.
 
 from __future__ import annotations
 
+import json
 import shutil
 import subprocess
 import time
-from dataclasses import dataclass
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from enum import StrEnum
 from pathlib import Path
 
 from .resources import packaged
@@ -176,6 +179,34 @@ SLICES = {
 }
 
 
+class State(StrEnum):
+    """How a collection ended, in four words rather than a boolean.
+
+    `ok` was the whole answer, and it is an exit code wearing a name. A run
+    that reached two hundred of three hundred sites and then lost its
+    connection had the same value as one that never authenticated: the first
+    produced evidence worth two hundred sites, and the second produced nothing.
+
+    That collapse is made nowhere else in this engine. Coverage keeps
+    `requested` and `completed` apart and names why a fact was unavailable; a
+    rule answers `unknown` rather than failing when the gap could change its
+    answer. The collection outcome was the one place a partial result and a
+    failure were indistinguishable.
+    """
+
+    COMPLETED = "completed"
+    """Everything the slice asked for."""
+
+    PARTIAL = "partial"
+    """Usable evidence, and less of the estate than was asked for."""
+
+    FAILED = "failed"
+    """No usable artefact."""
+
+    CANCELLED = "cancelled"
+    """Stopped deliberately. What was already written is kept, and says so."""
+
+
 @dataclass
 class Outcome:
     slice_name: str
@@ -185,8 +216,35 @@ class Outcome:
     stdout: str
     stderr: str
 
+    #: Set only when the caller stopped it. Nothing infers cancellation from an
+    #: exit code: a collector killed by the network and one stopped by a person
+    #: exit the same way, and only the caller knows which happened.
+    cancelled: bool = False
+
+    #: What the written documents said they could not read, one entry per
+    #: document that fell short. Read from the artefacts rather than guessed
+    #: from the exit code.
+    incomplete: list[str] = field(default_factory=list)
+
+    @property
+    def state(self) -> State:
+        if self.cancelled:
+            return State.CANCELLED
+        if self.returncode != 0:
+            # A collector that died having written documents produced evidence
+            # worth exactly those documents. Calling that `failed` throws away
+            # what it did read, which is the collapse this type exists to end.
+            return State.PARTIAL if self.written else State.FAILED
+        return State.PARTIAL if self.incomplete else State.COMPLETED
+
     @property
     def ok(self) -> bool:
+        """Kept, and deliberately narrow: it means the process exited zero.
+
+        Callers deciding what a collection produced want `state`. This answers
+        a different and smaller question, and the two are not synonyms: a
+        partial collection can exit zero and a cancelled one cannot.
+        """
         return self.returncode == 0
 
 
@@ -213,7 +271,20 @@ def run_slice(
     device_login: bool = False,
     count_unique_scopes: bool = False,
     dry_run: bool = False,
+    on_progress: Callable[[str], None] | None = None,
 ) -> Outcome:
+    """Run one slice against a tenant.
+
+    `on_progress` receives each line the collector prints, as it prints it. It
+    is optional and the default is silence, which is what a caller redirecting
+    output wants.
+
+    The output used to be buffered until the process exited. The collector
+    writes progress, including how many sites an identity enumerated, and none
+    of it reached the person waiting: `collect sites` against a large tenant
+    printed nothing for however long it took and then printed everything. There
+    was no stream to show, so nothing downstream could show one.
+    """
     chosen = SLICES[name]
 
     argv = [
@@ -244,18 +315,105 @@ def run_slice(
 
     before = _files(output)
     started = time.monotonic()
-    result = subprocess.run(argv, capture_output=True, text=True)
+    returncode, out, err, cancelled = _run(argv, on_progress)
     elapsed = time.monotonic() - started
     written = sorted(set(_files(output)) - set(before))
 
     return Outcome(
         slice_name=name,
-        returncode=result.returncode,
+        returncode=returncode,
         seconds=elapsed,
         written=written,
-        stdout=result.stdout,
-        stderr=result.stderr,
+        stdout=out,
+        stderr=err,
+        cancelled=cancelled,
+        incomplete=incomplete_coverage(written),
     )
+
+
+def _run(
+    argv: list[str], on_progress: Callable[[str], None] | None
+) -> tuple[int, str, str, bool]:
+    """Run it, and hand each line over as it arrives.
+
+    stderr is merged into stdout on purpose. Reading two pipes without select
+    or threads deadlocks the moment either fills its buffer, and a collector
+    that hangs at four hundred sites because nobody drained stderr would be a
+    worse defect than the silence this replaces. The collector's own failure
+    messages are therefore in the stream too, which is where somebody watching
+    wants them.
+
+    KeyboardInterrupt is a cancellation and not a crash: the child is asked to
+    stop, whatever it already wrote to disk stays there, and the outcome says
+    it was cancelled rather than that it failed.
+    """
+    linhas: list[str] = []
+    cancelled = False
+    with subprocess.Popen(
+        argv,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+    ) as child:
+        try:
+            assert child.stdout is not None
+            for linha in child.stdout:
+                linha = linha.rstrip("\n")
+                linhas.append(linha)
+                if on_progress is not None:
+                    on_progress(linha)
+            returncode = child.wait()
+        except KeyboardInterrupt:
+            child.terminate()
+            try:
+                child.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                child.kill()
+            cancelled = True
+            returncode = child.returncode if child.returncode is not None else 130
+
+    return returncode, "\n".join(linhas), "", cancelled
+
+
+def incomplete_coverage(written: list[Path]) -> list[str]:
+    """Which of these documents read less than they set out to.
+
+    Read from the artefacts, never inferred from the exit code. Every evidence
+    document records `requested` against `completed`, and the difference is the
+    engine's own account of what it did not see. A caller that guessed at
+    partial from the number of files on disk would be inventing governance
+    meaning from a side effect.
+
+    A document this cannot parse is reported rather than skipped: a file that
+    is not readable evidence is a reason to doubt the collection, and staying
+    quiet about it would be the same rounding-up the outcome states exist to
+    stop.
+    """
+    fora = []
+    for caminho in written:
+        try:
+            dados = json.loads(caminho.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            fora.append(f"{caminho.name}: cannot be read as evidence ({exc})")
+            continue
+        cobertura = dados.get("coverage")
+        if not isinstance(cobertura, dict):
+            fora.append(f"{caminho.name}: no coverage recorded")
+            continue
+        pedido = set(cobertura.get("requested") or [])
+        feito = set(cobertura.get("completed") or [])
+        em_falta = sorted(pedido - feito)
+        if em_falta:
+            indisponivel = cobertura.get("unavailable") or {}
+            razoes = "; ".join(
+                f"{k}: {v}" for k, v in indisponivel.items() if k in em_falta
+            )
+            fora.append(
+                f"{caminho.name}: {', '.join(em_falta)} not read"
+                + (f" ({razoes})" if razoes else "")
+            )
+    return fora
 
 
 def _files(output: Path) -> list[Path]:

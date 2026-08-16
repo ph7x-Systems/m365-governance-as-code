@@ -255,6 +255,17 @@ def _cmd_show_rule(args) -> int:
     return 0
 
 
+def _relatar_lacunas(outcome) -> None:
+    """What the documents themselves say they did not read.
+
+    Read from the artefacts rather than from the exit code, and printed
+    whenever it is not empty: a partial collection whose gaps are invisible is
+    a complete one as far as the reader is concerned.
+    """
+    for lacuna in outcome.incomplete:
+        print(f"  {lacuna}")
+
+
 def _cmd_collect(args) -> int:
     chosen = collecting.SLICES[args.slice]
 
@@ -273,6 +284,13 @@ def _cmd_collect(args) -> int:
         )
         return 2
 
+    # Printed as it arrives. `collect sites` against a large tenant used to
+    # print nothing for however long it took and then print everything, so the
+    # only thing distinguishing a working collection from a hung one was the
+    # patience of the person waiting.
+    def relatar(linha: str) -> None:
+        print(linha, flush=True)
+
     outcome = collecting.run_slice(
         args.slice,
         client_id=args.client_id,
@@ -282,16 +300,16 @@ def _cmd_collect(args) -> int:
         device_login=args.device_login,
         count_unique_scopes=args.count_unique_scopes,
         dry_run=args.dry_run,
+        on_progress=None if args.dry_run else relatar,
     )
 
     if args.dry_run:
         print(outcome.stdout)
         return 0
 
-    if outcome.stdout.strip():
-        print(outcome.stdout.rstrip())
-    if not outcome.ok:
-        print(outcome.stderr.rstrip(), file=sys.stderr)
+    estado = outcome.state
+
+    if estado is collecting.State.FAILED:
         print(
             f"\ncollection failed after {outcome.seconds:.1f}s. Nothing was "
             f"written to the tenant; a collector has no write path.",
@@ -299,7 +317,39 @@ def _cmd_collect(args) -> int:
         )
         return 1
 
-    print(f"\n{len(outcome.written)} evidence documents in {outcome.seconds:.1f}s.")
+    if estado is collecting.State.CANCELLED:
+        # What was already written stays, and says what it covers. Deleting it
+        # would throw away a reading somebody may still want, and keeping it
+        # silently would let it pass for a complete one.
+        print(
+            f"\ncancelled after {outcome.seconds:.1f}s. "
+            f"{len(outcome.written)} evidence documents were already written "
+            f"and are kept; they describe only what had been read by then.",
+            file=sys.stderr,
+        )
+        _relatar_lacunas(outcome)
+        return 1
+
+    if estado is collecting.State.PARTIAL:
+        # NOT A FAILURE, and the exit code says so. A collection that reached
+        # part of an estate produced evidence worth exactly that part, and
+        # rules over it answer `unknown` where the gap could change them.
+        print(
+            f"\n{len(outcome.written)} evidence documents in "
+            f"{outcome.seconds:.1f}s, and the collection is PARTIAL."
+        )
+        _relatar_lacunas(outcome)
+        if outcome.returncode != 0:
+            print(
+                "  the collector stopped before finishing; what it had already "
+                "written is above",
+            )
+        print(
+            "\nEvaluating this is valid. Where the gap could change an answer, "
+            "a rule returns `unknown` rather than a pass."
+        )
+    else:
+        print(f"\n{len(outcome.written)} evidence documents in {outcome.seconds:.1f}s.")
     # Named rather than assumed: the pairing between a collection and the
     # rules that read it is the difference between a report and a wall of
     # `unknown` for facts nobody requested.
