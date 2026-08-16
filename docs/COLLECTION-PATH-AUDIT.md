@@ -160,16 +160,31 @@ identifier whether or not it is data.
 code, not an interactive prompt, not a client id. It cost none of the owner's
 session time, which is why it could be run at all.
 
-**And the mechanism matters more than the value.** The failure names it:
+**And the mechanism matters more than the value.** A failure names an endpoint:
 
 ```text
 Exception while invoking endpoint
 https://login.microsoftonline.com/<prefix>.onmicrosoft.com/.well-known/openid-configuration
 ```
 
-It is public OpenID discovery, keyed on the prefix taken out of the hostname.
-So this is an **authoritative resolution from an address**, and it is not an
-observation by the identity that collected anything.
+**That is where the result came from and not where the proof came from.** An
+error message is still a result, and reading the mechanism out of one is the
+inference this document exists to refuse. A call that succeeded because a token
+was already cached would look exactly the same from the outside. So it was
+measured twice, both ways:
+
+| Asked | Answer |
+|---|---|
+| the endpoint itself, by `curl`, with no client, no token and no authorization header | `HTTP 200`, and the `issuer` carries the same GUID |
+| the cmdlet, with `HOME` pointed at an empty directory — no MSAL cache, no `.IdentityService`, no prior connection | the same GUID |
+
+The empty environment was confirmed before the call rather than assumed
+(`cache = False`, no previous connection) and destroyed after it.
+
+**So the resolution is public and depends on no token at all.** It is an
+authoritative resolution from an address, and it is not an observation by the
+identity that collected anything — and now that is measured rather than
+deduced.
 
 ### What that settles, and what it does not
 
