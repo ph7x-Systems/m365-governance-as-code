@@ -182,9 +182,12 @@ def test_a_dry_run_reaches_no_tenant_and_reports_the_command(tmp_path):
         dry_run=True,
     )
 
-    assert outcome.state is State.COMPLETED
     assert "-Mode" in outcome.stdout and "TenantSites" in outcome.stdout
     assert outcome.written == []
+    # A COLLECTION THAT NEVER RAN HAS NO STATE. Asking for one used to answer
+    # `completed`, which is a statement about a tenant nobody looked at.
+    with pytest.raises(ValueError, match="dry run"):
+        _ = outcome.state
 
 
 def test_run_slice_accepts_a_progress_callback(tmp_path):
@@ -342,3 +345,47 @@ def test_an_interrupt_stops_the_child_and_is_reported_as_cancelled(monkeypatch):
     # exit code turned out to be.
     outcome = _outcome(returncode=code, cancelled=cancelled)
     assert outcome.state is State.CANCELLED
+
+
+def test_a_clean_exit_that_wrote_nothing_is_failed_and_not_completed(tmp_path):
+    """The rounding-up made by the type that exists to prevent it.
+
+    A collector that authenticated, enumerated nothing and exited zero used to
+    report `completed`, which tells a consumer everything was read by a
+    collection that wrote nothing down. `failed` is what the contract calls no
+    usable artefact, and an exit code does not change whether there is one.
+
+    A tenant with nothing in it lands here too, and that is the right side of
+    the line: somebody has to establish whether an estate is empty or was never
+    read, and being told the collection went well answers neither.
+    """
+    outcome = _outcome(returncode=0, written=[])
+
+    assert outcome.state is State.FAILED
+    # And `ok` still answers its own smaller question, which is not this one.
+    assert outcome.ok is True
+
+
+def test_the_reason_an_area_was_not_read_is_a_sentence_and_not_a_structure(tmp_path):
+    """It arrived as a Python dict repr, braces and quotes included.
+
+    The same string goes into the manifest's `because` and onto stdout under
+    `collect`, so a reader was shown the engine's internals where a reason
+    belonged.
+    """
+    doc = _evidence(
+        tmp_path / "a.json",
+        ["sites", "owners"],
+        ["sites"],
+        {
+            "owners": {
+                "state": "permission-denied",
+                "detail": "the identity is not a site collection administrator",
+            }
+        },
+    )
+
+    (reported,) = incomplete_coverage([doc])
+
+    assert "permission-denied — the identity is not a site collection" in reported
+    assert "{" not in reported and "'" not in reported

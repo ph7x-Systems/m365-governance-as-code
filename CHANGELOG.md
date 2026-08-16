@@ -56,6 +56,20 @@ change its answer.
   have compiled — which nothing here would have said, because nothing here
   compiles it.
 
+Two defects the contract itself exposed, both found by reading a manifest it
+had just written rather than by reading the code:
+
+- **A clean exit that wrote nothing reported `completed`.** The state is now
+  `failed` whenever there is no artefact, whatever the exit code: no usable
+  artefact is what the contract calls `failed`, and telling a consumer that
+  everything was read by a collection that wrote nothing down is the
+  rounding-up these states exist to stop, made by the type meant to stop it.
+- **A dry run had a state.** It reaches no tenant and gave a collector nothing
+  to do, so asking for one now refuses instead of answering `completed` about
+  an estate nobody looked at.
+- The reason an area was not read reached the manifest and stdout as a Python
+  dict repr, braces and quotes included, where a sentence belonged.
+
 What is **not** in this release: an assessment still does not record which
 collection produced its evidence or in what state that collection ended. That
 costs an assessment contract version and is the next step.

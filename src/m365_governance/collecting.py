@@ -276,15 +276,42 @@ class Outcome:
     #: from the exit code.
     incomplete: list[str] = field(default_factory=list)
 
+    #: False for a dry run, which describes a command and reaches no tenant.
+    #:
+    #: A COLLECTION THAT NEVER RAN HAS NO STATE. The four states are all
+    #: statements about what a collector managed to do, and a dry run gave one
+    #: nothing to do: reading it as `failed` would report a tenant as unread by
+    #: a collection nobody asked to run, and as `completed` would be worse.
+    attempted: bool = True
+
     @property
     def state(self) -> State:
+        if not self.attempted:
+            raise ValueError(
+                "this is a dry run: it describes the command and reaches no "
+                "tenant, so there is no collection to be in a state. The "
+                "command is in `stdout`."
+            )
         if self.cancelled:
             return State.CANCELLED
+        if not self.written:
+            # NO ARTEFACT IS `failed`, WHATEVER THE EXIT CODE. A clean exit that
+            # produced nothing used to read as `completed`, which told a
+            # consumer everything had been read by a collection that wrote
+            # nothing down — the rounding-up these states exist to stop, made by
+            # the type meant to stop it.
+            #
+            # A tenant with nothing in it lands here too, and that is the right
+            # side of the line: the collection has no evidence to offer, and a
+            # consumer that has to establish whether an estate is empty or was
+            # never read should be told that nobody wrote anything, not that
+            # everything went well.
+            return State.FAILED
         if self.returncode != 0:
             # A collector that died having written documents produced evidence
             # worth exactly those documents. Calling that `failed` throws away
             # what it did read, which is the collapse this type exists to end.
-            return State.PARTIAL if self.written else State.FAILED
+            return State.PARTIAL
         return State.PARTIAL if self.incomplete else State.COMPLETED
 
     @property
@@ -360,8 +387,10 @@ def run_slice(
 
     if dry_run:
         # Printed before anything runs, because a collector reaching a tenant
-        # is the one moment somebody might want to stop it.
-        return Outcome(name, 0, 0.0, [], " ".join(argv), "")
+        # is the one moment somebody might want to stop it. `attempted=False`,
+        # so nothing downstream reads a state out of a collection that did not
+        # happen, and no manifest is written: there is nothing to account for.
+        return Outcome(name, 0, 0.0, [], " ".join(argv), "", attempted=False)
 
     before = _files(output)
     started_at = _now()
@@ -473,14 +502,27 @@ def incomplete_coverage(written: list[Path]) -> list[str]:
         )
         if missing:
             unavailable = coverage.get("unavailable") or {}
+            # The two fields, read out. It used to interpolate the whole entry,
+            # so a sentence a person was meant to read arrived as a Python dict
+            # repr, quotes and braces included, in the manifest and on stdout.
             reasons = "; ".join(
-                f"{k}: {v}" for k, v in unavailable.items() if k in missing
+                f"{area}: {_reason(entry)}"
+                for area, entry in unavailable.items()
+                if area in missing
             )
             short.append(
                 f"{path.name}: {', '.join(missing)} not read"
                 + (f" ({reasons})" if reasons else "")
             )
     return short
+
+
+def _reason(entry: Any) -> str:
+    """Why an area was not read, as a sentence rather than as a structure."""
+    if not isinstance(entry, dict):
+        return str(entry)
+    state, detail = entry.get("state"), entry.get("detail")
+    return f"{state} — {detail}" if state and detail else str(detail or state or entry)
 
 
 # ---------------------------------------------------------------------------
