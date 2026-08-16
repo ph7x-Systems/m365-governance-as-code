@@ -8,6 +8,58 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 1.0.0b4
+
+A collection now reports what it is doing while it does it, and says what it
+managed to do when it stops. Both were missing, and the second one is a new
+contract.
+
+**A collection had no account of itself.** The only thing a caller could read
+was a process exit code, and a run that reached two hundred of three hundred
+sites and then lost its connection had the same value as one that never
+authenticated. The first produced evidence worth two hundred sites. That
+collapse is made nowhere else here: coverage keeps `requested` and `completed`
+apart, and a rule answers `unknown` rather than failing when the gap could
+change its answer.
+
+- **A new contract**, `collection/1.0.0`. A `collection-manifest.json` is
+  written beside the evidence, on every path including the failure that
+  produced no evidence at all. It carries the state, the facts behind it, what
+  was asked for, what was observed, the identity that looked, the coverage as a
+  union of the artefacts' own, every artefact with a digest over its bytes, and
+  a digest over itself. Full contract in
+  [docs/COLLECTION-MANIFEST.md](docs/COLLECTION-MANIFEST.md).
+- **Four states** where there was a boolean: `completed`, `partial`, `failed`,
+  `cancelled`. `partial` is not a failure and `collect` exits `0` for it.
+  `cancelled` is set by the caller and never inferred from an exit code.
+- **The collector's output streams.** It was buffered until the process exited,
+  so `collect sites` against a large tenant printed nothing for however long it
+  took and then printed everything — including the line saying how many sites
+  the identity had enumerated.
+- **`evaluate` states the bound before the results**, on stderr, where a
+  manifest exists. Where none exists it says nothing: evidence collected before
+  this contract, or exported from elsewhere, carries no account of its own
+  completeness, and inventing one would report a gap that was never measured as
+  an absence of gaps.
+- **A manifest is not evidence.** `collect` does not count one as a document it
+  wrote, and `evaluate` does not hand one to the evaluator.
+- **Two collections into one directory no longer destroy each other's record.**
+  The second carries its own short identity in the filename. Overwriting would
+  have removed the only statement that the first was partial.
+- The canonical form moved to `m365_governance/canonical.py`. Two documents now
+  publish a digest a recipient recomputes, and a second copy of those four
+  lines would be a second definition of the canonical form.
+- **The model generator refuses two records with one name.** Found by adding
+  this contract: it emitted three records called `Versions` and two called
+  `Coverage` into one namespace, all different shapes. Every file was
+  individually correct, the manifest was consistent, and the bundle would not
+  have compiled — which nothing here would have said, because nothing here
+  compiles it.
+
+What is **not** in this release: an assessment still does not record which
+collection produced its evidence or in what state that collection ended. That
+costs an assessment contract version and is the next step.
+
 ## 1.0.0b3
 
 A correctness fix, not a cosmetic one. `1.0.0b2` reported the wrong version of

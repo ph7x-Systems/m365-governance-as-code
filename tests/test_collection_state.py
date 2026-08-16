@@ -193,7 +193,7 @@ def test_run_slice_accepts_a_progress_callback(tmp_path):
     A dry run reaches nothing, so this asserts the door exists rather than what
     comes through it: a test that needed a tenant to prove a callback would
     never run anywhere."""
-    linhas: list[str] = []
+    lines: list[str] = []
 
     run_slice(
         "sites",
@@ -201,10 +201,10 @@ def test_run_slice_accepts_a_progress_callback(tmp_path):
         output=tmp_path,
         tenant_url="https://contoso-admin.sharepoint.com",
         dry_run=True,
-        on_progress=linhas.append,
+        on_progress=lines.append,
     )
 
-    assert linhas == []
+    assert lines == []
 
 
 def test_a_missing_collector_host_is_an_outcome_and_not_a_traceback(
@@ -217,10 +217,10 @@ def test_a_missing_collector_host_is_an_outcome_and_not_a_traceback(
     just wanted to know whether their tenant was read."""
     import m365_governance.collecting as collecting
 
-    def sem_pwsh(*args, **kwargs):
+    def no_pwsh(*args, **kwargs):
         raise FileNotFoundError("pwsh")
 
-    monkeypatch.setattr(collecting.subprocess, "Popen", sem_pwsh)
+    monkeypatch.setattr(collecting.subprocess, "Popen", no_pwsh)
 
     with pytest.raises(FileNotFoundError):
         # Recorded as it behaves today rather than as it should: the caller
@@ -253,30 +253,30 @@ def test_lines_arrive_while_the_child_is_still_running():
 
     from m365_governance import collecting
 
-    guiao = (
+    script = (
         "import sys, time\n"
         "print('first', flush=True)\n"
         "time.sleep(0.4)\n"
         "print('second', flush=True)\n"
     )
 
-    momentos: list[tuple[str, float]] = []
-    inicio = _time.monotonic()
-    codigo, saida, _erro, cancelado = collecting._run(
-        [_sys.executable, "-c", guiao],
-        lambda linha: momentos.append((linha, _time.monotonic() - inicio)),
+    moments: list[tuple[str, float]] = []
+    start = _time.monotonic()
+    code, out, _err, cancelled = collecting._run(
+        [_sys.executable, "-c", script],
+        lambda line: moments.append((line, _time.monotonic() - start)),
     )
 
-    assert codigo == 0
-    assert cancelado is False
-    assert [linha for linha, _ in momentos] == ["first", "second"]
-    assert saida == "first\nsecond"
+    assert code == 0
+    assert cancelled is False
+    assert [line for line, _ in moments] == ["first", "second"]
+    assert out == "first\nsecond"
 
     # The first line has to arrive before the child has finished. Buffered, both
     # would land together at the end, which is what `capture_output=True` did.
-    primeiro, segundo = momentos[0][1], momentos[1][1]
-    assert segundo - primeiro > 0.2, (
-        f"both lines arrived together ({primeiro:.2f}s, {segundo:.2f}s): the "
+    first_at, second_at = moments[0][1], moments[1][1]
+    assert second_at - first_at > 0.2, (
+        f"both lines arrived together ({first_at:.2f}s, {second_at:.2f}s): the "
         f"output is buffered and nothing can report progress"
     )
 
@@ -289,14 +289,14 @@ def test_stderr_is_in_the_stream_where_somebody_watching_will_see_it():
 
     from m365_governance import collecting
 
-    guiao = "import sys\nprint('out')\nprint('bad', file=sys.stderr)\n"
+    script = "import sys\nprint('out')\nprint('bad', file=sys.stderr)\n"
 
-    _codigo, saida, erro, _cancelado = collecting._run(
-        [_sys.executable, "-c", guiao], None
+    _codigo, out, err, _cancelado = collecting._run(
+        [_sys.executable, "-c", script], None
     )
 
-    assert "out" in saida and "bad" in saida
-    assert erro == ""
+    assert "out" in out and "bad" in out
+    assert err == ""
 
 
 def test_a_non_zero_exit_is_carried_rather_than_raised():
@@ -304,12 +304,12 @@ def test_a_non_zero_exit_is_carried_rather_than_raised():
 
     from m365_governance import collecting
 
-    codigo, _saida, _erro, cancelado = collecting._run(
+    code, _saida, _err, cancelled = collecting._run(
         [_sys.executable, "-c", "raise SystemExit(3)"], None
     )
 
-    assert codigo == 3
-    assert cancelado is False
+    assert code == 3
+    assert cancelled is False
 
 
 def test_an_interrupt_stops_the_child_and_is_reported_as_cancelled(monkeypatch):
@@ -323,22 +323,22 @@ def test_an_interrupt_stops_the_child_and_is_reported_as_cancelled(monkeypatch):
 
     from m365_governance import collecting
 
-    guiao = "import time\nprint('working', flush=True)\ntime.sleep(30)\n"
+    script = "import time\nprint('working', flush=True)\ntime.sleep(30)\n"
 
-    def desiste(_linha: str) -> None:
+    def give_up(_linha: str) -> None:
         # Raised from inside the loop, which is where a real Ctrl-C lands: the
         # process is mid-read when somebody presses it.
         raise KeyboardInterrupt
 
-    codigo, saida, _erro, cancelado = collecting._run(
-        [_sys.executable, "-c", guiao], desiste
+    code, out, _err, cancelled = collecting._run(
+        [_sys.executable, "-c", script], give_up
     )
 
-    assert cancelado is True
-    assert "working" in saida
-    assert codigo != 0
+    assert cancelled is True
+    assert "working" in out
+    assert code != 0
 
     # And it travels: a cancelled run is never `failed`, whatever the child's
     # exit code turned out to be.
-    outcome = _outcome(returncode=codigo, cancelled=cancelado)
+    outcome = _outcome(returncode=code, cancelled=cancelled)
     assert outcome.state is State.CANCELLED

@@ -28,6 +28,16 @@ blocked for a reason that is written down.
 
 # Recomputed 2026-08-16: what a collection reports while it runs
 
+**Delivered in `1.0.0b4`.** Kept below as the reasoning that produced it, because the arithmetic in the table above is only auditable if the candidate that beat it is still readable. The contract is in
+[COLLECTION-MANIFEST.md](COLLECTION-MANIFEST.md).
+
+> **What is still open:** an assessment does not record which collection
+> produced its evidence, or in what state that collection ended. The
+> manifest travels beside the evidence and not inside the assessment, so a
+> recipient sent only an assessment is not being told whether the
+> collection behind it was complete. That costs an assessment contract
+> version and is the next candidate.
+
 The table above scores rules and domains. This is neither, and it outranks all
 three: it is a gap in what the engine can say about its own work.
 

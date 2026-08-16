@@ -12,16 +12,54 @@ is the whole reason the two halves are separate.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 import subprocess
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
+from . import canonical, registry
 from .resources import packaged
+
+#: The manifest a collection writes beside its evidence, and the pattern a
+#: consumer globs for.
+#:
+#: ONE FILE PER COLLECTION AND NEVER OVERWRITTEN. The documented layout gives
+#: each slice its own directory, so the plain name is the ordinary case. It is
+#: not enforced, and two collections pointed at one directory used to be
+#: possible; the second would have replaced the first's account of itself with
+#: no diagnostic, destroying the only record that the earlier one was partial.
+#: A second collection in the same directory therefore carries its own short
+#: identity in the filename instead.
+MANIFEST = "collection-manifest.json"
+MANIFEST_GLOB = "collection-manifest*.json"
+
+#: What the manifest's digest is taken over: everything except the identity it
+#: produces and the digest block that holds it. Naming them in the document
+#: means a consumer verifying one does not have to know which engine wrote it.
+DIGESTED = (
+    "$schema",
+    "acquisition",
+    "artefacts",
+    "because",
+    "coverage",
+    "exit_code",
+    "finished_at",
+    "identity",
+    "observed",
+    "requested",
+    "seconds",
+    "slice",
+    "started_at",
+    "state",
+    "versions",
+)
 
 # Asked of the import system, not derived from this file's position. The
 # previous form was `Path(__file__).resolve().parents[2] / "collectors" / ...`,
@@ -216,6 +254,18 @@ class Outcome:
     stdout: str
     stderr: str
 
+    #: Wall clock, and separate from `seconds`, which is monotonic. A reader
+    #: compares these against a tenant's own change history; a duration
+    #: subtracted from them would be wrong, occasionally negative, whenever the
+    #: clock was adjusted mid-collection.
+    started_at: str = ""
+    finished_at: str = ""
+
+    #: Where the account of this collection was written, and None when there
+    #: was no directory to write it into — a dry run, or a caller that asked
+    #: for a single file.
+    manifest_path: Path | None = None
+
     #: Set only when the caller stopped it. Nothing infers cancellation from an
     #: exit code: a collector killed by the network and one stopped by a person
     #: exit the same way, and only the caller knows which happened.
@@ -314,12 +364,14 @@ def run_slice(
         return Outcome(name, 0, 0.0, [], " ".join(argv), "")
 
     before = _files(output)
+    started_at = _now()
     started = time.monotonic()
     returncode, out, err, cancelled = _run(argv, on_progress)
     elapsed = time.monotonic() - started
+    finished_at = _now()
     written = sorted(set(_files(output)) - set(before))
 
-    return Outcome(
+    outcome = Outcome(
         slice_name=name,
         returncode=returncode,
         seconds=elapsed,
@@ -328,7 +380,23 @@ def run_slice(
         stderr=err,
         cancelled=cancelled,
         incomplete=incomplete_coverage(written),
+        started_at=started_at,
+        finished_at=finished_at,
     )
+
+    # Written whatever happened, including a collection that produced nothing:
+    # a failure that leaves no trace is a failure a consumer has to reconstruct
+    # from an empty directory, which is the inference this contract exists to
+    # remove.
+    outcome.manifest_path = write_manifest(
+        outcome,
+        directory=_collection_directory(output),
+        client_id=client_id,
+        site_url=site_url,
+        tenant_url=tenant_url,
+        device_login=device_login,
+    )
+    return outcome
 
 
 def _run(
@@ -347,7 +415,7 @@ def _run(
     stop, whatever it already wrote to disk stays there, and the outcome says
     it was cancelled rather than that it failed.
     """
-    linhas: list[str] = []
+    lines: list[str] = []
     cancelled = False
     with subprocess.Popen(
         argv,
@@ -358,11 +426,11 @@ def _run(
     ) as child:
         try:
             assert child.stdout is not None
-            for linha in child.stdout:
-                linha = linha.rstrip("\n")
-                linhas.append(linha)
+            for line in child.stdout:
+                line = line.rstrip("\n")
+                lines.append(line)
                 if on_progress is not None:
-                    on_progress(linha)
+                    on_progress(line)
             returncode = child.wait()
         except KeyboardInterrupt:
             child.terminate()
@@ -373,7 +441,7 @@ def _run(
             cancelled = True
             returncode = child.returncode if child.returncode is not None else 130
 
-    return returncode, "\n".join(linhas), "", cancelled
+    return returncode, "\n".join(lines), "", cancelled
 
 
 def incomplete_coverage(written: list[Path]) -> list[str]:
@@ -390,33 +458,319 @@ def incomplete_coverage(written: list[Path]) -> list[str]:
     quiet about it would be the same rounding-up the outcome states exist to
     stop.
     """
-    fora = []
-    for caminho in written:
+    short = []
+    for path in written:
+        document = _evidence(path)
+        if document is None:
+            short.append(f"{path.name}: cannot be read as evidence")
+            continue
+        coverage = document.get("coverage")
+        if not isinstance(coverage, dict):
+            short.append(f"{path.name}: no coverage recorded")
+            continue
+        missing = sorted(
+            set(coverage.get("requested") or []) - set(coverage.get("completed") or [])
+        )
+        if missing:
+            unavailable = coverage.get("unavailable") or {}
+            reasons = "; ".join(
+                f"{k}: {v}" for k, v in unavailable.items() if k in missing
+            )
+            short.append(
+                f"{path.name}: {', '.join(missing)} not read"
+                + (f" ({reasons})" if reasons else "")
+            )
+    return short
+
+
+# ---------------------------------------------------------------------------
+# the manifest: what the collection did, beside the evidence it produced
+# ---------------------------------------------------------------------------
+
+
+def build_manifest(
+    outcome: Outcome,
+    *,
+    directory: Path,
+    client_id: str,
+    site_url: str | None,
+    tenant_url: str | None,
+    device_login: bool,
+) -> dict[str, Any]:
+    """The account of one collection, as a document.
+
+    EVERYTHING HERE IS EITHER A FACT ABOUT THE INVOCATION OR READ BACK FROM THE
+    ARTEFACTS. Nothing is inferred from the exit code, which is published raw
+    and consumed as a verdict by nobody: the tenant, the identity kind, the
+    collector version and the coverage all come from documents that were
+    actually written, and are null or empty where none were.
+    """
+    chosen = SLICES[outcome.slice_name]
+    documents = [(path, _evidence(path)) for path in outcome.written]
+
+    body: dict[str, Any] = {
+        "$schema": registry.contract("collection"),
+        "state": str(outcome.state),
+        "because": _because(outcome, documents),
+        "slice": {
+            "name": chosen.name,
+            "mode": chosen.mode,
+            "describes": chosen.describes,
+            "profile": chosen.profile,
+        },
+        "started_at": outcome.started_at,
+        "finished_at": outcome.finished_at,
+        "seconds": round(outcome.seconds, 3),
+        "exit_code": outcome.returncode,
+        "requested": {"site_url": site_url, "tenant_url": tenant_url},
+        "observed": _observed_tenant(documents),
+        "identity": {
+            "kind": _identity_kind(documents),
+            "client_id": client_id,
+            "device_login": device_login,
+        },
+        "acquisition": "collected",
+        "versions": {
+            "engine": _engine_version(),
+            "contract": _contract_version(),
+            "collector": _collector_version(documents),
+        },
+        "coverage": _union_coverage(documents),
+        "artefacts": [_artefact(path, parsed, directory) for path, parsed in documents],
+    }
+
+    value = canonical.digest({k: body[k] for k in DIGESTED})
+    body["collection_id"] = value
+    body["digest"] = {
+        "algorithm": canonical.ALGORITHM,
+        "value": value,
+        "covers": list(DIGESTED),
+    }
+    return body
+
+
+def write_manifest(
+    outcome: Outcome,
+    *,
+    directory: Path,
+    client_id: str,
+    site_url: str | None,
+    tenant_url: str | None,
+    device_login: bool,
+) -> Path | None:
+    """Write the manifest beside the evidence, without replacing another one.
+
+    The directory is created where it does not exist, because a collection that
+    failed before writing anything is exactly the case a consumer most needs an
+    account of, and refusing to record it would leave an empty directory to be
+    interpreted.
+    """
+    manifest = build_manifest(
+        outcome,
+        directory=directory,
+        client_id=client_id,
+        site_url=site_url,
+        tenant_url=tenant_url,
+        device_login=device_login,
+    )
+
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / MANIFEST
+    if path.exists() and _collection_id(path) != manifest["collection_id"]:
+        # A second collection in a directory that already holds one. The first
+        # one's account stays exactly where it is: overwriting it would destroy
+        # the only record that it was partial.
+        path = directory / f"collection-manifest.{manifest['collection_id'][:12]}.json"
+
+    path.write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    return path
+
+
+def manifests(evidence: Path) -> list[dict[str, Any]]:
+    """Every collection manifest under a path, as documents.
+
+    THE ABSENCE OF ONE IS NOT A CLAIM ABOUT COMPLETENESS. Evidence collected
+    before this contract existed, or exported from somewhere else, carries no
+    manifest, and a caller reading an empty list here learns that nobody said —
+    never that everything was read.
+    """
+    if evidence.is_file():
+        found = [evidence] if evidence.name.startswith("collection-manifest") else []
+    elif evidence.is_dir():
+        found = sorted(evidence.rglob(MANIFEST_GLOB))
+    else:
+        return []
+
+    documents = []
+    for path in found:
         try:
-            dados = json.loads(caminho.read_text(encoding="utf-8"))
-        except (OSError, json.JSONDecodeError) as exc:
-            fora.append(f"{caminho.name}: cannot be read as evidence ({exc})")
+            documents.append(json.loads(path.read_text(encoding="utf-8")))
+        except (OSError, json.JSONDecodeError):
+            # A manifest that cannot be read is reported by the schema layer
+            # when something validates it. Here it is simply not an account.
             continue
-        cobertura = dados.get("coverage")
-        if not isinstance(cobertura, dict):
-            fora.append(f"{caminho.name}: no coverage recorded")
+    return documents
+
+
+def _collection_id(path: Path) -> str | None:
+    try:
+        return json.loads(path.read_text(encoding="utf-8")).get("collection_id")
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _because(outcome: Outcome, documents: list[tuple[Path, dict | None]]) -> list[str]:
+    """Why the state is what it is, in the order the facts were established."""
+    reasons = []
+    if outcome.cancelled:
+        reasons.append("the caller stopped the collector")
+    if outcome.returncode != 0 and not outcome.cancelled:
+        reasons.append(f"the collector exited {outcome.returncode}")
+    reasons.append(f"{len(outcome.written)} evidence documents were written")
+    unreadable = [path.name for path, parsed in documents if parsed is None]
+    for name in unreadable:
+        reasons.append(f"{name} could not be read back as evidence")
+    reasons.extend(outcome.incomplete)
+    if outcome.state is State.COMPLETED:
+        reasons.append("every area each document requested was read")
+    return reasons
+
+
+def _artefact(path: Path, parsed: dict | None, directory: Path) -> dict[str, Any]:
+    raw = path.read_bytes() if path.is_file() else b""
+    try:
+        relative = path.relative_to(directory)
+    except ValueError:
+        # Written outside the directory the manifest sits in. Rare, and the
+        # absolute path is the truthful answer rather than a `..` chain that
+        # stops resolving the moment either end moves.
+        relative = path
+    return {
+        "path": str(relative).replace("\\", "/"),
+        "digest": hashlib.sha256(raw).hexdigest(),
+        "bytes": len(raw),
+        "readable": parsed is not None,
+    }
+
+
+def _union_coverage(documents: list[tuple[Path, dict | None]]) -> dict[str, Any]:
+    """The artefacts' coverage, unioned by area name and never counted.
+
+    An area is `completed` only where every document that asked for it read it.
+    One document reading an area another could not is not the collection having
+    got all of it.
+    """
+    requested: set[str] = set()
+    completed: set[str] = set()
+    missing: set[str] = set()
+    unavailable: dict[str, Any] = {}
+
+    for _path, parsed in documents:
+        coverage = (parsed or {}).get("coverage")
+        if not isinstance(coverage, dict):
             continue
-        pedido = set(cobertura.get("requested") or [])
-        feito = set(cobertura.get("completed") or [])
-        em_falta = sorted(pedido - feito)
-        if em_falta:
-            indisponivel = cobertura.get("unavailable") or {}
-            razoes = "; ".join(
-                f"{k}: {v}" for k, v in indisponivel.items() if k in em_falta
-            )
-            fora.append(
-                f"{caminho.name}: {', '.join(em_falta)} not read"
-                + (f" ({razoes})" if razoes else "")
-            )
-    return fora
+        asked = set(coverage.get("requested") or [])
+        done = set(coverage.get("completed") or [])
+        requested |= asked
+        completed |= done
+        missing |= asked - done
+        for area, reason in (coverage.get("unavailable") or {}).items():
+            if isinstance(reason, dict) and area not in unavailable:
+                unavailable[area] = {
+                    "state": reason.get("state"),
+                    "detail": reason.get("detail"),
+                }
+
+    return {
+        "requested": sorted(requested),
+        "completed": sorted(completed - missing),
+        "unavailable": unavailable,
+    }
+
+
+def _observed_tenant(documents: list[tuple[Path, dict | None]]) -> dict | None:
+    for _path, parsed in documents:
+        tenant = ((parsed or {}).get("provenance") or {}).get("tenant")
+        if isinstance(tenant, dict):
+            return tenant
+    return None
+
+
+def _identity_kind(documents: list[tuple[Path, dict | None]]) -> str:
+    kinds = {
+        ((parsed or {}).get("provenance") or {}).get("identity_kind")
+        for _path, parsed in documents
+    }
+    kinds.discard(None)
+    # One kind or none. Two would mean one collection ran under two identities,
+    # which this engine has no way to produce and would not summarise if it did.
+    return kinds.pop() if len(kinds) == 1 else "not-established"
+
+
+def _collector_version(documents: list[tuple[Path, dict | None]]) -> str | None:
+    for _path, parsed in documents:
+        version = ((parsed or {}).get("provenance") or {}).get("collector_version")
+        if isinstance(version, str):
+            return version
+    return None
+
+
+def _engine_version() -> str:
+    from . import __version__
+
+    return __version__
+
+
+def _contract_version() -> str:
+    manifest = packaged("generated") / "manifest.json"
+    try:
+        return json.loads(manifest.read_text(encoding="utf-8"))["contract_version"]
+    except (OSError, KeyError, json.JSONDecodeError):
+        # The bundle is generated and committed; an installation without it is
+        # still a working engine, and saying so beats inventing a version.
+        return "not-published"
+
+
+def _evidence(path: Path) -> dict | None:
+    try:
+        document = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return document if isinstance(document, dict) else None
+
+
+def _now() -> str:
+    return datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _collection_directory(output: Path) -> Path:
+    """Where the account of this collection goes.
+
+    `--output` is a directory for the slices that write many documents and a
+    file for the ones that write one, and the difference is not declared
+    anywhere: it is probed. A path that does not exist yet is the failure case,
+    and a `.json` suffix is the only signal available for it.
+    """
+    if output.is_dir():
+        return output
+    if output.suffix.lower() == ".json":
+        return output.parent
+    return output
 
 
 def _files(output: Path) -> list[Path]:
+    """The evidence under a path. Manifests are not evidence and never count.
+
+    Without this exclusion a second collection into one directory would read
+    the first one's manifest as a document it had just written, digest it as
+    evidence, and report it as having no coverage.
+    """
     if output.is_dir():
-        return sorted(output.rglob("*.json"))
+        return sorted(
+            path
+            for path in output.rglob("*.json")
+            if not path.name.startswith("collection-manifest")
+        )
     return [output] if output.exists() else []

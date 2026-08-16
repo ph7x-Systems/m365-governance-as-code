@@ -1,0 +1,297 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/collection/1.0.0",
+  "title": "Collection",
+  "description": "What one collection did, written beside the evidence it produced. THE MANIFEST DESCRIBES THE COLLECTION; THE DOCUMENTS DESCRIBE EVIDENCE. That line is the whole design: an evidence document is about one resource, and a collection is a batch, so the state of the batch does not belong inside any of them. Writing it there would repeat one truth once per document and leave the harder case unanswerable — a collection that stopped halfway has to say what it did not read, and the documents that would have carried that sentence are precisely the ones that were never written. Before this contract existed the only account of a collection was a process exit code, and a consumer reading it could not tell a run that reached two hundred of three hundred sites from one that never authenticated. This document is what the engine says about its own work, so that nobody downstream has to infer governance meaning from a side effect.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "collection_id",
+    "state",
+    "because",
+    "slice",
+    "started_at",
+    "finished_at",
+    "seconds",
+    "exit_code",
+    "requested",
+    "observed",
+    "identity",
+    "acquisition",
+    "versions",
+    "coverage",
+    "artefacts",
+    "digest"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/collection/1.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword."
+    },
+    "collection_id": {
+      "$ref": "#/$defs/sha256",
+      "description": "The identity, and it is the digest below rather than a number counted somewhere. Two collections of the same slice against the same tenant differ by the moment they started, so they get different identities without anybody allocating one; and an identity derived from content is one a recipient can recompute. The same arrangement the assessment uses, for the same reason."
+    },
+    "state": {
+      "enum": [
+        "completed",
+        "partial",
+        "failed",
+        "cancelled"
+      ],
+      "description": "How the collection ended, in four words rather than a boolean. `completed` is everything the slice asked for. `partial` is USABLE EVIDENCE AND INCOMPLETE COVERAGE, and it is not a failure: a collection that reached half a tenant produced evidence worth exactly half a tenant, and rules over it answer `unknown` where the gap could change them. `failed` is no usable artefact at all. `cancelled` is stopped deliberately, and it is never inferred from an exit code — a collector killed by the network and one stopped by a person exit identically, and only the caller knows which happened."
+    },
+    "because": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "The observable facts that produced the state, in the order they were established. Never empty, for the same reason attention carries its reasons: a verdict with nothing behind it is the message this product exists to stop shipping."
+    },
+    "slice": {
+      "$ref": "#/$defs/slice"
+    },
+    "started_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the collector was launched. Wall clock, because a reader compares it against a tenant's own change history."
+    },
+    "finished_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When it stopped, however it stopped. Present on a failure and on a cancellation: a collection that ended badly still ended at a time somebody may need."
+    },
+    "seconds": {
+      "type": "number",
+      "minimum": 0,
+      "description": "How long it ran, measured on a monotonic clock rather than subtracted from the two timestamps above. Kept separately because those two are wall clock and a clock adjustment mid-collection would make the subtraction wrong, occasionally negative."
+    },
+    "exit_code": {
+      "type": "integer",
+      "description": "What the collector process returned. Published because it is a fact and consumed by nobody as a verdict: `state` is the answer, and this is the raw reading it was formed from."
+    },
+    "requested": {
+      "$ref": "#/$defs/requested",
+      "description": "What was asked for, as it was asked. Separate from what was observed, and it is the half that survives a total failure: a collection that authenticated against nothing still knows which tenant it was pointed at."
+    },
+    "observed": {
+      "$ref": "#/$defs/observed",
+      "description": "What the evidence turned out to be about, read back from the artefacts rather than restated from the request. Null where nothing was written, which is the honest value: nobody read it."
+    },
+    "identity": {
+      "$ref": "#/$defs/identity"
+    },
+    "acquisition": {
+      "const": "collected",
+      "description": "Constant, and carried anyway. Evidence uses the same field to separate what a collector of ours read from what arrived by export, and an import has no collection and therefore no manifest. A consumer holding both kinds reads one vocabulary rather than inferring the answer from which document it happens to be looking at."
+    },
+    "versions": {
+      "$ref": "#/$defs/collectionVersions"
+    },
+    "coverage": {
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/coverage",
+      "description": "WHAT THE COLLECTION AS A WHOLE SET OUT TO READ, AND WHAT IT READ. The evidence's own definition, referenced rather than restated, so one definition moves at a time and a consumer reads one structure at both levels. It is a UNION OF THE ARTEFACTS' COVERAGE BY AREA NAME and never a count: a total computed here would be a second authority on how much of a tenant was seen, agreeing with the documents until the day it did not. An area is in `completed` only where every artefact that asked for it read it — an area one document read and another could not is not the collection having got all of it, and reporting it as complete would be the rounding-up the states exist to stop. The reason an area is missing travels from the artefact that stated it."
+    },
+    "artefacts": {
+      "type": "array",
+      "description": "Every evidence document this collection wrote, with a digest over the bytes. Present and empty on a failure, so an absent list and a collection that produced nothing never read alike. The manifest names them and does not restate what they say: each one carries its own coverage, provenance and facts, and copying those here would be one truth in two places waiting to disagree.",
+      "items": {
+        "$ref": "#/$defs/artefact"
+      }
+    },
+    "digest": {
+      "$ref": "#/$defs/digest"
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "slice": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "mode",
+        "describes",
+        "profile"
+      ],
+      "description": "Which question was asked. The profile is here because the pairing between a collection and the rules that read it is the difference between a report and a wall of `unknown` for facts nobody requested, and a consumer that had to remember the pairing would eventually forget it.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The slice as a person names it on the command line: `sites`, `owners`, `sharing`."
+        },
+        "mode": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The collector mode it ran. A different vocabulary from the name on purpose: the name is the engine's, the mode is the collector's, and they are versioned by different things."
+        },
+        "describes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What this slice reads, in a sentence. Carried so that a document read a year later explains itself without the engine that wrote it."
+        },
+        "profile": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The rule profile that consumes this evidence."
+        }
+      }
+    },
+    "requested": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "site_url",
+        "tenant_url"
+      ],
+      "description": "The addresses the collector was pointed at. Both keys always, with nulls rather than omissions: a slice that walks the tenant has no site, and an absent key and a null would make 'not applicable to this slice' and 'nobody supplied one' read alike.",
+      "properties": {
+        "site_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tenant_url": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The admin centre, where the slice needs one. Some settings are a tenant property about a site, which is why a site address alone is not always enough."
+        }
+      }
+    },
+    "observed": {
+      "oneOf": [
+        {
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/tenant"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "The tenant the artefacts say they are about, taken from their provenance. Null when nothing was written. A TENANT IS NOT A HOSTNAME, and the shape is the evidence's own so that one definition moves at a time."
+    },
+    "identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "client_id",
+        "device_login"
+      ],
+      "description": "Who looked. WHAT AN IDENTITY COULD NOT SEE IS ABSENT FROM THE EVIDENCE RATHER THAN MARKED IN IT, so a collection that does not name the identity that produced it describes part of an estate in language that suits the whole of one.",
+      "properties": {
+        "kind": {
+          "enum": [
+            "application",
+            "delegated",
+            "not-established"
+          ],
+          "description": "Read back from the artefacts rather than assumed from the arguments. `not-established` where nothing was written, or where what was written does not say: a delegated run sees what one person sees, and guessing which kind it was would put a claim about visibility into a document whose whole job is to bound one."
+        },
+        "client_id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The application registration the collection authenticated with. Required, because PnP.PowerShell removed its own multi-tenant application in 2.12.0 and there is no longer any such thing as a collection without one."
+        },
+        "device_login": {
+          "type": "boolean",
+          "description": "Whether the code flow was used, for a host with no browser. A fact about how somebody signed in, not about what they could see."
+        }
+      }
+    },
+    "artefact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "digest",
+        "bytes",
+        "readable"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Relative to the manifest, so a collection survives being moved or sent to somebody whose directories are laid out differently."
+        },
+        "digest": {
+          "$ref": "#/$defs/sha256",
+          "description": "Over the bytes as written. This is what makes the manifest able to say that a document it names is the document that arrived."
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "readable": {
+          "type": "boolean",
+          "description": "Whether the engine could parse it back as evidence. False is a reason to doubt the collection rather than a file to skip quietly, and a false here always has a matching sentence in `because`."
+        }
+      }
+    },
+    "digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "algorithm",
+        "value",
+        "covers"
+      ],
+      "description": "WHAT THIS PROVES AND WHAT IT DOES NOT. It proves that the manifest and the documents it names are the bytes that were written, so a truncated transfer or an edited file is detectable. It proves nothing about who produced them: anybody who can edit the manifest can recompute the digest. Authenticity is a signature and this engine does not claim one.",
+      "properties": {
+        "algorithm": {
+          "const": "sha256"
+        },
+        "value": {
+          "$ref": "#/$defs/sha256",
+          "description": "Over the canonical form of this document with `collection_id` and `digest` removed. THE CANONICAL FORM IS PART OF THE CONTRACT and not an implementation detail, because a consumer has to reproduce it exactly: keys sorted, no whitespace between tokens, UTF-8 with nothing escaped that does not have to be. That last clause was learned rather than chosen — two correct implementations of 'the same JSON' disagreed over ten apostrophes because one escaped them and the other did not."
+        },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": "The top-level members the value was computed over, named rather than assumed. A consumer verifying this does not have to know which version of the engine wrote it to know what was hashed."
+        }
+      }
+    },
+    "collectionVersions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine",
+        "contract",
+        "collector"
+      ],
+      "description": "What produced this. The collector's version is read back from the artefacts and is null where none were written, which separates 'the collector never got far enough to say' from 'it did not say'.",
+      "properties": {
+        "engine": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contract": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The contract bundle this engine publishes, so a consumer can say which vocabulary the document was written in without resolving the $id over a network."
+        },
+        "collector": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

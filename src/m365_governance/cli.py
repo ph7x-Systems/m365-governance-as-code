@@ -255,15 +255,26 @@ def _cmd_show_rule(args) -> int:
     return 0
 
 
-def _relatar_lacunas(outcome) -> None:
+def _report_gaps(outcome) -> None:
     """What the documents themselves say they did not read.
 
     Read from the artefacts rather than from the exit code, and printed
     whenever it is not empty: a partial collection whose gaps are invisible is
     a complete one as far as the reader is concerned.
     """
-    for lacuna in outcome.incomplete:
-        print(f"  {lacuna}")
+    for gap in outcome.incomplete:
+        print(f"  {gap}")
+
+
+def _report_manifest(outcome) -> None:
+    """Where the account of this collection was written.
+
+    Named on every path, including the failures. A consumer that has to find it
+    by convention is a consumer that will one day look in the wrong place and
+    conclude the collection was fine.
+    """
+    if outcome.manifest_path is not None:
+        print(f"  the collection is described in {outcome.manifest_path}")
 
 
 def _cmd_collect(args) -> int:
@@ -288,8 +299,8 @@ def _cmd_collect(args) -> int:
     # print nothing for however long it took and then print everything, so the
     # only thing distinguishing a working collection from a hung one was the
     # patience of the person waiting.
-    def relatar(linha: str) -> None:
-        print(linha, flush=True)
+    def report(line: str) -> None:
+        print(line, flush=True)
 
     outcome = collecting.run_slice(
         args.slice,
@@ -300,24 +311,25 @@ def _cmd_collect(args) -> int:
         device_login=args.device_login,
         count_unique_scopes=args.count_unique_scopes,
         dry_run=args.dry_run,
-        on_progress=None if args.dry_run else relatar,
+        on_progress=None if args.dry_run else report,
     )
 
     if args.dry_run:
         print(outcome.stdout)
         return 0
 
-    estado = outcome.state
+    state = outcome.state
 
-    if estado is collecting.State.FAILED:
+    if state is collecting.State.FAILED:
         print(
             f"\ncollection failed after {outcome.seconds:.1f}s. Nothing was "
             f"written to the tenant; a collector has no write path.",
             file=sys.stderr,
         )
+        _report_manifest(outcome)
         return 1
 
-    if estado is collecting.State.CANCELLED:
+    if state is collecting.State.CANCELLED:
         # What was already written stays, and says what it covers. Deleting it
         # would throw away a reading somebody may still want, and keeping it
         # silently would let it pass for a complete one.
@@ -327,10 +339,11 @@ def _cmd_collect(args) -> int:
             f"and are kept; they describe only what had been read by then.",
             file=sys.stderr,
         )
-        _relatar_lacunas(outcome)
+        _report_gaps(outcome)
+        _report_manifest(outcome)
         return 1
 
-    if estado is collecting.State.PARTIAL:
+    if state is collecting.State.PARTIAL:
         # NOT A FAILURE, and the exit code says so. A collection that reached
         # part of an estate produced evidence worth exactly that part, and
         # rules over it answer `unknown` where the gap could change them.
@@ -338,7 +351,7 @@ def _cmd_collect(args) -> int:
             f"\n{len(outcome.written)} evidence documents in "
             f"{outcome.seconds:.1f}s, and the collection is PARTIAL."
         )
-        _relatar_lacunas(outcome)
+        _report_gaps(outcome)
         if outcome.returncode != 0:
             print(
                 "  the collector stopped before finishing; what it had already "
@@ -350,6 +363,7 @@ def _cmd_collect(args) -> int:
         )
     else:
         print(f"\n{len(outcome.written)} evidence documents in {outcome.seconds:.1f}s.")
+    _report_manifest(outcome)
     # Named rather than assumed: the pairing between a collection and the
     # rules that read it is the difference between a report and a wall of
     # `unknown` for facts nobody requested.
@@ -476,9 +490,53 @@ def _load_rules_for(args) -> list[dict]:
 
 
 def _evidence_documents(path: Path) -> list[Path]:
+    """Every evidence document under `--evidence`. A manifest is not one.
+
+    The exclusion is by name and it is deliberate: a collection manifest is a
+    `.json` file sitting among the documents it describes, and validating it as
+    evidence would refuse a whole evaluation over a document that is not
+    evidence and never claimed to be.
+    """
     if path.is_dir():
-        return sorted(path.rglob("*.json"))
+        return sorted(
+            found
+            for found in path.rglob("*.json")
+            if not found.name.startswith("collection-manifest")
+        )
     return [path]
+
+
+def _report_collections(evidence: Path) -> None:
+    """What the collections that produced this evidence say about themselves.
+
+    CONSERVATIVE ON PURPOSE. Where a manifest exists it is used, because the
+    collection said what it did. Where none exists nothing is claimed: evidence
+    collected before this contract, or exported from elsewhere, carries no
+    account of its own completeness, and inventing one here would be the engine
+    reporting a gap it never measured as an absence of gaps.
+    """
+    found = collecting.manifests(evidence)
+    if not found:
+        return
+
+    short = [m for m in found if m.get("state") != "completed"]
+    if not short:
+        print(
+            f"{len(found)} collections produced this evidence, all complete.",
+            file=sys.stderr,
+        )
+        return
+
+    print(
+        f"{len(found)} collections produced this evidence, {len(short)} of them "
+        f"incomplete. What follows is bounded by what was read:",
+        file=sys.stderr,
+    )
+    for manifest in short:
+        name = manifest.get("slice", {}).get("name", "?")
+        print(f"  {name}: {manifest.get('state')}", file=sys.stderr)
+        for reason in manifest.get("because", []):
+            print(f"    {reason}", file=sys.stderr)
 
 
 def _set_aside_classes(profile_path: Path) -> set[str]:
@@ -517,6 +575,11 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
 
     rules = _load_rules_for(args)
     aside = _set_aside_classes(_profile_source(args).path)
+
+    # Before the results, not after. What was read bounds everything that
+    # follows, and a bound printed underneath a conclusion arrives too late to
+    # change how the conclusion is read.
+    _report_collections(args.evidence)
 
     runs, documents = [], []
     for path in _evidence_documents(args.evidence):
