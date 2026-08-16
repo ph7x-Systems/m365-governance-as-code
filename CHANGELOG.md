@@ -8,6 +8,37 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## Unreleased
+
+The gate that was missing after the upload, and the two defects that proved it
+was missing.
+
+**A successful upload proves the file arrived. It proves nothing about whether
+anybody can install and run it.** `release-check.sh` proves the wheel this
+repository builds; nothing proved the wheel a stranger downloads, and twice a
+version uploaded cleanly and was wrong on arrival — `1.0.0b2` with an install
+command that resolved to nothing, `1.0.0b4` with one naming `1.0.0b3`. A
+release description is frozen at upload, so neither could be corrected without
+spending another version.
+
+- `tools/post-release-check.sh` creates a throwaway environment, installs from
+  the **public index**, and refuses unless the program reports the version that
+  was released, `doctor` is happy, packaged evidence evaluates and decides
+  something, the commands a reader is given all run, and the contract bundle is
+  in the wheel. Then it destroys the environment.
+- `publish.yml` runs it after every publish, waiting for the index to serve the
+  version rather than assuming it does.
+- `docs/RELEASING.md`: **until it passes, the version is uploaded rather than
+  released**, and the site follows in the same slice.
+- **`pip install` is the wrong command for this, and on many machines it is not
+  even possible.** A modern Python refuses to install an application into the
+  system environment (`externally-managed-environment`, PEP 668), which
+  Homebrew's Python, Debian's and Ubuntu's all enforce. The README now gives
+  `pipx`, with a virtual environment as the alternative.
+- The README's status line was stale in every number it carried: it claimed 18
+  rules, a ten-mode collector, 8 profiles, ten commands and 350 tests at 91 per
+  cent. Measured: 20, twelve, 9, 13, and 802 tests at 90 per cent.
+
 ## 1.0.0b4
 
 A collection now reports what it is doing while it does it, and says what it
