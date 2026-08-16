@@ -7,6 +7,8 @@
 [![Licence](https://img.shields.io/pypi/l/m365-governance-as-code?color=2ea44f)](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/LICENSE)
 [![CI](https://img.shields.io/github/actions/workflow/status/ph7x-Systems/m365-governance-as-code/ci.yml?branch=main&label=CI)](https://github.com/ph7x-Systems/m365-governance-as-code/actions/workflows/ci.yml)
 [![Documentation](https://img.shields.io/badge/docs-ph7x.com-1f6feb)](https://ph7x.com/tools/m365-governance-as-code/docs/)
+[![Release](https://img.shields.io/github/v/release/ph7x-Systems/m365-governance-as-code?include_prereleases&label=release&color=6f42c1)](https://github.com/ph7x-Systems/m365-governance-as-code/releases)
+[![DCO](https://img.shields.io/badge/DCO-required-1f6feb)](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/DCO.txt)
 
 > Each badge reports something measured. The Python versions are the ones CI
 > runs the suite against, and the CI badge is the state of `main`. None of them
