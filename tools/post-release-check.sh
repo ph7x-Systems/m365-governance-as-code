@@ -63,9 +63,24 @@ echo "  ✓ $("$ENV_DIR/env/bin/python" --version)"
 
 step "Install $VERSION from the public index"
 # NOT from ./dist, and not with -e. The point is the artefact a stranger gets.
-if ! "$PIP" install --quiet "m365-governance-as-code==$VERSION"; then
-  red "  ✗ $VERSION cannot be installed from PyPI."
-  echo "    The upload may still be propagating, or the version does not exist."
+#
+# RETRIED, because PyPI accepts an upload long before every edge serves it. The
+# first version of this gate failed a release that was already on the index and
+# perfectly good, which reports a slow CDN as a broken release -- worse than not
+# checking, because it teaches everybody to ignore the check.
+INSTALLED=0
+for attempt in $(seq 1 10); do
+  if "$PIP" install --quiet "m365-governance-as-code==$VERSION" 2>/dev/null; then
+    INSTALLED=1
+    [[ $attempt -gt 1 ]] && echo "  (served after $attempt attempts)"
+    break
+  fi
+  sleep 30
+done
+if [[ $INSTALLED -eq 0 ]]; then
+  red "  ✗ $VERSION could not be installed from PyPI within five minutes."
+  echo "    Either it was never uploaded, or the index has not served it yet."
+  echo "    The publish job's own log says which."
   exit 1
 fi
 echo "  ✓ installed from PyPI"

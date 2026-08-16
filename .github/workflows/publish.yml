@@ -101,20 +101,30 @@ jobs:
         with:
           python-version: "3.13"
 
-      # PyPI's index takes a moment to serve a version its API already knows
-      # about. Retrying is the honest way to wait for it; assuming is not.
+      # PyPI accepts an upload long before every edge serves it, and how long
+      # is not ours to decide. The first version of this waited two minutes and
+      # failed a release that was already on the index and perfectly good --
+      # reporting a slow CDN as a broken release, which is worse than not
+      # checking at all.
+      #
+      # Fifteen minutes, and a failure here says which of the two it is: the
+      # upload succeeded in the job above, so this timing out is a wait that
+      # ran out rather than a package that is missing.
       - name: Wait for the index to serve it
         run: |
           version="${GITHUB_REF_NAME#v}"
-          for attempt in 1 2 3 4 5 6; do
-            if pip download --no-deps --dest /tmp/probe \
+          for attempt in $(seq 1 30); do
+            if pip download --no-deps --dest "$RUNNER_TEMP/probe" \
                  "m365-governance-as-code==$version" >/dev/null 2>&1; then
               echo "served after $attempt attempt(s)"
               exit 0
             fi
-            sleep 20
+            sleep 30
           done
-          echo "the index did not serve $version within two minutes" >&2
+          echo "::error::$version did not appear on the index within 15 minutes." >&2
+          echo "The upload succeeded, so this is propagation rather than a" >&2
+          echo "missing package. Re-run this job, or prove it by hand:" >&2
+          echo "  ./tools/post-release-check.sh $version" >&2
           exit 1
 
       - name: ./tools/post-release-check.sh
