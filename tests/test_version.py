@@ -56,11 +56,15 @@ def test_a_linha_de_comandos_responde_a_mesma_versao():
     """Pela mesma via que um utilizador usa, e não pela importação."""
     r = subprocess.run(
         [sys.executable, "-m", "m365_governance.cli", "--version"],
-        capture_output=True, text=True, cwd=RAIZ)
+        capture_output=True,
+        text=True,
+        cwd=RAIZ,
+    )
     assert r.returncode == 0, r.stderr
     assert r.stdout.strip() == _versao_declarada(), (
         f"`--version` respondeu {r.stdout.strip()!r} e o pacote declara "
-        f"{_versao_declarada()!r}")
+        f"{_versao_declarada()!r}"
+    )
 
 
 def test_a_versao_nao_e_a_de_um_pacote_nao_instalado():
@@ -71,4 +75,5 @@ def test_a_versao_nao_e_a_de_um_pacote_nao_instalado():
         pytest.fail(
             "o pacote não está instalado, por isso `__version__` é a "
             "alternativa. Corra `pip install -e .` antes da suíte: um "
-            "assessment produzido assim não diz que motor o decidiu.")
+            "assessment produzido assim não diz que motor o decidiu."
+        )
