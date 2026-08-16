@@ -8,6 +8,28 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## 1.0.0b2
+
+The first release whose project page is right. Nothing in the engine changed.
+
+`1.0.0b1` shipped a README whose banner used a relative path and whose install
+command omitted the pre-release pin. GitHub resolves a relative path against
+the repository; PyPI has none, so the project page opened with a broken image.
+And `pip install m365-governance-as-code` resolves to nothing while the only
+version is a pre-release, which is the first command anybody was given.
+
+A release description on PyPI is frozen at upload, so correcting the file could
+not correct the page. This version is what publishes the corrected one.
+
+- README: absolute URL for the banner, `==` on both install commands.
+- README: `doctor` no longer claimed to print where the packaged fixtures live,
+  because it does not. The command that resolves the directory is given instead.
+- README: badges for the published version, the Python versions CI runs against,
+  the licence and the state of `main`, each with a line saying what it reports
+  and what it does not.
+- `docs/RELEASING.md`: the publishing procedure, including the two things that
+  cannot be fixed after an upload.
+
 ## Unreleased
 
 ### Removed
