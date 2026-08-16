@@ -2,6 +2,17 @@
 
 # Microsoft 365 Governance as Code
 
+[![PyPI](https://img.shields.io/pypi/v/m365-governance-as-code?label=PyPI&color=0073b7)](https://pypi.org/project/m365-governance-as-code/)
+[![Python](https://img.shields.io/pypi/pyversions/m365-governance-as-code?color=3776ab)](https://pypi.org/project/m365-governance-as-code/)
+[![Licence](https://img.shields.io/pypi/l/m365-governance-as-code?color=2ea44f)](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/LICENSE)
+[![CI](https://img.shields.io/github/actions/workflow/status/ph7x-Systems/m365-governance-as-code/ci.yml?branch=main&label=CI)](https://github.com/ph7x-Systems/m365-governance-as-code/actions/workflows/ci.yml)
+[![Documentation](https://img.shields.io/badge/docs-ph7x.com-1f6feb)](https://ph7x.com/tools/m365-governance-as-code/docs/)
+
+> Each badge reports something measured. The Python versions are the ones CI
+> runs the suite against, and the CI badge is the state of `main`. None of them
+> is a claim about the governance conclusions this engine produces; those
+> declare their own basis, one rule at a time.
+
 
 > **Every governance conclusion must declare what kind of truth it is.**
 >
@@ -19,7 +30,7 @@ It does not infer the characteristics of an estate it has not observed. There
 are two modes, and the engine never knows which one produced the evidence it
 is reading: **Live** observes Microsoft 365 directly, **Assessment** evaluates
 evidence exported by something else and says so on the first line of every
-report. See [docs/SCOPE.md](docs/SCOPE.md).
+report. See [docs/SCOPE.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/SCOPE.md).
 
 **Why it exists.** We kept writing the same governance findings into
 documents, and kept watching them lose the one thing that made them useful:
@@ -31,7 +42,7 @@ executable and made impossible to skip.
 against a live tenant, 8 profiles, ten commands and 350 tests at 91 per
 cent coverage. Beta because the model has stopped moving: the outcomes, the
 resolution order, the basis types and the evidence schema are frozen, and
-[docs/MILESTONE-A.md](docs/MILESTONE-A.md) records what closing SharePoint
+[docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md) records what closing SharePoint
 end to end actually cost. The rule set is still small, and that is the next
 milestone rather than a caveat on this one.
 
@@ -89,7 +100,7 @@ pass · fail · unknown · not-applicable · invalid-evidence · error
 `error` is the only one a rule may not author a message for: it describes the
 engine, not the resource.
 
-Full model in [docs/TRUST-MODEL.md](docs/TRUST-MODEL.md).
+Full model in [docs/TRUST-MODEL.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/TRUST-MODEL.md).
 
 ---
 
@@ -120,8 +131,8 @@ Layer 6 is numbered like the others on purpose. No validator can prove that a
 rule represents a document correctly, and pretending otherwise would be the
 exact failure the trust model exists to prevent.
 
-Details in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and
-[docs/JSON-SCHEMA-PLAN.md](docs/JSON-SCHEMA-PLAN.md).
+Details in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/ARCHITECTURE.md) and
+[docs/JSON-SCHEMA-PLAN.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/JSON-SCHEMA-PLAN.md).
 
 ---
 
@@ -309,7 +320,7 @@ reasons from the bound:
   so the answer is **unknown**.
 
 Without an upper bound the engine can prove `pass` and can never prove `fail`.
-That table lives in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), not in each
+That table lives in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/ARCHITECTURE.md), not in each
 rule: a rule author declares the condition, and the engine decides what can be
 concluded from what was collected.
 
@@ -340,7 +351,7 @@ And when the answer is that there is no answer:
 fact about collection, not about the resource.
 ```
 
-One example per outcome is in [examples/](examples/), every one of them
+One example per outcome is in [examples/](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/examples/), every one of them
 produced by a real run and checked by CI. There is no example of `error`: a
 rule cannot author one, so an example of it would be an example of a bug.
 
@@ -365,9 +376,9 @@ Stated here rather than discovered:
   claim can only be checked by a person.
 - **The model has not been reviewed by anyone outside its authors.** Two
   independent reviews are pending; see
-  [docs/review/RULE-REVIEW.md](docs/review/RULE-REVIEW.md). Changes already
+  [docs/review/RULE-REVIEW.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/review/RULE-REVIEW.md). Changes already
   decided but deliberately not yet applied are in
-  [docs/POST-REVIEW-CHANGES.md](docs/POST-REVIEW-CHANGES.md).
+  [docs/POST-REVIEW-CHANGES.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/POST-REVIEW-CHANGES.md).
 
 ---
 
@@ -407,12 +418,12 @@ absent and never as compliant.
 ## Roadmap
 
 `1.0.0-beta.1` is the baseline. Milestone A closed SharePoint end to end and
-does not reopen; see [docs/MILESTONE-A.md](docs/MILESTONE-A.md).
+does not reopen; see [docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md).
 
 **Epic B is open**: everything one identity cannot see. Application
 authentication, group expansion, importers, HTML reporting, and SARIF once the
 representation of `unknown` is decided. The model is frozen for the whole of
-it. See [docs/EPIC-B.md](docs/EPIC-B.md).
+it. See [docs/EPIC-B.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/EPIC-B.md).
 
 The table below is the direction, ordered by what would make the tool useful
 to somebody else soonest rather than by what is most interesting to build.
@@ -437,10 +448,10 @@ inferring `basis` from a source, or treating missing evidence as compliance.
 ## Contributing
 
 Rules are the interesting contribution. A pull request that adds one is
-reviewed against [docs/review/RULE-REVIEW.md](docs/review/RULE-REVIEW.md),
+reviewed against [docs/review/RULE-REVIEW.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/review/RULE-REVIEW.md),
 and the criterion is not agreement — it is disagreeing in the right place.
 
-Read [CONTRIBUTING.md](CONTRIBUTING.md) first; it is short. Before opening a
+Read [CONTRIBUTING.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/CONTRIBUTING.md) first; it is short. Before opening a
 pull request:
 
 ```bash
@@ -449,8 +460,8 @@ pytest
 python tools/examples.py --check
 ```
 
-Also: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) ·
-[SECURITY.md](SECURITY.md) · [CHANGELOG.md](CHANGELOG.md)
+Also: [CODE_OF_CONDUCT.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/CODE_OF_CONDUCT.md) ·
+[SECURITY.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/SECURITY.md) · [CHANGELOG.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/CHANGELOG.md)
 
 The build fails, deliberately, when a rule is missing `basis`, when a
 documented type has no source, when a convention has no rationale, when
@@ -463,7 +474,7 @@ field appears anywhere.
 That last one is `additionalProperties: false` everywhere, and it is not
 pedantry: `severty: high` must stop the build, not disappear.
 
-When you change a rule, read [docs/CHANGE-POLICY.md](docs/CHANGE-POLICY.md).
+When you change a rule, read [docs/CHANGE-POLICY.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/CHANGE-POLICY.md).
 The test is one sentence: *if a report produced yesterday would be interpreted
 differently today, the rule version must change.*
 
@@ -471,4 +482,4 @@ differently today, the rule version must change.*
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/LICENSE).
