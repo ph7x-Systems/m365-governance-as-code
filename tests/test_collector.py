@@ -15,6 +15,7 @@ from __future__ import annotations
 import re
 import shutil
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -478,3 +479,42 @@ def test_the_evidence_schema_knows_nothing_about_fixtures():
         "`synthetic` entered the evidence schema. It is repository metadata, "
         "not a way for evidence to arrive."
     )
+
+
+def test_a_cmdlet_named_in_a_comment_is_not_a_cmdlet_the_collector_calls():
+    """The measured surface is parsed, never grepped.
+
+    A regular expression over the source counts every mention. The moment a
+    comment explained why `Get-PnPTenantId` was NOT being called, the
+    measurement said it was, and `docs/OBSERVABLE-SURFACE.md` published a
+    collection path that does not exist.
+
+    That document is the engine's own coverage question asked of itself, so a
+    false positive there is the product overstating what it reads -- which is
+    the failure it exists to make impossible everywhere else.
+    """
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "surface", Path(__file__).resolve().parents[1] / "tools" / "surface.py"
+    )
+    surface = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(surface)
+
+    called = surface.used()
+    if not called:
+        pytest.skip("pwsh is not installed, and the AST needs it")
+
+    source = "".join(
+        p.read_text(encoding="utf-8")
+        for p in (DATA / "collectors").rglob("*")
+        if p.suffix in {".ps1", ".psm1"}
+    )
+
+    # The cmdlet the collector deliberately does not call, and says so.
+    assert "Get-PnPTenantId" in source
+    assert "Get-PnPTenantId" not in called
+
+    # And the ones it really does call are still there.
+    assert "Get-PnPConnection" in called
+    assert "Get-PnPWeb" in called

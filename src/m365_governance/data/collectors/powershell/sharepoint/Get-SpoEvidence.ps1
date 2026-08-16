@@ -154,10 +154,13 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents')]
+    [ValidateSet('Connect', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents')]
     [string] $Mode,
 
-    [Parameter(Mandatory = $true)]
+    # Not mandatory, because `Connect` writes no evidence and demanding a path
+    # it will never use would be asking for a lie. Checked in the body instead,
+    # where the mode is known.
+    [Parameter()]
     [string] $OutputPath,
 
     [Parameter(Mandatory = $true)]
@@ -212,6 +215,25 @@ foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions
 
 $TenantHost = Connect-Collector -Mode $Mode -ClientId $ClientId -SiteUrl $SiteUrl `
     -TenantUrl $TenantUrl -DeviceLogin:$DeviceLogin
+
+# --- connect only ------------------------------------------------------------
+#
+# The mode that answers "can this application registration reach this tenant,
+# and as whom". It writes nothing and returns before evidence exists, because
+# there is none: a connection is not an observation about a resource.
+#
+# The line is prefixed so a caller can find it in a stream that also carries
+# whatever PnP.PowerShell printed on the way, including a device code somebody
+# has to read.
+if ($Mode -eq 'Connect') {
+    $facts = Get-ConnectionFacts -TenantHost $TenantHost
+    Write-Host ('CONNECTION ' + ($facts | ConvertTo-Json -Depth 4 -Compress))
+    return
+}
+
+if (-not $OutputPath) {
+    throw "Mode $Mode writes evidence and needs -OutputPath."
+}
 
 Initialize-Evidence -CollectorName $CollectorName `
     -CollectorVersion $CollectorVersion -TenantHost $TenantHost

@@ -10,6 +10,45 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
+`connect`: the other half of `doctor`, and the measurement defect it exposed.
+
+**Nothing answered whether you can reach the tenant.** `doctor` reports whether
+this installation is sound. Whether the application registration in front of
+you can reach the tenant in front of you, and as whom, was found out several
+minutes into a collection, from a failure that looked like a tenant problem
+rather than a consent problem.
+
+- `m365-governance connect --client-id X --tenant-url Y` opens a read-only
+  session, streams what the collector prints — including the device code
+  somebody has to read off the screen — and reports what was established.
+  Four words rather than a boolean: `established`, `refused`, `unreachable`,
+  `cancelled`. A tenant that answered and would not have us is a different
+  sentence from one that never answered, and collapsing them sends a person to
+  check their network when the answer was consent.
+- **It never says which organisation answered.** A host is an endpoint; the
+  identity is the directory id, and no collection path for it is proven on a
+  tenant. So a successful sign-in reports the address and
+  `identity: not-established`, and says why in the report itself.
+- It writes no evidence and produces no document. A connection is not an
+  observation about a resource, and it is deliberately not a contract: what it
+  reports is the state of a session that ends when the process does.
+- A `Connect` mode in the collector, which writes nothing and returns before
+  any evidence exists.
+
+**A documented path for the directory identity exists, and we said there was
+none.** `Get-PnPTenantId -TenantUrl` is documented as not requiring an active
+connection. Recorded in `docs/COLLECTION-PATH-AUDIT.md` as
+`needs-tenant-validation` rather than implemented: documentation proves the
+cmdlet exists and what it accepts, and only a run proves it returns a value.
+
+**The measured surface was counting comments as calls.** `used()` in
+`tools/surface.py` was a regular expression over the collector's source, so the
+moment a comment explained why `Get-PnPTenantId` was *not* being called, the
+published document said it was. It reads the syntax tree now, which is what the
+read-only gate has always done to the same files, and a test freezes it.
+
+## Unreleased — the release gate
+
 The gate that was missing after the upload, and the two defects that proved it
 was missing.
 
