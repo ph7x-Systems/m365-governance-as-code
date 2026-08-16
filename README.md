@@ -1,4 +1,4 @@
-![Microsoft 365 Governance as Code, by pH7x Systems](docs/banner.png)
+![Microsoft 365 Governance as Code, by pH7x Systems](https://raw.githubusercontent.com/ph7x-Systems/m365-governance-as-code/main/docs/banner.png)
 
 # Microsoft 365 Governance as Code
 
