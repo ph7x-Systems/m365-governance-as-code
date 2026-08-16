@@ -74,14 +74,58 @@ def read_cmdlets() -> list[str] | None:
     return sorted(set(result.stdout.split())) if result.returncode == 0 else None
 
 
+#: The same reading the read-only gate does, asked for command names instead of
+#: for mutating verbs. Kept out of the f-string so the line length is the
+#: script's own rather than an artefact of indentation.
+_AST_SCRIPT = """
+$names = @()
+$files = Get-ChildItem -Recurse '<ROOT>' -Include *.ps1, *.psm1
+foreach ($file in $files) {
+    $ast = [System.Management.Automation.Language.Parser]::ParseFile(
+        $file.FullName, [ref]$null, [ref]$null)
+    $commands = $ast.FindAll({
+        param($n)
+        $n -is [System.Management.Automation.Language.CommandAst]
+    }, $true)
+    $names += $commands | ForEach-Object { $_.GetCommandName() }
+}
+$names | Where-Object { $_ } | Sort-Object -Unique
+"""
+
+
 def used() -> set[str]:
-    """What the collector actually calls, from its own source."""
-    source = "".join(
-        p.read_text(encoding="utf-8")
-        for p in COLLECTORS.rglob("*")
-        if p.suffix in {".ps1", ".psm1"}
+    """What the collector actually calls, from its own syntax tree.
+
+    PARSED, NOT GREPPED, and the difference is a claim this document makes
+    about itself. A regular expression over the source counts every mention:
+    the moment a comment explained why `Get-PnPTenantId` was NOT being called,
+    the measurement said it was, and the published surface asserted a
+    collection path that does not exist.
+
+    The AST is already how the read-only gate proves there is no write path, so
+    this is the same reading applied to the same files. A cmdlet named inside a
+    comment or a help block is not a call, and a cmdlet reached through a
+    variable is still invisible to both -- which is a floor under review rather
+    than a substitute for it, and the same caveat the read-only gate carries.
+    """
+    if not shutil.which("pwsh"):
+        return set()
+
+    result = subprocess.run(
+        [
+            "pwsh",
+            "-NoProfile",
+            "-Command",
+            _AST_SCRIPT.replace("<ROOT>", str(COLLECTORS)),
+        ],
+        capture_output=True,
+        text=True,
     )
-    return set(re.findall(r"\bGet-Pnp\w+|\bGet-PnP\w+|\bTest-PnP\w+", source))
+    if result.returncode != 0:
+        return set()
+
+    called = set(result.stdout.split())
+    return {name for name in called if re.fullmatch(r"(?:Get|Test)-PnP\w+", name, re.I)}
 
 
 def version() -> str:

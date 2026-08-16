@@ -114,6 +114,66 @@ rules use the identity path, and the storage rule is safe by design. It is
 recorded here so that the next person to write a rule on an enumerated
 property finds the question already asked.
 
+## The directory identity, which we said had no path
+
+**Recorded 2026-08-16.** Every evidence document this engine writes carries
+`tenant.id: null`, with the reason stated in `New-TenantIdentity`:
+
+```powershell
+# Null until a collection path for the directory identity is proven on
+# a tenant. The host is an endpoint, and saying so is the point.
+id = $null
+```
+
+**A path exists, and it is documented.** PnP.PowerShell ships `Get-PnPTenantId`,
+and its own documentation states that the `-TenantUrl` form *does not require an
+active connection to that tenant*:
+
+```powershell
+Get-PnPTenantId -TenantUrl <String> [-AzureEnvironment <AzureEnvironment>]
+Get-PnPTenantId [-Connection <PnPConnection>]
+```
+
+Read from the project's documentation on GitHub rather than from memory, and
+the parameter sets confirmed against the installed module.
+
+**Why this matters more than one null field.** A tenant has one directory
+identity and any number of addresses, and the engine says so in its own
+contract. Today the host carries the identity as a compatibility measure, which
+means a multi-geo satellite reads as a second tenant and two hosts of one
+organisation cannot be folded together without inventing something. The id is
+what settles it.
+
+### needs-tenant-validation
+
+Documentation proves the cmdlet exists and what it accepts. **Only a run proves
+it returns a value**, which is the standing rule here and the reason this is
+recorded rather than implemented into a rule:
+
+```text
+Run it interactively against a real tenant, and check:
+
+    Get-PnPTenantId -TenantUrl https://<tenant>.sharepoint.com
+    Get-PnPTenantId                     (with a connection open)
+
+A GUID from both, equal        → the path is proven, and `tenant.id` can stop
+                                 being null.
+A value from one and not the
+other                          → the form that works is the collection path,
+                                 and the other is not.
+Neither                        → the field stays null and this entry stays
+                                 open, which is the honest outcome.
+```
+
+**Owner-only**, like every tenant validation here: it needs interactive access
+this machine's executor does not have, and never a device code.
+
+**What it unblocks.** Any consumer that authenticates has to be able to say
+which organisation it is actually looking at, and it may not derive that from a
+hostname somebody typed. Until this is proven, the honest answer after
+authenticating is the host and `identity: not-established`, which is what
+`connect` reports.
+
 ## The open gap
 
 `sharing.anonymous_link_expiry_days` is collected and cannot be interpreted.

@@ -31,7 +31,15 @@ import sys
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import __version__, assessment, collecting, comparison, explaining, reporting
+from . import (
+    __version__,
+    assessment,
+    collecting,
+    comparison,
+    connecting,
+    explaining,
+    reporting,
+)
 from . import doctor as doctor_module
 from . import inspect as inspect_module
 from .engine import evaluate
@@ -115,6 +123,30 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     collect.add_argument(
         "--dry-run", action="store_true", help="print the command and reach no tenant"
+    )
+
+    connect = sub.add_parser(
+        "connect",
+        help="reach a tenant and say what was established. Collects nothing",
+    )
+    connect.add_argument(
+        "--client-id",
+        required=True,
+        help="an Entra ID app registration. Required: PnP.PowerShell has "
+        "shipped no application of its own since 2.12.0",
+    )
+    connect.add_argument("--site-url")
+    connect.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
+    connect.add_argument(
+        "--device-login",
+        action="store_true",
+        help="authenticate with a device code, for hosts with no browser",
+    )
+    connect.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="json for a consumer. Not a contract: a session is not a document",
     )
 
     explain = sub.add_parser(
@@ -372,6 +404,64 @@ def _cmd_collect(args) -> int:
         f"profiles/{chosen.profile}.yaml --evidence {args.output}"
     )
     return 0
+
+
+def _cmd_connect(args) -> int:
+    """Reach a tenant, and say what was established.
+
+    The other half of `doctor`. That one answers whether this installation is
+    sound; nothing answered whether the application registration in front of
+    you can reach the tenant in front of you, and as whom — which was found out
+    several minutes into a collection, from a failure that looked like a tenant
+    problem rather than a consent problem.
+    """
+    for problem in collecting.preflight():
+        print(problem, file=sys.stderr)
+        return 2
+
+    if not args.site_url and not args.tenant_url:
+        print(
+            "connect needs --tenant-url or --site-url: an address to reach.",
+            file=sys.stderr,
+        )
+        return 2
+
+    # Printed as it arrives, and this one is not a convenience. A device-code
+    # sign-in prints a code somebody has to read off the screen, so buffering
+    # would ask a person to wait for something they had already been shown.
+    def report(line: str) -> None:
+        if args.format == "text":
+            print(line, flush=True)
+
+    established = connecting.connect(
+        client_id=args.client_id,
+        site_url=args.site_url,
+        tenant_url=args.tenant_url,
+        device_login=args.device_login,
+        on_progress=report,
+    )
+
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "reach": str(established.reach),
+                    "attempted_at": established.attempted_at,
+                    "seconds": round(established.seconds, 3),
+                    "exit_code": established.returncode,
+                    "requested": established.requested,
+                    "established": established.established,
+                    "identity": established.identity,
+                    "because": established.because,
+                },
+                indent=2,
+            )
+        )
+    else:
+        print()
+        sys.stdout.write(connecting.describe(established))
+
+    return 0 if established.reach is connecting.Reach.ESTABLISHED else 1
 
 
 def _cmd_explain(args) -> int:
@@ -874,6 +964,7 @@ _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
     "collect": _cmd_collect,
+    "connect": _cmd_connect,
     "explain": _cmd_explain,
     "doctor": _cmd_doctor,
     "stats": _cmd_stats,

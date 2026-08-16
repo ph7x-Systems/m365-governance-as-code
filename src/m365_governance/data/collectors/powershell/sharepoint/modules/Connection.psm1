@@ -82,10 +82,20 @@ function Connect-Collector {
         [Parameter()] [switch] $DeviceLogin
     )
 
-    $connectUrl = if ($script:AdminModes -contains $Mode) { $TenantUrl } else { $SiteUrl }
-    if (-not $connectUrl) {
-        $needed = if ($script:AdminModes -contains $Mode) { '-TenantUrl' } else { '-SiteUrl' }
-        throw "Mode $Mode needs $needed."
+    # `Connect` takes whichever address it was given, and prefers the admin
+    # centre. It is a reachability check rather than a slice, so it has no
+    # opinion about which endpoint the caller intends to collect from -- and
+    # refusing it for the wrong one would answer a question nobody asked.
+    if ($Mode -eq 'Connect') {
+        $connectUrl = if ($TenantUrl) { $TenantUrl } else { $SiteUrl }
+        if (-not $connectUrl) { throw 'Mode Connect needs -TenantUrl or -SiteUrl.' }
+    }
+    else {
+        $connectUrl = if ($script:AdminModes -contains $Mode) { $TenantUrl } else { $SiteUrl }
+        if (-not $connectUrl) {
+            $needed = if ($script:AdminModes -contains $Mode) { '-TenantUrl' } else { '-SiteUrl' }
+            throw "Mode $Mode needs $needed."
+        }
     }
     if ($Mode -eq 'SiteSharing' -and -not $SiteUrl) {
         throw 'Mode SiteSharing needs -SiteUrl as well as -TenantUrl.'
@@ -101,4 +111,52 @@ function Connect-Collector {
     return Get-TenantHost -Url $connectUrl
 }
 
-Export-ModuleMember -Function Connect-Collector, Get-TenantHost
+function Get-ConnectionFacts {
+    <#
+        .SYNOPSIS
+        What the open session turned out to be. Never what it might be.
+
+        .DESCRIPTION
+        Read from PnP.PowerShell's own connection object rather than restated
+        from the arguments: the point of connecting is to find out, and echoing
+        back what was asked for would answer a different question.
+
+        WHAT IS DELIBERATELY ABSENT. The connection object also exposes
+        ClientSecret, Certificate and PSCredential. None of them is read here
+        and none may ever be: a command that printed a credential would put one
+        into a terminal, a log and whatever captured that log.
+
+        THE DIRECTORY IDENTITY IS NOT HERE EITHER, and that is the honest
+        answer rather than an omission. `tenant.id` is null throughout this
+        engine because no collection path for it is proven on a real tenant.
+        A documented candidate exists -- Get-PnPTenantId -TenantUrl -- and it
+        is recorded in docs/COLLECTION-PATH-AUDIT.md as needs-tenant-validation.
+        Until a run settles it, a host is an address and nothing establishes
+        which directory it belongs to.
+    #>
+    [CmdletBinding()]
+    param(
+        # Passed in rather than read from a script variable. `$script:TenantHost`
+        # belongs to Evidence.psm1, and a module scope is not shared: reading it
+        # here would have silently produced an empty host.
+        [Parameter(Mandatory = $true)] [string] $TenantHost
+    )
+
+    $connection = Get-PnPConnection
+
+    # Interactive and device sign-in are both delegated: the session sees what
+    # one person sees. Recording the flow separately from the identity kind
+    # keeps two different questions apart.
+    [ordered]@{
+        connected        = $true
+        host             = $TenantHost
+        url              = [string] $connection.Url
+        client_id        = [string] $connection.ClientId
+        identity_kind    = 'delegated'
+        connection_type  = [string] $connection.ConnectionType
+        scopes           = @($connection.Scopes)
+        tenant_directory = $null
+    }
+}
+
+Export-ModuleMember -Function Connect-Collector, Get-TenantHost, Get-ConnectionFacts
