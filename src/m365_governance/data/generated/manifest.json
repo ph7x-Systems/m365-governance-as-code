@@ -8,9 +8,10 @@
     "itself opportunistically against whatever engine happened to be on",
     "the machine would be reproducible only on that machine."
   ],
-  "contract_version": "1.0.0b3",
+  "contract_version": "1.0.0b4",
   "generated": [
     "Assessment.g.cs",
+    "Collection.g.cs",
     "Comparison.g.cs",
     "Evidence.g.cs",
     "Run.g.cs",
@@ -29,6 +30,10 @@
     "https://ph7x.com/schemas/m365-governance/assessment/4.0.0": {
       "digest": "bbeeb65ac9cfa1df07bde6cd3f9e5c65fcac43fb633a5809da55ac279a97a706",
       "path": "schemas/assessment.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
+      "digest": "6283a2f038717dad38ce892ed18ae0c0682fd70833cda43d340bdbba9faa6c4a",
+      "path": "schemas/collection.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/2.0.0": {
       "digest": "d49f23278570d66d0f2974a29456e73906fcf32a2548e1b2f420a1b41cca31d2",
@@ -79,5 +84,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "5e71384aaa42474fa74a755c844cce95cddd77c3268f05df3ec38383e7b50a5f"
+  "set_digest": "3fa4b931cf7be868b6d296002154bbd14d125d8f60dc3c001b8dab246bc158cb"
 }

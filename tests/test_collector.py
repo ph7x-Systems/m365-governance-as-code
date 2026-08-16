@@ -408,7 +408,7 @@ def test_no_fixture_claims_an_api_the_collector_never_uses():
     )
 
 
-REGISTO = DATA / "fixture-registry.json"
+REGISTRY = DATA / "fixture-registry.json"
 
 
 def test_every_shipped_fixture_is_classified_once():
@@ -422,7 +422,7 @@ def test_every_shipped_fixture_is_classified_once():
     """
     import json
 
-    doc = json.loads(REGISTO.read_text(encoding="utf-8"))
+    doc = json.loads(REGISTRY.read_text(encoding="utf-8"))
     entries = {f["path"]: f for f in doc["fixtures"]}
     on_disk = {str(p.relative_to(DATA)) for p in (DATA / "fixtures").rglob("*.json")}
 
@@ -451,7 +451,7 @@ def test_the_public_example_is_classified_and_is_a_construction():
     silence."""
     import json
 
-    doc = json.loads(REGISTO.read_text(encoding="utf-8"))
+    doc = json.loads(REGISTRY.read_text(encoding="utf-8"))
     target = "fixtures/sharepoint/list-over-limit.json"
     f = next(
         (x for x in doc["fixtures"] if x["path"].replace("\\", "/") == target),

@@ -24,6 +24,91 @@ that is a result rather than a gap: SharePoint Online's seven domains all have
 rules, collectors, fixtures and tests, and the three candidates above are each
 blocked for a reason that is written down.
 
+---
+
+# Recomputed 2026-08-16: what a collection reports while it runs
+
+**Delivered in `1.0.0b4`.** Kept below as the reasoning that produced it, because the arithmetic in the table above is only auditable if the candidate that beat it is still readable. The contract is in
+[COLLECTION-MANIFEST.md](COLLECTION-MANIFEST.md).
+
+> **What is still open:** an assessment does not record which collection
+> produced its evidence, or in what state that collection ended. The
+> manifest travels beside the evidence and not inside the assessment, so a
+> recipient sent only an assessment is not being told whether the
+> collection behind it was complete. That costs an assessment contract
+> version and is the next candidate.
+
+The table above scores rules and domains. This is neither, and it outranks all
+three: it is a gap in what the engine can say about its own work.
+
+## What `collect` cannot say today
+
+```python
+result = subprocess.run(argv, capture_output=True, text=True)   # collecting.py
+
+@dataclass
+class Outcome:
+    slice_name, returncode, seconds, written, stdout, stderr
+
+    @property
+    def ok(self) -> bool:
+        return self.returncode == 0
+```
+
+**Nothing until it ends.** `capture_output=True` buffers the child's output
+until the process exits, so `collect sites` against a large tenant prints
+nothing for however long it takes and then prints everything. The collector
+does write progress, three lines of it including
+`"321 sites enumerated by this identity"`, and none of it reaches the person
+waiting.
+
+**And `ok` is a boolean over an exit code.** A collection that reached two
+hundred of three hundred sites and then lost its connection is `ok == False`,
+which is the same answer as one that never authenticated. The first produced
+evidence worth two hundred sites; the second produced nothing.
+
+That is a collapse this engine does not make anywhere else. Coverage keeps
+`requested` and `completed` apart and names the reason a fact was unavailable.
+A rule answers `unknown` rather than failing when the gap could change its
+answer. The collection outcome is the one place where a partial result and a
+failure are the same value.
+
+## What the slice adds
+
+| State | Means |
+|---|---|
+| `completed` | Everything the slice asked for |
+| `partial` | Usable evidence, incomplete coverage, with the reason |
+| `failed` | No usable artefact |
+| `cancelled` | Stopped deliberately, with a stated rule about what is kept |
+
+And the child's output streams rather than being buffered, so a caller can
+report what has been done while it is being done.
+
+## Why this belongs to the engine
+
+Every consumer wants it and none of them can derive it. A caller reading
+`returncode` and guessing at partial from the number of files on disk is a
+caller inventing governance meaning from a side effect, and the engine's whole
+position is that nobody downstream should have to.
+
+The CLI wants it first: `collect` is the one command with a duration, and today
+it is silent for the whole of it.
+
+## What this costs
+
+**A contract version.** The state crosses the boundary in what the engine
+publishes, so consumers re-vendor. That is a real cost and it is the correct
+one: a collection state that lived only in a consumer would be that consumer's
+opinion about an exit code.
+
+## What must not change
+
+Read only. The collector has no write path, CI proves it by parsing every file
+in the tree on every release, and nothing here goes near that. Streaming what a
+collector already prints is a change to how its output is carried, not to what
+it is allowed to do.
+
 ## 1 — Anyone link expiry
 
 Microsoft recommends requiring expiry, and the only collectable value remains

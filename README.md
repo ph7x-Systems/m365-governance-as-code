@@ -213,7 +213,7 @@ the source, and how the rule can pass while the problem survives.
 | | |
 |---|---|
 | `explain OUTCOME` | What `pass`, `fail`, `unknown`, `not-applicable`, `invalid-evidence` and `error` mean, and what each is not. `explain all` for the six |
-| `collect SLICE` | Run a collector against a tenant and write evidence. Evaluates nothing |
+| `collect SLICE` | Run a collector against a tenant and write evidence. Evaluates nothing. Reports progress as it arrives, and writes a manifest saying whether the collection was `completed`, `partial`, `failed` or `cancelled` |
 | `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around. Says what it found, not only whether it liked it |
 | `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
 | `show-rule ID` | One rule in full, including what it does not establish |

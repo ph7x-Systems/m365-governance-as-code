@@ -90,6 +90,9 @@ GENERATE = (
     "assessment.schema.json",
     "comparison.schema.json",
     "evidence.schema.json",
+    # The account a collection writes of itself. A consumer opens one to learn
+    # whether the evidence beside it is all of what was asked for.
+    "collection.schema.json",
 )
 
 #: Constructs that decide the SHAPE. The generator handles these.
@@ -507,12 +510,54 @@ def check_closure(schemas: dict) -> None:
         u
         for u in declared
         if u.rsplit("/", 2)[-2]
-        in ("run", "assessment", "comparison", "run-set", "evidence", "rule")
+        in (
+            "run",
+            "assessment",
+            "comparison",
+            "run-set",
+            "evidence",
+            "rule",
+            "collection",
+        )
     }
     orphans = declared - reached - roots
     if orphans:
         raise Unsupported(
             f"resources nobody references and nobody roots: {sorted(orphans)}"
+        )
+
+
+RECORD = re.compile(r"^public sealed record ([A-Za-z0-9_]+)\(", re.MULTILINE)
+
+
+def check_names(rendered: dict[str, str]) -> None:
+    """No two files declare the same record, because there is one namespace.
+
+    FOUND BY ADDING A SCHEMA. The collection contract has a `versions` and a
+    `coverage` of its own, and so do the assessment and the evidence: the
+    generator emitted three records called `Versions` and `Coverage` into one
+    namespace, all of them different shapes. Every file was individually
+    correct, the manifest was consistent, and the bundle would not compile —
+    which nothing here would have said, because nothing here compiles it.
+
+    The fix in a schema is one of two things, and the message says both: adopt
+    the existing definition by `$ref` where the shape really is the same, or
+    give the local one a name of its own where it is not.
+    """
+    seen: dict[str, str] = {}
+    clashes: list[str] = []
+    for filename, text in sorted(rendered.items()):
+        for name in RECORD.findall(text):
+            if name in seen:
+                clashes.append(f"{name} in both {seen[name]} and {filename}")
+            else:
+                seen[name] = filename
+    if clashes:
+        raise Unsupported(
+            "two records with one name in one namespace: "
+            + "; ".join(clashes)
+            + ". Either `$ref` the existing definition where the shape is the "
+            "same, or rename the local `$defs` entry where it is not."
         )
 
 
@@ -577,6 +622,7 @@ def main() -> int:
 
     OUT.mkdir(parents=True, exist_ok=True)
     stale = []
+    rendered = {}
     for name in GENERATE:
         path = SCHEMAS / name
         try:
@@ -585,12 +631,19 @@ def main() -> int:
             print(f"  ✗ {refused}")
             return 1
         target = OUT / (pascal(name.replace(".schema.json", "")) + ".g.cs")
+        rendered[target.name] = text
         if args.check:
             if not target.is_file() or target.read_text(encoding="utf-8") != text:
                 stale.append(target.name)
         else:
             target.write_text(text, encoding="utf-8")
             print(f"  wrote {target.relative_to(ROOT)}")
+
+    try:
+        check_names(rendered)
+    except Unsupported as refused:
+        print(f"  ✗ {refused}")
+        return 1
 
     manifest = build_manifest()
     manifest_path = OUT.parent / "manifest.json"

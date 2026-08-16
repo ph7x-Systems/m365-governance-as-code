@@ -25,10 +25,9 @@ another, which is how a convenience becomes canonical truth.
 from __future__ import annotations
 
 import hashlib
-import json
 from typing import Any
 
-from . import identity, registry
+from . import canonical, identity, registry
 from .results import RunSet
 
 #: Which members of `canonical` are hashed.
@@ -70,11 +69,13 @@ def _digest(value: Any) -> str:
 
     Escaping as little as possible is the only version of this that two
     languages agree on without one of them imitating the other's defaults.
+
+    LIVES IN `canonical.py` since a second document began publishing a digest a
+    recipient recomputes. A second copy of these four lines would be a second
+    definition of the canonical form, and the two would agree until whichever
+    one nobody was looking at drifted.
     """
-    encoded = json.dumps(
-        value, sort_keys=True, separators=(",", ":"), ensure_ascii=False
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    return canonical.digest(value)
 
 
 def _hashable(value: Any, name: str) -> Any:
