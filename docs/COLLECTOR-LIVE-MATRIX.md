@@ -37,7 +37,7 @@ to exercise.
 | `agents` | ✓ | 0 agents, 2026-08-10 | — | n.a. | **none**, by decision | **live-validated** |
 | `tenant-sharing` | ✓ | 3 properties, 2026-08-08 | — | n.a. | `SPO-SHARE-003`, `SPO-SHARE-004` | **live-validated** |
 | `spfx` | ✓ | not observed | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **negative path validated** |
-| `conditional-access` | ✓ | 10 policies, 1 location, defaults | `403` without `Policy.Read.All` | none at 10 items | none yet | **fully live-validated** at the provider |
+| `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | **none**, by decision | **provider live-validated, slice not live-validated** |
 
 ### What this table answers immediately
 
@@ -173,3 +173,18 @@ does not block shipping; it stays unproved until a tenant large enough exists.
 August, so the surface has never returned data here. It is correctly
 `needs-tenant-validation`, and `SPO-SPFX-001` is the one rule in the product
 whose supporting collector has never returned real evidence.
+
+### 4. The `conditional-access` slice has not itself been run against a tenant
+
+**The provider has, and that is a different claim.** The Graph reader read ten
+policies, one named location and the Security Defaults state from the test
+tenant, and was refused with `403` by an identity without `Policy.Read.All`.
+What has not run live is the CLI slice above it: the evidence documents, the
+coverage carried whole into each one, the refusal document and the collection
+manifest are proved offline, against every answer in the matrix, and have never
+been produced from a real read.
+
+The gap is a token, not a design: the slice spends one somebody already holds,
+and obtaining it costs the tenant owner an interactive sign-in — gap 1 again,
+in its Graph form. The row says `slice not live-validated` until that run
+happens, and no rule is written on this evidence in the meantime.
