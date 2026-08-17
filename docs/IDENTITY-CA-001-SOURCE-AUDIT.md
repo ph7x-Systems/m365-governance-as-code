@@ -220,7 +220,67 @@ Each needs an authenticated read against a real tenant with `Policy.Read.All`,
 which is owner-only. None of them blocks the provider, the fixtures, the
 contracts, the rules or the tests, which is why the slice continues.
 
-## 14. Live observation: `BLOCKED_OWNER_AUTH_CONFIG`
+## 14. Live observation, 2026-08-17: `BLOCKED_OWNER_POLICY_READ_ALL`
+
+**A session was opened against the authorised tenant and Graph was read.** The
+tenant is not named here: this repository is public.
+
+| Surface | Answer |
+|---|---|
+| `identity/conditionalAccess/policies` | `403` |
+| `identity/conditionalAccess/namedLocations` | `403` |
+| `policies/identitySecurityDefaultsEnforcementPolicy` | `403` |
+
+```text
+scopes granted:  AllSites.Read User.Read profile openid email
+Policy.Read.All: absent
+Graph's reason:  "required scopes are missing in the token"
+```
+
+**This is the case the provider exists for, observed rather than imagined.**
+Three surfaces answered `403` and not one of them answered `200` with an empty
+collection. A naive collector would have reported a tenant with no Conditional
+Access policies, no named locations and no Security Defaults state — the
+strongest possible governance conclusion, drawn from a permission nobody
+granted.
+
+The engine's answer is the opposite: `permission-denied` on all three,
+`coverage.unavailable` carrying Graph's own sentence, and any rule over that
+evidence answering `unknown`.
+
+### What this settles, and what it does not
+
+**Settled by a run:** the sign-in path works, `Get-PnPAccessToken
+-ResourceTypeName Graph` returns a Graph token from the existing session, and
+the token's `scp` claim is where the granted scopes actually are — which is
+what the provider reads to record identity.
+
+**Not settled, because a `403` reads nothing:** pagination behaviour, throttling
+limits, whether roles differ in the fields they return, and the licensing
+question. All four remain `needs-tenant-validation` from §13, unchanged.
+
+### What unblocks it
+
+`Policy.Read.All` consented for the application registration used above. The
+application exists and authenticates; it holds `AllSites.Read` and nothing that
+reaches identity. Granting a Graph permission is an owner action on the
+directory, and this engine never requests consent.
+
+**One thing learned at the owner's expense.** Two interactive sessions were
+spent on client ids: one invented, one read from the wrong column. Both would
+have been answered in three seconds without a browser, by asking the token
+endpoint whether the application exists:
+
+```bash
+curl -s -X POST "https://login.microsoftonline.com/<tenant>/oauth2/v2.0/devicecode" \
+  -d "client_id=<candidate>&scope=https%3A%2F%2Fgraph.microsoft.com%2F.default"
+```
+
+An application that exists returns a device code; one that does not returns
+`AADSTS700016`. **Validate a client id there before spending a session on a
+browser.**
+
+## 15. Previously: `BLOCKED_OWNER_AUTH_CONFIG`
 
 **Recorded 2026-08-17.** The slice's authentication precedence was walked
 without printing any value:
