@@ -56,7 +56,8 @@
         "estate",
         "canonical_hash",
         "coverage",
-        "evidence_hash"
+        "evidence_hash",
+        "read_by"
       ],
       "description": "One read of the estate, by identity rather than by copy. The read itself is a separate document; embedding it here would duplicate the thing this record describes, and the duplicate is what somebody edits.",
       "properties": {
@@ -89,6 +90,10 @@
           "type": "string",
           "pattern": "^[a-f0-9]{64}$",
           "description": "A digest of what this read OBSERVED — its items and its coverage — as distinct from `canonical_hash`, which covers the whole document including its id and timestamp. The two exist separately because a read stamped twice with different ids has two document digests and one evidence digest, and only the second answers the question a reader actually has: were these two different observations, or one observation presented twice? The record states the fact and never converts it into a verdict, because nothing in the evidence can tell those two apart."
+        },
+        "read_by": {
+          "$ref": "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0#/properties/read_by",
+          "description": "Who took this read. Carried into the record rather than referenced, because a reader weighing a missing item needs to know whether the identity that looked for it could have seen it."
         }
       }
     },

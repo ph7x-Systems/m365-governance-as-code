@@ -12,7 +12,8 @@
     "estate",
     "produced_by",
     "coverage",
-    "items"
+    "items",
+    "read_by"
   ],
   "properties": {
     "$schema": {
@@ -74,6 +75,45 @@
       "type": "string",
       "minLength": 1,
       "description": "How `content_digest` was computed, for every item this read carries one. Recorded because a digest without its algorithm is not comparable: a quickXorHash and a SHA-256 of the same bytes differ, and a comparison that did not know would report every single item as changed. Present only when the read carries digests at all."
+    },
+    "read_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "scopes"
+      ],
+      "description": "WHO TOOK THIS READ, and it is not a courtesy field. An estate read by an identity that cannot see all of it is byte-identical to a smaller estate: the items it could not see are simply absent, with no gap to mark them, because nothing refused — nothing was ever offered. Compare a read taken by an administrator against one taken by an ordinary user and every item the second could not see reports as missing, which is the most damaging false positive this product could produce. The identity is recorded so a comparison can refuse to make that mistake. Never the token: an identity that travelled with its bearer would put a credential into every archive a report is copied into.",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "application",
+            "delegated",
+            "not-established"
+          ],
+          "description": "From the token's own claims. An application token acts as itself with app roles; a delegated one acts as a person with their scopes AND their effective permissions, which is why two delegated reads by different people are not comparable."
+        },
+        "principal": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who the read acted as, when known. Two reads by different principals see different estates, and the difference does not appear anywhere else in the document."
+        },
+        "scopes": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "Granted scopes or app roles, values only. A narrower scope set is a narrower estate, and it is visible here rather than inferred from what came back.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "tenant": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The directory the session was opened in, as the issuer states it. Two reads of different tenants are a move; two reads of the same tenant by different identities are a measurement problem."
+        }
+      }
     }
   },
   "$defs": {

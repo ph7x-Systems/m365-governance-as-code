@@ -94,6 +94,7 @@ def reference(read: dict) -> dict:
             [read.get("items"), read.get("coverage")]
         ),
         "coverage": read.get("coverage", []),
+        "read_by": read["read_by"],
     }
 
 
@@ -146,6 +147,7 @@ def verify(document: dict, *, schemas: Any = None) -> list[str]:
 
     problems.extend(_ordering_rule(document))
     problems.extend(_distinct_reads_rule(document))
+    problems.extend(_same_eyes_rule(document))
     problems.extend(_declared_dimension_rule(document))
     problems.extend(_content_rule(document))
     return problems
@@ -190,6 +192,43 @@ def _distinct_reads_rule(document: dict) -> list[str]:
             "nothing"
         ]
     return []
+
+
+def _same_eyes_rule(document: dict) -> list[str]:
+    """Two reads taken by different identities are not comparable.
+
+    AN ESTATE READ BY SOMEBODY WHO CANNOT SEE ALL OF IT IS BYTE-IDENTICAL TO A
+    SMALLER ESTATE. Nothing refuses, so nothing writes a gap: the items are
+    simply absent. Compare an administrator's baseline against an ordinary
+    user's verification and every item the second could not see reports as
+    missing — the most damaging thing this product could say, and it would say
+    it with a clean coverage list.
+
+    Refused rather than reported, because there is no finding that repairs it.
+    Every `presence` result in such a record is unsound, and a document whose
+    every row may be wrong is not a document with a caveat.
+    """
+    before = document.get("baseline", {}).get("read_by", {})
+    after = document.get("verification", {}).get("read_by", {})
+    if not before or not after:
+        return []
+
+    problems = []
+    if before.get("principal") != after.get("principal"):
+        problems.append(
+            f"the baseline was read as {before.get('principal') or 'an unnamed '
+            'identity'} and the verification as {after.get('principal') or 'an '
+            'unnamed identity'}. What one identity cannot see is absent rather "
+            "than refused, so every missing item here may be a permission "
+            "difference wearing the clothes of a loss"
+        )
+    if sorted(before.get("scopes", [])) != sorted(after.get("scopes", [])):
+        problems.append(
+            "the two reads were taken with different scopes ("
+            + ", ".join(sorted(set(before.get("scopes", [])) ^ set(after.get("scopes", []))))
+            + "), so they did not have the same estate available to them"
+        )
+    return problems
 
 
 def _declared_dimension_rule(document: dict) -> list[str]:

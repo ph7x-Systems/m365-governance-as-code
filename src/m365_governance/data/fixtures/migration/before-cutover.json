@@ -51,5 +51,13 @@
       ],
       "sharing_links": []
     }
+  },
+  "read_by": {
+    "kind": "delegated",
+    "principal": "an operator",
+    "scopes": [
+      "Files.Read.All",
+      "Sites.Read.All"
+    ]
   }
 }

@@ -34,6 +34,8 @@ def read(which: str, *, at: str, digest: str, coverage=None) -> dict:
         "canonical_hash": digest,
         "evidence_hash": canonical.digest([{which: True}, coverage or []]),
         "coverage": coverage or [],
+        "read_by": {"kind": "delegated", "principal": "an operator",
+                    "scopes": ["Files.Read.All"]},
     }
 
 
@@ -797,6 +799,7 @@ def test_a_record_built_from_a_thin_source_still_validates(schemas):
     thin = {
         "items": {PLAN: {}},
         "coverage": [],
+        "read_by": {"kind": "delegated", "scopes": []},
         "unsupported": ["size", "content", "authorship", "versions", "permissions",
                         "sharing-links"],
     }
@@ -828,7 +831,8 @@ def test_two_reads_stamped_twice_share_one_evidence_digest():
     observed = {"items": {PLAN: {"size": 10}}, "coverage": []}
     sides = [
         migration.reference(
-            dict(observed, read_id=name, taken_at=at, estate="e")
+            dict(observed, read_id=name, taken_at=at, estate="e",
+                 read_by={"kind": "delegated", "scopes": []})
         )
         for name, at in (("first", "2026-03-01T09:00:00Z"),
                          ("second", "2026-03-09T09:00:00Z"))
@@ -849,7 +853,8 @@ def test_a_real_difference_is_not_reported_as_identical(schemas):
 
 
 def test_the_report_leads_with_the_tautology_rather_than_burying_it(schemas):
-    observed = {"items": {PLAN: {"size": 10}}, "coverage": []}
+    observed = {"items": {PLAN: {"size": 10}}, "coverage": [],
+                "read_by": {"kind": "delegated", "scopes": []}}
     document = migration.record(
         baseline=dict(observed, read_id="a", taken_at="2026-03-01T09:00:00Z",
                       estate="e", produced_by="p"),
@@ -860,3 +865,54 @@ def test_the_report_leads_with_the_tautology_rather_than_burying_it(schemas):
     summary = migration.report(document).split("## What was verified")[0]
     assert "observed byte-identical estates" in summary
     assert "does not guess" in summary
+
+
+# ---------------------------------------------------------------------------
+# the same eyes on both sides
+# ---------------------------------------------------------------------------
+
+
+def eyes(**overrides) -> dict:
+    return {"kind": "delegated", "principal": "an operator",
+            "scopes": ["Files.Read.All"], **overrides}
+
+
+def test_two_reads_by_different_people_are_refused(schemas):
+    """The most damaging thing this product could say, and it would look clean.
+
+    An estate read by somebody who cannot see all of it is byte-identical to a
+    smaller estate: nothing refuses, so nothing writes a gap. Every item the
+    second identity could not see would report as missing, with an empty
+    coverage list to reassure the reader.
+    """
+    mixed = record(
+        baseline=BEFORE | {"read_by": eyes(principal="an administrator")},
+        verification=AFTER | {"read_by": eyes(principal="an ordinary user")},
+    )
+    assert schemas.problems(mixed) == [], "well-formed, which is the danger"
+
+    problems = migration.verify(mixed, schemas=schemas)
+    assert problems and "wearing the clothes of a loss" in problems[0]
+
+
+def test_two_reads_with_different_scopes_are_refused(schemas):
+    narrower = record(
+        baseline=BEFORE | {"read_by": eyes(scopes=["Files.Read.All", "Sites.Read.All"])},
+        verification=AFTER | {"read_by": eyes(scopes=["Files.Read.All"])},
+    )
+    problems = migration.verify(narrower, schemas=schemas)
+    assert problems and "Sites.Read.All" in problems[0]
+
+
+def test_the_same_identity_on_both_sides_passes(schemas):
+    same = record(
+        baseline=BEFORE | {"read_by": eyes()},
+        verification=AFTER | {"read_by": eyes()},
+    )
+    assert migration.verify(same, schemas=schemas) == []
+
+
+def test_a_record_cannot_omit_who_read_it(schemas):
+    without = record()
+    del without["baseline"]["read_by"]
+    assert schemas.problems(without) != []

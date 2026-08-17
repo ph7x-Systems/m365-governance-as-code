@@ -261,6 +261,12 @@ def read(
         "produced_by": f"{NAME} via {reader.source_api}",
         "coverage": coverage,
         "items": items,
+        "read_by": {
+            "kind": reader.identity.kind,
+            "scopes": list(reader.identity.scopes),
+            **({"tenant": reader.identity.observed_tenant_id}
+               if reader.identity.observed_tenant_id else {}),
+        },
     }
 
     # What this read cannot provide, as opposed to what it did not fetch. Only
