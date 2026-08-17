@@ -1,0 +1,406 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/migration-verification/1.0.0",
+  "title": "Migration verification",
+  "description": "What a move actually moved, and what it did not, established against a baseline taken before it. A migration cannot be verified after the fact: decommissioning the source is the point of the exercise, so a record produced at sign-off has nothing left to compare against. This document therefore always names two reads of the same estate at two times, and it is never produced by whatever performed the move — a report by the producer of the work is the producer's account of its own work, and that is the condition this contract exists to remove. It carries no score, no percentage and no grade: `96% migrated` is precisely the sentence a reader would substitute for the eight dimensions below, and the substitution is what destroys the document's value.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "baseline",
+    "verification",
+    "move",
+    "dimensions",
+    "findings"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/migration-verification/1.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it."
+    },
+    "baseline": {
+      "$ref": "#/$defs/read",
+      "description": "The estate as it stood BEFORE the move. Without this there is no verification, only an inventory of the destination."
+    },
+    "verification": {
+      "$ref": "#/$defs/read",
+      "description": "The same estate AFTER the move."
+    },
+    "move": {
+      "$ref": "#/$defs/move"
+    },
+    "dimensions": {
+      "type": "array",
+      "minItems": 1,
+      "description": "What was compared, declared rather than implied. A dimension absent from this list was not examined, and a reader must never infer from silence that it was fine — which is what every report that omits its own scope invites.",
+      "items": {
+        "$ref": "#/$defs/dimension"
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "One entry per item and dimension that did not pass silently. An empty array means every compared item matched on every declared dimension, within the coverage each read states.",
+      "items": {
+        "$ref": "#/$defs/finding"
+      }
+    }
+  },
+  "$defs": {
+    "read": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "read_id",
+        "taken_at",
+        "estate",
+        "canonical_hash",
+        "coverage"
+      ],
+      "description": "One read of the estate, by identity rather than by copy. The read itself is a separate document; embedding it here would duplicate the thing this record describes, and the duplicate is what somebody edits.",
+      "properties": {
+        "read_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "taken_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "estate": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What was read, as the operator named it. Deliberately not a tenant: a move from a file share to a cloud service has no tenant on one side, and a field that only fits one platform would have to be replaced the first time this contract is used off it."
+        },
+        "canonical_hash": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "The read's canonical digest. Identity that can be verified rather than trusted, and the reason no path appears here: a path says where a file sat on one machine, not what it held."
+        },
+        "coverage": {
+          "type": "array",
+          "description": "What this read could NOT establish, and why. The most important field in the document. A migration report that cannot say what it failed to read is indistinguishable from one that read everything, and the two are the opposite of each other.",
+          "items": {
+            "$ref": "#/$defs/gap"
+          }
+        }
+      }
+    },
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "state"
+      ],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What could not be read — a container, a path, a class of item."
+        },
+        "state": {
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/absentState",
+          "description": "Why it is absent, from the vocabulary the evidence contract owns. Referenced rather than restated, because a second copy of an enum is a second definition of it."
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "move": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "produced_by"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What kind of move this was, as the operator named it. Free text on purpose: an enum written now would be a list of the move types one company has seen."
+        },
+        "performed_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The tool or party that performed the move, when known. Recorded so a reader can see that it is NOT the party that produced this document."
+        },
+        "produced_by": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The engine version that produced this record. A verification nobody can reproduce is an opinion about history."
+        }
+      }
+    },
+    "dimension": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "state"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "presence",
+            "count",
+            "size",
+            "content",
+            "authorship",
+            "versions",
+            "permissions",
+            "sharing-links"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "compared",
+            "not-compared"
+          ]
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "digest",
+            "size-only",
+            "metadata"
+          ],
+          "description": "How the dimension was established. It exists for `content`: comparing byte size is not comparing content, and two files of equal size differ. A `size-only` comparison may never conclude that content matched, and this contract refuses to let it."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why it was not compared. Required when it was not, because `not-compared` without a reason is indistinguishable from an oversight."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "state": {
+                "const": "not-compared"
+              }
+            },
+            "required": [
+              "state"
+            ]
+          },
+          "then": {
+            "required": [
+              "reason"
+            ],
+            "not": {
+              "required": [
+                "method"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "name": {
+                "const": "content"
+              },
+              "state": {
+                "const": "compared"
+              }
+            },
+            "required": [
+              "name",
+              "state"
+            ]
+          },
+          "then": {
+            "required": [
+              "method"
+            ],
+            "properties": {
+              "method": {
+                "enum": [
+                  "digest",
+                  "size-only"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "item",
+        "dimension",
+        "outcome"
+      ],
+      "properties": {
+        "item": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The item this concerns, by the identity used on both sides."
+        },
+        "dimension": {
+          "type": "string",
+          "enum": [
+            "presence",
+            "count",
+            "size",
+            "content",
+            "authorship",
+            "versions",
+            "permissions",
+            "sharing-links"
+          ]
+        },
+        "outcome": {
+          "type": "string",
+          "enum": [
+            "pass",
+            "fail",
+            "unknown",
+            "not-applicable",
+            "invalid-evidence"
+          ],
+          "description": "Five states, never three. `unknown` is the one a migration tool's report does not have, and it is the reason this contract exists: a path too long to read, a checked-out file or an unresolvable principal is a stated limitation, never a silent pass and never a failure."
+        },
+        "side": {
+          "type": "string",
+          "enum": [
+            "baseline",
+            "verification",
+            "both"
+          ],
+          "description": "Which read could not establish the item, for `unknown`. Not knowing on which side the gap fell is a different and weaker statement than not knowing at all."
+        },
+        "state": {
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/absentState",
+          "description": "Why the item could not be established, for `unknown`."
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "digest",
+            "size-only",
+            "metadata"
+          ],
+          "description": "How this particular finding was established, where the dimension admits more than one way."
+        },
+        "observed": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "What each side actually showed. Required for `fail`, because asserting a difference without saying what differed is an accusation rather than a finding.",
+          "required": [
+            "baseline",
+            "verification"
+          ],
+          "properties": {
+            "baseline": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            },
+            "verification": {
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "unknown"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "required": [
+              "side",
+              "state"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "side"
+                  ]
+                },
+                {
+                  "required": [
+                    "state"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "outcome": {
+                "const": "fail"
+              }
+            },
+            "required": [
+              "outcome"
+            ]
+          },
+          "then": {
+            "required": [
+              "observed"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "dimension": {
+                "const": "content"
+              },
+              "method": {
+                "const": "size-only"
+              }
+            },
+            "required": [
+              "dimension",
+              "method"
+            ]
+          },
+          "then": {
+            "properties": {
+              "outcome": {
+                "not": {
+                  "const": "pass"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
