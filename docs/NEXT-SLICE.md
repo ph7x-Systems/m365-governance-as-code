@@ -45,6 +45,42 @@ Slice       OPEN
 post-release gate has proven it from there. Only then does `IDENTITY-APPS-001`
 start.
 
+## PUBLIC-MANIFEST-001 — one published description of what this engine can do
+
+**Accepted 2026-08-17, and it runs before the Identity surface expands further.**
+
+### Question
+
+> What does this engine collect, decide and promise, in one document a consumer
+> can read without cloning the repository?
+
+### Why
+
+The facts exist and are scattered across the places that produce them: the
+slice registry knows the collectors, the rule files know the rules and their
+basis, the schemas know the contracts, `docs/COLLECTOR-LIVE-MATRIX.md` knows
+what has been proven against a tenant, and the source audits know the
+permissions and limitations. Nothing joins them, so every consumer that wants
+the whole picture rebuilds it by hand — and a hand-built copy of a fact this
+repository owns is a second authority that goes stale silently.
+
+### Scope
+
+Publish a versioned contract carrying, for each capability: its collectors, the
+Microsoft API each reads, the permissions each requires, the evidence contracts
+it produces, the rules that consume it with their basis and limitations, the
+relationships between them, and what live validation has established. Generated
+from the registry, the rules, the schemas and the matrix — never hand-written,
+and refused by the gate if it drifts from what it describes.
+
+`registry.contract(name)` and the existing schema bundle are the pattern; the
+manifest is one more contract published the same way, not a new mechanism.
+
+### What it is not
+
+Not state, not a queue, not a roadmap. A capability appears in it when it is
+implemented and shipped, and never because it is planned.
+
 ## Why this slice
 
 The next service is Microsoft Entra ID, starting with the access-policy surface that

@@ -107,6 +107,21 @@ Do not write durable product state outside the repository. Temporary
 directories, home-directory notes and scratch files are not evidence and do not
 survive the person who made them.
 
+### Execution cost
+
+`release-check.sh` runs the whole suite, builds a wheel in an isolated
+environment, installs it into a second one and starts PowerShell. **Run it once,
+when the work is finished.** While iterating, run the narrowest thing that can
+fail: one test file, one lint path, one command.
+
+Never start a second heavy process while one is running, and never run the gate
+"to see where it is". The machine that runs the gate is the machine somebody is
+working on, and a burst of builds takes their editor down with it — which costs
+more than the round of feedback was worth.
+
+Clean up what a run leaves behind: a gate that traps its own temporary
+directories still leaves them when it is interrupted.
+
 ## Decisions requiring explicit authorization
 
 - publish a release, or change what a published contract means;
