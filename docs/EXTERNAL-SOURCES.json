@@ -1,94 +1,143 @@
 {
- "_comment": [
-  "The external-source licence register. Every external repository or",
-  "publisher this product reads from has a record here before its material",
-  "is used for anything beyond reading it.",
-  "",
-  "tests/test_external_sources.py is the gate. It fails when a record is",
-  "incomplete, when an intended use outruns the permissions recorded for it,",
-  "and when a source referenced in the repository has no record at all.",
-  "",
-  "NO LICENCE FOUND IS NOT PERMISSION. An unresolved licence blocks reuse,",
-  "never discovery: facts and public API behaviour stay investigable, and",
-  "the executor may well conclude that nothing needed copying.",
-  "",
-  "Every field below was read from the source on the date in `verified`.",
-  "Nothing here is inferred from a repository's reputation or its owner."
- ],
- "intended_use_levels": {
-  "factual-discovery": "Read to learn what exists. Nothing leaves the source.",
-  "reference-only": "Cited or quoted briefly, with attribution. No code taken.",
-  "runtime-dependency": "Invoked as an installed tool. Not vendored, not shipped.",
-  "adapted-implementation": "An approach reimplemented here, not transcribed.",
-  "copied-code": "Source text carried into this repository.",
-  "upstream-contribution": "Work sent back to the source project."
- },
- "sources": [
-  {
-   "id": "pnp/powershell",
-   "repository": "https://github.com/pnp/powershell",
-   "publisher": "PnP community, copyright .NET Foundation",
-   "license": "MIT",
-   "license_source": "https://github.com/pnp/powershell/blob/v3.3.0/LICENSE",
-   "code_reuse": true,
-   "modification": true,
-   "redistribution": true,
-   "attribution": "MIT notice and copyright must travel with any copied or modified source.",
-   "content_license_differs": false,
-   "content_license_note": "One LICENSE covers the repository; no separate documentation licence exists.",
-   "intended_use": [
-    "runtime-dependency",
-    "reference-only"
-   ],
-   "use_note": "The collector calls PnP.PowerShell 3.3.0, which the operator installs. No source is vendored, copied or redistributed here, and nothing from it enters the wheel, any installer built from this project, or this repository. The licence is read at the tag that matches the version the collector requires: `dev` moves, and a licence read from a branch is a licence for whatever that branch says tomorrow.",
-   "contribution_terms": "https://github.com/pnp/powershell/blob/v3.3.0/CONTRIBUTING.md",
-   "verified": "2026-08-10",
-   "pinned_version": "3.3.0",
-   "pinned_tag": "v3.3.0",
-   "pinned_commit": "e84e7c3",
-   "package": "https://www.powershellgallery.com/packages/PnP.PowerShell/3.3.0",
-   "installed_by": "operator",
-   "shipped": false
+  "_comment": [
+    "The external-source licence register. Every external repository or",
+    "publisher this product reads from has a record here before its material",
+    "is used for anything beyond reading it.",
+    "",
+    "tests/test_external_sources.py is the gate. It fails when a record is",
+    "incomplete, when an intended use outruns the permissions recorded for it,",
+    "and when a source referenced in the repository has no record at all.",
+    "",
+    "NO LICENCE FOUND IS NOT PERMISSION. An unresolved licence blocks reuse,",
+    "never discovery: facts and public API behaviour stay investigable, and",
+    "the executor may well conclude that nothing needed copying.",
+    "",
+    "Every field below was read from the source on the date in `verified`.",
+    "Nothing here is inferred from a repository's reputation or its owner.",
+    "",
+    "WHICH SOURCE ANSWERS WHICH QUESTION, and it is not interchangeable.",
+    "Microsoft Learn documents Microsoft's own surfaces: Graph operations,",
+    "permissions, national clouds, resource types and enum conventions. It does",
+    "NOT document PnP.PowerShell, which is a community project: a search there",
+    "for a PnP cmdlet returns unrelated Azure or Exchange pages, which is worse",
+    "than nothing because it looks like an answer.",
+    "",
+    "So the authority for a PnP cmdlet -- whether it exists, its parameter sets,",
+    "and whether it needs an active connection -- is the pnp/powershell",
+    "repository's own documentation, read at the pinned tag. Learned by getting",
+    "it wrong: `Get-PnPTenantId -TenantUrl` was described from an error message",
+    "before the documentation was opened, and the documentation said something",
+    "the error message could not: that the call requires no active connection.",
+    "",
+    "AND A DOCUMENT IS NOT A RUN. Either source proves what is published, never",
+    "what a tenant returns. A mechanism read out of a result is inference: prove",
+    "it by removing the thing, in an environment confirmed empty beforehand."
+  ],
+  "intended_use_levels": {
+    "factual-discovery": "Read to learn what exists. Nothing leaves the source.",
+    "reference-only": "Cited or quoted briefly, with attribution. No code taken.",
+    "runtime-dependency": "Invoked as an installed tool. Not vendored, not shipped.",
+    "adapted-implementation": "An approach reimplemented here, not transcribed.",
+    "copied-code": "Source text carried into this repository.",
+    "upstream-contribution": "Work sent back to the source project."
   },
-  {
-   "id": "pnp/script-samples",
-   "repository": "https://github.com/pnp/script-samples",
-   "publisher": "Microsoft 365 Community",
-   "license": "MIT",
-   "license_source": "https://github.com/pnp/script-samples/blob/main/LICENSE",
-   "code_reuse": true,
-   "modification": true,
-   "redistribution": true,
-   "attribution": "MIT notice and copyright must travel with any copied or modified source.",
-   "content_license_differs": false,
-   "content_license_note": "The samples are markdown documents holding scripts, and the one LICENSE covers both.",
-   "intended_use": [
-    "factual-discovery"
-   ],
-   "use_note": "docs/PNP-INVENTORY.md counts samples by governance area and names three by filename. No sample text was read into this repository, and none may be without raising the intended use first.",
-   "contribution_terms": null,
-   "contribution_terms_note": "No CONTRIBUTING file at the repository root or under .github/ on 2026-08-08. Unresolved, which is why upstream-contribution is not an intended use: the gate blocks it until somebody finds the terms.",
-   "verified": "2026-08-08"
-  },
-  {
-   "id": "learn.microsoft.com",
-   "repository": "https://learn.microsoft.com",
-   "publisher": "Microsoft",
-   "license": "proprietary",
-   "license_source": "https://learn.microsoft.com/legal/termsofuse",
-   "code_reuse": false,
-   "modification": false,
-   "redistribution": false,
-   "attribution": "Short quotations are attributed in place and linked to the page quoted.",
-   "content_license_differs": true,
-   "content_license_note": "Documentation prose is proprietary. Code samples on Learn are commonly published under MIT in their own repositories, which is a separate question to resolve per sample rather than assumed from the page.",
-   "intended_use": [
-    "reference-only",
-    "factual-discovery"
-   ],
-   "use_note": "The normative authority for documented requirements, limits and guidance. Rules cite it; the repository quotes short passages with attribution and copies no page.",
-   "contribution_terms": null,
-   "verified": "2026-08-08"
-  }
- ]
+  "sources": [
+    {
+      "id": "pnp/powershell",
+      "repository": "https://github.com/pnp/powershell",
+      "publisher": "PnP community, copyright .NET Foundation",
+      "license": "MIT",
+      "license_source": "https://github.com/pnp/powershell/blob/v3.3.0/LICENSE",
+      "code_reuse": true,
+      "modification": true,
+      "redistribution": true,
+      "attribution": "MIT notice and copyright must travel with any copied or modified source.",
+      "content_license_differs": false,
+      "content_license_note": "One LICENSE covers the repository; no separate documentation licence exists.",
+      "intended_use": [
+        "runtime-dependency",
+        "reference-only"
+      ],
+      "use_note": "The collector calls PnP.PowerShell 3.3.0, which the operator installs. No source is vendored, copied or redistributed here, and nothing from it enters the wheel, any installer built from this project, or this repository. The licence is read at the tag that matches the version the collector requires: `dev` moves, and a licence read from a branch is a licence for whatever that branch says tomorrow.",
+      "contribution_terms": "https://github.com/pnp/powershell/blob/v3.3.0/CONTRIBUTING.md",
+      "verified": "2026-08-10",
+      "pinned_version": "3.3.0",
+      "pinned_tag": "v3.3.0",
+      "pinned_commit": "e84e7c3",
+      "package": "https://www.powershellgallery.com/packages/PnP.PowerShell/3.3.0",
+      "installed_by": "operator",
+      "shipped": false,
+      "authoritative_for": [
+        "whether a PnP cmdlet exists in the pinned version",
+        "its parameter sets and accepted values",
+        "whether it requires an active connection",
+        "the shape of what it returns"
+      ],
+      "not_authoritative_for": [
+        "Microsoft service behaviour or limits",
+        "Graph permissions",
+        "what a real tenant returns"
+      ],
+      "documentation_path": "https://github.com/pnp/powershell/tree/v3.3.0/documentation — canonical documentation fixed to the version used by the Engine; one page per cmdlet. Microsoft Learn does not document this module.",
+      "verified_cmdlet_documentation": "https://github.com/pnp/powershell/blob/v3.3.0/documentation/Get-PnPTenantId.md"
+    },
+    {
+      "id": "pnp/script-samples",
+      "repository": "https://github.com/pnp/script-samples",
+      "publisher": "Microsoft 365 Community",
+      "license": "MIT",
+      "license_source": "https://github.com/pnp/script-samples/blob/main/LICENSE",
+      "code_reuse": true,
+      "modification": true,
+      "redistribution": true,
+      "attribution": "MIT notice and copyright must travel with any copied or modified source.",
+      "content_license_differs": false,
+      "content_license_note": "The samples are markdown documents holding scripts, and the one LICENSE covers both.",
+      "intended_use": [
+        "factual-discovery"
+      ],
+      "use_note": "docs/PNP-INVENTORY.md counts samples by governance area and names three by filename. No sample text was read into this repository, and none may be without raising the intended use first.",
+      "contribution_terms": null,
+      "contribution_terms_note": "No CONTRIBUTING file at the repository root or under .github/ on 2026-08-08. Unresolved, which is why upstream-contribution is not an intended use: the gate blocks it until somebody finds the terms.",
+      "verified": "2026-08-08"
+    },
+    {
+      "id": "learn.microsoft.com",
+      "repository": "https://learn.microsoft.com",
+      "publisher": "Microsoft",
+      "license": "proprietary",
+      "license_source": "https://learn.microsoft.com/legal/termsofuse",
+      "code_reuse": false,
+      "modification": false,
+      "redistribution": false,
+      "attribution": "Short quotations are attributed in place and linked to the page quoted.",
+      "content_license_differs": true,
+      "content_license_note": "Documentation prose is proprietary. Code samples on Learn are commonly published under MIT in their own repositories, which is a separate question to resolve per sample rather than assumed from the page.",
+      "intended_use": [
+        "reference-only",
+        "factual-discovery"
+      ],
+      "use_note": "The normative authority for documented requirements, limits and guidance. Rules cite it; the repository quotes short passages with attribution and copies no page.",
+      "contribution_terms": null,
+      "verified": "2026-08-08",
+      "authoritative_for": [
+        "Microsoft Graph operations, request shapes and response resource types",
+        "least-privileged delegated and application permissions",
+        "national cloud availability",
+        "documented limits and documented guidance a rule may cite as basis",
+        "evolvable enum conventions, including unknownFutureValue"
+      ],
+      "not_authoritative_for": [
+        "PnP.PowerShell, which it does not document",
+        "what a tenant actually returns, which only a run establishes"
+      ],
+      "documentation_root": "https://learn.microsoft.com/graph/",
+      "slice_operation_references": [
+        "https://learn.microsoft.com/graph/api/conditionalaccessroot-list-policies?view=graph-rest-1.0",
+        "https://learn.microsoft.com/graph/api/conditionalaccessroot-list-namedlocations?view=graph-rest-1.0",
+        "https://learn.microsoft.com/graph/api/identitysecuritydefaultsenforcementpolicy-get?view=graph-rest-1.0",
+        "https://learn.microsoft.com/graph/api/resources/conditionalaccesspolicy?view=graph-rest-1.0"
+      ]
+    }
+  ]
 }

@@ -1,0 +1,221 @@
+# IDENTITY-CA-001 — source and collection-path audit
+
+**Read 2026-08-17 from Microsoft Learn, against `graph-rest-1.0`.** Every row
+below was opened, not remembered. Re-open the pages before writing the
+collector: this file records what the contract said on that date and is
+evidence of intent rather than proof of runtime behaviour.
+
+> **Nothing here has been observed against a tenant.** This audit establishes
+> what Microsoft documents. What the API returns is a separate question, and
+> the entries marked `needs-tenant-validation` say so.
+
+## Source authority and canonical location
+
+The documentation remains at the publisher; this repository records the exact
+authority and links rather than copying it:
+
+| Question | Canonical documentation | Location |
+|---|---|---|
+| Microsoft Graph operations, permissions, resource semantics and national-cloud support | Microsoft Learn — Microsoft Graph v1.0 | the exact `learn.microsoft.com/graph/api/...` operation and resource pages cited in each section below |
+| PnP.PowerShell cmdlet existence, parameter sets, connection requirements and return shape | PnP.PowerShell documentation owned by `pnp/powershell`, fixed to the version used by the Engine | <https://github.com/pnp/powershell/tree/v3.3.0/documentation> |
+| `Get-PnPTenantId` in the fixed PnP version | the cmdlet page in the same tagged documentation | <https://github.com/pnp/powershell/blob/v3.3.0/documentation/Get-PnPTenantId.md> |
+
+Microsoft Learn is not the authority for PnP.PowerShell. The current PnP website may
+describe a newer release, so reproducible implementation questions use the tagged
+repository documentation. Runtime output remains evidence of one run, not vendor
+documentation.
+
+## 1. Endpoints and response types
+
+| Surface | Read operation | Response type |
+|---|---|---|
+| Conditional Access policies | `GET /v1.0/identity/conditionalAccess/policies` | collection of `conditionalAccessPolicy` |
+| Named locations | `GET /v1.0/identity/conditionalAccess/namedLocations` | collection of `namedLocation` |
+| Security Defaults | `GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy` | single `identitySecurityDefaultsEnforcementPolicy` |
+
+**Authentication strengths are not a fourth call.** The policy response embeds
+`grantControls.authenticationStrength` as a full object — `id`, `displayName`,
+`policyType`, `requirementsSatisfied`, `allowedCombinations`,
+`combinationConfigurations` — so a strength referenced by a policy arrives with
+that policy. This removes the fourth endpoint the slice contemplated, and with
+it the separate permission question it raised.
+
+Sources:
+
+- <https://learn.microsoft.com/graph/api/conditionalaccessroot-list-policies?view=graph-rest-1.0>
+- <https://learn.microsoft.com/graph/api/conditionalaccessroot-list-namedlocations?view=graph-rest-1.0>
+- <https://learn.microsoft.com/graph/api/identitysecuritydefaultsenforcementpolicy-get?view=graph-rest-1.0>
+- <https://learn.microsoft.com/graph/api/resources/conditionalaccesspolicy?view=graph-rest-1.0>
+
+## 2. Least privilege, delegated and application, separately
+
+| Surface | Delegated (work or school) | Application |
+|---|---|---|
+| Policies | `Policy.Read.All` | `Policy.Read.All` |
+| Named locations | `Policy.Read.All` | `Policy.Read.All` |
+| Security Defaults | `Policy.Read.All` | `Policy.Read.All` |
+
+**One scope covers the whole slice**, and in both identity kinds. Microsoft
+records *"Not available"* under higher-privileged for all three, so there is no
+broader alternative to fall back to and no reason to request one.
+
+**Personal Microsoft accounts are not supported** on any of the three. A
+delegated session on a personal account is not a partial answer here; it is a
+surface that does not exist.
+
+**Delegated access additionally needs a directory role.** Microsoft names the
+built-in roles that grant only the least privilege necessary:
+
+```text
+Global Secure Access Administrator   (standard properties)
+Security Reader                      (standard properties)
+Security Administrator               (standard properties)
+Global Reader
+Conditional Access Administrator
+```
+
+That list is identical for policies and named locations. **A delegated identity
+holding `Policy.Read.All` and none of those roles is a documented failure mode
+this collector must distinguish from an empty tenant.**
+
+## 3. National clouds
+
+All three surfaces are documented as available in Global service, US Government
+L4, US Government L5 (DOD) and China operated by 21Vianet.
+
+**The endpoint host differs per cloud** and the provider must take it as
+configuration rather than hard-coding `graph.microsoft.com`. Availability of the
+operation is not availability at one address.
+
+## 4. Licensing
+
+Microsoft states no licence prerequisite on any of the three operation pages.
+
+**`not established`, deliberately.** Conditional Access itself has licensing
+requirements documented elsewhere in Entra, and the absence of a statement on an
+API page is not a statement of absence. A tenant without the required licence may
+answer differently, and this collector must not read that difference as a
+governance finding. Recorded as `needs-tenant-validation`.
+
+## 5. Pagination and query parameters
+
+| Surface | Documented OData parameters |
+|---|---|
+| Policies | `$skip`, `$top`, `$count`, `$filter`, `$orderby`, `$select` |
+| Named locations | `$count`, `$filter`, `$orderby`, `$select`, `$skip`, `$top` |
+| Security Defaults | `$select` only |
+
+**Follow `@odata.nextLink` and never construct a page URL.** The examples show
+`@odata.context` on every response; the collector treats the absence of a next
+link as the end of the collection and nothing else.
+
+**No `$select` in production collection.** The slice must record what the tenant
+has, and a projection chosen by us decides in advance what a future rule may
+read. Fields omitted unless selected are therefore not a risk this collector
+takes on.
+
+`needs-tenant-validation`: whether these collections page at all at real tenant
+sizes, and what page size the service actually applies. The documentation does
+not state a default.
+
+## 6. Throttling, transient failure, retry
+
+**Not documented on any of the three operation pages.** Microsoft Graph's
+throttling guidance is service-wide rather than per-operation.
+
+The provider therefore implements the general contract — honour `Retry-After` on
+`429`, bound the number of retries, and stop rather than loop — and records the
+exhaustion as an unavailable area with its reason. **A collection that gave up
+is `partial` with a stated cause and never an empty tenant.**
+
+`needs-tenant-validation`: the actual limits for this surface.
+
+## 7. What each answer means
+
+| Answer | Meaning | Never |
+|---|---|---|
+| `200` with `value: []` | The tenant has none of this object | a policy that could not be read |
+| `401` | The session is not authenticated | a tenant with no policies |
+| `403` | Authenticated and not permitted: missing `Policy.Read.All`, or a delegated identity without one of the roles in §2 | a compliant tenant |
+| `404` | The resource path does not exist in this cloud or version | an absent policy |
+| `429` | Throttled | anything about the tenant |
+
+**The distinction that matters most.** An empty collection and a denied read
+produce the same shape in a naive collector: nothing. They are opposite facts.
+`coverage.unavailable` carries the reason, and a rule over a denied read answers
+`unknown`.
+
+## 8. Evolvable enums
+
+`conditionalAccessPolicy` carries several evolvable enumerations, and Microsoft's
+convention is that a client which has not opted in receives `unknownFutureValue`
+in place of a member added after the client's opt-in point.
+
+**A value this engine does not know is preserved verbatim and never mapped.**
+Neither to a default, nor to `pass`, nor to an absence. An unknown state on a
+policy is exactly the case where a rule must answer `unknown`, and a collector
+that normalised it would remove the reader's only signal that the product has
+moved.
+
+The slice does not opt in to preview enum members. Opting in is a decision about
+what the engine claims to understand.
+
+## 9. Fields that need more than the read permission
+
+None documented for these three operations. Both roles listed in §2 are
+annotated *"read standard properties"*, which implies a non-standard set exists;
+Microsoft does not enumerate it on these pages.
+
+`needs-tenant-validation`: whether a Global Reader and a Conditional Access
+Administrator observe the same policy document. **Until that is measured, a
+field absent under one identity must not be recorded as absent from the tenant.**
+
+## 10. Basis available for rules
+
+Nothing on these pages is a `requirement` or a `documented-limit`: they describe
+a read API, not a governance position. Any rule written on this evidence takes
+its basis from a separate Microsoft document that states a position, cited on
+the rule.
+
+**No rule is created because a field exists.** An inventory that ships without a
+rule names its report consumer and says why Microsoft offers no normative
+conclusion, exactly as the `agents` slice does.
+
+## 11. Identifiers this slice can and cannot resolve
+
+**Carried as stable native IDs, unresolved:** users, groups, directory roles,
+applications, service principals, terms of use, authentication context class
+references.
+
+**Resolvable within the slice:** named locations, because the slice collects
+them; and authentication strengths, because the policy embeds them.
+
+**Directory-wide inventory is out of scope**, and resolving a display name for
+every excluded group would be exactly that. An unresolved reference keeps its
+ID and states that it was not resolved, which is a smaller and truer claim than
+a friendly label the collector had to go looking for.
+
+## 12. What this audit changed in the slice contract
+
+1. **Authentication strengths are not a separate endpoint.** They arrive
+   embedded, so the fourth call and its unverified permission are removed.
+2. **One permission covers everything:** `Policy.Read.All`, delegated and
+   application. There is nothing to negotiate per surface.
+3. **A delegated identity also needs a directory role**, and lacking one is a
+   documented denial rather than an empty result. That is now a required test
+   case.
+4. **The endpoint host is configuration**, because all four national clouds are
+   supported and none of them share an address.
+
+## 13. Open, and blocking nothing
+
+| Question | State |
+|---|---|
+| Licensing prerequisite for Conditional Access | `needs-tenant-validation` |
+| Real pagination behaviour and page size | `needs-tenant-validation` |
+| Throttling limits for this surface | `needs-tenant-validation` |
+| Whether roles differ in the fields they return | `needs-tenant-validation` |
+
+Each needs an authenticated read against a real tenant with `Policy.Read.All`,
+which is owner-only. None of them blocks the provider, the fixtures, the
+contracts, the rules or the tests, which is why the slice continues.
