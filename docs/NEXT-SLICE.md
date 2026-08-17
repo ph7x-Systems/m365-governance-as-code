@@ -47,6 +47,47 @@ Slice       OPEN
 post-release gate has proven it from there. Only then does `IDENTITY-APPS-001`
 start.
 
+## MIGRATION-VERIFY-001 — what a move actually moved
+
+**State:** contract and comparison landed on `public-manifest-001`; collectors not
+started. Anybody picking this up starts at *What is missing*, in that order.
+
+### What exists
+
+- `migration-read/1.0.0` — the input contract. One read of an estate at one
+  moment: what was found, and what could not be reached.
+- `migration-verification/1.0.0` — the record. Two reads named by digest, the
+  dimensions compared, and one finding per item that did not pass silently.
+- `src/m365_governance/migration.py` — comparison, derived dimensions, the
+  Markdown report, and four coherence rules a schema cannot express.
+- `migration-verify BASELINE VERIFICATION [--out] [--report]` in the CLI.
+- `tests/test_migration.py`, and a synthetic read pair under
+  `data/fixtures/migration/`, classified in the fixture registry.
+
+### The rule the whole slice turns on
+
+**A migration cannot be verified after the fact.** Decommissioning the source is
+the point of the exercise, so a record produced at sign-off has nothing left to
+compare against. Every document names two reads, and a baseline that is not
+earlier than the verification is refused rather than recorded.
+
+### What is missing, in order
+
+1. **A producer of reads.** Nothing writes a `migration-read` document. Until
+   something does, the product cannot be used on anything real, and the whole
+   comparison rests on hand-written JSON.
+2. **Live validation of that producer** against a tenant, under the same
+   observation rules as every other collector here.
+3. **Permissions**, stated as the other collectors state theirs.
+4. **Release**: the capability is not shipped until it is installable from the
+   public index.
+
+### What is deliberately not here
+
+No remediation, no ranking, no score. The record never claims something was not
+migrated when it could not be read: that is `unknown`, with the side and the
+reason, and it is the single behaviour the contract exists to protect.
+
 ## PUBLIC-MANIFEST-001 — one published description of what this engine can do
 
 **Accepted 2026-08-17, and it runs before the Identity surface expands further.**
