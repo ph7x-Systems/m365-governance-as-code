@@ -389,3 +389,54 @@ def test_the_reason_an_area_was_not_read_is_a_sentence_and_not_a_structure(tmp_p
 
     assert "permission-denied — the identity is not a site collection" in reported
     assert "{" not in reported and "'" not in reported
+
+
+def test_a_slice_that_writes_one_file_refuses_a_directory(tmp_path, capsys):
+    """The defect a live run found, before the process starts.
+
+    `collect owners --output <directory>` reached PowerShell and failed with
+    `Clear-Content is only supported on files.` four seconds later. That is an
+    internal error from another language, and somebody reading it has no way to
+    know they passed the wrong kind of path.
+    """
+    from m365_governance.cli import main
+
+    code = main(
+        ["collect", "owners", "--client-id", "an-id",
+         "--site-url", "https://contoso.sharepoint.com/sites/x",
+         "--output", str(tmp_path)]
+    )
+
+    assert code == 2
+    said = capsys.readouterr().err
+    assert "writes one document" in said
+    assert "owners.json" in said
+
+
+def test_a_slice_that_writes_many_refuses_a_file(tmp_path, capsys):
+    from m365_governance.cli import main
+
+    target = tmp_path / "one.json"
+    target.write_text("{}", encoding="utf-8")
+
+    code = main(
+        ["collect", "sites", "--client-id", "an-id",
+         "--tenant-url", "https://contoso-admin.sharepoint.com",
+         "--output", str(target)]
+    )
+
+    assert code == 2
+    assert "is a directory" in capsys.readouterr().err
+
+
+def test_which_slices_write_many_is_declared_rather_than_guessed():
+    """`sites` and `permissions` read many resources; the rest read one.
+
+    Declared on the slice so the refusal above is a property of the contract
+    rather than a heuristic over the slice's name.
+    """
+    from m365_governance.collecting import SLICES
+
+    many = {name for name, s in SLICES.items() if s.writes_many}
+
+    assert many == {"sites", "permissions"}

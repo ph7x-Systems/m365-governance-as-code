@@ -112,7 +112,11 @@ The engine already knows which slices are which: `Slice.needs_site` is a good
 proxy and `shaped_like` is exact. This should be a typed refusal before the
 process starts, not a `Set-Content` failure four seconds in.
 
-Queued rather than fixed here: it belongs to the CLI's argument contract.
+**Fixed.** `Slice.writes_many` declares which slices read many resources, and
+`collect` refuses the wrong kind of path before starting the process, naming
+what to pass instead. Two slices write many — `sites` and `permissions` — and a
+test freezes that set so the refusal is a property of the contract rather than
+a heuristic over a name.
 
 ### 2. Live validation costs one interactive sign-in per collector
 

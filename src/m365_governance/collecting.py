@@ -103,6 +103,15 @@ class Slice:
     #: so that "no rule" never reads as "nobody looked".
     produces_findings: bool = True
     consumed_by: str = "governance rules"
+    #: Whether `--output` is a directory or a single file.
+    #:
+    #: FOUND BY RUNNING IT. A slice that reads many resources writes one
+    #: document per resource into a directory; a slice that reads one writes a
+    #: file. The CLI accepted either for every slice, and the mismatch surfaced
+    #: four seconds in as `Clear-Content is only supported on files.` -- an
+    #: internal error from another language, to somebody with no way to know
+    #: they passed the wrong kind of path.
+    writes_many: bool = False
 
 
 SLICES = {
@@ -128,6 +137,7 @@ SLICES = {
             needs_site=False,
             needs_tenant=True,
             profile="capacity",
+            writes_many=True,
             describes="every site this identity can enumerate",
             shaped_like="site-storage-comfortable",
         ),
@@ -197,6 +207,7 @@ SLICES = {
             needs_site=True,
             needs_tenant=False,
             profile="capacity",
+            writes_many=True,
             describes="every visible list on a site, and its inheritance",
             shaped_like="list-within-limit",
         ),

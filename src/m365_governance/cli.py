@@ -319,6 +319,28 @@ def _cmd_collect(args) -> int:
     if chosen.needs_site and not args.site_url:
         print(f"collect {args.slice} needs --site-url", file=sys.stderr)
         return 2
+    # THE KIND OF PATH IS PART OF THE CONTRACT, and it was not checked. A
+    # slice that reads many resources writes a document per resource into a
+    # directory; a slice that reads one writes a file. Passing the wrong kind
+    # surfaced as `Clear-Content is only supported on files.` four seconds into
+    # a run, which is an internal error from another language and tells the
+    # reader nothing about what they did.
+    if chosen.writes_many and args.output.is_file():
+        print(
+            f"collect {args.slice} reads many resources and writes one document "
+            f"per resource, so --output is a directory. {args.output} is a file.",
+            file=sys.stderr,
+        )
+        return 2
+    if not chosen.writes_many and args.output.is_dir():
+        print(
+            f"collect {args.slice} reads one resource and writes one document, "
+            f"so --output is a file. {args.output} is a directory: give it a "
+            f"path such as {args.output / (args.slice + '.json')}.",
+            file=sys.stderr,
+        )
+        return 2
+
     if chosen.needs_tenant and not args.tenant_url:
         print(
             f"collect {args.slice} needs --tenant-url, the admin centre. "
