@@ -842,7 +842,19 @@ def test_collect_refuses_without_the_url_it_needs(
 def test_the_collector_command_line_never_carries_a_write_flag(tmp_path):
     from m365_governance import collecting
 
-    for name in collecting.SLICES:
+    for name, chosen in collecting.SLICES.items():
+        if chosen.source != "powershell":
+            # A Graph slice has no command line at all. It is refused by
+            # `run_slice` rather than routed to a collector that has never heard
+            # of its mode, and the test for that lives with the slice.
+            with pytest.raises(ValueError):
+                collecting.run_slice(
+                    name,
+                    client_id="an-id",
+                    output=tmp_path / "out",
+                    dry_run=True,
+                )
+            continue
         outcome = collecting.run_slice(
             name,
             client_id="00000000-0000-0000-0000-000000000000",

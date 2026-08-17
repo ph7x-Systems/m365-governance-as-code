@@ -23,6 +23,14 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "src" / "m365_governance" / "data"
 RULES = DATA / "rules"
 FIXTURES = DATA / "fixtures" / "sharepoint"
+ENTRA = DATA / "fixtures" / "entra"
+
+#: Every workload's fixtures. One list so that a schema guard covers a new
+#: workload the day it is added, rather than the day somebody remembers to
+#: widen a glob that named one directory.
+EVIDENCE_FIXTURES = sorted(
+    path for folder in (FIXTURES, ENTRA) for path in folder.glob("*.json")
+)
 SCHEMAS = DATA / "schemas"
 PROFILES = DATA / "profiles"
 COLLECTORS = DATA / "collectors"
@@ -37,7 +45,14 @@ def rule(rule_id: str) -> dict:
 
 
 def evidence(name: str) -> dict:
-    return json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))
+    for folder in (FIXTURES, ENTRA):
+        path = folder / f"{name}.json"
+        if path.is_file():
+            return json.loads(path.read_text(encoding="utf-8"))
+    # FileNotFoundError and not an assertion: a caller that deliberately asks
+    # for a fixture that may not exist catches it, and an assertion would turn
+    # that into a failure about the wrong thing.
+    raise FileNotFoundError(f"no fixture {name}.json under {FIXTURES} or {ENTRA}")
 
 
 def sabotage(document: dict, mutate) -> dict:

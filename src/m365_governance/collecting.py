@@ -103,6 +103,24 @@ class Slice:
     #: so that "no rule" never reads as "nobody looked".
     produces_findings: bool = True
     consumed_by: str = "governance rules"
+    #: Whether `--output` is a directory or a single file.
+    #:
+    #: FOUND BY RUNNING IT. A slice that reads many resources writes one
+    #: document per resource into a directory; a slice that reads one writes a
+    #: file. The CLI accepted either for every slice, and the mismatch surfaced
+    #: four seconds in as `Clear-Content is only supported on files.` -- an
+    #: internal error from another language, to somebody with no way to know
+    #: they passed the wrong kind of path.
+    writes_many: bool = False
+    #: Which collector answers this slice: `powershell` or `graph`.
+    #:
+    #: ONE REGISTRY AND TWO COLLECTORS. The alternative was a second list for
+    #: Graph slices, and it would have meant a second `collect` command, a
+    #: second manifest path and a second place to forget. What differs between
+    #: the two is where the process runs and what it needs to authenticate;
+    #: everything the manifest, the coverage and the reporting do with a slice
+    #: is the same, so the difference is a field rather than a fork.
+    source: str = "powershell"
 
 
 SLICES = {
@@ -128,6 +146,7 @@ SLICES = {
             needs_site=False,
             needs_tenant=True,
             profile="capacity",
+            writes_many=True,
             describes="every site this identity can enumerate",
             shaped_like="site-storage-comfortable",
         ),
@@ -197,6 +216,7 @@ SLICES = {
             needs_site=True,
             needs_tenant=False,
             profile="capacity",
+            writes_many=True,
             describes="every visible list on a site, and its inheritance",
             shaped_like="list-within-limit",
         ),
@@ -212,6 +232,33 @@ SLICES = {
             profile="spfx",
             describes="a site's app catalog: which solutions lag their version",
             shaped_like="site-spfx-behind",
+        ),
+        Slice(
+            "conditional-access",
+            "ConditionalAccess",
+            source="graph",
+            needs_site=False,
+            # The admin centre address, and not because Graph needs it. The
+            # token says which DIRECTORY the session opened in; the host is the
+            # organisation's address, and evidence collected here has to carry
+            # the same tenant identity as evidence collected from SharePoint or
+            # an assessment would hold two tenants that are one.
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # The second recorded exception to the twin rule, on the same terms
+            # as `agents`: an inventory whose consumer is named. Microsoft
+            # publishes no normative conclusion about which Conditional Access
+            # policies an organisation should have, so a threshold invented here
+            # would make a pass mean nothing. What the tenant has is worth
+            # collecting; what it ought to have is not this engine's to assert.
+            consumed_by="the access-policy inventory in a report, and any viewer",
+            describes=(
+                "the Conditional Access policies, named locations and Security "
+                "Defaults state of one tenant"
+            ),
+            shaped_like="entra-conditional-access-mfa-for-admins",
         ),
     ]
 }
@@ -363,6 +410,16 @@ def run_slice(
     was no stream to show, so nothing downstream could show one.
     """
     chosen = SLICES[name]
+    if chosen.source != "powershell":
+        # This function runs the PowerShell collector, and a slice answered by
+        # another one would have produced a `-Mode` that collector has never
+        # heard of. Refused here rather than four seconds into a process,
+        # because a slice reaching the wrong collector is a routing defect and
+        # not a tenant problem.
+        raise ValueError(
+            f"slice {name} is collected from {chosen.source}, not from the "
+            f"PowerShell collector."
+        )
 
     argv = [
         "pwsh",

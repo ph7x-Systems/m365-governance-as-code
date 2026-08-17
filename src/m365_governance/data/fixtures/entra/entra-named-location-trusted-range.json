@@ -1,0 +1,65 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-17T09:00:00Z",
+    "collector": "graph-conditional-access",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "conditional-access-policies",
+      "named-locations",
+      "security-defaults"
+    ],
+    "completed": [
+      "conditional-access-policies",
+      "named-locations",
+      "security-defaults"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "named-location",
+    "native_id": "cccccccc-0000-4000-8000-000000000003",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Documented office range"
+  },
+  "facts": {
+    "named_locations": {
+      "state": "observed",
+      "value": {
+        "@odata.type": "#microsoft.graph.ipNamedLocation",
+        "id": "cccccccc-0000-4000-8000-000000000003",
+        "displayName": "Documented office range",
+        "isTrusted": true,
+        "ipRanges": [
+          {
+            "@odata.type": "#microsoft.graph.iPv4CidrRange",
+            "cidrAddress": "198.51.100.0/24"
+          }
+        ]
+      }
+    }
+  }
+}

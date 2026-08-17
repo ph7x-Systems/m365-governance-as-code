@@ -8,6 +8,41 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## Unreleased
+
+Microsoft Entra ID, starting with the access-policy surface, and the first
+collector in this product that does not run PowerShell.
+
+- **`collect conditional-access`** reads Conditional Access policies, the named
+  locations they reference and the Security Defaults state in one session. The
+  authentication strength a policy requires needs no fourth request: it arrives
+  inside `grantControls`.
+- **A denial is written down as evidence.** An area that could not be read
+  produces a document about the tenant carrying the state and the reason.
+  Writing nothing would leave a directory indistinguishable from a tenant that
+  has no Conditional Access at all — and a rule over that would pass.
+- **Every document carries the coverage of the whole run**, not its own area,
+  so that the collection manifest can still report an area that produced no
+  documents to carry it.
+- **The token is never acquired and never an argument.** It is read from
+  `M365_GOVERNANCE_GRAPH_TOKEN`: a token on a command line is in the process
+  list for every account on the machine and in the shell history afterwards.
+- **A rule now has to match the workload as well as the resource type.**
+  `tenant` is a type name in every workload, so a SharePoint tenant rule applied
+  to an Entra tenant document the moment a second workload existed. The outcome
+  was `unknown` rather than wrong, which is worse than it sounds: a rule from
+  another surface appearing in a report until the day two workloads name one
+  fact the same.
+- **The fixture gate globbed one workload's directory** and would have gone on
+  passing the day a second arrived.
+
+No rule reads this evidence. Microsoft publishes no normative conclusion about
+which Conditional Access policies an organisation should have, so a threshold
+invented here would make a pass mean nothing; the inventory names its consumer
+instead. The slice is proved offline against the whole answer matrix and has
+not itself been run against a tenant — see `docs/COLLECTOR-LIVE-MATRIX.md`,
+which says so in its own row.
+
 ## 1.0.0b6
 
 `connect --format json` becomes a contract, having been argued not to be.

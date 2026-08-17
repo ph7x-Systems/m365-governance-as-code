@@ -115,7 +115,12 @@ step "tools/examples.py --check"
 
 # ── 7. every fixture evaluates ───────────────────────────────────────────────
 step "Every fixture evaluates"
-for f in src/m365_governance/data/fixtures/sharepoint/*.json; do
+# Every workload, not one directory. The glob named `sharepoint` and would have
+# gone on passing the day a second workload's fixtures arrived, which is the
+# kind of green that means nothing was checked. Named rather than globbed: the
+# other directories under fixtures hold assessments and comparisons, which are
+# not evidence and are not evaluated.
+for f in src/m365_governance/data/fixtures/{sharepoint,entra}/*.json; do
   m365-governance evaluate --evidence "$f" --format json > /dev/null
 done
 echo "  ✓ all fixtures evaluated"

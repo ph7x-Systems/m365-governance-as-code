@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from conftest import FIXTURES, evidence, sabotage
+from conftest import EVIDENCE_FIXTURES, evidence, sabotage
 from m365_governance.validator import validate_evidence_document
 
 
@@ -14,7 +14,7 @@ def problems(document: dict) -> list:
     return validate_evidence_document(document, "<test>")
 
 
-@pytest.mark.parametrize("path", sorted(FIXTURES.glob("*.json")), ids=lambda p: p.stem)
+@pytest.mark.parametrize("path", EVIDENCE_FIXTURES, ids=lambda p: p.stem)
 def test_every_fixture_matches_the_schema(path):
     document = json.loads(path.read_text(encoding="utf-8"))
     assert problems(document) == []
