@@ -558,3 +558,247 @@ def record(*, baseline: dict, verification: dict, move: dict) -> dict:
             baseline=baseline, verification=verification, dimensions=dimensions
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# the readable report
+# ---------------------------------------------------------------------------
+#
+# THE RECORD IS THE EVIDENCE; THIS IS THE DOCUMENT. Neither replaces the other:
+# the record is what a third party recomputes, and nobody recomputes anything
+# from prose.
+#
+# THE SUMMARY HAS NO NUMBER IN IT THAT COULD BE READ AS A GRADE. Counts, yes —
+# how many differences, how many things nobody could establish. A ratio, never.
+# The moment a reader can say "94% fine" the six sections below stop being read,
+# and the sections are the product.
+#
+# EVERY SECTION CAN BE EMPTY AND SAYS SO IN WORDS. A report whose empty parts
+# vanish reads as though they never applied, and "nothing could not be
+# verified" is a strong claim that has to be made out loud to be checked.
+
+#: What each dimension means to somebody who did not write the schema.
+IN_ENGLISH = {
+    "presence": "the item is there at all",
+    "count": "how many items the estate holds",
+    "size": "the byte size of the item",
+    "content": "the contents of the item",
+    "authorship": "who the item says created it",
+    "versions": "how much version history came across",
+    "permissions": "who can reach the item",
+    "sharing-links": "the sharing links that pointed at it",
+}
+
+#: How an absence reads in a sentence rather than as an enum value.
+BECAUSE = {
+    "missing": "it was not there to read",
+    "not-supported": "the surface does not expose it",
+    "permission-denied": "the reading identity was refused",
+    "partial": "only part of it could be read",
+}
+
+#: How each side reads when the sentence needs a noun rather than a label.
+SIDE = {
+    "baseline": "before",
+    "verification": "after",
+    "both": "before and after",
+}
+
+
+def report(document: dict) -> str:
+    """The record as a document somebody can act on, in Markdown.
+
+    Deterministic, like everything else here: the same record renders the same
+    bytes, so the report can be digested and delivered alongside the evidence
+    rather than regenerated and hoped over.
+    """
+    out: list[str] = []
+    baseline, verification = document["baseline"], document["verification"]
+    findings = document["findings"]
+
+    by_outcome: dict[str, list[dict]] = {}
+    for finding in findings:
+        by_outcome.setdefault(finding["outcome"], []).append(finding)
+    differences = by_outcome.get("fail", [])
+    unestablished = by_outcome.get("unknown", [])
+
+    compared = [d for d in document["dimensions"] if d["state"] == "compared"]
+    skipped = [d for d in document["dimensions"] if d["state"] != "compared"]
+    gaps = baseline["coverage"] + verification["coverage"]
+
+    out.append(f"# Migration verification: {baseline['estate']}")
+    out.append("")
+
+    # -- executive summary ------------------------------------------------
+    out.append("## Executive summary")
+    out.append("")
+    out.append(
+        f"The estate was read on {baseline['taken_at']}, before the move, and "
+        f"again on {verification['taken_at']}. This report compares those two "
+        "reads. It was not produced by whatever performed the move."
+    )
+    out.append("")
+    if differences:
+        out.append(
+            f"**{len(differences)} difference(s) were established** between the "
+            "two reads."
+        )
+    else:
+        out.append(
+            "**No differences were established** on the dimensions compared, "
+            "within the limits below."
+        )
+    if unestablished:
+        out.append("")
+        out.append(
+            f"**{len(unestablished)} thing(s) could not be established either "
+            "way.** They are not differences and they are not confirmations: "
+            "nobody was able to look. They are listed in full below, and a "
+            "reader who needs them settled has to go and read what could not "
+            "be read here."
+        )
+    out.append("")
+    out.append(
+        "There is no percentage in this report, deliberately. A single number "
+        "would be read instead of the sections, and the sections are what "
+        "answers the question."
+    )
+    out.append("")
+
+    # -- what was verified ------------------------------------------------
+    out.append("## What was verified")
+    out.append("")
+    if compared:
+        out.append("These were compared across both reads:")
+        out.append("")
+        for entry in compared:
+            how = f" (by {entry['method']})" if entry.get("method") else ""
+            out.append(f"- **{entry['name']}**{how}: {IN_ENGLISH[entry['name']]}")
+    else:
+        out.append("Nothing was compared, which makes this report an inventory.")
+    out.append("")
+
+    # -- what could not be verified ---------------------------------------
+    out.append("## What could not be verified")
+    out.append("")
+    if not skipped and not gaps and not unestablished:
+        out.append(
+            "Nothing. Both reads reached the whole declared estate, and every "
+            "compared dimension returned an answer."
+        )
+    if skipped:
+        out.append("Not compared at all:")
+        out.append("")
+        for entry in skipped:
+            out.append(f"- **{entry['name']}**: {entry['reason']}")
+        out.append("")
+    if gaps:
+        out.append("Not reachable by the reads:")
+        out.append("")
+        for gap in gaps:
+            because = BECAUSE.get(gap["state"], gap["state"])
+            out.append(
+                f"- **{gap['scope']}**: {because}"
+                + (f", because {gap['detail']}." if gap.get("detail") else ".")
+            )
+        out.append("")
+    if unestablished:
+        out.append("Compared, but not established for these items:")
+        out.append("")
+        for finding in unestablished:
+            out.append(
+                f"- `{finding['item']}` — {IN_ENGLISH[finding['dimension']]}: "
+                f"{BECAUSE.get(finding.get('state'), 'not established')}"
+                f", on the {SIDE.get(finding.get('side'), 'unstated')} read"
+            )
+        out.append("")
+
+    # -- differences ------------------------------------------------------
+    out.append("## Differences established")
+    out.append("")
+    if not differences:
+        out.append("None on the dimensions compared.")
+    else:
+        out.append("| Item | What differs | Before | After |")
+        out.append("| --- | --- | --- | --- |")
+        for finding in differences:
+            observed = finding.get("observed", {})
+            out.append(
+                f"| `{finding['item']}` | {IN_ENGLISH[finding['dimension']]} "
+                f"| {_plain(observed.get('baseline'))} "
+                f"| {_plain(observed.get('verification'))} |"
+            )
+    out.append("")
+
+    # -- evidence ---------------------------------------------------------
+    out.append("## Evidence")
+    out.append("")
+    out.append(
+        "This report is derived. The record it is derived from is delivered "
+        "with it, and anyone holding both reads can recompute the record and "
+        "check that it says what this says."
+    )
+    out.append("")
+    out.append("| | Read | Taken | Digest |")
+    out.append("| --- | --- | --- | --- |")
+    for label, side in (("Before", baseline), ("After", verification)):
+        out.append(
+            f"| {label} | {side['read_id']} | {side['taken_at']} "
+            f"| `{side['canonical_hash']}` |"
+        )
+    out.append("")
+    out.append(f"Record digest: `{digest(document)}`")
+    out.append("")
+    move = document["move"]
+    out.append(f"Move: {move['kind']}. Produced by {move['produced_by']}.")
+    if move.get("performed_by"):
+        out.append(f"The move itself was performed by {move['performed_by']}.")
+    out.append("")
+
+    # -- limitations ------------------------------------------------------
+    out.append("## Limitations")
+    out.append("")
+    out.append(
+        "- A difference is established only where **both** reads could see the "
+        "item. Where either could not, the result is recorded as not "
+        "established and never as a loss."
+    )
+    content = next((d for d in compared if d["name"] == "content"), None)
+    if content and content.get("method") == WEIGHED_NOT_READ:
+        out.append(
+            "- **Content was compared by size alone.** Two files of equal size "
+            "differ, so nothing in this report says the contents match."
+        )
+    out.append(
+        "- This report describes the two reads it names. It says nothing about "
+        "anything outside the estate they declare."
+    )
+    out.append("")
+
+    # -- appendix ---------------------------------------------------------
+    out.append("## Appendix: every finding")
+    out.append("")
+    if not findings:
+        out.append("There are none.")
+    else:
+        out.append("| Item | Dimension | Outcome | Note |")
+        out.append("| --- | --- | --- | --- |")
+        for finding in findings:
+            note = finding.get("detail") or BECAUSE.get(finding.get("state"), "")
+            out.append(
+                f"| `{finding['item']}` | {finding['dimension']} "
+                f"| {finding['outcome']} | {note} |"
+            )
+    out.append("")
+    return "\n".join(out)
+
+
+def _plain(value: Any) -> str:
+    """A value as a reader sees it, without pretending a list is a sentence."""
+    if value is None:
+        return "not carried"
+    if isinstance(value, bool):
+        return "present" if value else "absent"
+    if isinstance(value, list):
+        return ", ".join(_plain(v) for v in value) or "none"
+    return str(value)

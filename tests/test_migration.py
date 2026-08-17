@@ -606,7 +606,7 @@ def test_a_count_is_unknown_when_part_of_the_estate_could_not_be_read():
 
 
 def test_the_fixture_pair_produces_a_record_that_verifies(schemas):
-    """The whole product, from the two documents a customer would send."""
+    """End to end, from the two documents an operator supplies."""
     document = migration.record(
         baseline=fixture("before-cutover"),
         verification=fixture("after-cutover"),
@@ -630,3 +630,95 @@ def test_the_fixture_pair_produces_a_record_that_verifies(schemas):
     assert all(
         f["outcome"] != "pass" for f in document["findings"] if f["dimension"] == "content"
     )
+
+
+# ---------------------------------------------------------------------------
+# the report
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def delivered():
+    return migration.record(
+        baseline=fixture("before-cutover"),
+        verification=fixture("after-cutover"),
+        move={
+            "kind": "tenant-to-tenant",
+            "produced_by": "m365-governance test",
+            "performed_by": "a migration tool",
+        },
+    )
+
+
+def test_the_report_has_every_section_it_declares(delivered):
+    text = migration.report(delivered)
+    for heading in (
+        "## Executive summary",
+        "## What was verified",
+        "## What could not be verified",
+        "## Differences established",
+        "## Evidence",
+        "## Limitations",
+        "## Appendix: every finding",
+    ):
+        assert heading in text, heading
+
+
+def test_the_report_carries_no_percentage_and_no_grade(delivered):
+    """The one number that would replace every section."""
+    text = migration.report(delivered)
+    assert "%" not in text
+    assert "score" not in text.lower()
+    assert "no percentage in this report" in text
+
+
+def test_the_report_says_it_was_not_written_by_whoever_did_the_move(delivered):
+    text = migration.report(delivered)
+    assert "not produced by whatever performed the move" in text
+    assert "performed by a migration tool" in text
+
+
+def test_what_could_not_be_read_is_a_section_and_not_a_footnote(delivered):
+    text = migration.report(delivered)
+    assert "the reading identity was refused" in text
+    assert "not established for these items" in text.replace(
+        "Compared, but not established for these items", "not established for these items"
+    )
+
+
+def test_the_report_never_calls_an_unreadable_item_a_loss(delivered):
+    """The archive is absent after the move and appears nowhere as a difference."""
+    text = migration.report(delivered)
+    body = text.split("## Differences established")[1].split("## Evidence")[0]
+    assert "Minutes 2019" not in body
+
+
+def test_a_size_only_comparison_says_so_in_the_limitations(delivered):
+    text = migration.report(delivered)
+    assert "Content was compared by size alone" in text
+    assert "nothing in this report says the contents match" in text
+
+
+def test_the_report_carries_both_digests_so_it_can_be_checked(delivered):
+    text = migration.report(delivered)
+    assert delivered["baseline"]["canonical_hash"] in text
+    assert delivered["verification"]["canonical_hash"] in text
+    assert migration.digest(delivered) in text
+
+
+def test_the_report_is_deterministic(delivered):
+    assert migration.report(delivered) == migration.report(delivered)
+
+
+def test_an_empty_section_says_so_rather_than_disappearing(schemas):
+    """A report whose empty parts vanish reads as though they never applied."""
+    quiet = migration.record(
+        baseline=fixture("before-cutover"),
+        verification=fixture("before-cutover") | {
+            "read_id": "after", "taken_at": "2026-03-09T08:30:00Z"
+        },
+        move={"kind": "tenant-to-tenant", "produced_by": "test"},
+    )
+    text = migration.report(quiet)
+    assert "No differences were established" in text
+    assert "None on the dimensions compared." in text

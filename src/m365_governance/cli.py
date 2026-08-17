@@ -285,6 +285,13 @@ def _build_parser() -> argparse.ArgumentParser:
         help="what performed the move, so a reader can see it was not us",
     )
     moved.add_argument("--out", type=Path, help="write the record here")
+    moved.add_argument(
+        "--report",
+        type=Path,
+        help="write the readable report here. The record is the evidence and "
+        "this is the document; both are delivered and neither replaces the "
+        "other",
+    )
 
     contracts = sub.add_parser(
         "contracts",
@@ -942,6 +949,9 @@ def _cmd_migration_verify(args) -> int:
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_bytes(canonical.encode(document) + b"\n")
+    if args.report:
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(migration.report(document), encoding="utf-8")
 
     compared = [d["name"] for d in document["dimensions"] if d["state"] == "compared"]
     skipped = [d for d in document["dimensions"] if d["state"] != "compared"]
