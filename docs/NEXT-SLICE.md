@@ -4,10 +4,12 @@
 
 **Owner decision:** 2026-08-17
 
-**Execution base:** `readme-install-platforms@35e72dc` (PR #24, `QA_READY`)
+**Execution base:** `main@7d1ded4` — the installation slice merged as PR #24,
+so the finding it closed is removed from this queue rather than kept as history.
 
-**Integration rule:** execute without waiting for #24 to merge; after an authorised
-merge, rebase and prove the isolated delta. The Executor never merges.
+**Integration rule:** #24 is merged. The Executor does not merge; the owner decided
+this one, and a branch carrying older non-conforming commit messages is squashed with
+an explicit English subject and body so that nothing non-conforming reaches `main`.
 
 This file is the canonical Engine queue. Every numbered slice in this file is already
 accepted for execution. The Executor starts at the first slice that is not `QA_READY`
