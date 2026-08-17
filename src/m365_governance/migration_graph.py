@@ -1,0 +1,234 @@
+"""Producing a migration read from Microsoft Graph.
+
+ONE SESSION, ONE TOKEN, EVERY DIMENSION. A `GraphReader` is constructed once by
+the caller and spent here. Nothing in this module acquires authentication, and
+nothing re-authenticates per dimension: an interactive sign-in per collector is
+the single largest measured cost in this product, and repeating that mistake
+one level down would make it worse rather than better.
+
+WHAT ONE REQUEST BUYS, AND WHAT COSTS ONE PER ITEM. Listing a folder's children
+returns size, authorship and a content hash for every item in the page — three
+dimensions for the price of the enumeration. Versions and permissions do not
+work that way:
+
+    children listing  →  size · authorship · content        one request per page
+    /versions         →  versions                           one request per ITEM
+    /permissions      →  permissions · sharing links        one request per ITEM
+
+Graph is explicit that the permissions relationship **cannot be expanded** on a
+driveItem or a collection of them. On an estate of a quarter of a million items
+that is a quarter of a million requests, so the expensive two are opt-in and a
+read that did not ask for them says `out-of-scope` — the operator's decision —
+rather than `not-carried`, which would read as a defect.
+
+THE HASH IS PROPRIETARY AND THAT MATTERS. `quickXorHash` is the only hash
+guaranteed across OneDrive for work and for home; `sha256Hash` is documented as
+unsupported. It compares fine against another Graph read and means nothing
+against a SHA-256 of the same bytes, which is why the read records the
+algorithm and the comparison refuses to cross the two.
+
+IT NEVER GUESSES WHY SOMETHING IS ABSENT. Every dimension leaves here either
+carried, or declared `unsupported` because this surface cannot provide it, or
+left out of scope because nobody asked. A downstream that had to infer which
+would infer wrong.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from .graph import GraphReader, Read
+
+NAME = "graph-migration-read"
+
+#: The hash Graph is documented to provide for both OneDrive flavours. The
+#: others are `if available`, and `sha256Hash` is documented as unsupported —
+#: reading it would produce a field that is empty on most tenants and present
+#: on a few, which is worse than not reading it at all.
+DIGEST = "quickXorHash"
+
+#: What the enumeration itself carries, at no extra request.
+FROM_LISTING = ("size", "authorship", "content")
+
+#: What costs one request per item, and is therefore opt-in.
+PER_ITEM = {"versions": "versions", "permissions": "permissions"}
+
+#: What this surface cannot provide at all. Nothing here is a failure to read;
+#: it is the shape of the API, and it will not change by trying again.
+NEVER = ()
+
+#: The permissions this read needs, stated the way the other collectors state
+#: theirs. Read-only, and the narrower of the two that would work.
+PERMISSIONS = ("Files.Read.All", "Sites.Read.All")
+
+
+class Unreadable(Exception):
+    """The estate could not be enumerated, and saying why is the answer."""
+
+
+def _person(entry: dict[str, Any]) -> str | None:
+    """Who Graph says created an item, as one string or nothing.
+
+    `createdBy` may carry a user, an application, or neither. An application is
+    recorded rather than dropped: `a migration tool created this` is exactly
+    the observation this product exists to surface, and turning it into an
+    absence would hide the most common loss there is.
+    """
+    made_by = entry.get("createdBy") or {}
+    for kind in ("user", "application"):
+        who = made_by.get(kind) or {}
+        name = who.get("displayName") or who.get("email")
+        if name:
+            return name
+    return None
+
+
+def _item(entry: dict[str, Any]) -> dict[str, Any]:
+    """One driveItem, reduced to what a read carries."""
+    item: dict[str, Any] = {}
+    if isinstance(entry.get("size"), int):
+        item["size"] = entry["size"]
+    author = _person(entry)
+    if author:
+        item["author"] = author
+    hashes = (entry.get("file") or {}).get("hashes") or {}
+    # Present-and-null is a different statement from absent: it says this read
+    # looked for a digest and the service had none for this item.
+    if "file" in entry:
+        item["content_digest"] = hashes.get(DIGEST)
+    return item
+
+
+def _links(permissions: list[dict[str, Any]]) -> list[str]:
+    """Sharing links, from the permissions that carry a link facet."""
+    found = []
+    for permission in permissions:
+        link = permission.get("link") or {}
+        scope = link.get("scope")
+        kind = link.get("type")
+        if scope or kind:
+            found.append(f"{scope or 'unstated'}:{kind or 'unstated'}")
+    return sorted(found)
+
+
+def _grants(permissions: list[dict[str, Any]]) -> list[list[str]]:
+    """Principals and roles, as pairs, sorted so two unchanged reads match."""
+    grants = []
+    for permission in permissions:
+        roles = permission.get("roles") or []
+        identity = permission.get("grantedToV2") or permission.get("grantedTo") or {}
+        for kind in ("user", "group", "siteGroup", "application"):
+            who = identity.get(kind) or {}
+            name = who.get("displayName") or who.get("email") or who.get("id")
+            if name:
+                for role in roles or ["unstated"]:
+                    grants.append([name, role])
+                break
+    return sorted(grants)
+
+
+def read(
+    reader: GraphReader,
+    *,
+    drive: str,
+    read_id: str,
+    taken_at: str,
+    estate: str,
+    folder: str | None = None,
+    with_versions: bool = False,
+    with_permissions: bool = False,
+) -> dict[str, Any]:
+    """A `migration-read` document, from one authenticated session.
+
+    `taken_at` is supplied rather than read from the clock. The moment a read
+    was taken decides which side of a move it is, so it belongs to whoever ran
+    the collection, not to whichever machine happened to serialise it.
+    """
+    base = f"drives/{drive}"
+    root = f"{base}/items/{folder}" if folder else f"{base}/root"
+
+    items: dict[str, dict[str, Any]] = {}
+    coverage: list[dict[str, Any]] = []
+    carried_a_digest = False
+
+    def walk(path: str, prefix: str) -> None:
+        nonlocal carried_a_digest
+        answer: Read = reader.read(f"{path}/children")
+        if answer.unavailable is not None:
+            coverage.append(
+                {
+                    "scope": prefix or "/",
+                    "state": answer.unavailable.state,
+                    "detail": answer.unavailable.detail,
+                }
+            )
+            # What was read before the refusal is kept, and the gap is stated.
+            # Discarding a partial read would turn a container we half-saw into
+            # a container we claim nothing about.
+        for entry in answer.items:
+            name = entry.get("name") or entry.get("id") or "<unnamed>"
+            identity = f"{prefix}/{name}"
+            if "folder" in entry:
+                walk(f"{base}/items/{entry['id']}", identity)
+                continue
+            item = _item(entry)
+            if "content_digest" in item and item["content_digest"] is not None:
+                carried_a_digest = True
+
+            if with_versions:
+                versions = reader.read(f"{base}/items/{entry['id']}/versions")
+                if versions.unavailable is None:
+                    item["versions"] = len(versions.items)
+                else:
+                    coverage.append(
+                        {
+                            "scope": identity,
+                            "state": versions.unavailable.state,
+                            "detail": f"version history: {versions.unavailable.detail}",
+                        }
+                    )
+
+            if with_permissions:
+                granted = reader.read(f"{base}/items/{entry['id']}/permissions")
+                if granted.unavailable is None:
+                    item["permissions"] = _grants(granted.items)
+                    item["sharing_links"] = _links(granted.items)
+                else:
+                    coverage.append(
+                        {
+                            "scope": identity,
+                            "state": granted.unavailable.state,
+                            "detail": f"permissions: {granted.unavailable.detail}",
+                        }
+                    )
+
+            items[identity] = item
+
+    walk(root, "")
+
+    if not items and coverage:
+        raise Unreadable(
+            f"nothing was enumerated under {estate}: {coverage[0]['detail']}"
+        )
+
+    document: dict[str, Any] = {
+        "$schema": "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0",
+        "read_id": read_id,
+        "taken_at": taken_at,
+        "estate": estate,
+        "produced_by": f"{NAME} via {reader.source_api}",
+        "coverage": coverage,
+        "items": items,
+    }
+
+    # What this read cannot provide, as opposed to what it did not fetch. Only
+    # the first belongs in `unsupported`; the second is the operator's choice
+    # and reaches the comparison as `out-of-scope` because the dimension is
+    # simply not carried and the record says who decided.
+    unsupported = list(NEVER)
+    if unsupported:
+        document["unsupported"] = unsupported
+    if carried_a_digest:
+        document["content_digest_algorithm"] = DIGEST
+
+    return document

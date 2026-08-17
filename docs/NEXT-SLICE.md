@@ -93,14 +93,36 @@ permanent limit of the method, the second is a fixable gap, and a product that
 renders them the same way reports structural limits as execution failures the
 moment a second connector appears.
 
+### The cost model, measured rather than assumed
+
+| Request | Buys |
+|---|---|
+| one **per page** of a folder listing | size · authorship · content digest |
+| one **per item** | versions |
+| one **per item** | permissions · sharing links |
+
+**Graph cannot expand permissions on a driveItem or a collection of them** — it
+is documented, not a limitation of this client. On a quarter of a million items
+that is a quarter of a million requests, so the expensive two are opt-in and a
+read that did not ask for them records `out-of-scope`, which reads differently
+from a gap.
+
+**The digest is `quickXorHash`**, the only hash Graph guarantees across both
+OneDrive flavours; `sha256Hash` is documented as unsupported. It compares
+against another Graph read and means nothing against a SHA-256 of the same
+bytes, so the read records the algorithm and the comparison refuses to cross
+two.
+
 ### What is missing, in order
 
-1. **A producer of reads.** Nothing writes a `migration-read` document. Until
-   something does, the product cannot be used on anything real, and the whole
-   comparison rests on hand-written JSON.
-2. **Live validation of that producer** against a tenant, under the same
-   observation rules as every other collector here.
-3. **Permissions**, stated as the other collectors state theirs.
+1. **Live validation** of `migration-read` against a tenant, under the same
+   observation rules as every other collector here. Everything below it is
+   blocked on this.
+2. **Scale.** The enumeration follows the service's own next links, and nothing
+   has yet run it against an estate of the size the connector measured.
+3. **Content across systems.** `quickXorHash` is a Microsoft hash; a move from
+   a file share has nothing to compare it to. That needs a download and a real
+   digest on both sides, and it is deliberately not started.
 4. **Release**: the capability is not shipped until it is installable from the
    public index.
 

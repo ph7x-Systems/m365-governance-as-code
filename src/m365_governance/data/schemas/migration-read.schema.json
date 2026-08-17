@@ -69,6 +69,11 @@
           "sharing-links"
         ]
       }
+    },
+    "content_digest_algorithm": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How `content_digest` was computed, for every item this read carries one. Recorded because a digest without its algorithm is not comparable: a quickXorHash and a SHA-256 of the same bytes differ, and a comparison that did not know would report every single item as changed. Present only when the read carries digests at all."
     }
   },
   "$defs": {

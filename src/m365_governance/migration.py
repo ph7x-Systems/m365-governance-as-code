@@ -539,7 +539,26 @@ def dimensions_for(baseline: dict, verification: dict) -> list[dict]:
             "share, though the source is not declared unable to provide it",
         }
 
-    if "content" not in unsupported and carried("content_digest"):
+    #: A digest is only a digest against the same algorithm. Two reads hashed
+    #: differently would compare unequal on every item, and every one of those
+    #: would be a false report of a change that did not happen.
+    algorithms = {
+        baseline.get("content_digest_algorithm"),
+        verification.get("content_digest_algorithm"),
+    }
+
+    if "content" not in unsupported and carried("content_digest") and len(algorithms) > 1:
+        dimensions.append(
+            {
+                "name": "content",
+                "state": "not-compared",
+                "limit": "not-carried",
+                "reason": "the two reads hashed with different algorithms ("
+                + ", ".join(sorted(str(a) for a in algorithms))
+                + "), and digests are only comparable against the same one",
+            }
+        )
+    elif "content" not in unsupported and carried("content_digest"):
         dimensions.append({"name": "content", "state": "compared", "method": "digest"})
     elif "content" not in unsupported and carried("size"):
         dimensions.append(

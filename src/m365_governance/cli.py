@@ -42,7 +42,9 @@ from . import (
     conditional_access,
     connecting,
     explaining,
+    graph,
     migration,
+    migration_graph,
     reporting,
 )
 from . import doctor as doctor_module
@@ -271,6 +273,35 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="exit non-zero when any rule left `pass`",
     )
+    reading = sub.add_parser(
+        "migration-read",
+        help="read one estate at one moment, as the input a verification is "
+        "built from",
+    )
+    reading.add_argument("--drive", required=True, help="the drive to enumerate")
+    reading.add_argument("--folder", default=None, help="an item id to start at")
+    reading.add_argument("--read-id", required=True)
+    reading.add_argument(
+        "--taken-at",
+        required=True,
+        help="when this read was taken, ISO 8601. Supplied rather than read "
+        "from the clock: it decides which side of the move this is",
+    )
+    reading.add_argument("--estate", required=True, help="what was read, as you name it")
+    reading.add_argument(
+        "--with-versions",
+        action="store_true",
+        help="one extra request PER ITEM. Without it, version history is out "
+        "of scope for this read rather than missing from it",
+    )
+    reading.add_argument(
+        "--with-permissions",
+        action="store_true",
+        help="one extra request PER ITEM; Graph cannot expand permissions on a "
+        "collection. Also carries sharing links",
+    )
+    reading.add_argument("--out", type=Path, help="write the read here")
+
     moved = sub.add_parser(
         "migration-verify",
         help="what a move actually moved, from a read taken before it and one "
@@ -914,6 +945,62 @@ def _cmd_assess(args) -> int:
     return 0
 
 
+def _cmd_migration_read(args) -> int:
+    """One estate, one moment, one authenticated session.
+
+    The token is spent, never acquired. Every dimension this read carries comes
+    from the same session: an interactive sign-in per dimension is the mistake
+    this product already measured once, and repeating it here would multiply it
+    by the number of things worth comparing.
+    """
+    token = os.environ.get(migration_graph_token := "M365_GOVERNANCE_GRAPH_TOKEN")
+    if not token:
+        print(
+            f"{migration_graph_token} is not set. This command spends a token "
+            "somebody already holds; it never acquires one.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        reader = graph.GraphReader(token)
+        document = migration_graph.read(
+            reader,
+            drive=args.drive,
+            folder=args.folder,
+            read_id=args.read_id,
+            taken_at=args.taken_at,
+            estate=args.estate,
+            with_versions=args.with_versions,
+            with_permissions=args.with_permissions,
+        )
+    except (graph.Refused, migration_graph.Unreadable) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_bytes(canonical.encode(document) + b"\n")
+
+    carried = sorted(
+        {key for item in document["items"].values() for key in item}
+    )
+    print(f"{document['estate']}")
+    print(f"  read          {document['read_id']} ({document['taken_at']})")
+    print(f"  items         {len(document['items'])}")
+    print(f"  carried       {', '.join(carried) or 'identity only'}")
+    if document.get("content_digest_algorithm"):
+        print(f"  digest        {document['content_digest_algorithm']}")
+    for gap in document["coverage"]:
+        print(f"  not read      {gap['scope']} ({gap['state']})")
+    print(f"  digest        {canonical.digest(document)}")
+
+    # Coverage is not failure. A read that states what it could not reach is
+    # doing its job; only an estate nobody could enumerate at all is an error,
+    # and that raised before reaching here.
+    return 0
+
+
 def _cmd_migration_verify(args) -> int:
     """Two reads in, a verification record out, and refusals said out loud.
 
@@ -1177,6 +1264,7 @@ _COMMANDS = {
     "evaluate": _cmd_evaluate,
     "assess": _cmd_assess,
     "verify": _cmd_verify,
+    "migration-read": _cmd_migration_read,
     "migration-verify": _cmd_migration_verify,
     "report": _cmd_report,
     "diff": _cmd_diff,
