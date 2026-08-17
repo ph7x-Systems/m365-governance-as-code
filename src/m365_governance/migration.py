@@ -53,6 +53,12 @@ DIMENSIONS = (
 WEIGHED_NOT_READ = "size-only"
 
 
+#: What a gap in coverage does to a finding. It is the whole behaviour of this
+#: module in one line: an item that could not be read has not been shown to be
+#: missing, so absence of evidence never becomes evidence of absence.
+COVERED_BY_A_GAP = "unknown"
+
+
 class Unverifiable(ValueError):
     """This record cannot be produced, and saying why is the answer."""
 
@@ -216,3 +222,197 @@ def _content_rule(document: dict) -> list[str]:
                 "differ, so the strongest available statement is `unknown`"
             )
     return problems
+
+
+# ---------------------------------------------------------------------------
+# the comparison
+# ---------------------------------------------------------------------------
+#
+# TWO READS IN, FINDINGS OUT, AND NOTHING FROM THE CLOCK OR THE INSTALLATION.
+# The same two reads produce the same findings in the same order on any
+# machine, which is what lets a third party recompute this without us.
+#
+# THE ONE RULE WORTH READING THE CODE FOR. A difference only becomes `fail`
+# when both sides were actually readable. If either read declared a gap
+# covering the item, the honest outcome is `unknown` — and this is where every
+# migration report goes wrong, because reporting an item as missing is more
+# useful-sounding than reporting that nobody could look.
+
+
+def _covered(coverage: list[dict], item: str) -> dict | None:
+    """The gap that swallows this item, if a read declared one.
+
+    Prefix matching, because gaps are declared over containers and items live
+    inside them. A gap on `/Shared Documents/Archive` covers everything under
+    it, which is exactly what the person who could not read it meant.
+    """
+    for gap in coverage:
+        scope = gap.get("scope", "")
+        if item == scope or item.startswith(scope.rstrip("/") + "/"):
+            return gap
+    return None
+
+
+def _unreadable(baseline: dict, verification: dict, item: str) -> dict | None:
+    """Which side could not see this item, as a finding fragment.
+
+    `both` is not a formality. An item inside a gap on each side is less
+    established than one inside a gap on either, and a reader deciding whether
+    to go and look themselves needs to know which.
+    """
+    before = _covered(baseline.get("coverage", []), item)
+    after = _covered(verification.get("coverage", []), item)
+    if not before and not after:
+        return None
+    if before and after:
+        side, gap = "both", before
+    elif before:
+        side, gap = "baseline", before
+    else:
+        side, gap = "verification", after
+    return {"side": side, "state": gap["state"], "detail": gap.get("detail")}
+
+
+def _finding(item: str, dimension: str, outcome: str, **rest) -> dict:
+    finding = {"item": item, "dimension": dimension, "outcome": outcome}
+    finding.update({k: v for k, v in rest.items() if v is not None})
+    return finding
+
+
+def _presence(baseline: dict, verification: dict) -> list[dict]:
+    before = set(baseline.get("items", {}))
+    after = set(verification.get("items", {}))
+    findings = []
+    for item in sorted(before | after):
+        gap = _unreadable(baseline, verification, item)
+        if item in before and item in after:
+            continue  # present on both sides; nothing to say
+        if gap:
+            findings.append(
+                _finding(item, "presence", COVERED_BY_A_GAP, **gap)
+            )
+            continue
+        findings.append(
+            _finding(
+                item,
+                "presence",
+                "fail",
+                observed={
+                    "baseline": item in before,
+                    "verification": item in after,
+                },
+            )
+        )
+    return findings
+
+
+#: Which attribute each dimension reads off an item. `presence` is absent
+#: because it is about the item rather than about anything on it.
+ATTRIBUTE = {
+    "size": "size",
+    "content": "content_digest",
+    "authorship": "author",
+    "versions": "versions",
+    "permissions": "permissions",
+    "sharing-links": "sharing_links",
+}
+
+
+def _attribute(
+    baseline: dict, verification: dict, dimension: str, method: str | None
+) -> list[dict]:
+    key = ATTRIBUTE[dimension]
+    before = baseline.get("items", {})
+    after = verification.get("items", {})
+    findings = []
+    for item in sorted(set(before) & set(after)):
+        gap = _unreadable(baseline, verification, item)
+        if gap:
+            findings.append(_finding(item, dimension, COVERED_BY_A_GAP, **gap))
+            continue
+
+        if dimension == "content" and method == WEIGHED_NOT_READ:
+            # Decided by the method before anything is read. A size-only
+            # comparison has no digest by definition, so reporting a thin read
+            # here would blame the data for the choice the operator made.
+            findings.append(
+                _finding(
+                    item,
+                    dimension,
+                    COVERED_BY_A_GAP,
+                    side="both",
+                    state="partial",
+                    method=method,
+                    detail="compared by size alone; content was not hashed",
+                )
+            )
+            continue
+
+        seen_before = before[item].get(key)
+        seen_after = after[item].get(key)
+        if seen_before is None or seen_after is None:
+            # Neither read declared a gap and the attribute is still not there.
+            # That is the read being thinner than it claimed, and saying so is
+            # more useful than either verdict.
+            findings.append(
+                _finding(
+                    item,
+                    dimension,
+                    COVERED_BY_A_GAP,
+                    side="baseline" if seen_before is None else "verification",
+                    state="partial",
+                    detail=f"the read carries no {key} for this item",
+                )
+            )
+            continue
+
+        if seen_before == seen_after:
+            continue
+
+        findings.append(
+            _finding(
+                item,
+                dimension,
+                "fail",
+                method=method,
+                observed={"baseline": seen_before, "verification": seen_after},
+            )
+        )
+    return findings
+
+
+def _count(baseline: dict, verification: dict) -> list[dict]:
+    before = len(baseline.get("items", {}))
+    after = len(verification.get("items", {}))
+    if before == after:
+        return []
+    return [
+        _finding(
+            "<estate>",
+            "count",
+            "fail",
+            observed={"baseline": before, "verification": after},
+        )
+    ]
+
+
+def compare(*, baseline: dict, verification: dict, dimensions: list[dict]) -> list[dict]:
+    """Findings for every declared dimension, and none for any other.
+
+    A dimension declared `not-compared` produces nothing, which is the only
+    behaviour consistent with saying nobody looked.
+    """
+    findings: list[dict] = []
+    for declared in dimensions:
+        if declared.get("state") != "compared":
+            continue
+        name = declared["name"]
+        if name == "presence":
+            findings.extend(_presence(baseline, verification))
+        elif name == "count":
+            findings.extend(_count(baseline, verification))
+        elif name in ATTRIBUTE:
+            findings.extend(
+                _attribute(baseline, verification, name, declared.get("method"))
+            )
+    return findings

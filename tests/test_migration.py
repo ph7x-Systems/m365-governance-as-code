@@ -294,3 +294,235 @@ def test_build_produces_a_document_that_declares_its_contract():
         findings=[],
     )
     assert document["$schema"] == migration.contract()
+
+
+# ---------------------------------------------------------------------------
+# the comparison
+# ---------------------------------------------------------------------------
+
+
+def side(items: dict, coverage=None) -> dict:
+    return {"items": items, "coverage": coverage or []}
+
+
+PLAN = "/Shared Documents/plan.xlsx"
+ARCHIVE = "/Shared Documents/Archive/2019.xlsx"
+
+
+def test_an_item_that_did_not_arrive_is_a_failure():
+    findings = migration.compare(
+        baseline=side({PLAN: {}}),
+        verification=side({}),
+        dimensions=[{"name": "presence", "state": "compared"}],
+    )
+    assert findings == [
+        {
+            "item": PLAN,
+            "dimension": "presence",
+            "outcome": "fail",
+            "observed": {"baseline": True, "verification": False},
+        }
+    ]
+
+
+def test_an_item_nobody_could_look_for_is_not_a_failure():
+    """The rule the whole product turns on.
+
+    The item is absent from the target and the target read says it could not
+    see that container. Reporting it missing would be more useful-sounding and
+    would be a claim nobody established.
+    """
+    findings = migration.compare(
+        baseline=side({ARCHIVE: {}}),
+        verification=side(
+            {},
+            coverage=[
+                {
+                    "scope": "/Shared Documents/Archive",
+                    "state": "permission-denied",
+                    "detail": "the reading identity had no access",
+                }
+            ],
+        ),
+        dimensions=[{"name": "presence", "state": "compared"}],
+    )
+    assert findings == [
+        {
+            "item": ARCHIVE,
+            "dimension": "presence",
+            "outcome": "unknown",
+            "side": "verification",
+            "state": "permission-denied",
+            "detail": "the reading identity had no access",
+        }
+    ]
+
+
+def test_a_gap_on_a_container_covers_what_is_inside_it():
+    """Gaps are declared over containers because that is how reading fails."""
+    findings = migration.compare(
+        baseline=side({ARCHIVE: {}, PLAN: {}}),
+        verification=side(
+            {},
+            coverage=[{"scope": "/Shared Documents/Archive", "state": "missing"}],
+        ),
+        dimensions=[{"name": "presence", "state": "compared"}],
+    )
+    outcomes = {f["item"]: f["outcome"] for f in findings}
+    assert outcomes == {ARCHIVE: "unknown", PLAN: "fail"}
+
+
+def test_a_gap_on_both_sides_is_weaker_than_a_gap_on_one():
+    findings = migration.compare(
+        baseline=side(
+            {ARCHIVE: {}},
+            coverage=[{"scope": "/Shared Documents/Archive", "state": "partial"}],
+        ),
+        verification=side(
+            {},
+            coverage=[
+                {"scope": "/Shared Documents/Archive", "state": "permission-denied"}
+            ],
+        ),
+        dimensions=[{"name": "presence", "state": "compared"}],
+    )
+    assert findings[0]["side"] == "both"
+
+
+def test_authorship_rewritten_by_the_move_is_reported_with_both_values():
+    """The most common silent loss in a migration, and the least reported."""
+    findings = migration.compare(
+        baseline=side({PLAN: {"author": "j.mendes@contoso.com"}}),
+        verification=side({PLAN: {"author": "svc-migration@contoso.com"}}),
+        dimensions=[{"name": "authorship", "state": "compared"}],
+    )
+    assert findings[0]["outcome"] == "fail"
+    assert findings[0]["observed"] == {
+        "baseline": "j.mendes@contoso.com",
+        "verification": "svc-migration@contoso.com",
+    }
+
+
+def test_content_equal_by_digest_says_nothing_because_nothing_is_wrong():
+    findings = migration.compare(
+        baseline=side({PLAN: {"content_digest": "d" * 64}}),
+        verification=side({PLAN: {"content_digest": "d" * 64}}),
+        dimensions=[
+            {"name": "content", "state": "compared", "method": "digest"}
+        ],
+    )
+    assert findings == []
+
+
+def test_content_equal_by_size_alone_is_unknown_and_never_silent():
+    """Equal by the only measure taken, and the measure cannot carry the claim."""
+    findings = migration.compare(
+        baseline=side({PLAN: {"content_digest": None, "size": 4096}}),
+        verification=side({PLAN: {"content_digest": None, "size": 4096}}),
+        dimensions=[
+            {"name": "size", "state": "compared"},
+            {"name": "content", "state": "compared", "method": "size-only"},
+        ],
+    )
+    content = [f for f in findings if f["dimension"] == "content"]
+    assert content and content[0]["outcome"] == "unknown"
+    assert "not hashed" in content[0]["detail"]
+
+
+def test_an_attribute_the_read_never_carried_is_unknown_not_a_pass():
+    """A thinner read than the record claims, said out loud."""
+    findings = migration.compare(
+        baseline=side({PLAN: {"versions": 12}}),
+        verification=side({PLAN: {}}),
+        dimensions=[{"name": "versions", "state": "compared"}],
+    )
+    assert findings[0]["outcome"] == "unknown"
+    assert findings[0]["state"] == "partial"
+
+
+def test_a_dimension_declared_not_compared_produces_nothing():
+    findings = migration.compare(
+        baseline=side({PLAN: {"versions": 12}}),
+        verification=side({PLAN: {"versions": 1}}),
+        dimensions=[
+            {
+                "name": "versions",
+                "state": "not-compared",
+                "reason": "out of scope for this project",
+            }
+        ],
+    )
+    assert findings == []
+
+
+def test_counts_that_differ_are_reported_against_the_estate():
+    findings = migration.compare(
+        baseline=side({PLAN: {}, ARCHIVE: {}}),
+        verification=side({PLAN: {}}),
+        dimensions=[{"name": "count", "state": "compared"}],
+    )
+    assert findings == [
+        {
+            "item": "<estate>",
+            "dimension": "count",
+            "outcome": "fail",
+            "observed": {"baseline": 2, "verification": 1},
+        }
+    ]
+
+
+def test_the_comparison_is_reproducible(schemas):
+    """Same two reads, same findings, same order, same digest."""
+    args = dict(
+        baseline=side({ARCHIVE: {"author": "a"}, PLAN: {"author": "b"}}),
+        verification=side({PLAN: {"author": "svc"}}),
+        dimensions=[
+            {"name": "presence", "state": "compared"},
+            {"name": "authorship", "state": "compared"},
+        ],
+    )
+    first = migration.compare(**args)
+    second = migration.compare(**args)
+    assert first == second
+    assert canonical.digest(first) == canonical.digest(second)
+
+
+def test_a_produced_record_verifies_end_to_end(schemas):
+    """Compare, build, validate — the whole of step three of the build order."""
+    dimensions = [
+        {"name": "presence", "state": "compared"},
+        {"name": "authorship", "state": "compared"},
+        {
+            "name": "content",
+            "state": "compared",
+            "method": "size-only",
+        },
+    ]
+    findings = migration.compare(
+        baseline=side(
+            {
+                PLAN: {"author": "j.mendes@contoso.com", "content_digest": None},
+                ARCHIVE: {"author": "r.silva@contoso.com", "content_digest": None},
+            }
+        ),
+        verification=side(
+            {PLAN: {"author": "svc-migration@contoso.com", "content_digest": None}},
+            coverage=[
+                {"scope": "/Shared Documents/Archive", "state": "permission-denied"}
+            ],
+        ),
+        dimensions=dimensions,
+    )
+    document = migration.build(
+        baseline=BEFORE,
+        verification=AFTER,
+        move=MOVE,
+        dimensions=dimensions,
+        findings=findings,
+    )
+    assert schemas.problems(document) == []
+    assert migration.verify(document, schemas=schemas) == []
+
+    outcomes = {(f["item"], f["dimension"]): f["outcome"] for f in findings}
+    assert outcomes[(ARCHIVE, "presence")] == "unknown"
+    assert outcomes[(PLAN, "authorship")] == "fail"
