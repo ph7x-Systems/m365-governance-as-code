@@ -8,7 +8,7 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
-## Unreleased
+## 1.0.0b6
 
 `connect --format json` becomes a contract, having been argued not to be.
 
