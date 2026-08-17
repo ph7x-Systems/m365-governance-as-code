@@ -113,11 +113,30 @@ against another Graph read and means nothing against a SHA-256 of the same
 bytes, so the read records the algorithm and the comparison refuses to cross
 two.
 
+### What a tenant has confirmed, and what it has not
+
+**Observed, 2026-08-17, through an interactive Microsoft 365 connector against a
+real tenant.** No identifier, drive, path or file name from it is recorded here.
+
+| Confirmed | |
+|---|---|
+| Traversal | an account carries several drives; children are folders or files, and the producer's folder-versus-file branch matches what the service returns |
+| Size | present on real items, as an integer, and it is the shape the producer reads |
+| Scale | one drive returned a total in the hundreds of thousands of items, against a surface that pages fifty at a time. The coverage a read writes for that is not hypothetical |
+
+| Not confirmed, and why |
+|---|
+| **Authorship, digest, versions, permissions.** The connector renders a summary; it does not expose `createdBy`, `file.hashes`, versions or permissions at all. Nothing about those four is established by having looked |
+| **The collector's own path.** The connector is a different surface from `GraphReader`. Confirming a field through one does not establish that the other reads it, and treating it as though it did is the substitution this repository's evidence ranking exists to prevent |
+
+**So `migration-read` still has no positive live read**, and the small drive that
+account carries is the known estate to run it against first.
+
 ### What is missing, in order
 
-1. **Live validation** of `migration-read` against a tenant, under the same
-   observation rules as every other collector here. Everything below it is
-   blocked on this.
+1. **Live validation** of `migration-read` against a tenant with a Graph token,
+   under the same observation rules as every other collector here. Everything
+   below it is blocked on this.
 2. **Scale.** The enumeration follows the service's own next links, and nothing
    has yet run it against an estate of the size the connector measured.
 3. **Content across systems.** `quickXorHash` is a Microsoft hash; a move from
