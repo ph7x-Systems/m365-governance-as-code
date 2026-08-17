@@ -402,9 +402,16 @@ def test_a_slice_that_writes_one_file_refuses_a_directory(tmp_path, capsys):
     from m365_governance.cli import main
 
     code = main(
-        ["collect", "owners", "--client-id", "an-id",
-         "--site-url", "https://contoso.sharepoint.com/sites/x",
-         "--output", str(tmp_path)]
+        [
+            "collect",
+            "owners",
+            "--client-id",
+            "an-id",
+            "--site-url",
+            "https://contoso.sharepoint.com/sites/x",
+            "--output",
+            str(tmp_path),
+        ]
     )
 
     assert code == 2
@@ -420,9 +427,16 @@ def test_a_slice_that_writes_many_refuses_a_file(tmp_path, capsys):
     target.write_text("{}", encoding="utf-8")
 
     code = main(
-        ["collect", "sites", "--client-id", "an-id",
-         "--tenant-url", "https://contoso-admin.sharepoint.com",
-         "--output", str(target)]
+        [
+            "collect",
+            "sites",
+            "--client-id",
+            "an-id",
+            "--tenant-url",
+            "https://contoso-admin.sharepoint.com",
+            "--output",
+            str(target),
+        ]
     )
 
     assert code == 2
