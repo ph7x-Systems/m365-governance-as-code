@@ -185,7 +185,7 @@ def test_an_empty_collection_is_complete_and_says_the_tenant_has_none():
 @pytest.mark.parametrize(
     "status,state,expected",
     [
-        (401, "permission-denied", "says nothing about the tenant"),
+        (401, "missing", "not a permission problem"),
         (403, "permission-denied", "Policy.Read.All"),
         (404, "not-supported", "not the same as a tenant having none"),
         (500, "missing", "answered 500"),
@@ -382,3 +382,123 @@ def test_an_identity_carries_no_credential_field():
     fields = {f.lower() for f in vars(Identity("delegated", "t", ()))}
 
     assert not fields & {"token", "secret", "password", "certificate", "assertion"}
+
+
+# ---------------------------------------------------------------------------
+# the matrix: every answer a caller can get, and what it may never become
+# ---------------------------------------------------------------------------
+
+
+def test_two_hundred_with_objects_is_read_and_carried_whole():
+    """The positive path, offline. Nothing is normalised away.
+
+    A collector that reshaped a policy here would decide in advance what a
+    future rule may read, and the reader would have no way back to what the
+    tenant said.
+    """
+    policy = {
+        "id": "aaaaaaaa-0000-4000-8000-000000000001",
+        "displayName": "Require MFA for administrators",
+        "state": "enabled",
+        "conditions": {"users": {"includeRoles": ["role-id"]}},
+        "grantControls": {
+            "operator": "OR",
+            "builtInControls": ["mfa"],
+            "authenticationStrength": {
+                "id": "00000000-0000-0000-0000-000000000002",
+                "displayName": "Multifactor authentication",
+                "policyType": "builtIn",
+                "requirementsSatisfied": "mfa",
+                "allowedCombinations": ["fido2", "password,sms"],
+            },
+        },
+    }
+
+    read = _reader(_answers(_ok([policy]))).read(POLICIES)
+
+    assert read.complete
+    assert read.items == [policy]
+    # The embedded strength arrived with the policy: not a fourth call.
+    strength = read.items[0]["grantControls"]["authenticationStrength"]
+    assert strength["requirementsSatisfied"] == "mfa"
+
+
+def test_an_unauthenticated_session_is_not_a_permission_problem():
+    """The matrix row that found a defect.
+
+    `401` and `403` both mapped to `permission-denied`, which sends somebody to
+    request a Graph permission when what they needed was to sign in again.
+    """
+    unauthenticated = _reader(_answers((401, "", {}))).read(POLICIES)
+    forbidden = _reader(_answers((403, "", {}))).read(POLICIES)
+
+    assert unauthenticated.unavailable.state != forbidden.unavailable.state
+    assert "not a permission problem" in unauthenticated.unavailable.detail
+    assert forbidden.unavailable.state == "permission-denied"
+
+
+def test_throttling_is_named_as_throttling_and_not_as_absent_data():
+    throttled = [(429, "", {"Retry-After": "1"})] * (RETRIES + 1)
+
+    read = _reader(_answers(*throttled)).read(POLICIES)
+
+    assert read.unavailable.state == "partial"
+    assert "throttled" in read.unavailable.detail
+    assert read.items == []
+
+
+def test_an_incomplete_document_is_invalid_evidence_rather_than_an_empty_tenant():
+    """A truncated body that still parses as JSON.
+
+    This is the shape a proxy or an interrupted transfer produces, and it is
+    the one most likely to be read as a tenant with nothing in it.
+    """
+    body = json.dumps({"@odata.context": "x"})
+    read = _reader(_answers((200, body, {}))).read(POLICIES)
+
+    assert read.unavailable.state == "invalid"
+    assert not read.complete
+
+
+def test_a_session_with_no_graph_token_is_refused_before_any_request():
+    """`Get-PnPAccessToken` returning nothing is a state, not a crash.
+
+    The refusal happens at construction, so no request is made and nothing is
+    recorded as having been read.
+    """
+    transport = _answers(_ok([]))
+
+    with pytest.raises(Refused):
+        GraphReader("", transport=transport)
+
+    assert transport.calls == []
+
+
+def test_an_area_read_only_in_part_is_never_reported_as_complete():
+    """What a manifest must carry as `partial`.
+
+    The first page arrived and the second was refused. The area has items and
+    is not complete, and a caller that looked only at the items would build a
+    manifest saying the whole tenant was read.
+    """
+    nxt = f"{GLOBAL}/v1.0/{POLICIES}?$skiptoken=opaque"
+    read = _reader(_answers(_ok([{"id": "a"}], nxt), (429, "", {}))).read(POLICIES)
+
+    assert read.items and not read.complete
+    assert read.unavailable is not None
+
+
+def test_every_matrix_answer_lands_in_exactly_one_state():
+    """No answer is left without a state, and every state carries a reason."""
+    matrix = {
+        401: "missing",
+        403: "permission-denied",
+        404: "not-supported",
+        429: "partial",
+        500: "missing",
+        503: "missing",
+    }
+    for status, state in matrix.items():
+        outcome = Unavailable.of(status, POLICIES)
+        assert outcome.state == state
+        assert outcome.detail.strip()

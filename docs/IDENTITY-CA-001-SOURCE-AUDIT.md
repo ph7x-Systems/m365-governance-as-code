@@ -329,3 +329,55 @@ consented. If it is not, Graph answers `403`, the collector records
 `BLOCKED_OWNER_POLICY_READ_ALL` — the second blocked state the slice
 anticipates, and it costs no further interactive session to establish.
 
+## 16. The answer matrix, and the contract gap it exposed
+
+Every answer a caller can receive, what it means, and what it may never become.
+All rows are covered offline by `tests/test_graph.py`; the live column records
+which have also been seen against a real tenant.
+
+| Answer | State | Never | Live |
+|---|---|---|---|
+| `200` with objects | complete, carried whole | reshaped or projected | not yet |
+| `200` with `value: []` | complete, the tenant has none | a read that was denied | not yet |
+| `401` | `missing` — the session is not valid | a permission problem | not yet |
+| `403` | `permission-denied`, with Graph's own sentence | a compliant or empty tenant | **observed** |
+| `404` | `not-supported` — this cloud or version | an absent policy | not yet |
+| `429`, budget exhausted | `partial`, keeping what was read | absent data | not yet |
+| `200` that is not JSON, or has no `value` | `invalid` | an empty tenant | not yet |
+| no Graph token | refused before any request | an empty result | not yet |
+| one page read, next refused | `partial` with items | `completed` | not yet |
+
+### `401` and `403` were the same state, and that was a defect
+
+Both mapped to `permission-denied`. They are different sentences: a `401` says
+the session is not valid — expired, issued for another audience, never
+established — and a `403` says a valid session was refused this surface.
+**Reading the first as the second sends somebody to request a Graph permission
+when what they needed was to sign in again.**
+
+### The gap this leaves in the evidence contract
+
+The evidence contract publishes four absent states:
+
+```text
+missing · not-supported · permission-denied · partial
+```
+
+**None of them means "not authenticated".** `401` is recorded as `missing` with
+a detail that says so in words, which is the honest use of the vocabulary that
+exists rather than borrowing the nearest word that fits.
+
+Whether the evidence contract should gain a fifth state is a decision for the
+Engine, and it costs an evidence contract version. It is recorded here rather
+than settled: a collector that invented a state would be the second authority
+on evidence semantics, which is the thing this repository refuses everywhere
+else.
+
+### What may not be claimed yet
+
+> Conditional Access was successfully collected from a real tenant.
+
+That sentence needs a `200` under `Policy.Read.All`. The negative live path is
+proven; the positive live path is `needs-tenant-validation`, and it is the last
+square rather than a blocker on the rest of the slice.
+

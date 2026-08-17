@@ -141,10 +141,21 @@ class Unavailable:
         """
         detail = (body or "").strip()[:400]
         if status == 401:
+            # NOT `permission-denied`, and the difference is not cosmetic. A
+            # `401` says the session is not valid -- expired, issued for another
+            # audience, never established -- and a `403` says a valid session
+            # was refused this surface. Reading the first as the second sends
+            # somebody to request a Graph permission when what they needed was
+            # to sign in again.
+            #
+            # `missing` because the evidence contract has four absent states and
+            # none of them means "not authenticated". Recorded as a contract gap
+            # in the slice audit rather than smuggled into the nearest word.
             return Unavailable(
-                "permission-denied",
-                "the session is not authenticated for Microsoft Graph. This "
-                "says nothing about the tenant. " + detail,
+                "missing",
+                "the session is not valid for Microsoft Graph: expired, issued "
+                "for another audience, or never established. This is not a "
+                "permission problem and says nothing about the tenant. " + detail,
             )
         if status == 403:
             return Unavailable(
