@@ -32,6 +32,10 @@
       "digest": "bbeeb65ac9cfa1df07bde6cd3f9e5c65fcac43fb633a5809da55ac279a97a706",
       "path": "schemas/assessment.schema.json"
     },
+    "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0": {
+      "digest": "5c223a670d66b70c4a0900449dd4281a36d637b729e0ea43170d61a7260ca939",
+      "path": "schemas/capability-manifest.schema.json"
+    },
     "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
       "digest": "6283a2f038717dad38ce892ed18ae0c0682fd70833cda43d340bdbba9faa6c4a",
       "path": "schemas/collection.schema.json"
@@ -89,5 +93,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "b22f7ec38821e5ae7cc8334003eb3b0de16c4d78c31f4fd6b99b15a999536007"
+  "set_digest": "147407309abd322ef4f555cc5e99308e078122552dc64edff7e0f61e9c9844b2"
 }

@@ -524,6 +524,11 @@ def check_closure(schemas: dict) -> None:
             "rule",
             "collection",
             "connection",
+            # A root with no generated model, and deliberately. It describes
+            # the engine rather than a tenant: nothing evaluates it, nothing
+            # persists it, and a consumer projects it as JSON. Generating a
+            # record for it would put a type in the bundle nobody deserialises.
+            "capability-manifest",
         )
     }
     orphans = declared - reached - roots

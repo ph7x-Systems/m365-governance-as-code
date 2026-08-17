@@ -35,39 +35,38 @@ CONTRACT = "capability-manifest"
 def manifest(rules: Path | None = None) -> dict[str, Any]:
     """The whole picture, assembled from the parts that own each piece."""
     loaded = [r.data for r in load_rules(rules or packaged("rules"))]
-    by_resource: dict[tuple[str, str], list[dict[str, Any]]] = {}
-    for rule in loaded:
-        key = (rule.get("service", ""), rule.get("resource_type", ""))
-        by_resource.setdefault(key, []).append(rule)
 
     return {
         "$schema": registry.contract(CONTRACT),
         "engine_version": _version(),
         "contract_version": collecting._contract_version(),
         "capabilities": [
-            _capability(chosen, by_resource)
+            _capability(chosen, loaded)
             for chosen in sorted(collecting.SLICES.values(), key=lambda s: s.name)
         ],
         "contracts": sorted(_contracts()),
-        "rules": sorted(
-            (_rule(rule) for rule in loaded), key=lambda r: str(r["id"])
-        ),
+        "rules": sorted((_rule(rule) for rule in loaded), key=lambda r: str(r["id"])),
     }
 
 
 def _capability(
-    chosen: collecting.Slice, by_resource: dict[tuple[str, str], list[dict[str, Any]]]
+    chosen: collecting.Slice, rules: list[dict[str, Any]]
 ) -> dict[str, Any]:
     """One slice, and everything that is true of it.
 
-    The rules are not declared on the slice and are not counted here either:
-    they are the rules whose workload and resource type match what this slice
-    produces. A declared list would be a second place to update, and the first
-    time somebody added a rule and forgot, the manifest would understate the
-    product while looking maintained.
+    The rules are not declared on the slice and are not counted here either.
+    They are derived, and the derivation matters: matching on workload and
+    resource type alone answered "which rules could apply to a document of this
+    shape", which for SharePoint is nearly all of them — the classification
+    slice came back owning fifteen rules it says nothing about. A rule belongs
+    to a slice when the slice produces the facts the rule requires, and the
+    fixture the slice is already paired with is what says which those are.
     """
-    workload, resource_type = _produces(chosen)
-    consuming = by_resource.get((workload, resource_type), [])
+    document = _fixture(chosen)
+    resource = document.get("resource", {})
+    workload = str(resource.get("workload", ""))
+    resource_type = str(resource.get("type", ""))
+    consuming = sorted(_decidable(rules, document))
 
     return {
         "name": chosen.name,
@@ -82,32 +81,51 @@ def _capability(
             "live_validation": chosen.live,
         },
         "produces": {"workload": workload, "resource_type": resource_type},
-        "consumed_by": (
-            [str(rule["id"]) for rule in sorted(consuming, key=lambda r: str(r["id"]))]
-            if chosen.produces_findings
-            else []
-        ),
+        "consumed_by": consuming if chosen.produces_findings else [],
         # Named whenever no rule reads it, which is the price of the exception
         # to the twin rule. Without it, "no rule" reads as "nobody looked".
         "consumer": chosen.consumed_by,
     }
 
 
-def _produces(chosen: collecting.Slice) -> tuple[str, str]:
-    """The workload and resource type this slice writes evidence about.
+def _decidable(rules: list[dict[str, Any]], document: dict[str, Any]) -> set[str]:
+    """The rules that can reach an answer from what this slice produces.
 
-    Read from the fixture the slice is already paired with, which is the one
-    place that has to be right for the profile test to pass. A second
-    declaration would be a second thing to keep true.
+    **Established by running them, not by comparing paths.** The first version
+    intersected each rule's declared evidence paths with the fixture's fact
+    keys, and it under-reported: `owners.count` is resolved by the engine from
+    an aggregate fact and exists as no literal key, so a rule that decides
+    perfectly well looked unsupported. The engine already knows how to resolve
+    a path; asking it is one authority, and reimplementing it here would be two.
+
+    `unknown` is the answer that excludes: it means the rule applies to this
+    shape of resource and could not decide from what this slice collected.
+    """
+    from .engine import evaluate
+    from .results import Outcome
+
+    if not document:
+        return set()
+    return {
+        str(result.rule_id)
+        for result in evaluate(rules, document).results
+        if result.outcome is not Outcome.UNKNOWN
+    }
+
+
+def _fixture(chosen: collecting.Slice) -> dict[str, Any]:
+    """The document this slice is already paired with.
+
+    One place has to be right for the profile pairing test to pass, and this is
+    it. A second declaration on the slice would be a second thing to keep true.
     """
     from .loader import load_json
 
     for folder in ("sharepoint", "entra"):
         path = packaged("fixtures") / folder / f"{chosen.shaped_like}.json"
         if path.is_file():
-            resource = load_json(path).get("resource", {})
-            return str(resource.get("workload", "")), str(resource.get("type", ""))
-    return "", ""
+            return load_json(path)
+    return {}
 
 
 def _rule(rule: dict[str, Any]) -> dict[str, Any]:
@@ -127,6 +145,11 @@ def _rule(rule: dict[str, Any]) -> dict[str, Any]:
         "severity": (rule.get("severity") or {}).get("default"),
         "basis": {
             "type": basis.get("type"),
+            # Carried because for a `convention` it is the whole authority.
+            # That basis type has no sources by design -- it says the threshold
+            # is ours -- and a manifest that showed an empty source list and
+            # nothing else would make an honest rule look unsupported.
+            "rationale": _text(basis.get("rationale")),
             "sources": [
                 {"url": s.get("url"), "title": s.get("title")}
                 for s in basis.get("sources") or []
@@ -140,6 +163,11 @@ def _rule(rule: dict[str, Any]) -> dict[str, Any]:
             "other": list(limitations.get("other") or []),
         },
     }
+
+
+def _text(value: Any) -> str | None:
+    """A YAML folded block as one line, or None where there is none."""
+    return " ".join(str(value).split()) if value else None
 
 
 def _contracts() -> list[str]:

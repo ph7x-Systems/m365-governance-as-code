@@ -119,6 +119,28 @@ def main() -> int:
             done.stdout, encoding="utf-8"
         )
         written += 1
+    # What this engine can do, as bytes rather than as a description of bytes.
+    # A consumer projecting the capabilities -- a public page per collector, per
+    # rule, a coverage matrix -- needs the document itself, and generating it
+    # locally would mean running an engine it may not have. It is derived on
+    # every publish, so it cannot be stale by the time it arrives.
+    done = subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "m365_governance.cli",
+            "capabilities",
+            "--format",
+            "json",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    if done.returncode != 0:
+        print("  ✗ the capability manifest could not be produced")
+        return 1
+    (out / "capabilities.json").write_text(done.stdout, encoding="utf-8")
+
     # An assessment is the only artefact whose identity is derived from its own
     # bytes, so a consumer that never received one cannot have tested the part
     # of the contract that matters most. This one used to be copied across by

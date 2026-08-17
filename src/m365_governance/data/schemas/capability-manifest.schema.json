@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0",
+  "title": "Capability manifest",
+  "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand — and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "engine_version",
+    "contract_version",
+    "capabilities",
+    "contracts",
+    "rules"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it."
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The engine that produced this description of itself."
+    },
+    "contract_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The version of the published contract bundle. Separate from the engine version because a consumer builds against contracts, not against an implementation, and the two move for different reasons."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capability"
+      },
+      "description": "One entry per collection slice: one question this engine can answer about a tenant."
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Every contract this engine holds, by its `$id`. A consumer that validates a document it received checks the id against this list rather than against a version it remembers."
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      },
+      "description": "Every rule, with what it decides and on what authority."
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "describes",
+        "collector",
+        "produces",
+        "consumed_by",
+        "consumer"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The slice as a person names it on the command line."
+        },
+        "describes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What it reads, in a sentence, so a document read a year later explains itself without the engine that wrote it."
+        },
+        "collector": {
+          "$ref": "#/$defs/collector"
+        },
+        "produces": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "workload",
+            "resource_type"
+          ],
+          "description": "The workload and resource type this slice writes evidence about. A rule applies to evidence only when both match, so this is what says which rules can ever read it.",
+          "properties": {
+            "workload": {
+              "type": "string"
+            },
+            "resource_type": {
+              "type": "string"
+            }
+          }
+        },
+        "consumed_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The rules that read this slice's evidence, by id. Empty where no rule does, which is a decision and not an omission — see `consumer`."
+        },
+        "consumer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who reads this slice's output. Normally the rules. Where no rule does, this names what does instead, and that is the price of the exception: without it, `consumed_by: []` reads as nobody having looked."
+        }
+      }
+    },
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "reads",
+        "permissions",
+        "live_validation"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "powershell",
+            "graph"
+          ],
+          "description": "Which collector answers this slice. It changes what the caller must have installed and how the identity is supplied, and nothing else about the contract."
+        },
+        "mode": {
+          "type": "string",
+          "description": "The collector's own name for this slice, which is a different vocabulary from the engine's on purpose: the two are versioned by different things."
+        },
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The Microsoft surface this slice reads, in that surface's own words — a cmdlet, or an HTTP path. It is what answers `what does this product touch` without anybody reading the source."
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Least privilege, as a source establishes it. `not-established` is a real answer and appears where no source has settled it: an invented permission would be worse than an admitted gap, because somebody would grant it."
+        },
+        "live_validation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What a run against a real tenant has established. `not live-validated` means offline tests only — the collector has been proved to behave as somebody believed the API behaves. No rule should rest on that alone."
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "service",
+        "resource_type",
+        "severity",
+        "basis",
+        "evidence_requirements",
+        "limitations"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": "string",
+          "description": "The workload this rule belongs to. It must match the evidence's `workload` for the rule to apply at all: `tenant` is a type name in every workload, and without this a rule reads another product's evidence."
+        },
+        "resource_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The default severity. Null where a rule declares none, rather than a value chosen here."
+        },
+        "basis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "rationale",
+            "sources"
+          ],
+          "description": "On what authority this rule decides. AN OUTCOME WITHOUT IT IS AN OPINION WITH A SEVERITY ATTACHED, which is why it travels with every rule rather than living in a document somebody has to find.",
+          "properties": {
+            "type": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Requirement, documented limit, documented guidance or convention. They are not the same claim and a reader is entitled to know which one is being made."
+            },
+            "rationale": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Why this basis supports this rule. For a `convention` it is the whole authority: that type has no sources by design, because the threshold is this engine's rather than a vendor's, and a rule showing an empty source list and nothing else would look unsupported when it is merely honest."
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "evidence_requirements": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": "The fact paths this rule reads. What a collection has to have produced for the rule to answer anything but `unknown`."
+        },
+        "limitations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passes_without_resolving",
+            "other"
+          ],
+          "description": "What a pass does not establish. THE MOST EXPENSIVE GREEN IS THE ONE THAT DOES NOT SAY WHAT IT LEFT UNRESOLVED, so this is required rather than optional.",
+          "properties": {
+            "passes_without_resolving": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "other": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

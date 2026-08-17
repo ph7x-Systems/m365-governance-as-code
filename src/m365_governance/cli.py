@@ -35,6 +35,7 @@ from pathlib import Path
 from . import (
     __version__,
     assessment,
+    capabilities,
     collecting,
     comparison,
     conditional_access,
@@ -125,6 +126,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     collect.add_argument(
         "--dry-run", action="store_true", help="print the command and reach no tenant"
+    )
+
+    caps = sub.add_parser(
+        "capabilities",
+        help="what this engine collects, decides and promises. Reaches no tenant",
+    )
+    caps.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
+    caps.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="json is the published capability-manifest contract",
     )
 
     connect = sub.add_parser(
@@ -309,6 +322,21 @@ def _report_manifest(outcome) -> None:
     """
     if outcome.manifest_path is not None:
         print(f"  the collection is described in {outcome.manifest_path}")
+
+
+def _cmd_capabilities(args) -> int:
+    """What this engine can do, derived from the objects that do it.
+
+    It reaches no tenant and reads no evidence. The JSON form is the published
+    contract a consumer projects; the text form is the same document for
+    somebody reading rather than parsing.
+    """
+    document = capabilities.manifest(args.rules)
+    if args.format == "json":
+        print(json.dumps(document, indent=2, ensure_ascii=False))
+    else:
+        print(capabilities.describe(document), end="")
+    return 0
 
 
 def _cmd_collect(args) -> int:
@@ -1047,6 +1075,7 @@ def _cmd_contracts(args) -> int:
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
+    "capabilities": _cmd_capabilities,
     "collect": _cmd_collect,
     "connect": _cmd_connect,
     "explain": _cmd_explain,
