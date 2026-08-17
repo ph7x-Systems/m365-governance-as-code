@@ -22,7 +22,13 @@ import json
 import pytest
 
 from m365_governance import connecting
-from m365_governance.connecting import Connection, Reach, connect, describe
+from m365_governance.connecting import (
+    Connection,
+    Reach,
+    connect,
+    describe,
+    document,
+)
 
 SESSION = {
     "connected": True,
@@ -289,9 +295,8 @@ def test_connect_reports_json_for_a_consumer(monkeypatch, capsys):
     reported = json.loads(capsys.readouterr().out)
     assert code == 0
     assert reported["reach"] == "established"
-    assert reported["identity"] == "delegated"
-    assert reported["observed_tenant_id"] is None
-    assert reported["session"]
+    assert reported["session"]["identity_kind"] == "delegated"
+    assert reported["session"]["observed_tenant_id"] is None
     assert reported["because"]
 
 
@@ -370,3 +375,75 @@ def test_the_report_keeps_the_two_answers_under_separate_headings():
     assert text.index("Address resolution") < text.index("Authenticated session")
     assert "observed   not established" in text
     assert "does not stand in for it" in text
+
+
+# ---------------------------------------------------------------------------
+# it is a document of the contract it declares
+# ---------------------------------------------------------------------------
+
+
+def _valid(doc: dict) -> list[str]:
+    from m365_governance import registry
+    from m365_governance.resources import packaged
+
+    return registry.SchemaRegistry.load(packaged("schemas")).problems(doc)
+
+
+@pytest.mark.parametrize(
+    "lines,code,cancelled",
+    [
+        ([_resolved(), _established()], 0, False),
+        ([_resolved(), "AADSTS65001: consent"], 1, False),
+        ([_resolved(None, detail="no such tenant")], 1, False),
+        ([], 127, False),
+        ([_resolved(), "  waiting"], 1, True),
+    ],
+)
+def test_every_outcome_is_a_document_of_the_contract(lines, code, cancelled):
+    """Including the ones that reached nothing.
+
+    A failure is exactly the case a consumer cannot reconstruct, so a contract
+    that only described the successful attempt would leave it to be inferred.
+    """
+    doc = document(_attempt(engine=_engine(lines, code, cancelled)))
+
+    assert doc["$schema"].endswith("/connection/1.0.0")
+    assert _valid(doc) == []
+
+
+def test_no_session_is_null_rather_than_an_empty_one():
+    """An empty session reads as one that established nothing.
+
+    That is a different and much weaker statement than there being no session
+    at all, and a consumer would show a signed-in panel with every field blank.
+    """
+    doc = document(_attempt(engine=_engine([_resolved(), "refused"], 1)))
+
+    assert doc["session"] is None
+    assert doc["address"]["resolved_tenant_id"] is not None
+
+
+def test_the_document_never_carries_the_resolved_id_as_an_observation():
+    """The one line the whole contract exists to hold.
+
+    Copying the public resolution into `observed_tenant_id` would make a lookup
+    anybody can perform indistinguishable from something this session saw, in
+    the single field a reader trusts to mean what was observed.
+    """
+    doc = document(_attempt(engine=_engine([_resolved(), _established()])))
+
+    assert (
+        doc["address"]["resolved_tenant_id"] == "fcea8c52-d8bb-4836-8ef1-a3ab74265d08"
+    )
+    assert doc["session"]["observed_tenant_id"] is None
+    assert doc["address"]["how"] == "public-discovery"
+
+
+def test_the_document_carries_no_credential():
+    smuggled = _established(client_secret="s3cret", certificate="a-thumbprint")
+
+    doc = document(_attempt(engine=_engine([_resolved(), smuggled])))
+
+    assert "s3cret" not in json.dumps(doc)
+    assert "a-thumbprint" not in json.dumps(doc)
+    assert _valid(doc) == []
