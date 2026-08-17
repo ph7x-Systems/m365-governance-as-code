@@ -21,11 +21,18 @@ def schemas():
 
 
 def read(which: str, *, at: str, digest: str, coverage=None) -> dict:
+    """One side of a record, as `reference()` builds it.
+
+    Two digests, not one: the document, and what the document observed. A test
+    that carried only the first would not exercise the distinction that exists
+    because its author once compared a read against itself.
+    """
     return {
         "read_id": f"{which}-001",
         "taken_at": at,
         "estate": "contoso-projects",
         "canonical_hash": digest,
+        "evidence_hash": canonical.digest([{which: True}, coverage or []]),
         "coverage": coverage or [],
     }
 
@@ -703,10 +710,16 @@ def test_a_size_only_comparison_says_so_in_the_limitations(delivered):
     assert "nothing in this report says the contents match" in text
 
 
-def test_the_report_carries_both_digests_so_it_can_be_checked(delivered):
+def test_the_report_carries_the_evidence_digests_so_it_can_be_checked(delivered):
+    """The report publishes what each read OBSERVED, not what the file was.
+
+    A reader comparing two documents wants to know whether the observations
+    differed. The document digest also moves when only an id or a timestamp
+    changed, so publishing it here would answer a question nobody asked.
+    """
     text = migration.report(delivered)
-    assert delivered["baseline"]["canonical_hash"] in text
-    assert delivered["verification"]["canonical_hash"] in text
+    assert delivered["baseline"]["evidence_hash"] in text
+    assert delivered["verification"]["evidence_hash"] in text
     assert migration.digest(delivered) in text
 
 
@@ -801,3 +814,49 @@ def test_a_record_built_from_a_thin_source_still_validates(schemas):
         "a search surface establishes that items exist and how many; everything "
         "else needs a source that carries it"
     )
+
+
+def test_two_reads_stamped_twice_share_one_evidence_digest():
+    """The tautology that produced a clean report for its author.
+
+    Both sides written from one set of items, stamped with two ids and two
+    times. The document digests differ and the evidence digest does not, which
+    is the only signal there is — and it is published rather than judged,
+    because nothing here can tell one observation submitted twice from two
+    observations that agree.
+    """
+    observed = {"items": {PLAN: {"size": 10}}, "coverage": []}
+    sides = [
+        migration.reference(
+            dict(observed, read_id=name, taken_at=at, estate="e")
+        )
+        for name, at in (("first", "2026-03-01T09:00:00Z"),
+                         ("second", "2026-03-09T09:00:00Z"))
+    ]
+    assert sides[0]["canonical_hash"] != sides[1]["canonical_hash"]
+    assert sides[0]["evidence_hash"] == sides[1]["evidence_hash"]
+
+
+def test_a_real_difference_is_not_reported_as_identical(schemas):
+    """The guard must not fire whenever a comparison happens to be quiet."""
+    before = {"items": {PLAN: {"size": 10}}, "coverage": []}
+    after = {"items": {PLAN: {"size": 11}}, "coverage": []}
+    findings = migration.compare(
+        baseline=before, verification=after,
+        dimensions=[{"name": "size", "state": "compared"}],
+    )
+    assert [f["outcome"] for f in findings] == ["fail"]
+
+
+def test_the_report_leads_with_the_tautology_rather_than_burying_it(schemas):
+    observed = {"items": {PLAN: {"size": 10}}, "coverage": []}
+    document = migration.record(
+        baseline=dict(observed, read_id="a", taken_at="2026-03-01T09:00:00Z",
+                      estate="e", produced_by="p"),
+        verification=dict(observed, read_id="b", taken_at="2026-03-09T09:00:00Z",
+                          estate="e", produced_by="p"),
+        move={"kind": "t", "produced_by": "test"},
+    )
+    summary = migration.report(document).split("## What was verified")[0]
+    assert "observed byte-identical estates" in summary
+    assert "does not guess" in summary

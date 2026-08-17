@@ -90,6 +90,9 @@ def reference(read: dict) -> dict:
         "taken_at": read["taken_at"],
         "estate": read["estate"],
         "canonical_hash": canonical.digest(read),
+        "evidence_hash": canonical.digest(
+            [read.get("items"), read.get("coverage")]
+        ),
         "coverage": read.get("coverage", []),
     }
 
@@ -673,6 +676,18 @@ def report(document: dict) -> str:
         "reads. It was not produced by whatever performed the move."
     )
     out.append("")
+    if baseline.get("evidence_hash") == verification.get("evidence_hash"):
+        out.append(
+            "**The two reads observed byte-identical estates.** Their ids and "
+            "timestamps differ; what they saw does not. This report cannot "
+            "tell whether the estate genuinely did not change or whether one "
+            "observation was submitted twice, and it does not guess — the "
+            "evidence digests are published below so a reader can see it for "
+            "themselves. Across a real move, identical observations are not a "
+            "quiet estate."
+        )
+        out.append("")
+
     if differences:
         out.append(
             f"**{len(differences)} difference(s) were established** between the "
@@ -774,12 +789,12 @@ def report(document: dict) -> str:
         "check that it says what this says."
     )
     out.append("")
-    out.append("| | Read | Taken | Digest |")
+    out.append("| | Read | Taken | Digest of what it observed |")
     out.append("| --- | --- | --- | --- |")
     for label, side in (("Before", baseline), ("After", verification)):
         out.append(
             f"| {label} | {side['read_id']} | {side['taken_at']} "
-            f"| `{side['canonical_hash']}` |"
+            f"| `{side['evidence_hash']}` |"
         )
     out.append("")
     out.append(f"Record digest: `{digest(document)}`")
