@@ -276,3 +276,66 @@ def test_a_read_with_no_versions_says_who_decided(schemas):
         "the surface can provide versions; this read did not fetch them, which "
         "is a different sentence from the surface being unable to"
     )
+
+
+# -- what a real drive does that a fixture does not -------------------------
+
+
+def test_a_folder_reached_twice_is_read_once_and_said_so():
+    """A drive can carry a shortcut back to an ancestor."""
+    loop = {
+        "/root/children": {"value": [{"id": "2", "name": "A", "folder": {}}]},
+        "/items/2/children": {
+            "value": [FILE, {"id": "2", "name": "A-again", "folder": {}}]
+        },
+    }
+    document = migration_graph.read(
+        reader_for(loop), drive="d", read_id="r",
+        taken_at="2026-03-01T09:00:00Z", estate="e",
+    )
+    assert list(document["items"]) == ["/A/plan.xlsx"]
+    assert any("already entered" in gap["detail"] for gap in document["coverage"])
+
+
+def test_the_walk_stops_at_a_depth_and_reports_it_rather_than_crashing():
+    """Deeper than the interpreter allows is a coverage gap, not a stack trace."""
+    # Each level carries a new folder id so the cycle guard never fires, and a
+    # file so the read is not empty for an unrelated reason.
+    counter = {"n": 0}
+
+    def transport(url: str, token: str):
+        counter["n"] += 1
+        return 200, json.dumps(
+            {
+                "value": [
+                    FILE,
+                    {"id": f"lvl-{counter['n']}", "name": "deep", "folder": {}},
+                ]
+            }
+        ), {}
+
+    document = migration_graph.read(
+        GraphReader(TOKEN, transport=transport), drive="d", read_id="r",
+        taken_at="2026-03-01T09:00:00Z", estate="e",
+    )
+    assert any("the walk stopped at" in gap["detail"] for gap in document["coverage"])
+    assert counter["n"] <= migration_graph.MAX_DEPTH + 2
+
+
+def test_an_item_shared_from_another_drive_is_listed_but_never_walked():
+    """Its contents belong to an estate this read does not cover."""
+    shared = {
+        "id": "9",
+        "name": "Shared",
+        "folder": {},
+        "remoteItem": {"id": "elsewhere"},
+        "size": 12,
+    }
+    document = migration_graph.read(
+        reader_for({"/root/children": {"value": [FILE, shared]}}),
+        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+    )
+    assert "/Shared" in document["items"], "it is in the folder, so it is listed"
+    gap = next(g for g in document["coverage"] if g["scope"] == "/Shared")
+    assert gap["state"] == "not-supported"
+    assert "another drive" in gap["detail"]

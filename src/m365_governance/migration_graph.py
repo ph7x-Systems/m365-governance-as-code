@@ -61,6 +61,13 @@ NEVER = ()
 #: theirs. Read-only, and the narrower of the two that would work.
 PERMISSIONS = ("Files.Read.All", "Sites.Read.All")
 
+#: How deep the walk goes before it stops and says so. A drive has no documented
+#: depth limit and Python's recursion does, so without this a deep enough tree
+#: ends the collection with a stack trace instead of a coverage gap — which is
+#: the difference between a product that reports its limits and one that dies at
+#: them.
+MAX_DEPTH = 64
+
 
 class Unreadable(Exception):
     """The estate could not be enumerated, and saying why is the answer."""
@@ -150,9 +157,20 @@ def read(
     items: dict[str, dict[str, Any]] = {}
     coverage: list[dict[str, Any]] = []
     carried_a_digest = False
+    #: Folders already entered. A drive can carry a shortcut back to an ancestor,
+    #: and a walk without this follows it until the interpreter stops it.
+    entered: set[str] = set()
 
-    def walk(path: str, prefix: str) -> None:
+    def walk(path: str, prefix: str, depth: int = 0) -> None:
         nonlocal carried_a_digest
+        if depth > MAX_DEPTH:
+            coverage.append({
+                "scope": prefix or "/",
+                "state": "partial",
+                "detail": f"the walk stopped at {MAX_DEPTH} levels; anything "
+                "below this is not in this read",
+            })
+            return
         answer: Read = reader.read(f"{path}/children")
         if answer.unavailable is not None:
             coverage.append(
@@ -168,8 +186,32 @@ def read(
         for entry in answer.items:
             name = entry.get("name") or entry.get("id") or "<unnamed>"
             identity = f"{prefix}/{name}"
+            if "remoteItem" in entry:
+                # It lives in another drive. Listing it is honest — it is in
+                # this folder — but walking into it would put another estate's
+                # items under this estate's identities, and every one of them
+                # would then read as present or missing here on the strength of
+                # a read that never covered that drive.
+                items[identity] = _item(entry)
+                coverage.append({
+                    "scope": identity,
+                    "state": "not-supported",
+                    "detail": "this item is shared from another drive; its "
+                    "contents are not part of this estate and were not walked",
+                })
+                continue
+
             if "folder" in entry:
-                walk(f"{base}/items/{entry['id']}", identity)
+                if entry["id"] in entered:
+                    coverage.append({
+                        "scope": identity,
+                        "state": "partial",
+                        "detail": "this folder was already entered elsewhere in "
+                        "the walk, so it was not read twice",
+                    })
+                    continue
+                entered.add(entry["id"])
+                walk(f"{base}/items/{entry['id']}", identity, depth + 1)
                 continue
             item = _item(entry)
             if "content_digest" in item and item["content_digest"] is not None:
