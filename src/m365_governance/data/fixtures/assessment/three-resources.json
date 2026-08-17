@@ -2158,7 +2158,7 @@
       }
     ],
     "versions": {
-      "engine": "1.0.0b5",
+      "engine": "1.0.0b6",
       "rules": {
         "SPO-ACTIVITY-001": "1.0",
         "SPO-CLASS-001": "1.0",
@@ -2202,17 +2202,17 @@
           "collected"
         ]
       },
-      "assessment_id": "350d5d73eae67b954910e4a85eb7e4cd2afe4ff42964b7001742c5ccbaee774e"
+      "assessment_id": "84ed46ae573f7c58e2b0e35121841eee9e0a1a08d61962967790df5f235e95dc"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
         "run_set": "b797667a7de13b702e57f0b63113488667ef2567729addb09ae33d5d2bf93c80",
         "evidence": "f28860a02a4b822eeb6353e9c356f3bd004046109959f71b6990782d9b0fe79f",
-        "versions": "e19e2af97ecd1425faff6f67cc03ed9c6e53fefd4dd35fbd5f5475be25d8ab25",
+        "versions": "2421ae26ce1dc570f9a24c96e188ed0c4fb6e0e5c60018aefc1f0c27b98692a9",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "350d5d73eae67b954910e4a85eb7e4cd2afe4ff42964b7001742c5ccbaee774e"
+      "canonical_hash": "84ed46ae573f7c58e2b0e35121841eee9e0a1a08d61962967790df5f235e95dc"
     }
   }
 }

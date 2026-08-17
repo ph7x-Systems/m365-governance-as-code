@@ -40,8 +40,8 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `1.0.0b5`. 20 rules, a thirteen-mode collector validated
-against a live tenant, 9 profiles, 14 commands and 823 tests at 90 per
+**Status:** `1.0.0b6`. 20 rules, a thirteen-mode collector validated
+against a live tenant, 9 profiles, 14 commands and 835 tests at 90 per
 cent coverage. Beta because the model has stopped moving: the outcomes, the
 resolution order, the basis types and the evidence schema are frozen, and
 [docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md) records what closing SharePoint
@@ -144,7 +144,7 @@ Details in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governanc
 brew install pipx        # macOS. Ubuntu 23.04+/Debian 12+: sudo apt install pipx
 pipx ensurepath          # then open a new shell
 
-pipx install m365-governance-as-code==1.0.0b5
+pipx install m365-governance-as-code==1.0.0b6
 ```
 
 `pipx ensurepath` is not optional, and skipping it looks like a broken install:
@@ -168,10 +168,10 @@ If you would rather manage the environment yourself:
 
 ```bash
 python3 -m venv .venv
-./.venv/bin/pip install m365-governance-as-code==1.0.0b5
+./.venv/bin/pip install m365-governance-as-code==1.0.0b6
 ```
 
-The `==` is not optional yet. `1.0.0b5` is a pre-release under PEP 440, and pip
+The `==` is not optional yet. `1.0.0b6` is a pre-release under PEP 440, and pip
 skips pre-releases unless a version is pinned or `--pre` is given, so plain
 `pipx install m365-governance-as-code` resolves to nothing until there is a
 stable release.
@@ -211,7 +211,7 @@ which of the two it used.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pipx install m365-governance-as-code==1.0.0b5  # 1. install (see Install)
+pipx install m365-governance-as-code==1.0.0b6  # 1. install (see Install)
 m365-governance doctor                # 2. is anything broken here
 m365-governance list-rules            # 3. what ships with this version
 m365-governance show-rule SPO-LIST-001
