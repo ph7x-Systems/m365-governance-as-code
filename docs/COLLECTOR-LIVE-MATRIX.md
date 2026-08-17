@@ -25,19 +25,33 @@ The tenant is not named here: this repository is public.
 Recorded 2026-08-17 unless stated. `n.a.` means the surface has no pagination
 to exercise.
 
-| Collector | Positive | Negative | Pagination | Schema | State |
-|---|---|---|---|---|---|
-| `sites` | `partial`, 11 documents | `failed` under `AllSites.Read` | none at 11 items | 11/11 valid | **fully live-validated** |
-| `owners` | `completed`, 1 document | not attempted | n.a. | valid | **live-validated** |
-| `modernity` | `completed`, `pages` + `web` | not attempted | n.a. | valid | **live-validated** |
-| `classification` | `completed` | not attempted | n.a. | valid | **live-validated** |
-| `sharing` | `completed` | not attempted | n.a. | valid | **live-validated** |
-| `activity` | `completed` | not attempted | n.a. | valid | **live-validated** |
-| `permissions` | `completed`, 17 documents | not attempted | n.a. | 17/17 valid | **live-validated** |
-| `agents` | 0 agents returned, 2026-08-10 | not attempted | n.a. | recorded | **live-validated** |
-| `tenant-sharing` | 3 properties read, 2026-08-08 | not attempted | n.a. | recorded | **live-validated** |
-| `spfx` | not observed | `403 Forbidden`, 2026-08-08 | n.a. | — | **negative path validated** |
-| `conditional-access` | 10 policies, 1 named location, defaults read | `403` without `Policy.Read.All` | none at 10 items | provider only | **fully live-validated** at the provider |
+| Collector | Offline | Live + | Live − | Pagination | Rules it supports | Status |
+|---|---|---|---|---|---|---|
+| `sites` | ✓ | `partial`, 11 docs | `failed` under `AllSites.Read` | none at 11 items | `SPO-LIST-001/002/003`, `SPO-SITE-003` | **fully live-validated** |
+| `owners` | ✓ | `completed`, 1 doc | — | n.a. | `SPO-SITE-001`, `SPO-SITE-002` | **live-validated** |
+| `modernity` | ✓ | `completed`, `pages` + `web` | — | n.a. | `SPO-MODERN-001/003/004` | **live-validated** |
+| `classification` | ✓ | `completed` | — | n.a. | `SPO-CLASS-001/002/003` | **live-validated** |
+| `sharing` | ✓ | `completed` | — | n.a. | `SPO-SHARE-001/002/005` | **live-validated** |
+| `activity` | ✓ | `completed` | — | n.a. | `SPO-ACTIVITY-001` | **live-validated** |
+| `permissions` | ✓ | `completed`, 17 docs | — | n.a. | `SPO-LIST-001/002/003`, `SPO-SITE-003` | **live-validated** |
+| `agents` | ✓ | 0 agents, 2026-08-10 | — | n.a. | **none**, by decision | **live-validated** |
+| `tenant-sharing` | ✓ | 3 properties, 2026-08-08 | — | n.a. | `SPO-SHARE-003`, `SPO-SHARE-004` | **live-validated** |
+| `spfx` | ✓ | not observed | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **negative path validated** |
+| `conditional-access` | ✓ | 10 policies, 1 location, defaults | `403` without `Policy.Read.All` | none at 10 items | none yet | **fully live-validated** at the provider |
+
+### What this table answers immediately
+
+**Is this collector ready for production?** The Status column.
+
+**Which rules depend on it?** The rules column. `agents` is the deliberate
+exception: it produces an inventory that no rule reads, because Microsoft
+publishes no normative position on how many agents an organisation should have,
+and `consumed_by` names the report instead.
+
+**If it fails, what becomes `unknown`?** The rules in its row. `SPO-SPFX-001`
+is the live case: `spfx` has never returned data from this tenant, so that rule
+has never been evaluated against real evidence and would answer `unknown` for
+every site if run today.
 
 ## What the evaluations produced, which is the other half of the proof
 
@@ -111,8 +125,47 @@ There is no way today to open one session and drive several slices through it.
 That is a real gap in the collector's design for live validation, and it is
 recorded here because it shapes how long this matrix takes to close.
 
-## Rule
+## The maturity gate
+
+**This file is a gate, not a photograph of one slice.** A collector's row is
+what says whether it may be relied on, and a row that does not exist is an
+answer too.
+
+> **No new collector enters this repository without:**
+>
+> - complete offline tests, covering the whole answer matrix;
+> - a row in this file;
+> - a positive live proof, or an explicit `needs-tenant-validation` with the
+>   reason it could not be obtained;
+> - the list of rules it supports, or a statement that it supports none and
+>   why.
 
 **No rule depends on a collector that has only been simulated.** A collector at
 `not live-validated` may ship evidence and may be evaluated; a rule written on
 its output is a governance conclusion resting on a belief about an API.
+
+## The three outstanding gaps, ranked
+
+### 1. One interactive sign-in per collector — the one that does not scale
+
+Each `collect` spawns its own process and authenticates again. Six collectors
+were proved here at the cost of six browser prompts. At thirty or forty
+collectors, live validation stops being something anybody does.
+
+**Live validation should open one authenticated session and drive every
+compatible collector through it.** The collector authenticates inside
+`Get-SpoEvidence.ps1`, so this is an engine change rather than a script a
+caller can write, and it is the highest-value of the three.
+
+### 2. Real pagination, never exercised
+
+The only gap that spans every collector. Eleven sites and ten policies produced
+no next link, so the client's paging is proved offline and unproved live. It
+does not block shipping; it stays unproved until a tenant large enough exists.
+
+### 3. `spfx` has no positive path
+
+**Not a defect in the collector.** The tenant refused the API permission in
+August, so the surface has never returned data here. It is correctly
+`needs-tenant-validation`, and `SPO-SPFX-001` is the one rule in the product
+whose supporting collector has never returned real evidence.
