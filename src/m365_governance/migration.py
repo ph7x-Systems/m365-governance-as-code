@@ -34,6 +34,7 @@ from typing import Any
 from . import canonical, registry
 
 NAME = "migration-verification"
+READ = "migration-read"
 
 #: What can be compared between two reads. The order is the order they are
 #: worth doing in: presence before count, count before anything about the items
@@ -66,6 +67,31 @@ class Unverifiable(ValueError):
 def contract() -> str:
     """The exact contract a producer of these documents must declare."""
     return registry.contract(NAME)
+
+
+def read_contract() -> str:
+    """The exact contract a read must declare, which is what we ask for."""
+    return registry.contract(READ)
+
+
+def reference(read: dict) -> dict:
+    """A read, as the verification record names it.
+
+    By identity and digest rather than by copy. The record stays small, the
+    reads stay authoritative, and anyone holding both can recompute the whole
+    thing — which is the only reason a third party can check this without us.
+
+    Coverage is carried across rather than referenced, because a reader
+    deciding how much weight to give a finding needs to see what could not be
+    read without fetching a second document.
+    """
+    return {
+        "read_id": read["read_id"],
+        "taken_at": read["taken_at"],
+        "estate": read["estate"],
+        "canonical_hash": canonical.digest(read),
+        "coverage": read.get("coverage", []),
+    }
 
 
 def build(
@@ -348,8 +374,8 @@ def _attribute(
             )
             continue
 
-        seen_before = before[item].get(key)
-        seen_after = after[item].get(key)
+        seen_before = _comparable(before[item].get(key))
+        seen_after = _comparable(after[item].get(key))
         if seen_before is None or seen_after is None:
             # Neither read declared a gap and the attribute is still not there.
             # That is the read being thinner than it claimed, and saying so is
@@ -381,11 +407,51 @@ def _attribute(
     return findings
 
 
+#: Attributes that are sets wearing a list's clothes. Two grants in a different
+#: order are the same two grants, and a report that called that a change would
+#: be noise on the one dimension where noise is most expensive: nobody reads
+#: the permission findings twice after the first false alarm.
+SET_LIKE = ("permissions", "sharing_links")
+
+
+def _comparable(value: Any) -> Any:
+    """The value as it should be compared, and as it is recorded.
+
+    Sorting here rather than trusting the producer to sort: a rule that depends
+    on every future collector remembering it is a rule that holds until the
+    second collector.
+    """
+    if isinstance(value, list):
+        return sorted(value, key=canonical.encode)
+    return value
+
+
 def _count(baseline: dict, verification: dict) -> list[dict]:
+    """How many items each side holds, and only when both were fully read.
+
+    A count is a claim about a whole container, so a single gap anywhere
+    invalidates it. The first version reported `fail` for an estate whose only
+    difference was a folder nobody could open — contradicting, in the same
+    document, the `unknown` it had just recorded for the items inside it.
+    """
+    gaps = baseline.get("coverage", []) + verification.get("coverage", [])
     before = len(baseline.get("items", {}))
     after = len(verification.get("items", {}))
-    if before == after:
+    if before == after and not gaps:
         return []
+    if gaps:
+        first = (baseline.get("coverage") or verification.get("coverage"))[0]
+        return [
+            _finding(
+                "<estate>",
+                "count",
+                COVERED_BY_A_GAP,
+                side="baseline" if baseline.get("coverage") else "verification",
+                state=first["state"],
+                detail="a count is a claim about the whole estate, and part of "
+                f"it could not be read ({first['scope']})",
+            )
+        ]
     return [
         _finding(
             "<estate>",
@@ -416,3 +482,79 @@ def compare(*, baseline: dict, verification: dict, dimensions: list[dict]) -> li
                 _attribute(baseline, verification, name, declared.get("method"))
             )
     return findings
+
+
+def dimensions_for(baseline: dict, verification: dict) -> list[dict]:
+    """What these two reads can actually be compared on.
+
+    DERIVED FROM THE EVIDENCE, NEVER ASSERTED BY THE CALLER. A flag saying
+    `compare content by digest` would let somebody claim a comparison the reads
+    cannot support, and the claim would be indistinguishable from a real one in
+    the record. Here the reads decide: if both carry digests, content is
+    compared by digest; if they carry sizes and no digests, it is `size-only`
+    and the record says so; if they carry neither, content is not compared at
+    all and the reason is written down.
+    """
+    before = baseline.get("items", {})
+    after = verification.get("items", {})
+    shared = set(before) & set(after)
+
+    def carried(key: str) -> bool:
+        return any(before[i].get(key) is not None for i in shared) and any(
+            after[i].get(key) is not None for i in shared
+        )
+
+    dimensions = [
+        {"name": "presence", "state": "compared"},
+        {"name": "count", "state": "compared"},
+    ]
+
+    if carried("content_digest"):
+        dimensions.append({"name": "content", "state": "compared", "method": "digest"})
+    elif carried("size"):
+        dimensions.append(
+            {"name": "content", "state": "compared", "method": WEIGHED_NOT_READ}
+        )
+    else:
+        dimensions.append(
+            {
+                "name": "content",
+                "state": "not-compared",
+                "reason": "neither read carries a digest or a size for the "
+                "items they share",
+            }
+        )
+
+    for name, key in (
+        ("size", "size"),
+        ("authorship", "author"),
+        ("versions", "versions"),
+        ("permissions", "permissions"),
+        ("sharing-links", "sharing_links"),
+    ):
+        if carried(key):
+            dimensions.append({"name": name, "state": "compared"})
+        else:
+            dimensions.append(
+                {
+                    "name": name,
+                    "state": "not-compared",
+                    "reason": f"at least one read carries no {key} for the "
+                    "items they share",
+                }
+            )
+    return dimensions
+
+
+def record(*, baseline: dict, verification: dict, move: dict) -> dict:
+    """Two reads in, a verification record out. The whole product in one call."""
+    dimensions = dimensions_for(baseline, verification)
+    return build(
+        baseline=reference(baseline),
+        verification=reference(verification),
+        move=move,
+        dimensions=dimensions,
+        findings=compare(
+            baseline=baseline, verification=verification, dimensions=dimensions
+        ),
+    )

@@ -294,7 +294,7 @@
         "observed": {
           "type": "object",
           "additionalProperties": false,
-          "description": "What each side actually showed. Required for `fail`, because asserting a difference without saying what differed is an accusation rather than a finding.",
+          "description": "What each side actually showed. Required for `fail`, because asserting a difference without saying what differed is an accusation rather than a finding. Arrays are allowed and not flattened: a permission set rendered as a sentence loses the structure a reader needs to see which grant moved.",
           "required": [
             "baseline",
             "verification"
@@ -305,16 +305,20 @@
                 "string",
                 "number",
                 "boolean",
+                "array",
                 "null"
-              ]
+              ],
+              "items": {}
             },
             "verification": {
               "type": [
                 "string",
                 "number",
                 "boolean",
+                "array",
                 "null"
-              ]
+              ],
+              "items": {}
             }
           }
         },

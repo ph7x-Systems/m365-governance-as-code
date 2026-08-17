@@ -35,12 +35,14 @@ from pathlib import Path
 from . import (
     __version__,
     assessment,
+    canonical,
     capabilities,
     collecting,
     comparison,
     conditional_access,
     connecting,
     explaining,
+    migration,
     reporting,
 )
 from . import doctor as doctor_module
@@ -269,6 +271,21 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="exit non-zero when any rule left `pass`",
     )
+    moved = sub.add_parser(
+        "migration-verify",
+        help="what a move actually moved, from a read taken before it and one "
+        "taken after",
+    )
+    moved.add_argument("baseline", type=Path, help="a read taken BEFORE the move")
+    moved.add_argument("verification", type=Path, help="a read taken after it")
+    moved.add_argument("--kind", default="unstated", help="what kind of move it was")
+    moved.add_argument(
+        "--performed-by",
+        default=None,
+        help="what performed the move, so a reader can see it was not us",
+    )
+    moved.add_argument("--out", type=Path, help="write the record here")
+
     contracts = sub.add_parser(
         "contracts",
         help="write the contract bundle a consumer vendors: schemas, models, "
@@ -890,6 +907,71 @@ def _cmd_assess(args) -> int:
     return 0
 
 
+def _cmd_migration_verify(args) -> int:
+    """Two reads in, a verification record out, and refusals said out loud.
+
+    The record is refused rather than produced when the inputs cannot support
+    it — a baseline that is not earlier, or one read handed in twice. Printing
+    a warning and continuing would put the operator's mistake inside a document
+    that then travels as evidence.
+    """
+    reads = []
+    for which, path in (("baseline", args.baseline), ("verification", args.verification)):
+        document = load_evidence(path).data
+        if document.get("$schema") != migration.read_contract():
+            print(
+                f"{path}: not a migration read. It must declare "
+                f"{migration.read_contract()}",
+                file=sys.stderr,
+            )
+            return 2
+        reads.append(document)
+
+    move = {"kind": args.kind, "produced_by": f"m365-governance {__version__}"}
+    if args.performed_by:
+        move["performed_by"] = args.performed_by
+
+    try:
+        document = migration.record(
+            baseline=reads[0], verification=reads[1], move=move
+        )
+    except migration.Unverifiable as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_bytes(canonical.encode(document) + b"\n")
+
+    compared = [d["name"] for d in document["dimensions"] if d["state"] == "compared"]
+    skipped = [d for d in document["dimensions"] if d["state"] != "compared"]
+    counts: dict[str, int] = {}
+    for finding in document["findings"]:
+        counts[finding["outcome"]] = counts.get(finding["outcome"], 0) + 1
+
+    print(f"{document['baseline']['estate']}")
+    print(f"  baseline      {document['baseline']['read_id']} "
+          f"({document['baseline']['taken_at']})")
+    print(f"  verification  {document['verification']['read_id']} "
+          f"({document['verification']['taken_at']})")
+    print(f"  compared      {', '.join(compared)}")
+    for entry in skipped:
+        print(f"  not compared  {entry['name']}: {entry['reason']}")
+    for gap in document["baseline"]["coverage"] + document["verification"]["coverage"]:
+        print(f"  not read      {gap['scope']} ({gap['state']})")
+    if not document["findings"]:
+        print("  nothing to report, within the coverage above")
+    for outcome in ("fail", "unknown", "invalid-evidence"):
+        if counts.get(outcome):
+            print(f"  {outcome:<13} {counts[outcome]}")
+    print(f"  digest        {migration.digest(document)}")
+
+    # `unknown` is not a failure and does not become one here. An operator who
+    # could not read half the estate has a coverage problem, not a migration
+    # problem, and conflating them is what this whole contract refuses.
+    return 1 if counts.get("fail") or counts.get("invalid-evidence") else 0
+
+
 def _cmd_verify(args) -> int:
     """What is wrong with an assessment that arrived, or nothing.
 
@@ -1085,6 +1167,7 @@ _COMMANDS = {
     "evaluate": _cmd_evaluate,
     "assess": _cmd_assess,
     "verify": _cmd_verify,
+    "migration-verify": _cmd_migration_verify,
     "report": _cmd_report,
     "diff": _cmd_diff,
     "contracts": _cmd_contracts,

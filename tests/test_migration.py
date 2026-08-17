@@ -526,3 +526,107 @@ def test_a_produced_record_verifies_end_to_end(schemas):
     outcomes = {(f["item"], f["dimension"]): f["outcome"] for f in findings}
     assert outcomes[(ARCHIVE, "presence")] == "unknown"
     assert outcomes[(PLAN, "authorship")] == "fail"
+
+
+# ---------------------------------------------------------------------------
+# reads in, records out
+# ---------------------------------------------------------------------------
+
+FIXTURES = SCHEMAS.parent / "fixtures" / "migration"
+
+
+def fixture(name: str) -> dict:
+    import json
+
+    return json.loads((FIXTURES / f"{name}.json").read_text(encoding="utf-8"))
+
+
+def test_the_published_reads_validate_against_the_read_contract(schemas):
+    for name in ("before-cutover", "after-cutover"):
+        assert schemas.problems(fixture(name)) == [], name
+
+
+def test_a_read_is_named_by_digest_and_never_copied():
+    document = fixture("before-cutover")
+    side = migration.reference(document)
+    assert side["canonical_hash"] == canonical.digest(document)
+    assert "items" not in side
+
+
+def test_the_method_is_derived_from_the_reads_not_asserted():
+    """A caller cannot claim a comparison the evidence does not support."""
+    before, after = fixture("before-cutover"), fixture("after-cutover")
+    content = next(
+        d for d in migration.dimensions_for(before, after) if d["name"] == "content"
+    )
+    assert content == {
+        "name": "content",
+        "state": "compared",
+        "method": "size-only",
+    }, "the reads carry sizes and null digests, so size-only is the only honest method"
+
+
+def test_digests_present_produce_a_digest_comparison():
+    before, after = fixture("before-cutover"), fixture("after-cutover")
+    for document in (before, after):
+        for item in document["items"].values():
+            item["content_digest"] = "e" * 64
+    content = next(
+        d for d in migration.dimensions_for(before, after) if d["name"] == "content"
+    )
+    assert content["method"] == "digest"
+
+
+def test_permissions_in_a_different_order_are_not_a_change():
+    """The same two grants, reordered by the move. Noise, and expensive noise."""
+    findings = migration.compare(
+        baseline=side({PLAN: {"permissions": [["Owners", "full"], ["Members", "edit"]]}}),
+        verification=side(
+            {PLAN: {"permissions": [["Members", "edit"], ["Owners", "full"]]}}
+        ),
+        dimensions=[{"name": "permissions", "state": "compared"}],
+    )
+    assert findings == []
+
+
+def test_a_count_is_unknown_when_part_of_the_estate_could_not_be_read():
+    """A count is a claim about the whole container, so one gap invalidates it."""
+    findings = migration.compare(
+        baseline=side({PLAN: {}, ARCHIVE: {}}),
+        verification=side(
+            {PLAN: {}},
+            coverage=[
+                {"scope": "/Shared Documents/Archive", "state": "permission-denied"}
+            ],
+        ),
+        dimensions=[{"name": "count", "state": "compared"}],
+    )
+    assert findings[0]["outcome"] == "unknown"
+    assert "whole estate" in findings[0]["detail"]
+
+
+def test_the_fixture_pair_produces_a_record_that_verifies(schemas):
+    """The whole product, from the two documents a customer would send."""
+    document = migration.record(
+        baseline=fixture("before-cutover"),
+        verification=fixture("after-cutover"),
+        move={"kind": "tenant-to-tenant", "produced_by": "m365-governance test"},
+    )
+    assert schemas.problems(document) == []
+    assert migration.verify(document, schemas=schemas) == []
+
+    outcomes = {(f["item"].split("/")[-1], f["dimension"]): f["outcome"]
+                for f in document["findings"]}
+
+    # The archive could not be read after the move. It is not reported missing.
+    assert outcomes[("Minutes 2019.docx", "presence")] == "unknown"
+    # Authorship was rewritten to the migration account, which is a real loss.
+    assert outcomes[("Handover.docx", "authorship")] == "fail"
+    # Thirty-one versions arrived; seven became one.
+    assert outcomes[("Handover.docx", "versions")] == "fail"
+    # Permissions were reordered and are not reported at all.
+    assert ("Handover.docx", "permissions") not in outcomes
+    # Nothing anywhere claims content matched.
+    assert all(
+        f["outcome"] != "pass" for f in document["findings"] if f["dimension"] == "content"
+    )

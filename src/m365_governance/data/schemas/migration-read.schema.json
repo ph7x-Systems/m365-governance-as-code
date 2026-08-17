@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0",
+  "title": "Migration read",
+  "description": "One read of an estate at one moment, and the input a verification is built from. It exists as its own contract because the question `what do we need from you` has to have an answer before anybody can be asked for anything: a comparison whose inputs had no shape could not be requested, only improvised. A read states what it found AND what it could not reach, and the second half is what makes it evidence rather than a listing — an inventory that cannot say where it failed to look is indistinguishable from one that looked everywhere.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "read_id",
+    "taken_at",
+    "estate",
+    "produced_by",
+    "coverage",
+    "items"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it."
+    },
+    "read_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How this read is named. Two reads of one estate need distinguishing by more than their order in a command line."
+    },
+    "taken_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the estate was read, which decides which side of the move this is. It is the only field that establishes that a baseline is a baseline."
+    },
+    "estate": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What was read, as the operator named it. Deliberately not a tenant: a move from a file share has no tenant on one side."
+    },
+    "produced_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What produced this read. Recorded so a reader can see whether it was the same thing that performed the move."
+    },
+    "coverage": {
+      "type": "array",
+      "description": "What this read could NOT establish, and why. An empty array is a claim, not a default: it says the whole declared estate was reached.",
+      "items": {
+        "$ref": "#/$defs/gap"
+      }
+    },
+    "items": {
+      "type": "object",
+      "description": "What was found, keyed by the identity used on both sides. An object rather than an array because the identity is the key a comparison joins on, and an array would let one identity appear twice with different attributes.",
+      "additionalProperties": {
+        "$ref": "#/$defs/item"
+      }
+    }
+  },
+  "$defs": {
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "state"
+      ],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What could not be read. Declared over a container, because that is how reading fails: a folder refuses, not a file at a time."
+        },
+        "state": {
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/absentState"
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One item, with whatever this read established about it. Every attribute is optional and absence means the read did not carry it, which a comparison reports as `unknown` rather than treating as equal. A read that omits an attribute for every item is a thinner read than one that carries it, and the comparison says so instead of concluding from silence.",
+      "properties": {
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "content_digest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A digest of the item's content, or null where it was not hashed. Null is deliberate rather than absent: it distinguishes `we chose not to hash` from `this read does not carry digests at all`."
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who created the item, as the estate reports it. The attribute a move most often rewrites to whatever account performed it, and the loss nobody notices until somebody asks who wrote something."
+        },
+        "versions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "permissions": {
+          "type": "array",
+          "description": "Principals and roles, as pairs. Sorted by the producer so that two reads of an unchanged item compare equal without the comparison having to know how to order them.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "sharing_links": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}
