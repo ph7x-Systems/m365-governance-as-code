@@ -7,6 +7,50 @@ names work that is not public, so it lives with the platform contract rather
 than here. This page says what the engine's own next steps are, and what it
 refused.
 
+## High — Getting Started does not define equivalent installation paths
+
+**Finding:** the installation documentation does not cover the operating
+systems implied by the package metadata, and the repository has no explicit
+supported-platform contract.
+
+**Evidence**
+
+- `pyproject.toml` declares `Operating System :: OS Independent` and Python
+  3.11–3.13.
+- `README.md` gives one shell block led by `brew install pipx`, with Ubuntu and
+  Debian compressed into an inline comment. It gives no Windows/PowerShell
+  installation path.
+- `.github/workflows/ci.yml` runs the release contract only on
+  `ubuntu-latest`; Windows and macOS compatibility are not established by CI.
+- `README.md` currently installs `1.0.0b6`. Instructions naming `1.0.0b5`
+  would introduce version drift.
+
+**Why it matters:** a Windows user cannot follow the Getting Started from a
+clean machine, while the package metadata implies no operating-system
+restriction. The documentation therefore promises a broader platform surface
+than its instructions and gates establish.
+
+**Owner:** Engine repository owns the installation and supported-platform
+contract. The Site manual must consume or reference that contract and must not
+maintain separate commands or version numbers.
+
+**Blockers:** the owner must decide which operating systems are supported. At
+present Windows and macOS support are **not established** by repository gates.
+
+**Concrete recommendation:** declare the supported operating systems from
+tested evidence. For every declared platform, provide an equivalent clean
+install path, including Windows PowerShell where Windows is supported, followed
+by `m365-governance doctor` and `m365-governance --version`. Derive the expected
+version from the release rather than copying a literal into multiple documents.
+
+**Observable done:** the README and public manual identify the same supported
+platforms; each declared platform has a clean-install sequence and verification
+commands; the documented commands use the current released version; a gate
+proves every platform claimed as supported.
+
+**Exclusions:** no packaging redesign, installer, CI implementation, platform
+support expansion or version release in this documentation finding.
+
 Five factors, scored 0 to 3, **multiplied**. A zero anywhere eliminates the
 candidate, which is how an unprovable one is refused arithmetically instead of
 by argument. **Hard gates run before scoring**, and a candidate blocked by
