@@ -72,8 +72,27 @@ Every commit carries `Signed-off-by` (`tools/dco-check.sh`).
 
 ## Language
 
-This repository is public. Everything in it — code, comments, tests,
-documentation, commit messages, branch names — is written in English.
+**Everything written down is English, in every repository of this programme,
+public or private.** Code, comments, tests, documentation, commit messages,
+branch names, PR titles and bodies, issue text, review comments.
+
+**The only exception is live conversation between people.** A chat can be in
+whatever language the two of them speak; the moment something is written into a
+repository, a commit, a pull request or an issue, it is English.
+
+Not a public-repository rule that happens to apply here. The same person writes
+both sides, and a habit that switches by repository is a habit that leaks —
+this repository's published history carries the proof.
+
+### Merging a branch that carries older non-conforming messages
+
+Squash, and write the subject and body explicitly in English. Never accept the
+default text: it concatenates the branch's own messages and drags whatever they
+say onto the main branch.
+
+A merge commit is refused where it would carry non-conforming messages into
+`main`. History already published stays as it is — rewriting a shared branch is
+real risk for no product — and this rule applies from here forward.
 
 ## Search scope
 
