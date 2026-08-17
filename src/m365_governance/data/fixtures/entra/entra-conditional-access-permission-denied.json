@@ -1,0 +1,54 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-17T09:00:00Z",
+    "collector": "graph-conditional-access",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "conditional-access-policies",
+      "named-locations",
+      "security-defaults"
+    ],
+    "completed": [
+      "named-locations",
+      "security-defaults"
+    ],
+    "unavailable": {
+      "conditional-access-policies": {
+        "state": "permission-denied",
+        "detail": "authenticated and not permitted to read identity/conditionalAccess/policies. Least privilege for this surface is Policy.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Conditional Access Administrator. "
+      }
+    }
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "tenant",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "contoso.sharepoint.com"
+  },
+  "facts": {
+    "conditional_access_policies": {
+      "state": "permission-denied",
+      "detail": "authenticated and not permitted to read identity/conditionalAccess/policies. Least privilege for this surface is Policy.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Conditional Access Administrator. "
+    }
+  }
+}

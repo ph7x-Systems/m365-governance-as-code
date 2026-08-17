@@ -73,6 +73,43 @@ class Reach(StrEnum):
     """Stopped deliberately. Never inferred from an exit code."""
 
 
+#: The suffix Microsoft documents for the admin centre, which is the only label
+#: that differs between the two hosts of one tenant.
+ADMIN = "-admin"
+
+
+def tenant_host(url: str) -> str:
+    """The tenant's host, from any of its addresses.
+
+    The admin centre lives on a different host from the sites it administers,
+    and Microsoft documents the format as `https://{prefix}-admin.sharepoint.com`
+    with the same shape in every cloud, so only the first label differs and
+    removing the suffix is a documented mapping rather than a guess.
+
+    <https://learn.microsoft.com/sharepoint/dev/spfx/set-up-your-developer-tenant>
+
+    WHY IT EXISTS TWICE. The SharePoint collector normalises its own host inside
+    PowerShell, in the process that holds the session; this is the same
+    documented mapping applied in the process that reads Microsoft Graph. Both
+    cite the mapping rather than each other, and a tenant reached through the
+    admin centre by one and through Graph by the other has to come out as one
+    organisation or an assessment cannot assemble them.
+
+    KNOWN LIMIT, RECORDED RATHER THAN PAPERED OVER. In multi-geo, a satellite
+    lives on its own host and this returns the satellite. The mapping above is
+    documented only for the admin centre.
+    """
+    host = url.strip()
+    for prefix in ("https://", "http://"):
+        if host.lower().startswith(prefix):
+            host = host[len(prefix) :]
+    host = host.split("/")[0].split("?")[0].strip().rstrip(".")
+    labels = host.split(".")
+    if labels[0].lower().endswith(ADMIN):
+        labels[0] = labels[0][: -len(ADMIN)]
+    return ".".join(labels)
+
+
 @dataclass
 class Connection:
     """What one attempt to reach a tenant turned out to be."""

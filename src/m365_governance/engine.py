@@ -341,10 +341,23 @@ def evaluate(rules: list[dict], evidence: dict) -> Run:
     from .classifying import classify
 
     classification = classify(evidence)
+    resource = evidence.get("resource", {})
+    # BOTH, and the workload half was missing. `resource_type` alone matched a
+    # SharePoint tenant rule against an Entra tenant document the moment a
+    # second workload existed: `tenant` is a type name in every workload, and
+    # the workload is the namespace that decides what the name means. The
+    # outcome was `unknown` rather than wrong, which is worse than it sounds —
+    # it is a rule from another product quietly appearing in a report, and the
+    # day two workloads name one fact the same it stops being `unknown`.
+    #
+    # The rule says `service` and the evidence says `workload`. One name would
+    # be better; renaming a shipped field in either contract is a version of its
+    # own, and this is the join between them until then.
     applicable = [
         r
         for r in rules
-        if r.get("resource_type") == evidence.get("resource", {}).get("type")
+        if r.get("resource_type") == resource.get("type")
+        and r.get("service") == resource.get("workload")
     ]
     return Run(
         results=[evaluate_rule(rule, evidence) for rule in applicable],

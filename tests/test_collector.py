@@ -153,7 +153,14 @@ def test_a_slice_with_no_site_connects_to_the_admin_centre():
     assert declared, "Connection.psm1 no longer declares $script:AdminModes"
     admin = set(re.findall(r"'([^']+)'", declared.group(1)))
 
-    siteless = {s.mode for s in collecting.SLICES.values() if not s.needs_site}
+    # PowerShell slices only. A Graph slice has no `-SiteUrl` to pass and no
+    # PnP session to open, so requiring its mode to appear in the collector's
+    # admin list would be asking one collector to declare another's work.
+    siteless = {
+        s.mode
+        for s in collecting.SLICES.values()
+        if not s.needs_site and s.source == "powershell"
+    }
     assert siteless <= admin, (
         f"slice modes with no -SiteUrl that would connect to one: "
         f"{sorted(siteless - admin)}"
@@ -390,6 +397,14 @@ def test_no_fixture_claims_an_api_the_collector_never_uses():
     default = re.search(r"\[string\]\s*\$SourceApi\s*=\s*'([^']+)'", evid)
     if default:
         paths.add(default.group(1))
+
+    # The second collector. Read from the reader itself rather than written out
+    # here, so that a version bump in one place cannot make this gate accuse
+    # evidence the product really does produce.
+    from m365_governance.graph import VERSION
+
+    paths.add(f"Microsoft Graph {VERSION}")
+
     assert paths, "the collector declares no collection path at all"
 
     bad = []

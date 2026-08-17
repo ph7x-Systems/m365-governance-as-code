@@ -444,13 +444,15 @@ def test_a_slice_that_writes_many_refuses_a_file(tmp_path, capsys):
 
 
 def test_which_slices_write_many_is_declared_rather_than_guessed():
-    """`sites` and `permissions` read many resources; the rest read one.
+    """Three slices read many resources; the rest read one.
 
     Declared on the slice so the refusal above is a property of the contract
-    rather than a heuristic over the slice's name.
+    rather than a heuristic over the slice's name. Frozen as a set so that a
+    slice added with the wrong kind of path is a failing test rather than a
+    `Clear-Content is only supported on files.` four seconds into a tenant run.
     """
     from m365_governance.collecting import SLICES
 
     many = {name for name, s in SLICES.items() if s.writes_many}
 
-    assert many == {"sites", "permissions"}
+    assert many == {"sites", "permissions", "conditional-access"}

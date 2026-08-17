@@ -19,39 +19,31 @@ The first active slice is `IDENTITY-CA-001`. Its full contract follows. The rema
 cards are executable contracts combined with the common contract below; they are not
 ideas, options or a backlog requiring refinement by the Executor.
 
-## Cross-repository capability slices
+## A capability is not shipped until it is installable
 
-> **A capability slice is not closed when the Engine ships. It is closed when the
-> Engine publishes it, the Workbench consumes it, and the Site documents the same
-> published capability.**
+> **Merging a collector is not shipping it.** A capability slice reaches
+> `SHIPPED` when the release that carries it is published to the public index and
+> proven installable from there by `tools/post-release-check.sh` — not when the
+> branch is green, and not when a local wheel works.
 
-The trigger is a public capability, contract, rule or collector that the other two
-repositories consume. An internal fix does not require three commits.
+The trigger is a public capability: a contract, a rule, a collector or a CLI
+surface that somebody outside this repository consumes. An internal fix is not one.
 
-Until the current slice is closed on all three, no new collector starts. The Engine
-running ahead of its consumers is how the desktop product and the manual end up
-describing a version nobody can install, and the drift is only visible from outside
-any single repository.
-
-Each repository executes its own half and records the same block:
+Until the current slice is `SHIPPED`, no new collector starts here. An engine that
+keeps adding surfaces ahead of its own published releases accumulates capability
+nobody can install, and the gap is invisible from inside the branch that created it.
 
 ```text
 IDENTITY-CA-001
 
 Engine      IN PROGRESS
-Workbench   PENDING
-Site        PENDING
 
 Slice       OPEN
 ```
 
-`IN PROGRESS` becomes `SHIPPED` when the Engine release is published and proven from
-the public index; `PENDING` becomes `CONSUMED` when the Workbench re-vendors that
-release, recognises its collectors and rules and shows their findings with no logic
-of its own; `PENDING` becomes `DOCUMENTED` when the Site manual carries the same
-version, the new collectors and rules, and `tested_with` recorded after running the
-published release. Three of three and the slice is `CLOSED`. Only then does
-`IDENTITY-APPS-001` start.
+`IN PROGRESS` becomes `SHIPPED` when the release is on the public index and the
+post-release gate has proven it from there. Only then does `IDENTITY-APPS-001`
+start.
 
 ## Why this slice
 

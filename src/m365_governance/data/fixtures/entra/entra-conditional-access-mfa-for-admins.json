@@ -1,0 +1,97 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-17T09:00:00Z",
+    "collector": "graph-conditional-access",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "conditional-access-policies",
+      "named-locations",
+      "security-defaults"
+    ],
+    "completed": [
+      "conditional-access-policies",
+      "named-locations",
+      "security-defaults"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "conditional-access-policy",
+    "native_id": "aaaaaaaa-0000-4000-8000-000000000001",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Require multifactor authentication for administrators"
+  },
+  "facts": {
+    "conditional_access_policies": {
+      "state": "observed",
+      "value": {
+        "id": "aaaaaaaa-0000-4000-8000-000000000001",
+        "displayName": "Require multifactor authentication for administrators",
+        "state": "enabled",
+        "conditions": {
+          "users": {
+            "includeRoles": [
+              "62e90394-69f5-4237-9190-012177145e10"
+            ],
+            "excludeUsers": [
+              "bbbbbbbb-0000-4000-8000-000000000002"
+            ]
+          },
+          "applications": {
+            "includeApplications": [
+              "All"
+            ]
+          },
+          "locations": {
+            "includeLocations": [
+              "All"
+            ],
+            "excludeLocations": [
+              "AllTrusted"
+            ]
+          }
+        },
+        "grantControls": {
+          "operator": "OR",
+          "builtInControls": [
+            "mfa"
+          ],
+          "authenticationStrength": {
+            "id": "00000000-0000-0000-0000-000000000004",
+            "displayName": "Multifactor authentication",
+            "policyType": "builtIn",
+            "requirementsSatisfied": "mfa",
+            "allowedCombinations": [
+              "fido2",
+              "password,sms"
+            ]
+          }
+        }
+      }
+    }
+  }
+}

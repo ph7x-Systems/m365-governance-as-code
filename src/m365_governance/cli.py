@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import sys
 from datetime import UTC, datetime
@@ -36,6 +37,7 @@ from . import (
     assessment,
     collecting,
     comparison,
+    conditional_access,
     connecting,
     explaining,
     reporting,
@@ -312,9 +314,13 @@ def _report_manifest(outcome) -> None:
 def _cmd_collect(args) -> int:
     chosen = collecting.SLICES[args.slice]
 
-    for problem in collecting.preflight():
-        print(problem, file=sys.stderr)
-        return 2
+    # PowerShell is what the SharePoint collector runs in, and a Graph slice
+    # needs none of it. Asking for it anyway would refuse a collection this
+    # installation is perfectly able to perform.
+    if chosen.source == "powershell":
+        for problem in collecting.preflight():
+            print(problem, file=sys.stderr)
+            return 2
 
     if chosen.needs_site and not args.site_url:
         print(f"collect {args.slice} needs --site-url", file=sys.stderr)
@@ -344,10 +350,19 @@ def _cmd_collect(args) -> int:
     if chosen.needs_tenant and not args.tenant_url:
         print(
             f"collect {args.slice} needs --tenant-url, the admin centre. "
-            f"Sharing settings are a tenant property about a site.",
+            + (
+                "The token says which directory the session opened in; the "
+                "address is what lets this evidence and SharePoint evidence be "
+                "one tenant in an assessment."
+                if chosen.source == "graph"
+                else "Sharing settings are a tenant property about a site."
+            ),
             file=sys.stderr,
         )
         return 2
+
+    if chosen.source == "graph":
+        return _collect_from_graph(args, chosen)
 
     # Printed as it arrives. `collect sites` against a large tenant used to
     # print nothing for however long it took and then print everything, so the
@@ -372,6 +387,64 @@ def _cmd_collect(args) -> int:
         print(outcome.stdout)
         return 0
 
+    return _report_collection(args, chosen, outcome)
+
+
+def _collect_from_graph(args, chosen) -> int:
+    """The Graph half of `collect`, which acquires nothing.
+
+    The token comes from the environment because this engine never obtains one.
+    A missing token is a refusal with the command that produces it, not a stack
+    trace and not an attempt to sign somebody in.
+    """
+    token = os.environ.get(conditional_access.TOKEN_VARIABLE, "")
+
+    if args.dry_run:
+        paths = [
+            *conditional_access.AREAS.values(),
+            *conditional_access.SINGLE.values(),
+        ]
+        held = "set" if token else "not set"
+        print(
+            f"collect {args.slice} would read, in one session:\n"
+            + "\n".join(f"  GET {path}" for path in paths)
+            + f"\n\nwith the token in {conditional_access.TOKEN_VARIABLE}, "
+            f"which is {held}."
+        )
+        return 0
+
+    if not token:
+        print(
+            f"collect {args.slice} reads Microsoft Graph and never acquires a "
+            f"token: it spends one you already hold. Put it in "
+            f"{conditional_access.TOKEN_VARIABLE}.\n\n{conditional_access.HOW}",
+            file=sys.stderr,
+        )
+        return 2
+
+    def report(line: str) -> None:
+        print(line, flush=True)
+
+    outcome = conditional_access.run(
+        token=token,
+        output=args.output,
+        tenant_url=args.tenant_url,
+        client_id=args.client_id,
+        on_progress=report,
+    )
+    if outcome.stderr:
+        print(outcome.stderr, file=sys.stderr)
+    return _report_collection(args, chosen, outcome)
+
+
+def _report_collection(args, chosen, outcome) -> int:
+    """What a collection produced, in the vocabulary of its four states.
+
+    Shared by both collectors on purpose. The state, the gaps, the manifest and
+    the evaluation line are facts about a collection rather than about the
+    process that performed it, and a second copy here would be the second place
+    where `partial` quietly starts meaning something else.
+    """
     state = outcome.state
 
     if state is collecting.State.FAILED:
