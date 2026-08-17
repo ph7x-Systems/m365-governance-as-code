@@ -219,3 +219,53 @@ a friendly label the collector had to go looking for.
 Each needs an authenticated read against a real tenant with `Policy.Read.All`,
 which is owner-only. None of them blocks the provider, the fixtures, the
 contracts, the rules or the tests, which is why the slice continues.
+
+## 14. Live observation: `BLOCKED_OWNER_AUTH_CONFIG`
+
+**Recorded 2026-08-17.** The slice's authentication precedence was walked
+without printing any value:
+
+```text
+ENTRAID_APP_ID     absent
+ENTRAID_CLIENT_ID  absent
+AZURE_CLIENT_ID    absent
+managed PnP session   none open
+```
+
+No authentication configuration exists on this machine, and the slice forbids
+creating one. **This blocks live observation only.** The provider, fixtures,
+contracts, rules, reports and tests continue against synthetic evidence, which
+is what every other collector in this engine is built from.
+
+### How a token reaches the provider, when one exists
+
+Read from the PnP documentation at the pinned tag rather than assumed:
+
+```powershell
+Get-PnPAccessToken -ResourceTypeName Graph
+```
+
+`ResourceTypeName` accepts `Graph`, `SharePoint` and `ARM`, and defaults to
+`Graph`. It requires an existing connection.
+
+<https://github.com/pnp/powershell/blob/v3.3.0/documentation/Get-PnPAccessToken.md>
+
+**This is why the provider never acquires authentication.** The operator opens
+one session with the collector's existing interactive path, and the same
+session yields the Graph token. Nothing new is consented, nothing is cached by
+this engine, and the identity that reads Graph is the identity the operator
+already signed in as.
+
+### What unblocks it
+
+An application registration **that exists in the tenant** and whose id is
+supplied through the precedence above. A client id that does not exist in the
+directory fails at the sign-in screen with `AADSTS700016`, which spends an
+interactive session to learn something a token request would have said first.
+
+Once a session opens, the remaining question is whether `Policy.Read.All` is
+consented. If it is not, Graph answers `403`, the collector records
+`permission-denied` with the reason, and that is
+`BLOCKED_OWNER_POLICY_READ_ALL` — the second blocked state the slice
+anticipates, and it costs no further interactive session to establish.
+
