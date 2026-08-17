@@ -33,6 +33,8 @@ echo "▸ Repository language"
 # Tracked technical and operational files. Localized content lives nowhere in
 # this repository today; when it does, exclude its directory here and say why.
 while IFS= read -r path; do
+  # This file, which has to name the words it looks for.
+  [ "$path" = "tools/language-check.sh" ] && continue
   case "$path" in
     *.py|*.ps1|*.psm1|*.sh|*.md|*.json|*.yaml|*.yml|*.cs|*.toml) ;;
     *) continue ;;
