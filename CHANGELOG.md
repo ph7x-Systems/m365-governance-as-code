@@ -44,8 +44,6 @@ that should have existed before `1.0.0b4` went out.
 
 ### `connect`: the other half of `doctor`
 
-`connect`: the other half of `doctor`, and the measurement defect it exposed.
-
 **Nothing answered whether you can reach the tenant.** `doctor` reports whether
 this installation is sound. Whether the application registration in front of
 you can reach the tenant in front of you, and as whom, was found out several
@@ -107,8 +105,7 @@ moment a comment explained why `Get-PnPTenantId` was *not* being called, the
 published document said it was. It reads the syntax tree now, which is what the
 read-only gate has always done to the same files, and a test freezes it.
 
-### The gate that was missing after the upload, and the two defects that proved it
-was missing.
+### The gate that was missing after the upload
 
 **A successful upload proves the file arrived. It proves nothing about whether
 anybody can install and run it.** `release-check.sh` proves the wheel this
