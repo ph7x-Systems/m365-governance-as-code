@@ -13,6 +13,7 @@
     "Assessment.g.cs",
     "Collection.g.cs",
     "Comparison.g.cs",
+    "Connection.g.cs",
     "Evidence.g.cs",
     "Run.g.cs",
     "RunSet.g.cs"
@@ -42,6 +43,10 @@
     "https://ph7x.com/schemas/m365-governance/comparison/3.0.0": {
       "digest": "9c2d76d1ae89d8766e572b76e3eddee2eb79a067fdf64a6674906a6bbb504bd2",
       "path": "schemas/comparison.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/connection/1.0.0": {
+      "digest": "054ad3ffb0bce5ed1183d78fed8f310034d8de7707a7989e288c70877ce7c12c",
+      "path": "schemas/connection.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
       "digest": "b51cfa3692db26746c1d78a022ccb0f8c39dae1fe190451d6b87310c0185aa29",
@@ -84,5 +89,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "3fa4b931cf7be868b6d296002154bbd14d125d8f60dc3c001b8dab246bc158cb"
+  "set_digest": "b22f7ec38821e5ae7cc8334003eb3b0de16c4d78c31f4fd6b99b15a999536007"
 }

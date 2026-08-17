@@ -93,6 +93,11 @@ GENERATE = (
     # The account a collection writes of itself. A consumer opens one to learn
     # whether the evidence beside it is all of what was asked for.
     "collection.schema.json",
+    # What one attempt to reach a tenant turned out to be. Not evidence, and a
+    # contract anyway: a consumer parses it to decide whether a collection may
+    # start, and a shape somebody depends on is a contract whether or not it is
+    # called one.
+    "connection.schema.json",
 )
 
 #: Constructs that decide the SHAPE. The generator handles these.
@@ -518,6 +523,7 @@ def check_closure(schemas: dict) -> None:
             "evidence",
             "rule",
             "collection",
+            "connection",
         )
     }
     orphans = declared - reached - roots

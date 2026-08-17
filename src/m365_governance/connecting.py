@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
+from . import registry
 from .collecting import COLLECTOR, _now, _run
 
 #: What the collector prints when the session is open, and the only line this
@@ -257,6 +258,60 @@ def _because(
         tail = [line for line in lines if line.strip()][-3:]
         reasons.extend(tail)
     return reasons
+
+
+def document(connection: Connection) -> dict[str, Any]:
+    """The connection as the contract it declares.
+
+    IT IS A CONTRACT NOW, HAVING BEEN ARGUED NOT TO BE. The first version
+    published this shape and called it deliberately unversioned, because a
+    session ends when the process does and so has nothing to persist. That
+    answered the wrong question: persistence is not the test, DEPENDENCE is. A
+    consumer already parses this to decide whether a collection may start, and
+    a shape somebody depends on is a contract whether or not it is called one —
+    the only difference being whether it can change without anybody noticing.
+    """
+    session = connection.established
+    return {
+        "$schema": registry.contract("connection"),
+        "reach": str(connection.reach),
+        "attempted_at": connection.attempted_at,
+        "seconds": round(connection.seconds, 3),
+        "exit_code": connection.returncode,
+        "requested": {
+            "site_url": connection.requested.get("site_url"),
+            "tenant_url": connection.requested.get("tenant_url"),
+            "client_id": connection.requested.get("client_id", ""),
+            "device_login": bool(connection.requested.get("device_login")),
+        },
+        "address": {
+            # None, not "", when nothing was resolved. A collector that never
+            # ran read no address, and echoing back the one that was asked for
+            # would put a request where a reader expects a result.
+            "host": connection.address.get("host"),
+            "resolved_tenant_id": connection.address.get("resolved_tenant_id"),
+            "how": "public-discovery",
+            "detail": connection.address.get("detail"),
+        },
+        # Null rather than an empty object when nothing opened. An empty session
+        # would read as one that established nothing, which is a different and
+        # much weaker statement than there being no session at all.
+        "session": {
+            "host": session.get("host", ""),
+            "client_id": session.get("client_id", ""),
+            "identity_kind": session.get("identity_kind", "not-established"),
+            "connection_type": session.get("connection_type", ""),
+            "scopes": list(session.get("scopes") or []),
+            # NEVER `resolved_tenant_id`. That one is a lookup anybody can
+            # perform without reaching this tenant, and copying it here would
+            # make a public resolution indistinguishable from an observation, in
+            # the one field a reader trusts to mean what was seen.
+            "observed_tenant_id": session.get("observed_tenant_id"),
+        }
+        if session
+        else None,
+        "because": connection.because,
+    }
 
 
 def describe(connection: Connection) -> str:

@@ -8,14 +8,41 @@ Rules carry their own versions, independently of this file. See
 
 ---
 
+## Unreleased
+
+`connect --format json` becomes a contract, having been argued not to be.
+
+**The reasoning was wrong and it is worth saying how.** The first version
+published this shape and called it deliberately unversioned, because a session
+ends when the process does and so has nothing to persist. That answers the
+wrong question: persistence is not the test, **dependence** is. A consumer
+already parses it to decide whether a collection may start, and a shape
+somebody depends on is a contract whether or not it is called one — the only
+difference being whether it can change without anybody noticing.
+
+- **A new contract**, `connection/1.0.0`, generated model and all. It describes
+  an attempt rather than a resource, which is why it is a contract of its own
+  and not a corner of the evidence: no rule reads it, no assessment carries it,
+  and it produces no finding.
+- **`address` and `session` are separate blocks**, and `observed_tenant_id` may
+  never be filled from `resolved_tenant_id`. The schema says so where somebody
+  editing it will read it.
+- **`address.host` is null when nothing was resolved**, found by validating the
+  document for an attempt where the collector never ran: echoing back the
+  address that was asked for would have put a request where a reader expects a
+  result. What was asked stays in `requested`.
+
+Not in this release, and a decision of its own: whether evidence provenance
+gains the resolved id at all. It would need a field with its own name and its
+own semantics, and a new version of the evidence contract — never
+`observed_tenant_id`, which means what a collection saw.
+
 ## 1.0.0b5
 
 Two commands' worth of honesty about reaching a tenant, and the release gate
 that should have existed before `1.0.0b4` went out.
 
 ### `connect`: the other half of `doctor`
-
-`connect`: the other half of `doctor`, and the measurement defect it exposed.
 
 **Nothing answered whether you can reach the tenant.** `doctor` reports whether
 this installation is sound. Whether the application registration in front of
@@ -78,8 +105,7 @@ moment a comment explained why `Get-PnPTenantId` was *not* being called, the
 published document said it was. It reads the syntax tree now, which is what the
 read-only gate has always done to the same files, and a test freezes it.
 
-### The gate that was missing after the upload, and the two defects that proved it
-was missing.
+### The gate that was missing after the upload
 
 **A successful upload proves the file arrived. It proves nothing about whether
 anybody can install and run it.** `release-check.sh` proves the wheel this
