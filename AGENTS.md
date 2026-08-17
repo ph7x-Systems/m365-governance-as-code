@@ -68,21 +68,34 @@ After a release, `./tools/post-release-check.sh` proves the published artefact
 installs from the public index and runs — a release that only built is not a
 release that shipped.
 
-Every commit carries `Signed-off-by` (`tools/dco-check.sh`).
+Every commit carries `Signed-off-by` (`tools/dco-check.sh`), and everything written is English (`tools/language-check.sh`, inside the gate).
 
 ## Language
 
-**Everything written down is English, in every repository of this programme,
-public or private.** Code, comments, tests, documentation, commit messages,
-branch names, PR titles and bodies, issue text, review comments.
+> **Repository language: English only. All implementation, comments, tests,
+> documentation, operational instructions, commit messages, pull requests, and
+> release text must be in English. Localized product content and verbatim
+> external evidence are the only exceptions.**
 
-**The only exception is live conversation between people.** A chat can be in
-whatever language the two of them speak; the moment something is written into a
-repository, a commit, a pull request or an issue, it is English.
+That covers source code, comments, tests and test names, exception and error
+messages, CLI output, docs, `README.md`, this file, `docs/NEXT-SLICE.md`,
+architecture documents, schema descriptions, fixtures we wrote, commit
+messages, pull request titles and bodies, release notes, issue text, and any
+comment or metadata our own code generates.
 
-Not a public-repository rule that happens to apply here. The same person writes
-both sides, and a habit that switches by repository is a habit that leaks —
-this repository's published history carries the proof.
+**The two exceptions, and they are narrow.** Content the product is
+deliberately presenting in another language — a localized page, a fixture whose
+purpose is to exercise localization. And verbatim external evidence, where
+changing the text would destroy the proof: an error message a vendor returned
+is quoted as it arrived.
+
+Live conversation between people is not a repository artefact and is not
+covered. The moment something is written into the repository, a commit, a pull
+request or an issue, it is English.
+
+`tools/language-check.sh` catches the obvious regressions. It reads technical
+and operational files and stays away from localized content, because a guard
+that flags legitimate localization is a guard people learn to skip.
 
 ### Merging a branch that carries older non-conforming messages
 
