@@ -28,19 +28,42 @@ to exercise.
 | Collector | Positive | Negative | Pagination | Schema | State |
 |---|---|---|---|---|---|
 | `sites` | `partial`, 11 documents | `failed` under `AllSites.Read` | none at 11 items | 11/11 valid | **fully live-validated** |
-| `owners` | `completed`, 1 document, rules decided | not attempted | n.a. | valid | **live-validated** |
+| `owners` | `completed`, 1 document | not attempted | n.a. | valid | **live-validated** |
+| `modernity` | `completed`, `pages` + `web` | not attempted | n.a. | valid | **live-validated** |
+| `classification` | `completed` | not attempted | n.a. | valid | **live-validated** |
+| `sharing` | `completed` | not attempted | n.a. | valid | **live-validated** |
+| `activity` | `completed` | not attempted | n.a. | valid | **live-validated** |
+| `permissions` | `completed`, 17 documents | not attempted | n.a. | 17/17 valid | **live-validated** |
 | `agents` | 0 agents returned, 2026-08-10 | not attempted | n.a. | recorded | **live-validated** |
 | `tenant-sharing` | 3 properties read, 2026-08-08 | not attempted | n.a. | recorded | **live-validated** |
 | `spfx` | not observed | `403 Forbidden`, 2026-08-08 | n.a. | — | **negative path validated** |
-| `modernity` | not observed | not observed | — | — | `not live-validated` |
-| `sharing` | not observed | not observed | — | — | `not live-validated` |
-| `activity` | not observed | not observed | — | — | `not live-validated` |
-| `classification` | not observed | not observed | — | — | `not live-validated` |
-| `permissions` | not observed | not observed | — | — | `not live-validated` |
-| `conditional-access` | 10 policies, 1 named location, defaults read | `403` under an identity without `Policy.Read.All` | none at 10 items | provider only | **fully live-validated** at the provider |
+| `conditional-access` | 10 policies, 1 named location, defaults read | `403` without `Policy.Read.All` | none at 10 items | provider only | **fully live-validated** at the provider |
 
-**Four of eleven are fully or partly proved. Five have never been read from a
-tenant at all**, and until this file existed nobody could say which.
+## What the evaluations produced, which is the other half of the proof
+
+A collector that reads is not a collector that produces a governance answer.
+Every document above was evaluated against its own profile:
+
+| Collector | Outcomes |
+|---|---|
+| `owners` | 1 `fail`, 1 `unknown` |
+| `modernity` | 3 `pass` |
+| `classification` | 2 `fail`, 11 `unknown`, 2 `not-applicable` |
+| `sharing` | 1 `pass`, 2 `not-applicable` |
+| `activity` | 1 `pass` |
+| `permissions` | 13 `pass`, 34 `unknown`, 4 `not-applicable` |
+
+**`unknown` outnumbers `pass` on two of the six**, and that is the product
+working rather than failing: a rule that cannot decide from what was read says
+so instead of passing. A run that had returned green everywhere would be the
+result worth distrusting.
+
+**Ten of eleven now have a positive live read.** `spfx` has only the negative
+path, refused by the tenant in August with `403 Forbidden`, and that refusal is
+itself a valid row.
+
+Before this file existed, five collectors had never been read from a tenant at
+all and nobody could say which five.
 
 ## What `sites` proved, and it is the pair that matters
 
