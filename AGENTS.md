@@ -107,6 +107,23 @@ A merge commit is refused where it would carry non-conforming messages into
 `main`. History already published stays as it is — rewriting a shared branch is
 real risk for no product — and this rule applies from here forward.
 
+## Presentation layers
+
+> **Presentation layers may explain, group, translate or visualize contract
+> values. They may never redefine their meaning or create an alternative
+> semantic model.**
+
+This is a product rule, not a rule of any one repository. It binds the site,
+the desktop product, the reports, every export, every future API and every
+integration. A layer that renames `unknown` to something friendlier on screen
+is explaining; a layer that decides `unknown` may be counted as a pass is
+redefining, and that is the second authority this programme spends its effort
+removing.
+
+Translation is allowed and must be **declared where it happens**, so a reader
+can always recover the contract value behind the word they were shown. A silent
+relabel is a redefinition that nobody has noticed yet.
+
 ## Search scope
 
 Anchor every search at this repository's root. Not `~`, not a parent
