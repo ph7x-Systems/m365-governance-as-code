@@ -115,6 +115,7 @@ def test_a_finding_on_a_dimension_declared_not_compared_is_refused(schemas):
             {
                 "name": "versions",
                 "state": "not-compared",
+                "limit": "out-of-scope",
                 "reason": "version history was out of scope for this project",
             },
         ],
@@ -186,6 +187,8 @@ def test_unknown_is_available_where_pass_is_not(schemas):
 
 def test_a_dimension_not_compared_must_say_why(schemas):
     silent = record(dimensions=[{"name": "versions", "state": "not-compared"}])
+    # `limit` is required too — a reason in prose does not separate a permanent
+    # limit of the source from a gap in this run.
     assert schemas.problems(silent) != []
 
 
@@ -448,6 +451,7 @@ def test_a_dimension_declared_not_compared_produces_nothing():
             {
                 "name": "versions",
                 "state": "not-compared",
+                "limit": "out-of-scope",
                 "reason": "out of scope for this project",
             }
         ],
@@ -722,3 +726,78 @@ def test_an_empty_section_says_so_rather_than_disappearing(schemas):
     text = migration.report(quiet)
     assert "No differences were established" in text
     assert "None on the dimensions compared." in text
+
+
+# ---------------------------------------------------------------------------
+# a structural limit is not an execution gap
+# ---------------------------------------------------------------------------
+
+
+def test_a_source_that_cannot_provide_a_dimension_says_so_permanently():
+    """`not-supported` means reading again will not change the answer."""
+    thin = {"items": {PLAN: {}}, "unsupported": ["permissions", "versions"]}
+    dimensions = migration.dimensions_for(thin, thin | {"read_id": "after"})
+    permissions = next(d for d in dimensions if d["name"] == "permissions")
+    assert permissions["limit"] == "not-supported"
+    assert "will not change" in permissions["reason"]
+
+
+def test_a_read_that_merely_did_not_carry_it_is_a_different_sentence():
+    """The same missing attribute, and a fixable cause."""
+    thin = {"items": {PLAN: {}}}
+    dimensions = migration.dimensions_for(thin, thin)
+    permissions = next(d for d in dimensions if d["name"] == "permissions")
+    assert permissions["limit"] == "not-carried"
+    assert "not declared unable" in permissions["reason"]
+
+
+def test_the_two_are_indistinguishable_without_the_declaration():
+    """Why the producer has to declare it: the items look identical."""
+    declared = {"items": {PLAN: {}}, "unsupported": ["authorship"]}
+    undeclared = {"items": {PLAN: {}}}
+    assert declared["items"] == undeclared["items"], "same evidence, both ways"
+
+    limits = [
+        next(
+            d
+            for d in migration.dimensions_for(read, read)
+            if d["name"] == "authorship"
+        )["limit"]
+        for read in (declared, undeclared)
+    ]
+    assert limits == ["not-supported", "not-carried"], (
+        "identical items, different sentences — which is exactly why nothing "
+        "downstream can infer this and the producer must state it"
+    )
+
+
+def test_an_unsupported_dimension_is_never_reported_as_compared():
+    """Even when the items happen to carry the attribute."""
+    lying = {"items": {PLAN: {"author": "j"}}, "unsupported": ["authorship"]}
+    authorship = next(
+        d for d in migration.dimensions_for(lying, lying) if d["name"] == "authorship"
+    )
+    assert authorship["state"] == "not-compared"
+
+
+def test_a_record_built_from_a_thin_source_still_validates(schemas):
+    thin = {
+        "items": {PLAN: {}},
+        "coverage": [],
+        "unsupported": ["size", "content", "authorship", "versions", "permissions",
+                        "sharing-links"],
+    }
+    dimensions = migration.dimensions_for(thin, thin)
+    document = migration.build(
+        baseline=BEFORE, verification=AFTER, move=MOVE,
+        dimensions=dimensions,
+        findings=migration.compare(
+            baseline=thin, verification=thin, dimensions=dimensions
+        ),
+    )
+    assert schemas.problems(document) == []
+    compared = [d["name"] for d in dimensions if d["state"] == "compared"]
+    assert compared == ["presence", "count"], (
+        "a search surface establishes that items exist and how many; everything "
+        "else needs a source that carries it"
+    )

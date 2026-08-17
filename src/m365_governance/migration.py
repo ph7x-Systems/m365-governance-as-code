@@ -509,21 +509,44 @@ def dimensions_for(baseline: dict, verification: dict) -> list[dict]:
         {"name": "count", "state": "compared"},
     ]
 
-    if carried("content_digest"):
+    #: What a source says it cannot do, as opposed to what a run did not do.
+    unsupported = set(baseline.get("unsupported", [])) | set(
+        verification.get("unsupported", [])
+    )
+
+    def absent(name: str, key: str) -> dict:
+        """Why a dimension was not compared, kept as three distinct sentences.
+
+        The distinction is the whole point and it cannot be inferred: a read
+        with no `author` looks identical whether the surface never exposes
+        authorship or whether this run did not ask. One is permanent and one is
+        a fixable gap, and collapsing them is how a verification product starts
+        reporting structural limits as execution failures.
+        """
+        if name in unsupported:
+            return {
+                "name": name,
+                "state": "not-compared",
+                "limit": "not-supported",
+                "reason": f"the source declares it cannot provide {name}; "
+                "reading again will not change that",
+            }
+        return {
+            "name": name,
+            "state": "not-compared",
+            "limit": "not-carried",
+            "reason": f"at least one read carries no {key} for the items they "
+            "share, though the source is not declared unable to provide it",
+        }
+
+    if "content" not in unsupported and carried("content_digest"):
         dimensions.append({"name": "content", "state": "compared", "method": "digest"})
-    elif carried("size"):
+    elif "content" not in unsupported and carried("size"):
         dimensions.append(
             {"name": "content", "state": "compared", "method": WEIGHED_NOT_READ}
         )
     else:
-        dimensions.append(
-            {
-                "name": "content",
-                "state": "not-compared",
-                "reason": "neither read carries a digest or a size for the "
-                "items they share",
-            }
-        )
+        dimensions.append(absent("content", "digest or size"))
 
     for name, key in (
         ("size", "size"),
@@ -532,17 +555,10 @@ def dimensions_for(baseline: dict, verification: dict) -> list[dict]:
         ("permissions", "permissions"),
         ("sharing-links", "sharing_links"),
     ):
-        if carried(key):
+        if name not in unsupported and carried(key):
             dimensions.append({"name": name, "state": "compared"})
         else:
-            dimensions.append(
-                {
-                    "name": name,
-                    "state": "not-compared",
-                    "reason": f"at least one read carries no {key} for the "
-                    "items they share",
-                }
-            )
+            dimensions.append(absent(name, key))
     return dimensions
 
 

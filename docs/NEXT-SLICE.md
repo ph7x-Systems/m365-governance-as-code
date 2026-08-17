@@ -71,6 +71,28 @@ the point of the exercise, so a record produced at sign-off has nothing left to
 compare against. Every document names two reads, and a baseline that is not
 earlier than the verification is refused rather than recorded.
 
+### Which source each dimension needs
+
+**Not a decision — a consequence.** Established by running the connector against
+a real estate and reading what came back:
+
+| Dimension | Minimum source |
+|---|---|
+| Presence · Count | a **search** surface |
+| Size · Authorship · Versions · Permissions · Sharing links | **Graph** |
+| Content | a **download**, and nothing weaker: equal size is not equal content |
+
+That table answers *what is the next collector* without anybody choosing. A
+search surface establishes that items exist and how many; every other dimension
+needs a source that carries the attribute.
+
+**And a read declares what its source can never provide.** `unsupported` on a
+read separates two sentences that look identical from the outside: *this API
+never exposes authorship* and *this run did not ask for it*. The first is a
+permanent limit of the method, the second is a fixable gap, and a product that
+renders them the same way reports structural limits as execution failures the
+moment a second connector appears.
+
 ### What is missing, in order
 
 1. **A producer of reads.** Nothing writes a `migration-read` document. Until

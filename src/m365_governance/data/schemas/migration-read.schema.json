@@ -53,6 +53,22 @@
       "additionalProperties": {
         "$ref": "#/$defs/item"
       }
+    },
+    "unsupported": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "Dimensions this source CANNOT provide, ever. Declared by the producer because nothing downstream can infer it: a read with no `author` looks identical whether the surface does not expose authorship or whether this run simply did not ask. Those are different sentences — one is a structural limit of the method, the other is a gap in an execution — and a comparison that renders them the same way manufactures false conclusions the moment a second source appears.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "size",
+          "content",
+          "authorship",
+          "versions",
+          "permissions",
+          "sharing-links"
+        ]
+      }
     }
   },
   "$defs": {

@@ -175,6 +175,15 @@
           "type": "string",
           "minLength": 1,
           "description": "Why it was not compared. Required when it was not, because `not-compared` without a reason is indistinguishable from an oversight."
+        },
+        "limit": {
+          "type": "string",
+          "enum": [
+            "not-supported",
+            "not-carried",
+            "out-of-scope"
+          ],
+          "description": "WHY it was not compared, as a value rather than as prose. `not-supported` is a structural limit of the source and will never change by trying again. `not-carried` is this read being thinner than the source allows, and is fixable. `out-of-scope` is an operator's decision. A reader deciding whether to go and look themselves needs these separated; a single free-text reason reads the same for all three."
         }
       },
       "allOf": [
@@ -191,7 +200,8 @@
           },
           "then": {
             "required": [
-              "reason"
+              "reason",
+              "limit"
             ],
             "not": {
               "required": [
