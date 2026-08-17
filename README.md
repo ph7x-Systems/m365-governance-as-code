@@ -140,17 +140,52 @@ Details in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governanc
 
 ## Install
 
-```bash
-brew install pipx        # macOS. Ubuntu 23.04+/Debian 12+: sudo apt install pipx
-pipx ensurepath          # then open a new shell
+Three supported platforms, and the instructions are equivalent on all three.
+The first step installs `pipx`, which most systems do not ship.
 
-pipx install m365-governance-as-code==1.0.0b6
+**Windows.** Python 3.11 or later from [python.org](https://www.python.org/downloads/),
+then in PowerShell:
+
+```powershell
+py -m pip install --user pipx
+py -m pipx ensurepath
 ```
 
-`pipx ensurepath` is not optional, and skipping it looks like a broken install:
-pipx gives each application a directory of its own, and that directory is not on
-your PATH until this puts it there. Without it you install successfully and then
-get `command not found: m365-governance`.
+**macOS.**
+
+```bash
+brew install pipx
+pipx ensurepath
+```
+
+**Linux.** Install `pipx` with your distribution's package manager, then
+`pipx ensurepath`. The package is named `pipx` almost everywhere, and
+`python-pipx` on Arch:
+
+```bash
+sudo apt install pipx      # Debian, Ubuntu
+sudo dnf install pipx      # Fedora
+sudo pacman -S python-pipx # Arch
+sudo zypper install pipx   # openSUSE
+```
+
+Then, in a **new shell** on any of the three:
+
+```bash
+pipx install m365-governance-as-code==1.0.0b6
+m365-governance doctor
+m365-governance --version
+```
+
+`doctor` exits `0` and reports the packaged content; the version is the one you
+installed.
+
+`pipx ensurepath` is not optional, and the new shell is part of the step rather
+than a note beside it. pipx gives each application a directory of its own, and
+that directory is not on your PATH until `ensurepath` puts it there — and a
+shell already open never re-reads the profile it edits. Skip either and you get
+`command not found: m365-governance` after an installation that succeeded,
+which reads like a broken package.
 
 `pipx` and not `pip`, and it is not a preference either. This is a command-line
 application rather than a library you import, and a modern Python refuses to
@@ -161,8 +196,12 @@ error: externally-managed-environment
 ```
 
 That is [PEP 668](https://peps.python.org/pep-0668/), enforced by Homebrew's
-Python, Debian's and Ubuntu's — including for installing pipx itself, which is
-why the distribution package is the way in rather than `pip install --user`.
+Python and by the distributions that ship one — including for installing pipx
+itself, which is why the distribution's package is the way in on Linux rather
+than `pip install --user`. Where a distribution has no package, pipx's own
+documentation gives `python3 -m pip install --user pipx` followed by
+`python3 -m pipx ensurepath`; the two cover each other, because the `--user`
+path fails exactly on the distributions that ship the package.
 
 If you would rather manage the environment yourself:
 
