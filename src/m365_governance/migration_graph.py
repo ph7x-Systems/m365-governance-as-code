@@ -134,6 +134,27 @@ def _grants(permissions: list[dict[str, Any]]) -> list[list[str]]:
     return sorted(grants)
 
 
+def _gap(scope: str, unavailable, what: str) -> dict[str, Any]:
+    """One item's failed read, with the one status that means something else.
+
+    A 404 on an AREA means the surface is not served here, and that is what the
+    shared vocabulary maps it to. A 404 on an item this walk enumerated seconds
+    ago means something different and more ordinary: it was deleted while the
+    estate was being read. Estates change under a collector, and calling that
+    an unsupported surface would file a normal event as a limitation of the
+    method.
+    """
+    state = unavailable.state
+    detail = f"{what}: {unavailable.detail}"
+    if state == "not-supported":
+        state = "missing"
+        detail = (
+            f"{what}: this item was listed by the enumeration and was gone "
+            "when it was read. Estates change while they are being read"
+        )
+    return {"scope": scope, "state": state, "detail": detail}
+
+
 def read(
     reader: GraphReader,
     *,
@@ -223,11 +244,7 @@ def read(
                     item["versions"] = len(versions.items)
                 else:
                     coverage.append(
-                        {
-                            "scope": identity,
-                            "state": versions.unavailable.state,
-                            "detail": f"version history: {versions.unavailable.detail}",
-                        }
+                        _gap(identity, versions.unavailable, "version history")
                     )
 
             if with_permissions:
@@ -236,13 +253,7 @@ def read(
                     item["permissions"] = _grants(granted.items)
                     item["sharing_links"] = _links(granted.items)
                 else:
-                    coverage.append(
-                        {
-                            "scope": identity,
-                            "state": granted.unavailable.state,
-                            "detail": f"permissions: {granted.unavailable.detail}",
-                        }
-                    )
+                    coverage.append(_gap(identity, granted.unavailable, "permissions"))
 
             items[identity] = item
 

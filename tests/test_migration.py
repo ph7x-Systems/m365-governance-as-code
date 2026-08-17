@@ -916,3 +916,53 @@ def test_a_record_cannot_omit_who_read_it(schemas):
     without = record()
     del without["baseline"]["read_by"]
     assert schemas.problems(without) != []
+
+
+# ---------------------------------------------------------------------------
+# the same report, in a browser
+# ---------------------------------------------------------------------------
+
+
+def test_the_html_report_says_exactly_what_the_markdown_says(delivered):
+    """Two renderers drift; the day they do, one tells a client something the
+    record does not say. Both are built from one list of lines."""
+    markdown = migration.report(delivered)
+    page = migration.report(delivered, "html")
+    for sentence in (
+        "No differences were established",
+        "not produced by whatever performed the move",
+        "no percentage in this report",
+    ):
+        if sentence in markdown:
+            assert sentence in page, sentence
+
+
+def test_the_html_report_needs_nothing_from_anywhere_else(delivered):
+    """Opened months later, from an archive, on a machine with no network."""
+    page = migration.report(delivered, "html")
+    for reaching_out in ("http://", "https://", "<script", "src=", "@import"):
+        assert reaching_out not in page, reaching_out
+
+
+def test_an_estate_cannot_inject_markup_through_its_own_file_names(schemas):
+    """A file named after a script tag is a file, not an instruction."""
+    hostile = "/Shared Documents/<script>alert(1)</script>.docx"
+    observed = {"items": {hostile: {"size": 1}}, "coverage": [],
+                "read_by": {"kind": "delegated", "scopes": []}}
+    document = migration.record(
+        baseline=dict(observed, read_id="a", taken_at="2026-03-01T09:00:00Z",
+                      estate="e", produced_by="p"),
+        verification=dict(
+            {"items": {}, "coverage": [], "read_by": {"kind": "delegated", "scopes": []}},
+            read_id="b", taken_at="2026-03-09T09:00:00Z", estate="e", produced_by="p",
+        ),
+        move={"kind": "t", "produced_by": "test"},
+    )
+    page = migration.report(document, "html")
+    assert "<script>" not in page
+    assert "&lt;script&gt;" in page
+
+
+def test_an_unknown_format_is_refused_rather_than_guessed(delivered):
+    with pytest.raises(ValueError, match="not a format this writes"):
+        migration.report(delivered, "pdf")

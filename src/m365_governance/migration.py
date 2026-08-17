@@ -29,6 +29,7 @@ destroys the record. There is nothing here to aggregate, deliberately.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from . import canonical, registry
@@ -682,8 +683,12 @@ SIDE = {
 }
 
 
-def report(document: dict) -> str:
-    """The record as a document somebody can act on, in Markdown.
+def report(document: dict, fmt: str = "markdown") -> str:
+    """The record as a document somebody can act on.
+
+    Two formats, one source. HTML is rendered from the same lines rather than
+    written separately: two renderers drift, and the day they do, one of them
+    tells a client something the record does not say.
 
     Deterministic, like everything else here: the same record renders the same
     bytes, so the report can be digested and delivered alongside the evidence
@@ -879,6 +884,14 @@ def report(document: dict) -> str:
                 f"| {finding['outcome']} | {note} |"
             )
     out.append("")
+    if fmt == "html":
+        return _html(out, f"Migration verification: {baseline['estate']}")
+    if fmt != "markdown":
+        raise ValueError(
+            f"{fmt!r} is not a format this writes: markdown or html. A report "
+            "that guessed would hand somebody a file whose contents are not "
+            "what its name promises"
+        )
     return "\n".join(out)
 
 
@@ -891,3 +904,108 @@ def _plain(value: Any) -> str:
     if isinstance(value, list):
         return ", ".join(_plain(v) for v in value) or "none"
     return str(value)
+
+
+# ---------------------------------------------------------------------------
+# the same report, in a browser
+# ---------------------------------------------------------------------------
+#
+# SELF-CONTAINED, ALWAYS. No stylesheet, no font, no script from anywhere else.
+# A report is opened months later, often from an archive, sometimes on a
+# machine with no network — and one that renders differently depending on
+# whether a CDN answered is a document whose appearance is somebody else's
+# decision.
+
+STYLE = """
+:root { color-scheme: light dark; }
+body { max-width: 46rem; margin: 3rem auto; padding: 0 1.5rem;
+       font: 16px/1.6 ui-serif, Georgia, serif; }
+h1 { font-size: 1.6rem; line-height: 1.25; }
+h2 { font-size: 1.15rem; margin-top: 2.5rem;
+     border-top: 1px solid color-mix(in srgb, currentColor 20%, transparent);
+     padding-top: 1.2rem; }
+table { border-collapse: collapse; width: 100%; margin: 1rem 0;
+        display: block; overflow-x: auto; }
+th, td { text-align: left; padding: .45rem .7rem; vertical-align: top;
+         border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
+th { font-weight: 600; }
+code { font: .85em ui-monospace, monospace; word-break: break-all; }
+li { margin: .35rem 0; }
+"""
+
+
+def _escape(text: str) -> str:
+    for raw, safe in (("&", "&amp;"), ("<", "&lt;"), (">", "&gt;")):
+        text = text.replace(raw, safe)
+    return text
+
+
+def _inline(text: str) -> str:
+    """Bold, italic and code, and nothing that could carry markup through.
+
+    Escaping happens first and unconditionally. An estate names its own files,
+    and a file named after a script tag is a file, not an instruction.
+    """
+    text = _escape(text)
+    for pattern, tag in ((r"\*\*(.+?)\*\*", "strong"), (r"`(.+?)`", "code"),
+                         (r"(?<!\*)\*([^*]+?)\*(?!\*)", "em")):
+        text = re.sub(pattern, rf"<{tag}>\1</{tag}>", text)
+    return text
+
+
+def _html(lines: list[str], title: str) -> str:
+    """The Markdown lines, as a page. Same content, same order, same claims."""
+    out = [
+        "<!doctype html>",
+        '<html lang="en"><head><meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width,initial-scale=1">',
+        f"<title>{_escape(title)}</title><style>{STYLE}</style>",
+        "</head><body>",
+    ]
+    table: list[str] = []
+    listing = False
+
+    def close_table() -> None:
+        if not table:
+            return
+        head, *body = [row for row in table if not set(row.strip()) <= {"|", "-", " "}]
+        cells = lambda row, tag: (  # noqa: E731
+            "<tr>"
+            + "".join(f"<{tag}>{_inline(c.strip())}</{tag}>" for c in row.strip("|").split("|"))
+            + "</tr>"
+        )
+        out.append("<table>" + cells(head, "th") + "".join(cells(r, "td") for r in body) + "</table>")
+        table.clear()
+
+    def close_list() -> None:
+        nonlocal listing
+        if listing:
+            out.append("</ul>")
+            listing = False
+
+    for line in lines:
+        if line.startswith("|"):
+            close_list()
+            table.append(line)
+            continue
+        close_table()
+
+        if line.startswith("- "):
+            if not listing:
+                out.append("<ul>")
+                listing = True
+            out.append(f"<li>{_inline(line[2:])}</li>")
+            continue
+        close_list()
+
+        if line.startswith("## "):
+            out.append(f"<h2>{_inline(line[3:])}</h2>")
+        elif line.startswith("# "):
+            out.append(f"<h1>{_inline(line[2:])}</h1>")
+        elif line.strip():
+            out.append(f"<p>{_inline(line)}</p>")
+
+    close_table()
+    close_list()
+    out.append("</body></html>")
+    return "\n".join(out) + "\n"

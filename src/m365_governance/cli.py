@@ -317,6 +317,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     moved.add_argument("--out", type=Path, help="write the record here")
     moved.add_argument(
+        "--report-format",
+        choices=("markdown", "html"),
+        default=None,
+        help="defaults to the report file's own suffix, then markdown",
+    )
+    moved.add_argument(
         "--report",
         type=Path,
         help="write the readable report here. The record is the evidence and "
@@ -1037,8 +1043,11 @@ def _cmd_migration_verify(args) -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_bytes(canonical.encode(document) + b"\n")
     if args.report:
+        fmt = args.report_format or (
+            "html" if args.report.suffix.lower() in (".html", ".htm") else "markdown"
+        )
         args.report.parent.mkdir(parents=True, exist_ok=True)
-        args.report.write_text(migration.report(document), encoding="utf-8")
+        args.report.write_text(migration.report(document, fmt), encoding="utf-8")
 
     compared = [d["name"] for d in document["dimensions"] if d["state"] == "compared"]
     skipped = [d for d in document["dimensions"] if d["state"] != "compared"]

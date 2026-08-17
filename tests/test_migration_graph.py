@@ -339,3 +339,92 @@ def test_an_item_shared_from_another_drive_is_listed_but_never_walked():
     gap = next(g for g in document["coverage"] if g["scope"] == "/Shared")
     assert gap["state"] == "not-supported"
     assert "another drive" in gap["detail"]
+
+
+# -- what a client's estate does to a collector -----------------------------
+
+
+def test_the_enumeration_follows_the_service_s_own_paging():
+    """A page cap is the service's business; a collector that stopped at the
+    first page would report a fraction of an estate as the whole of it."""
+    pages = {
+        "/root/children": {
+            "value": [FILE],
+            "@odata.nextLink": "https://graph.microsoft.com/v1.0/drives/d/root/children?page=2",
+        },
+        "children?page=2": {"value": [{**FILE, "id": "2", "name": "second.xlsx"}]},
+    }
+    document = migration_graph.read(
+        reader_for(pages), drive="d", read_id="r",
+        taken_at="2026-03-01T09:00:00Z", estate="e",
+    )
+    assert sorted(document["items"]) == ["/plan.xlsx", "/second.xlsx"]
+
+
+def test_a_throttled_read_is_retried_and_then_reported():
+    """429 is the service asking for room, not the estate being empty."""
+    attempts = {"n": 0}
+
+    def transport(url: str, token: str):
+        attempts["n"] += 1
+        return 429, json.dumps({"error": {"message": "slow down"}}), {"Retry-After": "0"}
+
+    reader = GraphReader(TOKEN, transport=transport, sleep=lambda _: None)
+    with pytest.raises(migration_graph.Unreadable):
+        migration_graph.read(
+            reader, drive="d", read_id="r",
+            taken_at="2026-03-01T09:00:00Z", estate="e",
+        )
+    assert attempts["n"] > 1, "a single attempt is not a retry"
+
+
+def test_an_item_deleted_during_the_read_is_a_gap_on_that_item():
+    """Estates change while they are being read; that is not a finding."""
+    document = migration_graph.read(
+        reader_for(
+            {"/root/children": {"value": [FILE]}, "/items/1/permissions": 404}
+        ),
+        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        with_permissions=True,
+    )
+    gap = next(g for g in document["coverage"] if g["scope"] == "/plan.xlsx")
+    assert gap["state"] == "missing"
+    assert "permissions" not in document["items"]["/plan.xlsx"]
+
+
+def test_the_same_estate_read_twice_produces_identical_bytes():
+    """A read that varied could not be compared against anything, including
+    itself. Nothing here may come from the clock, a set's ordering, or a dict
+    whose insertion order followed the service's."""
+    from m365_governance import canonical
+
+    shuffled = {
+        "/root/children": {
+            "value": [
+                {**FILE, "id": "2", "name": "b.xlsx"},
+                FILE,
+                {"id": "3", "name": "Z", "folder": {}},
+            ]
+        },
+        "/items/3/children": {"value": [{**FILE, "id": "4", "name": "deep.xlsx"}]},
+    }
+    reads = [
+        migration_graph.read(
+            reader_for(shuffled), drive="d", read_id="r",
+            taken_at="2026-03-01T09:00:00Z", estate="e",
+        )
+        for _ in range(2)
+    ]
+    assert canonical.digest(reads[0]) == canonical.digest(reads[1])
+
+
+def test_a_read_declares_the_identity_that_took_it():
+    document = migration_graph.read(
+        reader_for({"/root/children": {"value": [FILE]}}),
+        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+    )
+    assert document["read_by"]["kind"] == "not-established", (
+        "this token carries neither roles nor scp, and that is a real answer "
+        "about identity rather than a gap"
+    )
+    assert document["read_by"]["tenant"] == "t"
