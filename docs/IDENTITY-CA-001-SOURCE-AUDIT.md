@@ -381,3 +381,65 @@ That sentence needs a `200` under `Policy.Read.All`. The negative live path is
 proven; the positive live path is `needs-tenant-validation`, and it is the last
 square rather than a blocker on the rest of the slice.
 
+## 17. Live observation, positive path, 2026-08-17
+
+`Policy.Read.All` was consented by the tenant administrator for the collecting
+application, and all three surfaces answered. **The tenant is not named and no
+policy name, identifier, location or address appears here.**
+
+```text
+scopes: AllSites.Read Policy.Read.All User.Read profile openid email
+
+identity/conditionalAccess/policies                   200   10 items
+identity/conditionalAccess/namedLocations             200    1 item
+policies/identitySecurityDefaultsEnforcementPolicy    200    1 object
+```
+
+**The sentence that could not be written before this run can now be written:**
+Conditional Access was collected from a real tenant.
+
+### What the run settled
+
+| Question | Answer |
+|---|---|
+| Does a licence gate the read? | No. `Policy.Read.All` alone was sufficient; §4's licensing doubt is not blocking at this size. |
+| Is `authenticationStrength` embedded? | Yes, as §1 said. Zero of the ten policies referenced one, so the *absent* case is what was observed. |
+| Does the collection paginate? | **Not at ten items.** No `@odata.nextLink` appeared, so real pagination remains unexercised. |
+| Are Security Defaults readable? | Yes, and enabled is `false` in this tenant. |
+
+### Two things the documentation's example does not show
+
+**`deletedDateTime` is a top-level field on every policy**, present and null.
+The Learn example for `conditionalAccessPolicy` does not include it. The
+collector carries what the tenant sent rather than the fields an example
+listed, which is why a projection was refused in §5.
+
+**`securityDefaultsUpsell` and `controlTypes` are top-level fields** on the
+Security Defaults object, alongside the documented `isEnabled`. Neither appears
+in the operation page's example. **No rule is written on either**: a field
+observed once is not a documented basis, and `securityDefaultsUpsell` in
+particular looks like product telemetry rather than governance configuration.
+
+Recorded because a collector that silently dropped them would be answering a
+narrower question than the one it was asked.
+
+### Still `needs-tenant-validation`
+
+- **Pagination.** Ten items produced no next link. A tenant large enough to
+  page is required, and the offline test proves the client follows a next link
+  when the service sends one.
+- **Throttling limits.** Nothing was throttled.
+- **Whether directory roles differ in the fields returned.** One identity was
+  used.
+
+### What both live paths together prove
+
+```text
+limited identity  ->  403  ->  permission-denied, Graph's reason preserved
+consented identity ->  200  ->  10 policies, 1 named location, defaults read
+```
+
+The same collector, the same tenant, two identities, opposite answers, and
+**neither of them an empty estate**. That pair is what a test tenant exists to
+produce.
+
