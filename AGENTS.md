@@ -76,9 +76,9 @@ Programme-level decisions — purpose, principles, scope, constitutional
 properties and the open-source position — are recorded once, outside this
 repository, and bind it.
 
-**No implementation may define product policy.** A decision affecting pricing,
-licensing, scope, positioning or long-term architecture is recorded as a
-decision before it exists in code. Where this repository's behaviour and that
+**No implementation may define product policy.** A decision about what this
+product is for, who may use it and on what terms, or how it is shaped over
+years, is recorded as a decision before it exists in code. Where this repository's behaviour and that
 record disagree, one of them is a defect and neither may be assumed correct.
 
 ## Language
