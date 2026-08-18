@@ -182,3 +182,80 @@ def test_an_owner_an_identity_cannot_see_is_not_an_owner_that_is_absent():
 
     rule = load_rule(packaged("rules") / "sharepoint" / "SPO-SITE-001.yaml").data
     assert engine._evaluate(rule, evidence).outcome.value == "unknown"
+
+
+# ---------------------------------------------------------------------------
+# identity is part of the evidence
+# ---------------------------------------------------------------------------
+
+
+def test_two_identities_read_one_site_and_see_different_things():
+    """Not an authentication detail. A property of the trust model.
+
+    The same collector, the same site, the same minute, and two identities:
+    a person saw a Microsoft 365 group administering it, and the application
+    saw nothing at all. No API raised. Nothing was misconfigured. What differs
+    is what each identity is permitted to resolve, and an evidence document
+    that did not say which one produced it would describe part of an estate in
+    language that suits the whole of one.
+
+    Both fixtures are sanitized observations of the same site on 2026-08-18.
+    """
+    person = _load("site-owners-group-not-expanded")
+    application = _load("site-owners-unreadable-by-application")
+
+    assert person["resource"]["native_id"] == application["resource"]["native_id"]
+    assert person["provenance"]["identity_kind"] == "delegated"
+    assert application["provenance"]["identity_kind"] == "application"
+    assert application["provenance"]["identity_method"] == "certificate"
+
+    # The same question, answered from two identities, and they do not agree
+    # about what is there. That is the finding, not a defect.
+    assert person["facts"]["owners"]["group_count"]["value"] == 1
+    assert application["facts"]["owners"]["state"] == "partial"
+
+
+def test_neither_identity_produces_a_confident_wrong_answer():
+    """Different visibility is honest; a confident answer from it is not."""
+    from m365_governance import engine
+    from m365_governance.loader import load_rule
+
+    rule = load_rule(packaged("rules") / "sharepoint" / "SPO-SITE-001.yaml").data
+    for name in (
+        "site-owners-group-not-expanded",
+        "site-owners-unreadable-by-application",
+    ):
+        outcome = engine._evaluate(rule, _load(name)).outcome.value
+        assert outcome == "unknown", f"{name} decided the owner count: {outcome}"
+
+
+def test_every_document_says_which_identity_produced_it():
+    """Required by the contract, not by convention.
+
+    It was hard-coded to `delegated` and nothing would have failed the day an
+    application-only run wrote evidence describing itself as one person's view.
+    """
+    import json as _json
+
+    schema = _json.loads(
+        (packaged("schemas") / "evidence.schema.json").read_text(encoding="utf-8")
+    )
+    provenance = schema["$defs"]["provenance"]
+    assert "identity_kind" in provenance["required"]
+    assert set(provenance["properties"]["identity_method"]["enum"]) == {
+        "interactive",
+        "device-code",
+        "certificate",
+        "not-established",
+    }
+
+
+def test_no_document_carries_a_credential():
+    """A client id names a registration somebody can look up. Everything else
+    about the credential stays out of the evidence, in every fixture that ever
+    came from a real run."""
+
+    for path in (packaged("fixtures") / "sharepoint").glob("*.json"):
+        text = path.read_text(encoding="utf-8").lower()
+        for secret in ("begin private key", "begin rsa", ".pfx", "certificatepassword"):
+            assert secret not in text, f"{path.name} carries {secret}"
