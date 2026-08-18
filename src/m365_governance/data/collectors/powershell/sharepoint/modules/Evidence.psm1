@@ -21,6 +21,9 @@ $ErrorActionPreference = 'Stop'
 $script:CollectorName = $null
 $script:CollectorVersion = $null
 $script:TenantHost = $null
+$script:IdentityKind = 'delegated'
+$script:IdentityMethod = 'interactive'
+$script:ClientId = $null
 
 function Initialize-Evidence {
     <#
@@ -36,11 +39,29 @@ function Initialize-Evidence {
     param(
         [Parameter(Mandatory = $true)] [string] $CollectorName,
         [Parameter(Mandatory = $true)] [string] $CollectorVersion,
-        [Parameter(Mandatory = $true)] [string] $TenantHost
+        [Parameter(Mandatory = $true)] [string] $TenantHost,
+        # WHO COLLECTED THIS, and it was hard-coded to `delegated`. A run that
+        # authenticated the APPLICATION with a certificate produced evidence
+        # that described itself as one person's view, which is the difference
+        # between a partial audit and a misleading one -- the exact sentence
+        # already in the provenance comment, made untrue by the field beside
+        # it the day app-only became possible.
+        [Parameter()] [ValidateSet('delegated', 'application')] [string] $IdentityKind = 'delegated',
+        # HOW it authenticated, which is a different question from what kind of
+        # identity it is. Kept apart because only the kind changes what an
+        # empty result means; the method is operational provenance.
+        [Parameter()] [ValidateSet('interactive', 'device-code', 'certificate')] [string] $IdentityMethod = 'interactive',
+        # The application the run authenticated as. Never the certificate,
+        # never the key, never the token: a client id names a registration an
+        # administrator can look up, and the rest is a credential.
+        [Parameter()] [string] $ClientId
     )
     $script:CollectorName = $CollectorName
     $script:CollectorVersion = $CollectorVersion
     $script:TenantHost = $TenantHost
+    $script:IdentityKind = $IdentityKind
+    $script:IdentityMethod = $IdentityMethod
+    $script:ClientId = $ClientId
 }
 
 function New-Unavailable {
@@ -128,9 +149,12 @@ function New-Evidence {
             # was ever meant to be there. The host is an endpoint, already
             # normalised so the admin centre and a site agree.
             tenant            = [ordered]@{ id = $null; host = $script:TenantHost }
-            # Interactive and device sign-in are both delegated. Recording it
-            # is the difference between a partial audit and a misleading one.
-            identity_kind     = 'delegated'
+            # Interactive and device sign-in are both delegated; a
+            # certificate authenticates the application. Recording it is the
+            # difference between a partial audit and a misleading one.
+            identity_kind     = $script:IdentityKind
+            identity_method   = $script:IdentityMethod
+            client_id         = $script:ClientId
             # How it got here, which is a different question from who read it.
             acquisition       = 'collected'
             scopes            = @('AllSites.Read')

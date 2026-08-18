@@ -39,6 +39,7 @@ from . import (
     capabilities,
     collecting,
     comparison,
+    composing,
     conditional_access,
     connecting,
     explaining,
@@ -124,6 +125,27 @@ def _build_parser() -> argparse.ArgumentParser:
         help="authenticate with a device code, for hosts with no browser",
     )
     collect.add_argument(
+        "--tenant-id",
+        help="the directory, as an id or a domain. Required with a certificate",
+    )
+    collect.add_argument(
+        "--certificate-path",
+        type=Path,
+        help=(
+            "a PFX holding the application's certificate and private key. "
+            "App-only: the run authenticates as the application, not as you"
+        ),
+    )
+    collect.add_argument(
+        "--certificate-password-env",
+        metavar="NAME",
+        help=(
+            "the NAME of an environment variable holding the PFX password, "
+            "never the password itself: an argument is in the shell history "
+            "and in the process list of every user on the machine"
+        ),
+    )
+    collect.add_argument(
         "--count-unique-scopes",
         action="store_true",
         help="permissions only: walk every item of every list",
@@ -168,6 +190,27 @@ def _build_parser() -> argparse.ArgumentParser:
         "--device-login",
         action="store_true",
         help="authenticate with a device code, for hosts with no browser",
+    )
+    connect.add_argument(
+        "--tenant-id",
+        help="the directory, as an id or a domain. Required with a certificate",
+    )
+    connect.add_argument(
+        "--certificate-path",
+        type=Path,
+        help=(
+            "a PFX holding the application's certificate and private key. "
+            "App-only: the run authenticates as the application, not as you"
+        ),
+    )
+    connect.add_argument(
+        "--certificate-password-env",
+        metavar="NAME",
+        help=(
+            "the NAME of an environment variable holding the PFX password, "
+            "never the password itself: an argument is in the shell history "
+            "and in the process list of every user on the machine"
+        ),
     )
     connect.add_argument(
         "--format",
@@ -419,7 +462,69 @@ def _cmd_capabilities(args) -> int:
     return 0
 
 
+class AmbiguousIdentity(Exception):
+    """The command line names two ways of authenticating, or half of one."""
+
+
+def _authentication(args) -> None:
+    """Two modes, and the caller has to have chosen exactly one.
+
+    DELEGATED runs see what one person sees; an APPLICATION with a certificate
+    sees what the tenant granted the application. They answer differently, an
+    empty result means something different in each, and the evidence records
+    which one produced it. A command line that named both, or half of one,
+    used to be resolved by whichever branch the script tested first, and the
+    run would authenticate as somebody the caller did not choose.
+
+    Refused here rather than in the collector, because the collector reaches a
+    tenant and this does not: the cheapest place to stop is before the network.
+    """
+    certificate = getattr(args, "certificate_path", None)
+    device = getattr(args, "device_login", False)
+    tenant_id = getattr(args, "tenant_id", None)
+    password_env = getattr(args, "certificate_password_env", None)
+
+    if certificate and device:
+        raise AmbiguousIdentity(
+            "--certificate-path authenticates the application and "
+            "--device-login authenticates a person. Choose one."
+        )
+    if certificate and not tenant_id:
+        raise AmbiguousIdentity(
+            "--certificate-path needs --tenant-id: an application-only token "
+            "is issued by a directory, and the address alone does not name it."
+        )
+    if tenant_id and not certificate:
+        raise AmbiguousIdentity(
+            "--tenant-id is for the certificate flow. A delegated sign-in "
+            "takes the directory from the address and the person signing in."
+        )
+    if password_env and not certificate:
+        raise AmbiguousIdentity(
+            "--certificate-password-env is for the certificate flow, and "
+            "there is no certificate here."
+        )
+    if password_env and not os.environ.get(password_env):
+        raise AmbiguousIdentity(
+            f"--certificate-password-env names {password_env}, and that "
+            f"variable is empty or unset in this shell. The name is passed, "
+            f"never the value."
+        )
+    if certificate and not Path(certificate).exists():
+        raise AmbiguousIdentity(f"--certificate-path does not exist: {certificate}")
+
+
 def _cmd_collect(args) -> int:
+    # BEFORE ANYTHING REACHES A TENANT. Which identity a run authenticates as
+    # decides what an empty result means, and a command line naming two of
+    # them, or half of one, used to be settled by whichever branch the script
+    # tested first.
+    try:
+        _authentication(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
+
     chosen = collecting.SLICES[args.slice]
 
     # PowerShell is what the SharePoint collector runs in, and a Graph slice
@@ -486,6 +591,9 @@ def _cmd_collect(args) -> int:
         site_url=args.site_url,
         tenant_url=args.tenant_url,
         device_login=args.device_login,
+        tenant_id=args.tenant_id,
+        certificate_path=args.certificate_path,
+        certificate_password_env=args.certificate_password_env,
         count_unique_scopes=args.count_unique_scopes,
         dry_run=args.dry_run,
         on_progress=None if args.dry_run else report,
@@ -505,6 +613,12 @@ def _collect_from_graph(args, chosen) -> int:
     A missing token is a refusal with the command that produces it, not a stack
     trace and not an attempt to sign somebody in.
     """
+    try:
+        _authentication(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
+
     token = os.environ.get(conditional_access.TOKEN_VARIABLE, "")
 
     if args.dry_run:
@@ -618,6 +732,12 @@ def _cmd_connect(args) -> int:
     several minutes into a collection, from a failure that looked like a tenant
     problem rather than a consent problem.
     """
+    try:
+        _authentication(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
+
     for problem in collecting.preflight():
         print(problem, file=sys.stderr)
         return 2
@@ -863,7 +983,7 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
     # change how the conclusion is read.
     _report_collections(args.evidence)
 
-    runs, documents = [], []
+    documents = []
     for path in _evidence_documents(args.evidence):
         data = load_evidence(path).data
         problems = validate_evidence_document(data, str(path))
@@ -877,11 +997,42 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
                 file=sys.stderr,
             )
             raise _Refused
-        run = evaluate(rules, data)
+        documents.append(data)
+
+    # ONE RESOURCE, HOWEVER MANY COLLECTORS DESCRIBED IT.
+    # `collect` writes a document per slice and a run set holds a run per
+    # resource, and between those two correct decisions there was nothing: two
+    # slices of one site produced two documents and `assess` refused them. The
+    # only way through was to merge the files by hand, which is evidence edited
+    # between the command that wrote it and the command that reads it.
+    #
+    # The composition is for EVALUATION. `documents` stays as it was, so the
+    # assessment still carries what each collector actually wrote.
+    try:
+        composed = composing.compose(documents)
+    except composing.Conflict as clash:
+        print(f"refusing to evaluate: {clash}", file=sys.stderr)
+        raise _Refused from clash
+
+    # WITHOUT A PROFILE, THE SCOPE IS WHAT WAS COLLECTED.
+    # `default.yaml` selects every rule, and against a slice's evidence that
+    # means evaluating questions the collection never asked: the first real
+    # tenant run produced 742 unknowns out of 795, each one saying only that
+    # this document does not carry that evidence. A caller who names a profile
+    # has chosen; a caller who names none gets the questions their evidence can
+    # speak to, and `--profile default.yaml` still asks everything.
+    # The DEFAULT profile, not the resolution: `_profile_source` returns
+    # `default.yaml` when nothing was supplied, and default.yaml is every rule.
+    # Its own docstring names this failure -- evaluating every rule reports
+    # facts nobody requested as `unknown` -- and closes the case where a
+    # profile name does not resolve. The case where none was given stayed open.
+    scoped = getattr(args, "profile", None) is None
+    runs = []
+    for data in composed:
+        run = evaluate(rules, data, only_collected=scoped)
         run.set_aside = run.resource_class in aside
         run.rule_source = _rule_source(args).describe()
         runs.append(run)
-        documents.append(data)
     return runs, documents
 
 

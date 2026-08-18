@@ -222,6 +222,34 @@ def _compare_bounded(resolved: Resolved, operator: str, value: Any) -> bool | No
 # ---------------------------------------------------------------------------
 
 
+def _was_collected(rule: dict, evidence: dict) -> bool:
+    """Whether this collection asked the question at all.
+
+    A RULE THAT WAS NEVER ASKED IS NOT AN UNANSWERED ONE. Evaluating every rule
+    against every document produced, on the first real tenant run, a report of
+    1,668 lines in which 742 of 795 evaluations were `unknown` and every one of
+    them said the same thing: this document does not carry that evidence. It
+    never would. The site inventory slice collects storage; it was never going
+    to say whether a sensitivity label is applied, and printing 53 findings
+    saying so buries the 53 that mean something.
+
+    The distinction is the namespace, and it is exactly the right one because
+    a collector that TRIED and failed still writes it. `spfx` refused by a
+    permission is `facts.spfx` carrying an absent state, and that is a genuine
+    `unknown` about the resource. A document with no `spfx` key at all was
+    collected for something else, and has nothing to say either way.
+
+    Missing evidence is still never a pass. What changes is that evidence
+    nobody asked for stops being reported as missing.
+    """
+    facts = evidence.get("facts") or {}
+    needed = {
+        str(requirement.get("path", "")).split(".")[0]
+        for requirement in rule.get("evidence_requirements") or []
+    }
+    return bool(needed) and needed <= set(facts)
+
+
 def evaluate_rule(rule: dict, evidence: dict) -> Result:
     try:
         return _evaluate(rule, evidence)
@@ -331,7 +359,7 @@ def _render(template: str, resolutions: dict[str, Resolved]) -> tuple[str, bool]
     return " ".join(rendered.split()), degraded
 
 
-def evaluate(rules: list[dict], evidence: dict) -> Run:
+def evaluate(rules: list[dict], evidence: dict, *, only_collected: bool = False) -> Run:
     """Every applicable rule, plus the label the report groups by.
 
     The class never changes an outcome. It is carried so a reader can move
@@ -359,6 +387,8 @@ def evaluate(rules: list[dict], evidence: dict) -> Run:
         if r.get("resource_type") == resource.get("type")
         and r.get("service") == resource.get("workload")
     ]
+    if only_collected:
+        applicable = [r for r in applicable if _was_collected(r, evidence)]
     return Run(
         results=[evaluate_rule(rule, evidence) for rule in applicable],
         provenance=evidence.get("provenance", {}),

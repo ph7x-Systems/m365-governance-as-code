@@ -27,6 +27,32 @@ function Get-OwnerFacts {
         }
     }
 
+    # AN EMPTY LIST IS NOT A SITE WITHOUT ADMINISTRATORS.
+    # `Get-PnPSiteCollectionAdmin` returned nothing at all under an
+    # application-only identity holding Sites.Read.All, on a site whose
+    # administrator a delegated identity saw in the same minute: a Microsoft
+    # 365 group. It did not raise, so the catch above never fired, and the
+    # count went out as an EXACT zero with the expansion marked complete.
+    # SPO-SITE-001 then reported `The site has 0 owner` -- a confident,
+    # actionable, wrong finding, with remediation attached, about a site that
+    # has an owner.
+    #
+    # Nothing here can tell an unreadable administrator from an absent one, and
+    # the standing rule is that a collector never turns a denial into an empty
+    # tenant. Zero is therefore not published as a count. It is recorded as not
+    # established, with what was asked and what came back.
+    if ($admins.Count -eq 0) {
+        $detail = 'Get-PnPSiteCollectionAdmin returned no entries. That is not ' +
+        'the same as a site with no administrators: an identity that cannot ' +
+        'resolve them returns the same empty list, and this collector cannot ' +
+        'tell the two apart. Application-only identities have been observed ' +
+        'returning nothing for a site whose administrator is a group.'
+        return @{
+            facts       = @{ owners = New-AbsentFact -State 'partial' -Detail $detail }
+            unavailable = New-Unavailable -State 'partial' -Detail $detail
+        }
+    }
+
     $direct = @(); $groups = @()
     foreach ($admin in $admins) {
         if ($admin.PrincipalType -ne 'User') {
@@ -60,7 +86,23 @@ function Get-OwnerFacts {
         $owners['expansion_complete'] = $false
         $owners['minimum_count'] = $direct.Count
     }
-    return @{ facts = @{ owners = $owners }; unavailable = $null }
+
+    # AN INCOMPLETE EXPANSION HAS TO REACH THE COVERAGE.
+    # The facts said `expansion_complete: false` and carried a lower bound,
+    # which is honest, and the coverage beside them said `completed: [owners]`
+    # with nothing unavailable, which is not. On the first real tenant run the
+    # only administrator of a site was a group nobody expanded, and the
+    # document reported the slice as complete: a reader distinguishing "there
+    # is nobody" from "I could not see who" had nothing to read.
+    $note = $null
+    if (-not $owners['expansion_complete']) {
+        $note = New-Unavailable -State 'partial' -Detail (
+            "$($groups.Count) administrator group(s) were not expanded, so the " +
+            'number of administrators is a lower bound and who they are is ' +
+            'not established. Expanding a group needs a directory read this ' +
+            'collector does not perform.')
+    }
+    return @{ facts = @{ owners = $owners }; unavailable = $note }
 }
 
 function Get-ListPermissionFacts {

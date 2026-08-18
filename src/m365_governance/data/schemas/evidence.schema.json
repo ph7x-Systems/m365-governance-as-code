@@ -91,6 +91,23 @@
         },
         "tenant": {
           "$ref": "#/$defs/tenant"
+        },
+        "identity_method": {
+          "type": "string",
+          "enum": [
+            "interactive",
+            "device-code",
+            "certificate",
+            "not-established"
+          ],
+          "description": "HOW the identity authenticated, which is a different question from what kind of identity it is. `identity_kind` decides what an empty result means; this is operational provenance, so an administrator can tell an unattended run from somebody's session. Never the certificate, the key or the token."
+        },
+        "client_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The application registration the run authenticated as. A client id names something an administrator can look up; everything else about the credential stays out of the evidence."
         }
       },
       "allOf": [

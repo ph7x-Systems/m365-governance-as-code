@@ -145,11 +145,19 @@ def test_duplicate_resource_ids_are_refused():
 
 
 def test_the_command_line_says_which_resource_rather_than_a_traceback(capsys, tmp_path):
+    """The same evidence twice is still refused, and it says which resource.
+
+    Documents about ONE resource are now composed, because that is what
+    collecting several slices of a site produces and the pipeline has to carry
+    it. What is not composed is the same fact block arriving twice: identical
+    or not, one of them would be dropped, and nobody here can promise the
+    caller meant that.
+    """
     shutil.copy(FIXTURES / "site-two-owners.json", tmp_path / "a.json")
     shutil.copy(FIXTURES / "site-two-owners.json", tmp_path / "b.json")
     code, _, err = run(capsys, "evaluate", "--evidence", str(tmp_path))
     assert code == 2
-    assert "describes the same resource twice" in err
+    assert "`owners`" in err
     assert "contoso,site,finance" in err
     assert "Traceback" not in err
 

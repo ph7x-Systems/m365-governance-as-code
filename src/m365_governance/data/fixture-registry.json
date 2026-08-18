@@ -343,10 +343,22 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-owners-group-not-expanded.json",
+      "origin": "sanitized-observation",
+      "purpose": "the owners of a group-connected site, read on 2026-08-18, with the tenant, the site and the group id replaced. Two things broke here: the coverage block says the slice completed while the only administrator is a group nobody expanded, and the pair below shares this resource",
+      "may_be_presented_as_tenant_observation": true
+    },
+    {
       "path": "fixtures/sharepoint/site-owners-not-collected.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
       "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-owners-unreadable-by-application.json",
+      "origin": "sanitized-observation",
+      "purpose": "the same site as site-owners-group-not-expanded, read on 2026-08-18 by an APPLICATION-only identity holding Sites.Read.All instead of a person. Get-PnPSiteCollectionAdmin returned nothing at all, and the collector published an exact zero with the expansion marked complete: SPO-SITE-001 reported `The site has 0 owner` about a site whose administrator the delegated read saw in the same minute",
+      "may_be_presented_as_tenant_observation": true
     },
     {
       "path": "fixtures/sharepoint/site-partial-expansion-decides.json",
@@ -371,6 +383,12 @@
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
       "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-sharing-beside-owners.json",
+      "origin": "sanitized-observation",
+      "purpose": "the sharing settings of the SAME site as the fixture above, read in the same run. It is here as a pair: two documents about one resource is what collect produces for two slices, and assess refused it",
+      "may_be_presented_as_tenant_observation": true
     },
     {
       "path": "fixtures/sharepoint/site-sharing-default-permission-edit.json",
