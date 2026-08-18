@@ -368,3 +368,43 @@ def test_a_resource_with_nothing_to_read_does_not_fill_the_report():
     assert "No storage limit is set on this site" not in rendered, (
         "a settled resource was printed in full"
     )
+
+
+# ---------------------------------------------------------------------------
+# two rules about a missing label, and they are not the same one
+# ---------------------------------------------------------------------------
+
+
+def test_the_two_classification_rules_are_not_duplicates():
+    """They fire together on a real site, and they are still two decisions.
+
+    Asked because both reported on one site in a real assessment, which is what
+    duplication looks like from the outside. Across the shipped cases they
+    agree five times and diverge five, because they read different facts and
+    speak about different populations: SPO-CLASS-001 asks whether ANYTHING on
+    the site records what it holds, and a classic classification string answers
+    it; SPO-CLASS-003 asks whether the group's privacy and guest access are
+    pinned, and a string cannot do that.
+
+    The decisive case is a site with a classification string and no label. If
+    the two were one rule, one of those answers would have to be wrong.
+    """
+    from m365_governance import engine
+    from m365_governance.loader import load_rule
+
+    one = load_rule(packaged("rules") / "sharepoint" / "SPO-CLASS-001.yaml").data
+    three = load_rule(packaged("rules") / "sharepoint" / "SPO-CLASS-003.yaml").data
+
+    legacy = _load("site-class-legacy-string")
+    assert legacy["facts"]["classification"]["classification_set"]["value"] is True
+    assert legacy["facts"]["classification"]["label_applied"]["value"] is False
+    # A string satisfies one and says nothing to the other.
+    assert engine._evaluate(one, legacy).outcome.value == "pass"
+
+    # And where they do coincide, the message says what the second one adds,
+    # so a reader seeing two findings knows why there are two.
+    both = _load("site-class-group-unlabelled")
+    assert engine._evaluate(one, both).outcome.value == "fail"
+    result = engine._evaluate(three, both)
+    assert result.outcome.value == "fail"
+    assert "SPO-CLASS-001" in result.message
