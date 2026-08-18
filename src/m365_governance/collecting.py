@@ -69,6 +69,39 @@ DIGESTED = (
 COLLECTOR = packaged("collectors") / "powershell" / "sharepoint" / "Get-SpoEvidence.ps1"
 
 
+class Live(StrEnum):
+    """What a run against a real tenant has established about ONE slice.
+
+    THIS WAS A SENTENCE, AND A SENTENCE CANNOT BE DERIVED FROM. Five slices
+    carried five different strings -- `live-validated`, `fully live-validated`,
+    `negative path validated`, `provider live-validated, slice not
+    live-validated` -- and the schema typed the field as any non-empty string.
+    Anything that wanted to know whether a question can be answered from a real
+    tenant had to interpret prose, which means a second table mapping phrases
+    to meanings, kept by hand, diverging the first time somebody rephrased one.
+
+    Four states, and the difference between them is what was OBSERVED:
+
+    `none`          offline tests only. The collector behaves as somebody
+                    believed the API behaves. No rule should rest on it.
+    `negative_only` it ran against a real tenant and the surface was absent or
+                    empty. That the collector reports nothing correctly is
+                    proved; that it reports something correctly is not.
+    `provider_only` the transport underneath it read a real tenant, this
+                    slice's own path did not.
+    `full`          the path that produces this slice's evidence was observed
+                    against a real tenant.
+
+    The sentence is still published, and it is now RENDERED from the state, so
+    the two cannot disagree.
+    """
+
+    NONE = "not live-validated"
+    NEGATIVE_ONLY = "negative path validated"
+    PROVIDER_ONLY = "provider live-validated, slice not live-validated"
+    FULL = "live-validated"
+
+
 @dataclass(frozen=True)
 class Slice:
     """One question, and the collector mode that answers it."""
@@ -131,9 +164,12 @@ class Slice:
     reads: tuple[str, ...] = ()
     #: Least privilege for this slice, as Microsoft documents it.
     permissions: tuple[str, ...] = ()
-    #: What a run against a real tenant has established. The vocabulary is the
-    #: matrix's, and this is now where it lives: the document is a projection.
-    live: str = "not live-validated"
+    #: What a run against a real tenant has established, as a value rather
+    #: than a sentence. See `Live`.
+    live: Live = Live.NONE
+    #: Anything about this slice's live state that the four words do not carry.
+    #: Rendered after the sentence, never instead of it.
+    live_note: str = ""
     #: Which collector answers this slice: `powershell` or `graph`.
     #:
     #: ONE REGISTRY AND TWO COLLECTORS. The alternative was a second list for
@@ -143,6 +179,10 @@ class Slice:
     #: everything the manifest, the coverage and the reporting do with a slice
     #: is the same, so the difference is a field rather than a fork.
     source: str = "powershell"
+
+    def live_sentence(self) -> str:
+        """The live state as a person reads it: the state, then any note."""
+        return f"{self.live}, {self.live_note}" if self.live_note else str(self.live)
 
 
 SLICES = {
@@ -163,7 +203,7 @@ SLICES = {
             shaped_like="site-agents-with-sources",
             reads=("Get-PnPWeb", "Get-PnPCopilotAgent"),
             permissions=("Sites.Read.All",),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "sites",
@@ -183,7 +223,7 @@ SLICES = {
             # reason and the minimum is simply unknown. An invented name is
             # worse than an admitted gap.
             permissions=(),
-            live="fully live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "owners",
@@ -195,7 +235,7 @@ SLICES = {
             shaped_like="site-named-and-group-admins",
             reads=("Get-PnPWeb", "Get-PnPSiteCollectionAdmin"),
             permissions=("Sites.Read.All",),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "modernity",
@@ -207,7 +247,7 @@ SLICES = {
             shaped_like="site-modern-publishing-on",
             reads=("Get-PnPWeb", "Get-PnPList", "Get-PnPFeature", "Get-PnPPage"),
             permissions=("Sites.Read.All",),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "sharing",
@@ -219,7 +259,7 @@ SLICES = {
             shaped_like="site-sharing-anyone-default-anyone",
             reads=("Get-PnPWeb", "Get-PnPSite", "Get-PnPTenantSite"),
             permissions=(),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "tenant-sharing",
@@ -233,7 +273,7 @@ SLICES = {
             shaped_like="tenant-sharing-default-anyone-and-edit",
             reads=("Get-PnPTenant",),
             permissions=(),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "activity",
@@ -245,7 +285,7 @@ SLICES = {
             shaped_like="site-activity-stale",
             reads=("Get-PnPWeb", "Get-PnPTenantSite"),
             permissions=(),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "classification",
@@ -261,7 +301,7 @@ SLICES = {
             shaped_like="site-class-group-unlabelled",
             reads=("Get-PnPWeb", "Get-PnPSite"),
             permissions=("Sites.Read.All",),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "permissions",
@@ -278,7 +318,7 @@ SLICES = {
             also_shaped_like=("list-scopes-within-recommended",),
             reads=("Get-PnPList", "Get-PnPListItem"),
             permissions=("Sites.Read.All",),
-            live="live-validated",
+            live=Live.FULL,
         ),
         # SpfxCatalog only. The catalog is one call and feeds SPO-SPFX-001;
         # SpfxPages is a second, expensive mode whose evidence no rule reads
@@ -294,7 +334,7 @@ SLICES = {
             shaped_like="site-spfx-behind",
             reads=("Get-PnPApp",),
             permissions=("Sites.Read.All",),
-            live="negative path validated",
+            live=Live.NEGATIVE_ONLY,
         ),
         Slice(
             "conditional-access",
@@ -328,7 +368,7 @@ SLICES = {
                 "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy",
             ),
             permissions=("Policy.Read.All",),
-            live="provider live-validated, slice not live-validated",
+            live=Live.PROVIDER_ONLY,
         ),
     ]
 }

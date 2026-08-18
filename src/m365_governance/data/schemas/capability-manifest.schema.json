@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0",
   "title": "Capability manifest",
-  "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand \u2014 and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
+  "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand — and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -99,7 +99,7 @@
           "items": {
             "type": "string"
           },
-          "description": "The rules that read this slice's evidence, by id. Empty where no rule does, which is a decision and not an omission \u2014 see `consumer`."
+          "description": "The rules that read this slice's evidence, by id. Empty where no rule does, which is a decision and not an omission — see `consumer`."
         },
         "consumer": {
           "type": "string",
@@ -113,10 +113,11 @@
       "additionalProperties": false,
       "required": [
         "kind",
-        "reads",
-        "permissions",
         "live_validation",
-        "needs_tenant_surface"
+        "live_validation_state",
+        "needs_tenant_surface",
+        "permissions",
+        "reads"
       ],
       "properties": {
         "kind": {
@@ -135,7 +136,7 @@
           "items": {
             "type": "string"
           },
-          "description": "The Microsoft surface this slice reads, in that surface's own words \u2014 a cmdlet, or an HTTP path. It is what answers `what does this product touch` without anybody reading the source."
+          "description": "The Microsoft surface this slice reads, in that surface's own words — a cmdlet, or an HTTP path. It is what answers `what does this product touch` without anybody reading the source."
         },
         "permissions": {
           "type": "array",
@@ -148,11 +149,21 @@
         "live_validation": {
           "type": "string",
           "minLength": 1,
-          "description": "What a run against a real tenant has established. `not live-validated` means offline tests only \u2014 the collector has been proved to behave as somebody believed the API behaves. No rule should rest on that alone."
+          "description": "What a run against a real tenant has established, as a person reads it: the state, followed by anything specific to this slice. Rendered from `live_validation_state`, never written beside it."
         },
         "needs_tenant_surface": {
           "type": "boolean",
           "description": "Whether this collector reads the tenant administration surface as well as a site. It is published because least privilege has to exist in the COMPOSITION and not only in the documentation: an identity that can read sites and not the tenant runs everything here that is false, and a consumer must be able to see which capabilities that leaves them without rather than discovering it as a refusal at run time."
+        },
+        "live_validation_state": {
+          "type": "string",
+          "enum": [
+            "none",
+            "negative-only",
+            "provider-only",
+            "full"
+          ],
+          "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the surface was absent or empty, so it is proved to report nothing correctly and not to report something correctly. `provider-only` means the transport underneath read a real tenant and this slice's own path did not. `full` means the path that produces this slice's evidence was observed against a real tenant. This field exists because the sentence beside it could not be derived from: five slices carried five phrasings and any consumer asking whether a question is answerable had to interpret prose."
         }
       }
     },

@@ -21,6 +21,8 @@ than being left out to look better.
 
 from __future__ import annotations
 
+import json
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -84,7 +86,15 @@ def _capability(
             # Empty is a real answer and not an omission: least privilege is
             # recorded where a source establishes it, and invented nowhere.
             "permissions": list(chosen.permissions) or ["not-established"],
-            "live_validation": chosen.live,
+            # TWO FIELDS, ONE OWNER. `live_validation` is the sentence a
+            # person reads and `live_validation_state` is the value a consumer
+            # derives from; the sentence is rendered from the state plus the
+            # slice's own note, so they cannot come to disagree. The field was
+            # a free string, typed in the schema as any non-empty one, and
+            # anything asking "can this question be answered from a real
+            # tenant" had to interpret prose.
+            "live_validation": chosen.live_sentence(),
+            "live_validation_state": chosen.live.name.lower().replace("_", "-"),
             # Least privilege belongs in the composition, not only in the
             # documentation: an identity that reads sites and not the tenant
             # runs every collector where this is false, and the catalogue is
@@ -197,6 +207,141 @@ def _text(value: Any) -> str | None:
     return " ".join(str(value).split()) if value else None
 
 
+#: How much a live state proves, so the weakest link in a question can be found
+#: without comparing sentences.
+_PROVES = {"none": 0, "negative-only": 1, "provider-only": 2, "full": 3}
+
+
+def questions(rules: Path | None = None) -> dict[str, Any]:
+    """What this engine can defensibly answer about a real tenant.
+
+    `capabilities()` answers "what does this product touch". This answers the
+    question somebody actually has, which is "what can it tell me", and the two
+    are not the same document: a collector that reads four cmdlets and feeds no
+    rule is infrastructure, and a rule whose collector has only ever been run
+    against an empty surface is not an answer yet.
+
+    "We have twenty rules" is a count of files. It says nothing about whether
+    any of them can be decided from a tenant, which is the only claim worth
+    publishing. Each entry here carries the four things that make the verdict
+    checkable rather than asserted: what evidence decides it, whether the
+    collector that feeds it produces that evidence, what permission the
+    collection rests on, and what a run against a real tenant has established
+    about the path underneath.
+
+    NOTHING IS MAINTAINED BY HAND. The join is `consumed_by`, which each slice
+    already declares; the evidence paths are the rule's own; the availability
+    is resolved against the fixtures that define each shape the collector
+    writes. A second table would be a fifth place to forget.
+    """
+    document = manifest(rules)
+    by_rule: dict[str, list[str]] = {}
+    for capability in document["capabilities"]:
+        for rule_id in capability["consumed_by"]:
+            by_rule.setdefault(rule_id, []).append(capability["name"])
+    catalogue = {c["name"]: c for c in document["capabilities"]}
+
+    out = []
+    for rule in document["rules"]:
+        sources = sorted(by_rule.get(rule["id"], ()))
+        paths = rule["evidence_requirements"]
+        if not sources:
+            # A rule no collector feeds is debt, and it says so rather than
+            # being left out of the count.
+            out.append(
+                {
+                    "id": rule["id"],
+                    "question": rule["title"],
+                    "answerable": "no",
+                    "because": "no collector produces the evidence this rule needs",
+                    "evidence": paths,
+                    "evidence_available": False,
+                    "fed_by": [],
+                    "permission_basis": ["not-established"],
+                    "live_validation_state": "none",
+                }
+            )
+            continue
+        states = [catalogue[s]["collector"]["live_validation_state"] for s in sources]
+        weakest = min(states, key=lambda state: _PROVES[state])
+        available = all(_produced(sources, path) for path in paths)
+        answerable = "yes" if weakest == "full" and available else "unknown"
+        out.append(
+            {
+                "id": rule["id"],
+                "question": rule["title"],
+                "answerable": answerable,
+                "because": _because(weakest, available),
+                "evidence": paths,
+                "evidence_available": available,
+                "fed_by": sources,
+                "permission_basis": sorted(
+                    {
+                        permission
+                        for s in sources
+                        for permission in catalogue[s]["collector"]["permissions"]
+                    }
+                ),
+                "live_validation_state": weakest,
+            }
+        )
+    return {
+        "$schema": registry.contract(CONTRACT),
+        "engine_version": _version(),
+        "questions": out,
+    }
+
+
+def _because(state: str, available: bool) -> str:
+    """Why a question is not a yes, in the words of what is missing."""
+    if not available:
+        return "the collector that feeds this rule does not produce the evidence it requires"
+    return {
+        "full": "the path that produces this evidence was observed against a real tenant",
+        "negative-only": (
+            "the collector has only been observed against a surface that was "
+            "absent or empty, so reporting a finding is unproved"
+        ),
+        "provider-only": (
+            "the transport underneath has read a real tenant, this slice's own "
+            "path has not"
+        ),
+        "none": "offline tests only",
+    }[state]
+
+
+def _produced(sources: list[str], path: str) -> bool:
+    """Whether any feeding collector writes the fact at `path`.
+
+    Read from the fixtures that define each shape a slice writes, because those
+    are what the collector produces and they ship with the engine. Asking the
+    live tenant would make this document a run result; asking a hand-written
+    map would make it a fifth list.
+    """
+    from .engine import resolve
+
+    for name in sources:
+        for facts in _shape_facts(name):
+            if resolve(facts, path).kind != "missing":
+                return True
+    return False
+
+
+@lru_cache(maxsize=None)
+def _shape_facts(name: str) -> tuple[dict[str, Any], ...]:
+    from .collecting import SLICES
+
+    slice_ = SLICES[name]
+    found = []
+    for shape in (slice_.shaped_like, *slice_.also_shaped_like):
+        for root in ("sharepoint", "entra", "."):
+            candidate = packaged("fixtures") / root / f"{shape}.json"
+            if candidate.exists():
+                found.append(json.loads(candidate.read_text(encoding="utf-8")).get("facts", {}))
+                break
+    return tuple(found)
+
+
 def _contracts() -> list[str]:
     return registry.SchemaRegistry.load(packaged("schemas")).contracts()
 
@@ -205,6 +350,39 @@ def _version() -> str:
     from . import __version__
 
     return __version__
+
+
+def describe_questions(document: dict[str, Any]) -> str:
+    """The answerability document for somebody reading rather than parsing.
+
+    The totals lead, because they are the claim. A reader who stops after the
+    first line should still leave with the honest number rather than the count
+    of rule files.
+    """
+    entries = document["questions"]
+    tally: dict[str, int] = {}
+    for entry in entries:
+        tally[entry["answerable"]] = tally.get(entry["answerable"], 0) + 1
+
+    out = [
+        f"m365-governance {document['engine_version']}",
+        "",
+        "Questions defensibly answerable from a real tenant",
+        f"  yes {tally.get('yes', 0)}   unknown {tally.get('unknown', 0)}   "
+        f"no {tally.get('no', 0)}   of {len(entries)}",
+        "",
+    ]
+    for entry in entries:
+        out += [
+            f"  {entry['answerable'].upper():7} {entry['id']}",
+            f"          {entry['question']}",
+            f"          evidence   {', '.join(entry['evidence'])}",
+            f"          collected  {', '.join(entry['fed_by']) or 'nothing'}",
+            f"          permission {', '.join(entry['permission_basis'])}",
+            f"          live       {entry['live_validation_state']}",
+            f"          because    {entry['because']}",
+        ]
+    return "\n".join(out) + "\n"
 
 
 def describe(document: dict[str, Any]) -> str:

@@ -191,7 +191,9 @@ def test_the_command_reaches_no_tenant_and_reads_no_evidence():
         ._actions
     }
 
-    assert actions <= {"help", "rules", "format"}
+    # `questions` is a second PROJECTION of the same document, not a second
+    # source of it: it selects which view is printed and names no tenant.
+    assert actions <= {"help", "rules", "format", "questions"}
 
 
 def _fixture(name: str, load_json):
@@ -249,3 +251,65 @@ def test_a_collector_with_a_branch_declares_every_shape_it_produces():
         "the second shape adds nothing, so either the fixture is wrong or the "
         "declaration is decoration"
     )
+
+
+def test_no_rule_decides_anything_from_evidence_that_is_not_there():
+    """Empty facts, every shipped rule, and not one of them decides.
+
+    The ladder is in `engine._evaluate` and the rule-by-rule tests cover it.
+    What was never measured is the property across the SET: a rule whose
+    condition happens to compare against a default would pass on a tenant
+    nobody collected, and nothing would have said so. Missing evidence is
+    `unknown`, and `unknown` is not a pass.
+    """
+    from m365_governance import engine
+    from m365_governance.loader import load_rules
+    from m365_governance.resources import packaged
+
+    resource = {
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "https://example.invalid/sites/x",
+    }
+    decided = [
+        rule["id"]
+        for rule in (r.data for r in load_rules(packaged("rules")))
+        if engine._evaluate(rule, {"facts": {}, "resource": resource}).outcome.value
+        in ("pass", "fail")
+    ]
+    assert not decided, f"rules that decided without evidence: {decided}"
+
+
+def test_every_answerable_question_has_the_evidence_it_requires():
+    """A question is only answerable if its collector writes what it reads.
+
+    `evidence_available` is derived from the fixtures that define each shape a
+    slice writes, so this is measured against what ships rather than against a
+    map somebody keeps. A rule that requires a path no feeding collector
+    produces is a rule that can only ever be `unknown`, and that is a defect
+    rather than a property.
+    """
+    from m365_governance import capabilities
+
+    document = capabilities.questions(None)
+    missing = [
+        entry["id"] for entry in document["questions"] if not entry["evidence_available"]
+    ]
+    assert not missing, f"rules whose evidence no collector produces: {missing}"
+
+
+def test_the_live_state_is_a_value_and_the_sentence_comes_from_it():
+    """Four states, and the prose beside them is rendered rather than typed.
+
+    The field was a free string and the schema accepted any non-empty one, so
+    five slices carried five phrasings and anything asking whether a question
+    could be answered had to interpret prose. The sentence has to start with
+    the state, or the two have drifted.
+    """
+    from m365_governance.collecting import Live
+
+    for capability in MANIFEST["capabilities"]:
+        collector = capability["collector"]
+        state = collector["live_validation_state"]
+        assert state in {"none", "negative-only", "provider-only", "full"}
+        assert collector["live_validation"].startswith(str(Live[state.upper().replace("-", "_")]))
