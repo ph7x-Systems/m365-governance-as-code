@@ -185,12 +185,14 @@ def read(
     def walk(path: str, prefix: str, depth: int = 0) -> None:
         nonlocal carried_a_digest
         if depth > MAX_DEPTH:
-            coverage.append({
-                "scope": prefix or "/",
-                "state": "partial",
-                "detail": f"the walk stopped at {MAX_DEPTH} levels; anything "
-                "below this is not in this read",
-            })
+            coverage.append(
+                {
+                    "scope": prefix or "/",
+                    "state": "partial",
+                    "detail": f"the walk stopped at {MAX_DEPTH} levels; anything "
+                    "below this is not in this read",
+                }
+            )
             return
         answer: Read = reader.read(f"{path}/children")
         if answer.unavailable is not None:
@@ -214,22 +216,26 @@ def read(
                 # would then read as present or missing here on the strength of
                 # a read that never covered that drive.
                 items[identity] = _item(entry)
-                coverage.append({
-                    "scope": identity,
-                    "state": "not-supported",
-                    "detail": "this item is shared from another drive; its "
-                    "contents are not part of this estate and were not walked",
-                })
+                coverage.append(
+                    {
+                        "scope": identity,
+                        "state": "not-supported",
+                        "detail": "this item is shared from another drive; its "
+                        "contents are not part of this estate and were not walked",
+                    }
+                )
                 continue
 
             if "folder" in entry:
                 if entry["id"] in entered:
-                    coverage.append({
-                        "scope": identity,
-                        "state": "partial",
-                        "detail": "this folder was already entered elsewhere in "
-                        "the walk, so it was not read twice",
-                    })
+                    coverage.append(
+                        {
+                            "scope": identity,
+                            "state": "partial",
+                            "detail": "this folder was already entered elsewhere in "
+                            "the walk, so it was not read twice",
+                        }
+                    )
                     continue
                 entered.add(entry["id"])
                 walk(f"{base}/items/{entry['id']}", identity, depth + 1)
@@ -275,8 +281,11 @@ def read(
         "read_by": {
             "kind": reader.identity.kind,
             "scopes": list(reader.identity.scopes),
-            **({"tenant": reader.identity.observed_tenant_id}
-               if reader.identity.observed_tenant_id else {}),
+            **(
+                {"tenant": reader.identity.observed_tenant_id}
+                if reader.identity.observed_tenant_id
+                else {}
+            ),
         },
     }
 

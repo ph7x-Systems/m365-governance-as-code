@@ -91,9 +91,7 @@ def reference(read: dict) -> dict:
         "taken_at": read["taken_at"],
         "estate": read["estate"],
         "canonical_hash": canonical.digest(read),
-        "evidence_hash": canonical.digest(
-            [read.get("items"), read.get("coverage")]
-        ),
+        "evidence_hash": canonical.digest([read.get("items"), read.get("coverage")]),
         "coverage": read.get("coverage", []),
         "read_by": read["read_by"],
     }
@@ -363,9 +361,7 @@ def _presence(baseline: dict, verification: dict) -> list[dict]:
         if item in before and item in after:
             continue  # present on both sides; nothing to say
         if gap:
-            findings.append(
-                _finding(item, "presence", COVERED_BY_A_GAP, **gap)
-            )
+            findings.append(_finding(item, "presence", COVERED_BY_A_GAP, **gap))
             continue
         findings.append(
             _finding(
@@ -959,8 +955,11 @@ def _inline(text: str) -> str:
     and a file named after a script tag is a file, not an instruction.
     """
     text = _escape(text)
-    for pattern, tag in ((r"\*\*(.+?)\*\*", "strong"), (r"`(.+?)`", "code"),
-                         (r"(?<!\*)\*([^*]+?)\*(?!\*)", "em")):
+    for pattern, tag in (
+        (r"\*\*(.+?)\*\*", "strong"),
+        (r"`(.+?)`", "code"),
+        (r"(?<!\*)\*([^*]+?)\*(?!\*)", "em"),
+    ):
         text = re.sub(pattern, rf"<{tag}>\1</{tag}>", text)
     return text
 

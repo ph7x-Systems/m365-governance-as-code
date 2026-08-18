@@ -24,7 +24,9 @@ from m365_governance.graph import GraphReader
 TOKEN = (
     "eyJhbGciOiJub25lIn0."
     + __import__("base64")
-    .urlsafe_b64encode(json.dumps({"tid": "t", "aud": "https://graph.microsoft.com"}).encode())
+    .urlsafe_b64encode(
+        json.dumps({"tid": "t", "aud": "https://graph.microsoft.com"}).encode()
+    )
     .decode()
     .rstrip("=")
     + "."
@@ -93,7 +95,10 @@ def test_the_digest_algorithm_is_recorded_only_when_a_digest_was_found():
     no_hash = {**FILE, "file": {"hashes": {}}}
     document = migration_graph.read(
         reader_for({"/root/children": {"value": [no_hash]}}),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert "content_digest_algorithm" not in document
     assert document["items"]["/plan.xlsx"]["content_digest"] is None
@@ -107,7 +112,10 @@ def test_an_application_creator_is_recorded_and_never_dropped():
     }
     document = migration_graph.read(
         reader_for({"/root/children": {"value": [by_tool]}}),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert document["items"]["/plan.xlsx"]["author"] == "a migration tool"
 
@@ -122,7 +130,10 @@ def test_a_folder_that_refuses_becomes_coverage_not_an_empty_estate():
                 "/items/2/children": 403,
             }
         ),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert list(document["items"]) == ["/plan.xlsx"], "what was read is kept"
     assert document["coverage"][0]["scope"] == "/Archive"
@@ -134,7 +145,10 @@ def test_nothing_enumerated_at_all_is_refused_rather_than_returned_empty():
     with pytest.raises(migration_graph.Unreadable):
         migration_graph.read(
             reader_for({"/root/children": 403}),
-            drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+            drive="d",
+            read_id="r",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
         )
 
 
@@ -145,7 +159,10 @@ def test_versions_and_permissions_are_not_fetched_unless_asked():
     """The transport refuses unstated addresses, so this asserts by not raising."""
     document = migration_graph.read(
         reader_for({"/root/children": {"value": [FILE]}}),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert "versions" not in document["items"]["/plan.xlsx"]
     assert "permissions" not in document["items"]["/plan.xlsx"]
@@ -170,7 +187,10 @@ def test_permissions_become_grants_and_links_from_one_read():
                 },
             }
         ),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
         with_permissions=True,
     )
     item = document["items"]["/plan.xlsx"]
@@ -180,10 +200,12 @@ def test_permissions_become_grants_and_links_from_one_read():
 
 def test_grants_are_sorted_so_two_unchanged_reads_compare_equal():
     """The false positive this exists to prevent: same grants, other order."""
-    order_a = {"value": [
-        {"roles": ["full"], "grantedToV2": {"group": {"displayName": "Owners"}}},
-        {"roles": ["edit"], "grantedToV2": {"group": {"displayName": "Members"}}},
-    ]}
+    order_a = {
+        "value": [
+            {"roles": ["full"], "grantedToV2": {"group": {"displayName": "Owners"}}},
+            {"roles": ["edit"], "grantedToV2": {"group": {"displayName": "Members"}}},
+        ]
+    }
     order_b = {"value": list(reversed(order_a["value"]))}
 
     reads = [
@@ -191,7 +213,10 @@ def test_grants_are_sorted_so_two_unchanged_reads_compare_equal():
             reader_for(
                 {"/root/children": {"value": [FILE]}, "/items/1/permissions": order}
             ),
-            drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+            drive="d",
+            read_id="r",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
             with_permissions=True,
         )
         for order in (order_a, order_b)
@@ -208,10 +233,11 @@ def test_grants_are_sorted_so_two_unchanged_reads_compare_equal():
 
 def test_a_denied_permission_read_is_a_gap_on_that_item_not_a_missing_grant():
     document = migration_graph.read(
-        reader_for(
-            {"/root/children": {"value": [FILE]}, "/items/1/permissions": 403}
-        ),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        reader_for({"/root/children": {"value": [FILE]}, "/items/1/permissions": 403}),
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
         with_permissions=True,
     )
     assert "permissions" not in document["items"]["/plan.xlsx"]
@@ -231,19 +257,26 @@ def test_two_graph_reads_produce_a_record_that_verifies(schemas):
     }
 
     before = migration_graph.read(
-        reader_for(answers), drive="d", read_id="before",
-        taken_at="2026-03-01T09:00:00Z", estate="a library",
+        reader_for(answers),
+        drive="d",
+        read_id="before",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="a library",
     )
     after = migration_graph.read(
-        reader_for({"/root/children": {"value": [moved]}}), drive="d",
-        read_id="after", taken_at="2026-03-09T09:00:00Z", estate="a library",
+        reader_for({"/root/children": {"value": [moved]}}),
+        drive="d",
+        read_id="after",
+        taken_at="2026-03-09T09:00:00Z",
+        estate="a library",
     )
 
     assert schemas.problems(before) == []
     assert schemas.problems(after) == []
 
     document = migration.record(
-        baseline=before, verification=after,
+        baseline=before,
+        verification=after,
         move={"kind": "tenant-to-tenant", "produced_by": "test"},
     )
     assert schemas.problems(document) == []
@@ -265,13 +298,14 @@ def test_two_graph_reads_produce_a_record_that_verifies(schemas):
 def test_a_read_with_no_versions_says_who_decided(schemas):
     """Not fetched is the operator's choice, and reads differently from a gap."""
     before = migration_graph.read(
-        reader_for({"/root/children": {"value": [FILE]}}), drive="d",
-        read_id="b", taken_at="2026-03-01T09:00:00Z", estate="e",
+        reader_for({"/root/children": {"value": [FILE]}}),
+        drive="d",
+        read_id="b",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     versions = next(
-        d
-        for d in migration.dimensions_for(before, before)
-        if d["name"] == "versions"
+        d for d in migration.dimensions_for(before, before) if d["name"] == "versions"
     )
     assert versions["state"] == "not-compared"
     assert versions["limit"] == "not-carried", (
@@ -292,8 +326,11 @@ def test_a_folder_reached_twice_is_read_once_and_said_so():
         },
     }
     document = migration_graph.read(
-        reader_for(loop), drive="d", read_id="r",
-        taken_at="2026-03-01T09:00:00Z", estate="e",
+        reader_for(loop),
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert list(document["items"]) == ["/A/plan.xlsx"]
     assert any("already entered" in gap["detail"] for gap in document["coverage"])
@@ -307,18 +344,25 @@ def test_the_walk_stops_at_a_depth_and_reports_it_rather_than_crashing():
 
     def transport(url: str, token: str):
         counter["n"] += 1
-        return 200, json.dumps(
-            {
-                "value": [
-                    FILE,
-                    {"id": f"lvl-{counter['n']}", "name": "deep", "folder": {}},
-                ]
-            }
-        ), {}
+        return (
+            200,
+            json.dumps(
+                {
+                    "value": [
+                        FILE,
+                        {"id": f"lvl-{counter['n']}", "name": "deep", "folder": {}},
+                    ]
+                }
+            ),
+            {},
+        )
 
     document = migration_graph.read(
-        GraphReader(TOKEN, transport=transport), drive="d", read_id="r",
-        taken_at="2026-03-01T09:00:00Z", estate="e",
+        GraphReader(TOKEN, transport=transport),
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert any("the walk stopped at" in gap["detail"] for gap in document["coverage"])
     assert counter["n"] <= migration_graph.MAX_DEPTH + 2
@@ -335,7 +379,10 @@ def test_an_item_shared_from_another_drive_is_listed_but_never_walked():
     }
     document = migration_graph.read(
         reader_for({"/root/children": {"value": [FILE, shared]}}),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert "/Shared" in document["items"], "it is in the folder, so it is listed"
     gap = next(g for g in document["coverage"] if g["scope"] == "/Shared")
@@ -357,8 +404,11 @@ def test_the_enumeration_follows_the_service_s_own_paging():
         "children?page=2": {"value": [{**FILE, "id": "2", "name": "second.xlsx"}]},
     }
     document = migration_graph.read(
-        reader_for(pages), drive="d", read_id="r",
-        taken_at="2026-03-01T09:00:00Z", estate="e",
+        reader_for(pages),
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert sorted(document["items"]) == ["/plan.xlsx", "/second.xlsx"]
 
@@ -375,8 +425,11 @@ def test_a_throttled_read_is_retried_and_then_reported():
     reader = GraphReader(TOKEN, transport=transport, sleep=lambda _: None)
     with pytest.raises(migration_graph.Unreadable):
         migration_graph.read(
-            reader, drive="d", read_id="r",
-            taken_at="2026-03-01T09:00:00Z", estate="e",
+            reader,
+            drive="d",
+            read_id="r",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
         )
     assert attempts["n"] > 1, "a single attempt is not a retry"
 
@@ -384,10 +437,11 @@ def test_a_throttled_read_is_retried_and_then_reported():
 def test_an_item_deleted_during_the_read_is_a_gap_on_that_item():
     """Estates change while they are being read; that is not a finding."""
     document = migration_graph.read(
-        reader_for(
-            {"/root/children": {"value": [FILE]}, "/items/1/permissions": 404}
-        ),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        reader_for({"/root/children": {"value": [FILE]}, "/items/1/permissions": 404}),
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
         with_permissions=True,
     )
     gap = next(g for g in document["coverage"] if g["scope"] == "/plan.xlsx")
@@ -413,8 +467,11 @@ def test_the_same_estate_read_twice_produces_identical_bytes():
     }
     reads = [
         migration_graph.read(
-            reader_for(shuffled), drive="d", read_id="r",
-            taken_at="2026-03-01T09:00:00Z", estate="e",
+            reader_for(shuffled),
+            drive="d",
+            read_id="r",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
         )
         for _ in range(2)
     ]
@@ -424,7 +481,10 @@ def test_the_same_estate_read_twice_produces_identical_bytes():
 def test_a_read_declares_the_identity_that_took_it():
     document = migration_graph.read(
         reader_for({"/root/children": {"value": [FILE]}}),
-        drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
     )
     assert document["read_by"]["kind"] == "not-established", (
         "this token carries neither roles nor scp, and that is a real answer "

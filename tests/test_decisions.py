@@ -273,17 +273,28 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
     # moment the branch is, it is quoted in release notes and read on GitHub,
     # and until today nothing looked at one. Published history stays as it is.
     base = "origin/main"
-    if subprocess.run(
-        ["git", "rev-parse", "--verify", "--quiet", base], cwd=ROOT, capture_output=True
-    ).returncode == 0:
+    if (
+        subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", base],
+            cwd=ROOT,
+            capture_output=True,
+        ).returncode
+        == 0
+    ):
         unpublished = subprocess.run(
             ["git", "rev-list", f"{base}..HEAD"],
-            cwd=ROOT, capture_output=True, text=True, check=True,
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
         ).stdout.split()
         for commit in unpublished:
             message = subprocess.run(
                 ["git", "log", "-1", "--format=%B", commit],
-                cwd=ROOT, capture_output=True, text=True, check=True,
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
             ).stdout
             # A message describing this guard has to be able to quote it, on
             # the same terms as a file: the marker is in the message, where a

@@ -275,8 +275,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     reading = sub.add_parser(
         "migration-read",
-        help="read one estate at one moment, as the input a verification is "
-        "built from",
+        help="read one estate at one moment, as the input a verification is built from",
     )
     reading.add_argument("--drive", required=True, help="the drive to enumerate")
     reading.add_argument("--folder", default=None, help="an item id to start at")
@@ -990,9 +989,7 @@ def _cmd_migration_read(args) -> int:
         args.out.parent.mkdir(parents=True, exist_ok=True)
         args.out.write_bytes(canonical.encode(document) + b"\n")
 
-    carried = sorted(
-        {key for item in document["items"].values() for key in item}
-    )
+    carried = sorted({key for item in document["items"].values() for key in item})
     print(f"{document['estate']}")
     print(f"  read          {document['read_id']} ({document['taken_at']})")
     print(f"  items         {len(document['items'])}")
@@ -1039,9 +1036,7 @@ def _cmd_migration_verify(args) -> int:
         move["performed_by"] = args.performed_by
 
     try:
-        document = migration.record(
-            baseline=reads[0], verification=reads[1], move=move
-        )
+        document = migration.record(baseline=reads[0], verification=reads[1], move=move)
     except migration.Unverifiable as exc:
         print(str(exc), file=sys.stderr)
         return 1
@@ -1063,10 +1058,14 @@ def _cmd_migration_verify(args) -> int:
         counts[finding["outcome"]] = counts.get(finding["outcome"], 0) + 1
 
     print(f"{document['baseline']['estate']}")
-    print(f"  baseline      {document['baseline']['read_id']} "
-          f"({document['baseline']['taken_at']})")
-    print(f"  verification  {document['verification']['read_id']} "
-          f"({document['verification']['taken_at']})")
+    print(
+        f"  baseline      {document['baseline']['read_id']} "
+        f"({document['baseline']['taken_at']})"
+    )
+    print(
+        f"  verification  {document['verification']['read_id']} "
+        f"({document['verification']['taken_at']})"
+    )
     print(f"  compared      {', '.join(compared)}")
     for entry in skipped:
         print(f"  not compared  {entry['name']}: {entry['reason']}")

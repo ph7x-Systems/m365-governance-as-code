@@ -34,8 +34,11 @@ def read(which: str, *, at: str, digest: str, coverage=None) -> dict:
         "canonical_hash": digest,
         "evidence_hash": canonical.digest([{which: True}, coverage or []]),
         "coverage": coverage or [],
-        "read_by": {"kind": "delegated", "principal": "an operator",
-                    "scopes": ["Files.Read.All"]},
+        "read_by": {
+            "kind": "delegated",
+            "principal": "an operator",
+            "scopes": ["Files.Read.All"],
+        },
     }
 
 
@@ -419,9 +422,7 @@ def test_content_equal_by_digest_says_nothing_because_nothing_is_wrong():
     findings = migration.compare(
         baseline=side({PLAN: {"content_digest": "d" * 64}}),
         verification=side({PLAN: {"content_digest": "d" * 64}}),
-        dimensions=[
-            {"name": "content", "state": "compared", "method": "digest"}
-        ],
+        dimensions=[{"name": "content", "state": "compared", "method": "digest"}],
     )
     assert findings == []
 
@@ -630,8 +631,10 @@ def test_the_fixture_pair_produces_a_record_that_verifies(schemas):
     assert schemas.problems(document) == []
     assert migration.verify(document, schemas=schemas) == []
 
-    outcomes = {(f["item"].split("/")[-1], f["dimension"]): f["outcome"]
-                for f in document["findings"]}
+    outcomes = {
+        (f["item"].split("/")[-1], f["dimension"]): f["outcome"]
+        for f in document["findings"]
+    }
 
     # The archive could not be read after the move. It is not reported missing.
     assert outcomes[("Minutes 2019.docx", "presence")] == "unknown"
@@ -738,9 +741,8 @@ def test_an_empty_section_says_so_rather_than_disappearing(schemas):
     """A report whose empty parts vanish reads as though they never applied."""
     quiet = migration.record(
         baseline=fixture("before-cutover"),
-        verification=fixture("before-cutover") | {
-            "read_id": "after", "taken_at": "2026-03-09T08:30:00Z"
-        },
+        verification=fixture("before-cutover")
+        | {"read_id": "after", "taken_at": "2026-03-09T08:30:00Z"},
         move={"kind": "tenant-to-tenant", "produced_by": "test"},
     )
     text = migration.report(quiet)
@@ -779,9 +781,7 @@ def test_the_two_are_indistinguishable_without_the_declaration():
 
     limits = [
         next(
-            d
-            for d in migration.dimensions_for(read, read)
-            if d["name"] == "authorship"
+            d for d in migration.dimensions_for(read, read) if d["name"] == "authorship"
         )["limit"]
         for read in (declared, undeclared)
     ]
@@ -805,12 +805,20 @@ def test_a_record_built_from_a_thin_source_still_validates(schemas):
         "items": {PLAN: {}},
         "coverage": [],
         "read_by": {"kind": "delegated", "scopes": []},
-        "unsupported": ["size", "content", "authorship", "versions", "permissions",
-                        "sharing-links"],
+        "unsupported": [
+            "size",
+            "content",
+            "authorship",
+            "versions",
+            "permissions",
+            "sharing-links",
+        ],
     }
     dimensions = migration.dimensions_for(thin, thin)
     document = migration.build(
-        baseline=BEFORE, verification=AFTER, move=MOVE,
+        baseline=BEFORE,
+        verification=AFTER,
+        move=MOVE,
         dimensions=dimensions,
         findings=migration.compare(
             baseline=thin, verification=thin, dimensions=dimensions
@@ -836,11 +844,18 @@ def test_two_reads_stamped_twice_share_one_evidence_digest():
     observed = {"items": {PLAN: {"size": 10}}, "coverage": []}
     sides = [
         migration.reference(
-            dict(observed, read_id=name, taken_at=at, estate="e",
-                 read_by={"kind": "delegated", "scopes": []})
+            dict(
+                observed,
+                read_id=name,
+                taken_at=at,
+                estate="e",
+                read_by={"kind": "delegated", "scopes": []},
+            )
         )
-        for name, at in (("first", "2026-03-01T09:00:00Z"),
-                         ("second", "2026-03-09T09:00:00Z"))
+        for name, at in (
+            ("first", "2026-03-01T09:00:00Z"),
+            ("second", "2026-03-09T09:00:00Z"),
+        )
     ]
     assert sides[0]["canonical_hash"] != sides[1]["canonical_hash"]
     assert sides[0]["evidence_hash"] == sides[1]["evidence_hash"]
@@ -851,20 +866,34 @@ def test_a_real_difference_is_not_reported_as_identical(schemas):
     before = {"items": {PLAN: {"size": 10}}, "coverage": []}
     after = {"items": {PLAN: {"size": 11}}, "coverage": []}
     findings = migration.compare(
-        baseline=before, verification=after,
+        baseline=before,
+        verification=after,
         dimensions=[{"name": "size", "state": "compared"}],
     )
     assert [f["outcome"] for f in findings] == ["fail"]
 
 
 def test_the_report_leads_with_the_tautology_rather_than_burying_it(schemas):
-    observed = {"items": {PLAN: {"size": 10}}, "coverage": [],
-                "read_by": {"kind": "delegated", "scopes": []}}
+    observed = {
+        "items": {PLAN: {"size": 10}},
+        "coverage": [],
+        "read_by": {"kind": "delegated", "scopes": []},
+    }
     document = migration.record(
-        baseline=dict(observed, read_id="a", taken_at="2026-03-01T09:00:00Z",
-                      estate="e", produced_by="p"),
-        verification=dict(observed, read_id="b", taken_at="2026-03-09T09:00:00Z",
-                          estate="e", produced_by="p"),
+        baseline=dict(
+            observed,
+            read_id="a",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
+            produced_by="p",
+        ),
+        verification=dict(
+            observed,
+            read_id="b",
+            taken_at="2026-03-09T09:00:00Z",
+            estate="e",
+            produced_by="p",
+        ),
         move={"kind": "t", "produced_by": "test"},
     )
     summary = migration.report(document).split("## What was verified")[0]
@@ -878,8 +907,12 @@ def test_the_report_leads_with_the_tautology_rather_than_burying_it(schemas):
 
 
 def eyes(**overrides) -> dict:
-    return {"kind": "delegated", "principal": "an operator",
-            "scopes": ["Files.Read.All"], **overrides}
+    return {
+        "kind": "delegated",
+        "principal": "an operator",
+        "scopes": ["Files.Read.All"],
+        **overrides,
+    }
 
 
 def test_two_reads_by_different_people_are_refused(schemas):
@@ -953,18 +986,29 @@ def test_the_html_report_needs_nothing_from_anywhere_else(delivered):
 def test_an_estate_cannot_inject_markup_through_its_own_file_names(schemas):
     """A file named after a script tag is a file, not an instruction."""
     hostile = "/Shared Documents/<script>alert(1)</script>.docx"
-    observed = {"items": {hostile: {"size": 1}}, "coverage": [],
-                "read_by": {"kind": "delegated", "scopes": []}}
+    observed = {
+        "items": {hostile: {"size": 1}},
+        "coverage": [],
+        "read_by": {"kind": "delegated", "scopes": []},
+    }
     document = migration.record(
-        baseline=dict(observed, read_id="a", taken_at="2026-03-01T09:00:00Z",
-                      estate="e", produced_by="p"),
+        baseline=dict(
+            observed,
+            read_id="a",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
+            produced_by="p",
+        ),
         verification=dict(
             {
                 "items": {},
                 "coverage": [],
                 "read_by": {"kind": "delegated", "scopes": []},
             },
-            read_id="b", taken_at="2026-03-09T09:00:00Z", estate="e", produced_by="p",
+            read_id="b",
+            taken_at="2026-03-09T09:00:00Z",
+            estate="e",
+            produced_by="p",
         ),
         move={"kind": "t", "produced_by": "test"},
     )
