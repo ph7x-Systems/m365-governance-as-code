@@ -14,7 +14,8 @@
     "acquisition": "collected",
     "scopes": [
       "AllSites.Read"
-    ]
+    ],
+    "identity_method": "not-established"
   },
   "coverage": {
     "requested": [

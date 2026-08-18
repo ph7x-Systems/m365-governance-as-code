@@ -259,3 +259,39 @@ def test_no_document_carries_a_credential():
         text = path.read_text(encoding="utf-8").lower()
         for secret in ("begin private key", "begin rsa", ".pfx", "certificatepassword"):
             assert secret not in text, f"{path.name} carries {secret}"
+
+
+def test_every_observation_fixture_says_how_it_authenticated():
+    """One of them did not, and the gate above still passed.
+
+    `site-owners-group-not-expanded` was sanitized from a run taken before
+    `identity_method` existed, so the pair meant to demonstrate that identity
+    is part of the evidence had it on one side only. The schema does not
+    require the field -- an imported document may genuinely not know -- but a
+    fixture this repository collected itself always does.
+    """
+    import json as _json
+
+    registry = _json.loads(
+        (packaged("fixtures").parent / "fixture-registry.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    observed = [
+        entry["path"]
+        for entry in registry["fixtures"]
+        if entry["origin"] == "sanitized-observation"
+    ]
+    assert observed, "no observation fixtures at all"
+
+    for relative in observed:
+        document = _json.loads(
+            (packaged("fixtures").parent / relative).read_text(encoding="utf-8")
+        )
+        provenance = document["provenance"]
+        # Present, always. `not-established` is the honest value for a
+        # fixture collected before the field existed, and it is the word this
+        # product already has for evidence that does not carry its own
+        # identity -- filling it in from memory would be worse.
+        assert provenance.get("identity_method"), f"{relative}: no identity_method"
+        assert provenance.get("identity_kind"), f"{relative}: no identity_kind"

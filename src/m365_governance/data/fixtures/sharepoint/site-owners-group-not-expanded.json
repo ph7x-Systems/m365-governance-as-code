@@ -11,6 +11,8 @@
       "host": "contoso.sharepoint.com"
     },
     "identity_kind": "delegated",
+    "identity_method": "interactive",
+    "client_id": "00000000-0000-0000-0000-000000000000",
     "acquisition": "collected",
     "scopes": [
       "AllSites.Read"
