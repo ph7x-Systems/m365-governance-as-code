@@ -11,6 +11,7 @@ digest that is absent rather than null.
 
 from __future__ import annotations
 
+import io
 import json
 
 import pytest
@@ -419,8 +420,8 @@ def test_a_throttled_read_is_retried_and_then_reported():
 
     def transport(url: str, token: str):
         attempts["n"] += 1
-        corpo = json.dumps({"error": {"message": "slow down"}})
-        return 429, corpo, {"Retry-After": "0"}
+        body = json.dumps({"error": {"message": "slow down"}})
+        return 429, body, {"Retry-After": "0"}
 
     reader = GraphReader(TOKEN, transport=transport, sleep=lambda _: None)
     with pytest.raises(migration_graph.Unreadable):
@@ -491,3 +492,88 @@ def test_a_read_declares_the_identity_that_took_it():
         "about identity rather than a gap"
     )
     assert document["read_by"]["tenant"] == "t"
+
+
+# ── the transport itself ─────────────────────────────────────────────────────
+#
+# Every test above injects a fake transport, which is what makes them tests of
+# the producer rather than of the network. The consequence is that `_https` —
+# the one place a request actually leaves this process — was never exercised at
+# all, and it is the function that decides what a refusal from Graph looks like
+# to everything upstream.
+#
+# These do not reach a tenant either. They replace `urlopen` and assert the
+# three shapes the rest of the reader is written against.
+
+
+class _Answer:
+    """What `urlopen` yields: a context manager with a status, a body and
+    headers."""
+
+    def __init__(self, status: int, body: bytes, headers: dict[str, str]):
+        self.status = status
+        self._body = body
+        self.headers = headers
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def read(self):
+        return self._body
+
+
+def test_uma_resposta_boa_devolve_estado_corpo_e_cabecalhos(monkeypatch):
+    from m365_governance import graph
+
+    def urlopen(request, timeout=None):
+        # The structural half of read-only: the method is a literal and there
+        # is no parameter for it. If somebody adds one, this fails here.
+        assert request.get_method() == "GET"
+        assert request.headers["Authorization"].startswith("Bearer ")
+        return _Answer(200, b'{"value": []}', {"Content-Type": "application/json"})
+
+    monkeypatch.setattr(graph.urllib.request, "urlopen", urlopen)
+    status, body, headers = graph._https("https://graph.microsoft.com/v1.0/me", "t")
+    assert status == 200
+    assert json.loads(body) == {"value": []}
+    assert headers["Content-Type"] == "application/json"
+
+
+def test_uma_recusa_do_graph_devolve_se_em_vez_de_rebentar(monkeypatch):
+    """403 and 429 are answers, not breakages: the caller decides what to do
+    with them, and the 429 carries the `Retry-After` the reader honours."""
+    from m365_governance import graph
+
+    def urlopen(request, timeout=None):
+        raise graph.urllib.error.HTTPError(
+            request.full_url,
+            429,
+            "Too Many Requests",
+            {"Retry-After": "3"},
+            io.BytesIO(b'{"error": {"message": "slow down"}}'),
+        )
+
+    monkeypatch.setattr(graph.urllib.request, "urlopen", urlopen)
+    status, body, headers = graph._https("https://graph.microsoft.com/v1.0/me", "t")
+    assert status == 429
+    assert "slow down" in body
+    assert headers["Retry-After"] == "3"
+
+
+def test_um_graph_inalcancavel_e_uma_recusa_com_o_motivo(monkeypatch):
+    """With no network there is no answer to interpret at all, which is a
+    different thing from an answer that says no. The reason travels, because a
+    `Refused` without one leaves the reader guessing between DNS, TLS and a
+    proxy."""
+    from m365_governance import graph
+
+    def urlopen(request, timeout=None):
+        raise graph.urllib.error.URLError("name or service not known")
+
+    monkeypatch.setattr(graph.urllib.request, "urlopen", urlopen)
+    with pytest.raises(graph.Refused) as refusal:
+        graph._https("https://graph.microsoft.com/v1.0/me", "t")
+    assert "name or service not known" in str(refusal.value)
