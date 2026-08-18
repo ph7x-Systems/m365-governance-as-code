@@ -1,0 +1,81 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-18T00:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "owners"
+    ],
+    "completed": [],
+    "unavailable": {
+      "owners": {
+        "state": "partial",
+        "detail": "1 administrator group(s) were not expanded, so the number of administrators is a lower bound and who they are is not established. Expanding a group needs a directory read this collector does not perform."
+      }
+    }
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "https://contoso.sharepoint.com/sites/one",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "All Company",
+    "url": "https://contoso.sharepoint.com/sites/one"
+  },
+  "facts": {
+    "owners": {
+      "state": "observed",
+      "direct": [],
+      "groups": [
+        {
+          "principal_id": "c:0o.c|federateddirectoryclaimprovider|00000000-0000-0000-0000-000000000000_o",
+          "principal_type": "group",
+          "expansion": {
+            "status": "not-attempted"
+          }
+        }
+      ],
+      "direct_count": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "PrincipalType",
+          "value": 0
+        }
+      },
+      "group_count": {
+        "state": "observed",
+        "value": 1,
+        "raw": {
+          "field": "PrincipalType",
+          "value": 1
+        }
+      },
+      "expansion_complete": false,
+      "minimum_count": 0
+    }
+  }
+}

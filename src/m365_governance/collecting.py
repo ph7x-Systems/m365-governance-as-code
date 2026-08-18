@@ -527,6 +527,9 @@ def run_slice(
     site_url: str | None = None,
     tenant_url: str | None = None,
     device_login: bool = False,
+    tenant_id: str | None = None,
+    certificate_path: Path | None = None,
+    certificate_password_env: str | None = None,
     count_unique_scopes: bool = False,
     dry_run: bool = False,
     on_progress: Callable[[str], None] | None = None,
@@ -576,6 +579,15 @@ def run_slice(
         argv += ["-TenantUrl", tenant_url]
     if device_login:
         argv.append("-DeviceLogin")
+    if certificate_path:
+        # App-only. The password never travels as a value: what crosses is the
+        # NAME of an environment variable, and the collector reads it in its
+        # own process.
+        argv += ["-CertificatePath", str(certificate_path)]
+        if tenant_id:
+            argv += ["-TenantId", tenant_id]
+        if certificate_password_env:
+            argv += ["-CertificatePasswordEnv", certificate_password_env]
     if count_unique_scopes and chosen.mode == "UniquePermissions":
         argv.append("-CountUniqueScopes")
 
@@ -618,6 +630,7 @@ def run_slice(
         site_url=site_url,
         tenant_url=tenant_url,
         device_login=device_login,
+        certificate_path=certificate_path,
     )
     return outcome
 
@@ -732,6 +745,7 @@ def build_manifest(
     site_url: str | None,
     tenant_url: str | None,
     device_login: bool,
+    certificate_path: Path | None = None,
 ) -> dict[str, Any]:
     """The account of one collection, as a document.
 
@@ -764,6 +778,16 @@ def build_manifest(
             "kind": _identity_kind(documents),
             "client_id": client_id,
             "device_login": device_login,
+            # HOW, not what with. A path names a file an administrator can
+            # find; the certificate, the key and the password never appear in
+            # a manifest a recipient reads.
+            "method": (
+                "certificate"
+                if certificate_path
+                else "device-code"
+                if device_login
+                else "interactive"
+            ),
         },
         "acquisition": "collected",
         "versions": {
@@ -793,6 +817,7 @@ def write_manifest(
     site_url: str | None,
     tenant_url: str | None,
     device_login: bool,
+    certificate_path: Path | None = None,
 ) -> Path | None:
     """Write the manifest beside the evidence, without replacing another one.
 
@@ -808,6 +833,7 @@ def write_manifest(
         site_url=site_url,
         tenant_url=tenant_url,
         device_login=device_login,
+        certificate_path=certificate_path,
     )
 
     directory.mkdir(parents=True, exist_ok=True)

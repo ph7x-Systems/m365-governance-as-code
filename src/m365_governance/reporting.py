@@ -520,8 +520,17 @@ def _class_lines(runs: list[Run]) -> list[str]:
     aside = [r for r in runs if r.set_aside]
 
     lines = [f"{len(runs)} resources observed"]
-    for name in sorted(by_class):
-        lines.append(f"  {name:<16}{by_class[name]}")
+    # THE CLASS IS NOT AN OUTCOME, AND IT WAS PRINTED AS IF IT WERE.
+    # `unknown` names a resource whose kind the classifier could not settle,
+    # and it also names a rule that could not be decided. This block sat two
+    # lines above an outcome table, unlabelled, so a real report opened with
+    # `unknown  53` directly above `Unknown  0`. A reader has no way to know
+    # those are different dimensions, and the first number they see is the
+    # wrong one.
+    if by_class:
+        lines.append("  by kind of resource, which is not an outcome:")
+        for name in sorted(by_class):
+            lines.append(f"    {name:<16}{by_class[name]}")
     if aside:
         answered = sum(
             1 for r in aside for result in r.results if result.outcome.is_answer
@@ -623,7 +632,7 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
             continue
         for run in interesting:
             name = identity_module.label(run.resource)
-            klass = f" · {run.resource_class}" if run.resource_class else ""
+            klass = f" · kind: {run.resource_class}" if run.resource_class else ""
             lines.append(f"### {_esc_md(name)}{klass}")
             lines.append("")
             for result in run.results:
@@ -748,7 +757,7 @@ def many_to_html(value: list[Run] | RunSet) -> str:
             continue
         for run in interesting:
             name = identity_module.label(run.resource)
-            klass = f" · {run.resource_class}" if run.resource_class else ""
+            klass = f" · kind: {run.resource_class}" if run.resource_class else ""
             parts.append(f"<h3>{_esc(name)}{_esc(klass)}</h3>")
             for result in run.results:
                 if result.outcome is Outcome.PASS:

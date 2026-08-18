@@ -151,6 +151,14 @@
     minimum_count rather than a count it cannot prove.
 #>
 
+# PSAvoidUsingPlainTextForPassword matches on the parameter NAME, and it is
+# right to: a `[string] $...Password...` is nearly always a secret in the clear.
+# `-CertificatePasswordEnv` is the opposite. It takes the NAME of an
+# environment variable, and taking a SecureString instead would mean the caller
+# had the plain value in their own shell first, which is the thing this avoids.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+    'PSAvoidUsingPlainTextForPassword', 'CertificatePasswordEnv',
+    Justification = 'The value is the name of an environment variable, not a password.')]
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
@@ -177,6 +185,20 @@ param(
 
     [Parameter()]
     [switch] $DeviceLogin,
+
+    # APP-ONLY WITH A CERTIFICATE. The other authentication mode, and the one
+    # an unattended run needs. Exclusive with -DeviceLogin; see Connection.psm1.
+    [Parameter()]
+    [string] $CertificatePath,
+
+    [Parameter()]
+    [string] $TenantId,
+
+    # The NAME of an environment variable holding the password, never the
+    # password. A value here would be in the shell history and in the process
+    # list; the name is not a secret and the variable is read in this process.
+    [Parameter()]
+    [string] $CertificatePasswordEnv,
 
     [Parameter()]
     [switch] $CountUniqueScopes,
@@ -226,8 +248,14 @@ if ($Mode -eq 'Connect') {
 
 # --- connect (read-only) -----------------------------------------------------
 
+# Read where a function can carry the analyzer's exception: a script body
+# cannot, and the conversion needs one. See Connection.psm1.
+$certificatePassword = Read-CertificatePassword -VariableName $CertificatePasswordEnv
+
 $TenantHost = Connect-Collector -Mode $Mode -ClientId $ClientId -SiteUrl $SiteUrl `
-    -TenantUrl $TenantUrl -DeviceLogin:$DeviceLogin
+    -TenantUrl $TenantUrl -DeviceLogin:$DeviceLogin `
+    -CertificatePath $CertificatePath -TenantId $TenantId `
+    -CertificatePassword $certificatePassword
 
 # --- connect only ------------------------------------------------------------
 #
@@ -248,8 +276,16 @@ if (-not $OutputPath) {
     throw "Mode $Mode writes evidence and needs -OutputPath."
 }
 
+# The identity is decided by how the connection was made, one line above where
+# it is recorded, so the two cannot drift.
+$identityKind = if ($CertificatePath) { 'application' } else { 'delegated' }
+$identityMethod = if ($CertificatePath) { 'certificate' }
+elseif ($DeviceLogin) { 'device-code' }
+else { 'interactive' }
+
 Initialize-Evidence -CollectorName $CollectorName `
-    -CollectorVersion $CollectorVersion -TenantHost $TenantHost
+    -CollectorVersion $CollectorVersion -TenantHost $TenantHost `
+    -IdentityKind $identityKind -IdentityMethod $identityMethod -ClientId $ClientId
 
 
 # --- collect -----------------------------------------------------------------

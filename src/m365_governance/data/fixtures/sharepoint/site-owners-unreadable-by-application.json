@@ -1,0 +1,56 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-18T00:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "identity_kind": "application",
+    "identity_method": "certificate",
+    "client_id": "00000000-0000-0000-0000-000000000000",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "owners"
+    ],
+    "completed": [],
+    "unavailable": {
+      "owners": {
+        "state": "partial",
+        "detail": "Get-PnPSiteCollectionAdmin returned no entries. That is not the same as a site with no administrators: an identity that cannot resolve them returns the same empty list, and this collector cannot tell the two apart. Application-only identities have been observed returning nothing for a site whose administrator is a group."
+      }
+    }
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "https://contoso.sharepoint.com/sites/one",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "All Company",
+    "url": "https://contoso.sharepoint.com/sites/one"
+  },
+  "facts": {
+    "owners": {
+      "state": "partial",
+      "detail": "Get-PnPSiteCollectionAdmin returned no entries. That is not the same as a site with no administrators: an identity that cannot resolve them returns the same empty list, and this collector cannot tell the two apart. Application-only identities have been observed returning nothing for a site whose administrator is a group."
+    }
+  }
+}

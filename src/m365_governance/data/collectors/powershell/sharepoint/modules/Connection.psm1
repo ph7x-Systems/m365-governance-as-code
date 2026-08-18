@@ -63,6 +63,37 @@ function Get-TenantHost {
     return ($labels -join '.')
 }
 
+function Read-CertificatePassword {
+    <#
+        .SYNOPSIS
+        The PFX password, from the environment, as a SecureString.
+
+        .DESCRIPTION
+        What crosses the command line is the NAME of a variable. A value there
+        is in the shell history and in the process list of every user on the
+        machine, and it stays in both long after the run.
+
+        PSAvoidUsingConvertToSecureStringWithPlainText is right in general and
+        does not apply here. An environment variable IS a string, and
+        `Connect-PnPOnline -CertificatePassword` takes a SecureString: there is
+        no API that reads one straight into the other, so this conversion is
+        the narrowest bridge between them and the plain copy does not outlive
+        the function.
+    #>
+    [Diagnostics.CodeAnalysis.SuppressMessageAttribute(
+        'PSAvoidUsingConvertToSecureStringWithPlainText', '',
+        Justification = 'An environment variable is a string; PnP requires a SecureString.')]
+    [CmdletBinding()]
+    param([Parameter()] [string] $VariableName)
+
+    if (-not $VariableName) { return $null }
+    $raw = [Environment]::GetEnvironmentVariable($VariableName)
+    if ([string]::IsNullOrEmpty($raw)) {
+        throw "-CertificatePasswordEnv names $VariableName, and that variable is empty or unset."
+    }
+    return (ConvertTo-SecureString -String $raw -AsPlainText -Force)
+}
+
 function Connect-Collector {
     <#
         .SYNOPSIS
@@ -79,7 +110,20 @@ function Connect-Collector {
         [Parameter(Mandatory = $true)] [string] $ClientId,
         [Parameter()] [string] $SiteUrl,
         [Parameter()] [string] $TenantUrl,
-        [Parameter()] [switch] $DeviceLogin
+        [Parameter()] [switch] $DeviceLogin,
+        # APP-ONLY, AND IT IS A DIFFERENT IDENTITY RATHER THAN A DIFFERENT
+        # PROMPT. Interactive and device login are both delegated: the run sees
+        # what one person sees. A certificate authenticates the APPLICATION,
+        # and what it sees is what the tenant granted the application. An
+        # administrator has to be able to run the same collection unattended
+        # without the collector or the evidence changing shape.
+        [Parameter()] [string] $CertificatePath,
+        [Parameter()] [string] $TenantId,
+        # A SecureString, never a plain one, and never from the command line.
+        # The caller reads it from the environment or from stdin: an argument
+        # is in the shell history and in the process list of every user on the
+        # machine.
+        [Parameter()] [securestring] $CertificatePassword
     )
 
     # `Connect` takes whichever address it was given, and prefers the admin
@@ -101,7 +145,33 @@ function Connect-Collector {
         throw 'Mode SiteSharing needs -SiteUrl as well as -TenantUrl.'
     }
 
-    if ($DeviceLogin) {
+    # THE TWO MODES ARE EXCLUSIVE, and the refusal is here as well as in the
+    # command line: a script that silently preferred one would authenticate as
+    # somebody the caller did not choose, and the evidence would say so without
+    # anybody noticing.
+    if ($CertificatePath -and $DeviceLogin) {
+        throw 'Choose one: -CertificatePath authenticates the application, -DeviceLogin authenticates a person.'
+    }
+
+    if ($CertificatePath) {
+        if (-not $TenantId) { throw '-CertificatePath needs -TenantId.' }
+        if (-not (Test-Path -LiteralPath $CertificatePath)) {
+            throw "-CertificatePath does not exist: $CertificatePath"
+        }
+        $parameters = @{
+            Url             = $connectUrl
+            ClientId        = $ClientId
+            Tenant          = $TenantId
+            CertificatePath = $CertificatePath
+        }
+        # Omitted rather than passed empty: a certificate with no password is a
+        # supported case, and an empty SecureString is not the same thing.
+        if ($CertificatePassword) {
+            $parameters['CertificatePassword'] = $CertificatePassword
+        }
+        Connect-PnPOnline @parameters
+    }
+    elseif ($DeviceLogin) {
         Connect-PnPOnline -Url $connectUrl -DeviceLogin -ClientId $ClientId
     }
     else {
@@ -210,4 +280,4 @@ function Get-ConnectionFacts {
     }
 }
 
-Export-ModuleMember -Function Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress
+Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress

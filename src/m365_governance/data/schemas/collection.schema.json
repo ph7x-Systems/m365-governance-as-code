@@ -184,9 +184,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "kind",
         "client_id",
-        "device_login"
+        "device_login",
+        "kind",
+        "method"
       ],
       "description": "Who looked. WHAT AN IDENTITY COULD NOT SEE IS ABSENT FROM THE EVIDENCE RATHER THAN MARKED IN IT, so a collection that does not name the identity that produced it describes part of an estate in language that suits the whole of one.",
       "properties": {
@@ -206,6 +207,14 @@
         "device_login": {
           "type": "boolean",
           "description": "Whether the code flow was used, for a host with no browser. A fact about how somebody signed in, not about what they could see."
+        },
+        "method": {
+          "enum": [
+            "interactive",
+            "device-code",
+            "certificate"
+          ],
+          "description": "HOW the identity authenticated. `device_login` beside it is a boolean that could only ever say one thing, and it could not say `certificate` at all: an application-only run was recorded as an interactive one. The certificate, the key and the password are never here; a client id names a registration an administrator can look up."
         }
       }
     },

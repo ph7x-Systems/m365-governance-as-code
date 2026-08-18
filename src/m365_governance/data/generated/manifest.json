@@ -37,7 +37,7 @@
       "path": "schemas/capability-manifest.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
-      "digest": "6283a2f038717dad38ce892ed18ae0c0682fd70833cda43d340bdbba9faa6c4a",
+      "digest": "b75e25e8b6559d42a97a39defd23378f783ab8359709c25bf32f2be8c7a695ba",
       "path": "schemas/collection.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/2.0.0": {
@@ -61,7 +61,7 @@
       "path": "schemas/archive/evidence-2.0.0.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/3.0.0": {
-      "digest": "ae3ccd32345293ec7e19d82e65296947d28fd19c9c33e20ea02e607f59b3acc4",
+      "digest": "04865a0d33dbe11a8948cfcd7ae2f2fcc85c0e74a1a635ef86e472b0dc930efa",
       "path": "schemas/evidence.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0": {
@@ -101,5 +101,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "b7fd7b83d3380c541b0f57a95c0d9bfc79d94d06ae5d69e3f4e2ac6fdc99f558"
+  "set_digest": "840594cf2ca189731536bab7a898b68ba1c7597c0bc33463041b323edd9bc64e"
 }

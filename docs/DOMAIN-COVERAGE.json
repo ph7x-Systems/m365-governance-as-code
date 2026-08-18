@@ -195,6 +195,7 @@
       "fixtures": [
         "site-sharing-anyone-default-anyone",
         "site-sharing-anyone-default-direct",
+        "site-sharing-beside-owners",
         "site-sharing-default-permission-edit",
         "site-sharing-default-permission-inherits",
         "site-sharing-default-permission-view",
@@ -255,6 +256,7 @@
         "site-imported-inventory",
         "site-named-and-group-admins",
         "site-one-owner",
+        "site-owners-group-not-expanded",
         "site-partial-expansion-decides",
         "site-storage-comfortable",
         "site-storage-nearly-full",

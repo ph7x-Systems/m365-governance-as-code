@@ -1,0 +1,93 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-18T00:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / SharePoint Admin",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "sharing"
+    ],
+    "completed": [
+      "sharing"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "https://contoso.sharepoint.com/sites/one",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "All Company",
+    "url": "https://contoso.sharepoint.com/sites/one"
+  },
+  "facts": {
+    "sharing": {
+      "capability": {
+        "state": "observed",
+        "value": "ExternalUserSharingOnly",
+        "raw": {
+          "field": "SharingCapability",
+          "value": "ExternalUserSharingOnly"
+        }
+      },
+      "default_link_type": {
+        "state": "observed",
+        "value": "None",
+        "raw": {
+          "field": "DefaultSharingLinkType",
+          "value": "None"
+        }
+      },
+      "default_link_permission": {
+        "state": "observed",
+        "value": "None",
+        "raw": {
+          "field": "DefaultLinkPermission",
+          "value": "None"
+        }
+      },
+      "anonymous_link_expiry_days": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "AnonymousLinkExpirationInDays",
+          "value": 0
+        }
+      },
+      "anonymous_link_expiry_override": {
+        "state": "observed",
+        "value": "False",
+        "raw": {
+          "field": "OverrideTenantAnonymousLinkExpirationPolicy",
+          "value": "False"
+        }
+      },
+      "effective_default_link_type": {
+        "state": "missing",
+        "detail": "The site sets no default of its own and follows the tenant. The tenant setting was not read by this collection."
+      }
+    }
+  }
+}
