@@ -1,0 +1,176 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+  "provenance": {
+    "collected_at": "2026-08-18T00:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "spfx"
+    ],
+    "completed": [
+      "spfx"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "https://contoso.sharepoint.com/sites/appcatalog",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Store",
+    "url": "https://contoso.sharepoint.com/sites/appcatalog"
+  },
+  "facts": {
+    "spfx": {
+      "catalog_scope": {
+        "state": "observed",
+        "value": "Tenant",
+        "raw": {
+          "field": "Get-PnPApp -Scope",
+          "value": "Tenant"
+        }
+      },
+      "solutions": {
+        "state": "observed",
+        "value": [
+          {
+            "id": "00000000-0000-0000-0000-000000000001",
+            "title": "example-1-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000002",
+            "title": "example-2-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000003",
+            "title": "example-3-client-side-solution",
+            "catalog_version": "1.5.2.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000004",
+            "title": "example-4-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000005",
+            "title": "example-5-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000006",
+            "title": "example-6-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000007",
+            "title": "example-7-client-side-solution",
+            "catalog_version": "1.0.1.20",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000008",
+            "title": "example-8-client-side-solution",
+            "catalog_version": "1.0.0.33",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000009",
+            "title": "example-9-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          },
+          {
+            "id": "00000000-0000-0000-0000-000000000010",
+            "title": "example-10-client-side-solution",
+            "catalog_version": "1.0.0.0",
+            "installed_version": "",
+            "deployed": true,
+            "can_upgrade": false,
+            "client_side": true
+          }
+        ],
+        "raw": {
+          "field": "AppMetadata",
+          "value": 10
+        }
+      },
+      "solution_count": {
+        "state": "observed",
+        "value": 10,
+        "raw": {
+          "field": "AppMetadata",
+          "value": 10
+        }
+      },
+      "comparable_count": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "AppCatalogVersion and InstalledVersion both present",
+          "value": 0
+        }
+      },
+      "upgradable_count": {
+        "state": "not-supported",
+        "detail": "10 solutions in a Tenant catalog, none reporting an installed version. A tenant catalog records installation per site, so whether any solution is behind cannot be decided from here. Collect the site that hosts the solution to answer it."
+      }
+    }
+  }
+}

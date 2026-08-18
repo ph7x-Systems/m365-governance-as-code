@@ -69,6 +69,39 @@ DIGESTED = (
 COLLECTOR = packaged("collectors") / "powershell" / "sharepoint" / "Get-SpoEvidence.ps1"
 
 
+class Live(StrEnum):
+    """What a run against a real tenant has established about ONE slice.
+
+    THIS WAS A SENTENCE, AND A SENTENCE CANNOT BE DERIVED FROM. Five slices
+    carried five different strings -- `live-validated`, `fully live-validated`,
+    `negative path validated`, `provider live-validated, slice not
+    live-validated` -- and the schema typed the field as any non-empty string.
+    Anything that wanted to know whether a question can be answered from a real
+    tenant had to interpret prose, which means a second table mapping phrases
+    to meanings, kept by hand, diverging the first time somebody rephrased one.
+
+    Four states, and the difference between them is what was OBSERVED:
+
+    `none`          offline tests only. The collector behaves as somebody
+                    believed the API behaves. No rule should rest on it.
+    `negative_only` it ran against a real tenant and the surface was absent or
+                    empty. That the collector reports nothing correctly is
+                    proved; that it reports something correctly is not.
+    `provider_only` the transport underneath it read a real tenant, this
+                    slice's own path did not.
+    `full`          the path that produces this slice's evidence was observed
+                    against a real tenant.
+
+    The sentence is still published, and it is now RENDERED from the state, so
+    the two cannot disagree.
+    """
+
+    NONE = "not live-validated"
+    NEGATIVE_ONLY = "negative path validated"
+    PROVIDER_ONLY = "provider live-validated, slice not live-validated"
+    FULL = "live-validated"
+
+
 @dataclass(frozen=True)
 class Slice:
     """One question, and the collector mode that answers it."""
@@ -87,7 +120,17 @@ class Slice:
     #: written here was wrong and only a real run showed it: `sites` gathers
     #: inventory, not owners, and pointing it at the ownership profile
     #: produced 106 `unknown` results across 53 sites.
+    #:
+    #: ONE FIXTURE IS ONE SHAPE, AND A COLLECTOR CAN HAVE SEVERAL. The
+    #: capability manifest reads this to say which rules a slice feeds, by
+    #: running them against it, and a collector whose fixture shows one branch
+    #: under-reports the rest: `permissions` collects a unique scope count in
+    #: the branch that walks items, and the fixture it was paired with does
+    #: not carry one, so the published catalogue said this collector fed one
+    #: rule when it feeds three. `also_shaped_like` carries the other shapes,
+    #: and the manifest takes the union.
     shaped_like: str
+    also_shaped_like: tuple[str, ...] = ()
     #: Whether any rule consumes what this slice collects.
     #:
     #: The standing twin rule is that a collection path no rule can consume
@@ -121,9 +164,27 @@ class Slice:
     reads: tuple[str, ...] = ()
     #: Least privilege for this slice, as Microsoft documents it.
     permissions: tuple[str, ...] = ()
-    #: What a run against a real tenant has established. The vocabulary is the
-    #: matrix's, and this is now where it lives: the document is a projection.
-    live: str = "not live-validated"
+    #: What a run against a real tenant has established, as a value rather
+    #: than a sentence. See `Live`.
+    live: Live = Live.NONE
+    #: Anything about this slice's live state that the four words do not carry.
+    #: Rendered after the sentence, never instead of it.
+    live_note: str = ""
+    #: Whether a tenant address, when given, CHANGES WHAT THIS SLICE READS.
+    #:
+    #: `needs_tenant` says the slice cannot run without one. This says it can
+    #: run either way and reads something different when it has one, which is
+    #: not the same thing and had no way to be expressed.
+    #:
+    #: FOUND BY RUNNING IT. `spfx` reads a site collection app catalog or the
+    #: tenant one, and the script already chose between them by whether it was
+    #: given a tenant address. It never was: the argument is forwarded only
+    #: when `needs_tenant` is true, and this slice declares false because a
+    #: site catalog is a real target. So the tenant branch existed, was
+    #: documented, and could not be reached from the command line. On the
+    #: tenant this was first run against, the app catalog is the tenant one,
+    #: and the collector answered `missing` for a catalog that is there.
+    optional_tenant: bool = False
     #: Which collector answers this slice: `powershell` or `graph`.
     #:
     #: ONE REGISTRY AND TWO COLLECTORS. The alternative was a second list for
@@ -133,6 +194,10 @@ class Slice:
     #: everything the manifest, the coverage and the reporting do with a slice
     #: is the same, so the difference is a field rather than a fork.
     source: str = "powershell"
+
+    def live_sentence(self) -> str:
+        """The live state as a person reads it: the state, then any note."""
+        return f"{self.live}, {self.live_note}" if self.live_note else str(self.live)
 
 
 SLICES = {
@@ -152,8 +217,8 @@ SLICES = {
             describes="the Copilot agents in one site, and the sources each declares",
             shaped_like="site-agents-with-sources",
             reads=("Get-PnPWeb", "Get-PnPCopilotAgent"),
-            permissions=(),
-            live="live-validated",
+            permissions=("Sites.Read.All",),
+            live=Live.FULL,
         ),
         Slice(
             "sites",
@@ -165,8 +230,15 @@ SLICES = {
             describes="every site this identity can enumerate",
             shaped_like="site-storage-comfortable",
             reads=("Get-PnPTenantSite",),
-            permissions=("AllSites.FullControl",),
-            live="fully live-validated",
+            # NOT ESTABLISHED, and deliberately empty. This declared
+            # `AllSites.FullControl`, which is not an application role in the
+            # Entra model at all: it is a name from the retired ACS one. The
+            # tenant read was refused with Sites.Read.All on the administration
+            # surface as well as the site one, so the surface is not the
+            # reason and the minimum is simply unknown. An invented name is
+            # worse than an admitted gap.
+            permissions=(),
+            live=Live.FULL,
         ),
         Slice(
             "owners",
@@ -177,8 +249,8 @@ SLICES = {
             describes="who administers one site",
             shaped_like="site-named-and-group-admins",
             reads=("Get-PnPWeb", "Get-PnPSiteCollectionAdmin"),
-            permissions=(),
-            live="live-validated",
+            permissions=("Sites.Read.All",),
+            live=Live.FULL,
         ),
         Slice(
             "modernity",
@@ -189,8 +261,8 @@ SLICES = {
             describes="how one site is built: template, branding, publishing",
             shaped_like="site-modern-publishing-on",
             reads=("Get-PnPWeb", "Get-PnPList", "Get-PnPFeature", "Get-PnPPage"),
-            permissions=(),
-            live="live-validated",
+            permissions=("Sites.Read.All",),
+            live=Live.FULL,
         ),
         Slice(
             "sharing",
@@ -202,7 +274,7 @@ SLICES = {
             shaped_like="site-sharing-anyone-default-anyone",
             reads=("Get-PnPWeb", "Get-PnPSite", "Get-PnPTenantSite"),
             permissions=(),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "tenant-sharing",
@@ -216,7 +288,7 @@ SLICES = {
             shaped_like="tenant-sharing-default-anyone-and-edit",
             reads=("Get-PnPTenant",),
             permissions=(),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "activity",
@@ -228,7 +300,7 @@ SLICES = {
             shaped_like="site-activity-stale",
             reads=("Get-PnPWeb", "Get-PnPTenantSite"),
             permissions=(),
-            live="live-validated",
+            live=Live.FULL,
         ),
         Slice(
             "classification",
@@ -243,8 +315,8 @@ SLICES = {
             describes="what a site records about the kind of content it holds",
             shaped_like="site-class-group-unlabelled",
             reads=("Get-PnPWeb", "Get-PnPSite"),
-            permissions=(),
-            live="live-validated",
+            permissions=("Sites.Read.All",),
+            live=Live.FULL,
         ),
         Slice(
             "permissions",
@@ -255,9 +327,13 @@ SLICES = {
             writes_many=True,
             describes="every visible list on a site, and its inheritance",
             shaped_like="list-within-limit",
+            # The branch that walks items and counts unique scopes. Without
+            # it the catalogue published this collector as feeding one rule,
+            # and it feeds three.
+            also_shaped_like=("list-scopes-within-recommended",),
             reads=("Get-PnPList", "Get-PnPListItem"),
-            permissions=(),
-            live="live-validated",
+            permissions=("Sites.Read.All",),
+            live=Live.FULL,
         ),
         # SpfxCatalog only. The catalog is one call and feeds SPO-SPFX-001;
         # SpfxPages is a second, expensive mode whose evidence no rule reads
@@ -272,8 +348,17 @@ SLICES = {
             describes="a site's app catalog: which solutions lag their version",
             shaped_like="site-spfx-behind",
             reads=("Get-PnPApp",),
-            permissions=(),
-            live="negative path validated",
+            permissions=("Sites.Read.All",),
+            # A tenant address is not required and is not ignored: with one
+            # this reads the tenant app catalog, without one the site's own.
+            optional_tenant=True,
+            live=Live.FULL,
+            live_note=(
+                "both scopes observed: a tenant catalog of ten solutions and a "
+                "site catalog of one. No solution in either was behind its "
+                "catalog version, so the finding branch has not been produced "
+                "by a real catalog"
+            ),
         ),
         Slice(
             "conditional-access",
@@ -307,7 +392,7 @@ SLICES = {
                 "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy",
             ),
             permissions=("Policy.Read.All",),
-            live="provider live-validated, slice not live-validated",
+            live=Live.PROVIDER_ONLY,
         ),
     ]
 }
@@ -486,6 +571,9 @@ def run_slice(
         argv += ["-SiteUrl", site_url or ""]
     if chosen.needs_tenant:
         argv += ["-TenantUrl", tenant_url or ""]
+    elif chosen.optional_tenant and tenant_url:
+        # Given, so it decides the scope; absent, so the slice reads the site.
+        argv += ["-TenantUrl", tenant_url]
     if device_login:
         argv.append("-DeviceLogin")
     if count_unique_scopes and chosen.mode == "UniquePermissions":

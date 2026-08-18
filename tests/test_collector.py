@@ -539,3 +539,47 @@ def test_a_cmdlet_named_in_a_comment_is_not_a_cmdlet_that_is_called(tmp_path):
         pytest.skip("pwsh is not installed, and the AST needs it")
 
     assert called == {"Get-PnPReallyCalled"}
+
+
+def test_a_tenant_catalog_with_nothing_comparable_never_passes():
+    """Zero out of nothing is not a finding.
+
+    FOUND ON A REAL TENANT. The first app catalog this collector ever read
+    positively was a tenant one: ten solutions, every `InstalledVersion` empty,
+    because a tenant catalog records installation per site. The filter that
+    counts solutions behind requires both version numbers, so it counted zero,
+    and zero satisfied `greater-than 0` as false. SPO-SPFX-001 returned PASS --
+    "every solution in this catalog is installed at the version the catalog
+    holds" -- having compared nothing at all.
+
+    That is the exact failure this engine exists to not commit, and it survived
+    because the collector had only ever been observed against a site with no
+    catalog. The count is now absent where nothing is comparable, and absent
+    evidence is `unknown`.
+    """
+    import json
+
+    from m365_governance import engine
+    from m365_governance.loader import load_rule
+    from m365_governance.resources import packaged
+
+    evidence = json.loads(
+        (
+            packaged("fixtures")
+            / "sharepoint"
+            / "site-spfx-tenant-catalog-not-comparable.json"
+        ).read_text(encoding="utf-8")
+    )
+    facts = evidence["facts"]["spfx"]
+    assert facts["solution_count"]["value"] == 10, "the fixture stopped being the case"
+    assert facts["comparable_count"]["value"] == 0
+    assert facts["upgradable_count"]["state"] != "observed", (
+        "a count of solutions behind was published for a catalog where no "
+        "solution reports an installed version"
+    )
+
+    rule = load_rule(packaged("rules") / "sharepoint" / "SPO-SPFX-001.yaml").data
+    result = engine._evaluate(rule, evidence)
+    assert result.outcome.value == "unknown", (
+        f"a tenant catalog with nothing comparable produced {result.outcome.value}"
+    )

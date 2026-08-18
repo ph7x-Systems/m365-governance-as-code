@@ -718,3 +718,79 @@ def test_the_label_id_and_the_label_name_are_separate_facts():
     assert unresolved["label_resolved"]["value"] is False
     # Still classified: SPO-CLASS-001 must pass on it.
     assert unresolved["classified"]["value"] is True
+
+
+# ---------------------------------------------------------------------------
+# The two site conventions that shipped without a behaviour test
+#
+# Both were validated by `test_authored_rules_pass_every_layer`, which proves a
+# rule is well formed and proves nothing about what it decides. The docstring
+# on that test says a rule added without a test would pass silently, and these
+# two are what passing silently looks like: fixtures on disk, every outcome
+# reachable, and nothing asserting which fixture produces which.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        # A named administrator exists among the groups: the rule is satisfied
+        # by one person, and the groups beside them are not a defect.
+        ("site-named-and-group-admins", Outcome.PASS),
+        # Every administrator is a group. Somebody in there can act, once the
+        # right person is found, and finding them is the part that happens
+        # during an incident.
+        ("site-groups-only-admins", Outcome.FAIL),
+        # Not read is not empty. A site whose administrators were never
+        # collected cannot be said to lack a person.
+        ("site-owners-not-collected", Outcome.UNKNOWN),
+    ],
+)
+def test_a_site_needs_an_administrator_who_is_a_person(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SITE-002"), evidence(fixture)).outcome is expected
+
+
+def test_the_administrator_rule_names_the_count_it_found():
+    """A pass that cannot say how many people it found is an opinion. The
+    message carries the number, because the reader's next question is whether
+    one named administrator is enough for this site."""
+    from conftest import rule
+
+    result = evaluate_rule(
+        rule("SPO-SITE-002"), evidence("site-named-and-group-admins")
+    )
+    assert result.outcome is Outcome.PASS
+    assert "2" in result.message
+
+
+@pytest.mark.parametrize(
+    "fixture,expected",
+    [
+        ("site-storage-comfortable", Outcome.PASS),
+        ("site-storage-nearly-full", Outcome.FAIL),
+        # No quota, no percentage of it. The rule declines rather than
+        # inventing a denominator, which is what a zero would have been.
+        ("site-storage-no-quota", Outcome.NOT_APPLICABLE),
+        # The figures were never read, so how full it is stays open.
+        ("site-two-owners", Outcome.UNKNOWN),
+    ],
+)
+def test_a_site_near_its_quota_is_close_to_stopping(fixture, expected):
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SITE-003"), evidence(fixture)).outcome is expected
+
+
+def test_the_storage_rule_shows_the_arithmetic_it_judged_on():
+    """The threshold is ours, not Microsoft's, so the message has to hand the
+    reader both numbers and the percentage between them: a convention that
+    shows only its verdict cannot be argued with, and this one is meant to be
+    ignorable by a tenant that grants storage on request."""
+    from conftest import rule
+
+    result = evaluate_rule(rule("SPO-SITE-003"), evidence("site-storage-nearly-full"))
+    assert result.outcome is Outcome.FAIL
+    for numero in ("24100", "25600", "94"):
+        assert numero in result.message, f"the message drops {numero}"

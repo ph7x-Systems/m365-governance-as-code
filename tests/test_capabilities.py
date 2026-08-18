@@ -48,7 +48,10 @@ def test_each_capability_carries_what_its_slice_declares():
 
         assert collector["kind"] == chosen.source
         assert collector["reads"] == list(chosen.reads)
-        assert collector["live_validation"] == chosen.live
+        # The sentence, which is rendered from the state and any note.
+        assert collector["live_validation"] == chosen.live_sentence()
+        expected_state = chosen.live.name.lower().replace("_", "-")
+        assert collector["live_validation_state"] == expected_state
         assert capability["describes"] == chosen.describes
 
 
@@ -81,12 +84,16 @@ def test_the_rules_a_capability_supports_are_the_ones_that_can_decide():
         chosen = collecting.SLICES[capability["name"]]
         if not chosen.produces_findings:
             continue
-        document = _fixture(chosen.shaped_like, load_json)
-        decidable = {
-            result.rule_id
-            for result in evaluate(rules, document).results
-            if result.outcome is not Outcome.UNKNOWN
-        }
+        # Every shape the slice declares, not one of them: a collector with
+        # a branch feeds rules its primary fixture never reaches.
+        decidable = set()
+        for name in (chosen.shaped_like, *chosen.also_shaped_like):
+            document = _fixture(name, load_json)
+            decidable |= {
+                result.rule_id
+                for result in evaluate(rules, document).results
+                if result.outcome is not Outcome.UNKNOWN
+            }
         assert set(capability["consumed_by"]) == decidable, chosen.name
         assert decidable, f"{chosen.name} supports no rule and claims to"
 
@@ -187,7 +194,9 @@ def test_the_command_reaches_no_tenant_and_reads_no_evidence():
         ._actions
     }
 
-    assert actions <= {"help", "rules", "format"}
+    # `questions` is a second PROJECTION of the same document, not a second
+    # source of it: it selects which view is printed and names no tenant.
+    assert actions <= {"help", "rules", "format", "questions"}
 
 
 def _fixture(name: str, load_json):
@@ -196,3 +205,117 @@ def _fixture(name: str, load_json):
         if path.is_file():
             return load_json(path)
     raise AssertionError(f"no fixture {name}")
+
+
+def test_every_published_rule_is_fed_by_a_published_capability():
+    """THE CATALOGUE'S OWN COVERAGE, and the metric this phase is measured by.
+
+    A rule nobody can collect for answers `unknown` against every tenant, for
+    ever, which is honest and is also product debt. The manifest is where that
+    debt has to be visible, so this asserts the number rather than trusting a
+    reading of it.
+
+    It caught a real one. The manifest said `permissions` fed a single rule
+    when it feeds three: a collector with a branch produces more than one
+    shape, and the catalogue asked one of them which rules it decides. Two
+    published rules looked uncollectable and were not.
+    """
+    from m365_governance import capabilities
+
+    document = capabilities.manifest()
+    fed = set()
+    for capability in document["capabilities"]:
+        fed |= set(capability.get("consumed_by") or [])
+    published = {rule["id"] for rule in document["rules"]}
+    assert not published - fed, (
+        f"published rules no capability feeds: {sorted(published - fed)}. Each "
+        "one answers unknown against every tenant, and the catalogue is where "
+        "that has to be visible."
+    )
+
+
+def test_a_collector_with_a_branch_declares_every_shape_it_produces():
+    """`permissions` collects a unique scope count only in the branch that
+    walks items. Pairing it with a fixture from the other branch published a
+    collector as feeding one rule while it fed three, and nothing went red."""
+    from m365_governance import capabilities, collecting
+
+    chosen = collecting.SLICES["permissions"]
+    assert chosen.also_shaped_like, (
+        "the permissions slice stopped declaring its second shape, and the "
+        "catalogue will under-report it again"
+    )
+    rules = [r.data for r in load_rules(packaged("rules"))]
+    primary = capabilities._decidable(rules, capabilities._named(chosen.shaped_like))
+    every = set().union(
+        *(capabilities._decidable(rules, d) for d in capabilities._shapes(chosen))
+    )
+    assert every > primary, (
+        "the second shape adds nothing, so either the fixture is wrong or the "
+        "declaration is decoration"
+    )
+
+
+def test_no_rule_decides_anything_from_evidence_that_is_not_there():
+    """Empty facts, every shipped rule, and not one of them decides.
+
+    The ladder is in `engine._evaluate` and the rule-by-rule tests cover it.
+    What was never measured is the property across the SET: a rule whose
+    condition happens to compare against a default would pass on a tenant
+    nobody collected, and nothing would have said so. Missing evidence is
+    `unknown`, and `unknown` is not a pass.
+    """
+    from m365_governance import engine
+    from m365_governance.loader import load_rules
+    from m365_governance.resources import packaged
+
+    resource = {
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "https://example.invalid/sites/x",
+    }
+    decided = [
+        rule["id"]
+        for rule in (r.data for r in load_rules(packaged("rules")))
+        if engine._evaluate(rule, {"facts": {}, "resource": resource}).outcome.value
+        in ("pass", "fail")
+    ]
+    assert not decided, f"rules that decided without evidence: {decided}"
+
+
+def test_every_answerable_question_has_the_evidence_it_requires():
+    """A question is only answerable if its collector writes what it reads.
+
+    `evidence_available` is derived from the fixtures that define each shape a
+    slice writes, so this is measured against what ships rather than against a
+    map somebody keeps. A rule that requires a path no feeding collector
+    produces is a rule that can only ever be `unknown`, and that is a defect
+    rather than a property.
+    """
+    from m365_governance import capabilities
+
+    document = capabilities.questions(None)
+    missing = [
+        entry["id"]
+        for entry in document["questions"]
+        if not entry["evidence_available"]
+    ]
+    assert not missing, f"rules whose evidence no collector produces: {missing}"
+
+
+def test_the_live_state_is_a_value_and_the_sentence_comes_from_it():
+    """Four states, and the prose beside them is rendered rather than typed.
+
+    The field was a free string and the schema accepted any non-empty one, so
+    five slices carried five phrasings and anything asking whether a question
+    could be answered had to interpret prose. The sentence has to start with
+    the state, or the two have drifted.
+    """
+    from m365_governance.collecting import Live
+
+    for capability in MANIFEST["capabilities"]:
+        collector = capability["collector"]
+        state = collector["live_validation_state"]
+        assert state in {"none", "negative-only", "provider-only", "full"}
+        expected = Live[state.upper().replace("-", "_")]
+        assert collector["live_validation"].startswith(str(expected))

@@ -525,7 +525,7 @@ class _Answer:
         return self._body
 
 
-def test_uma_resposta_boa_devolve_estado_corpo_e_cabecalhos(monkeypatch):
+def test_a_good_answer_returns_status_body_and_headers(monkeypatch):
     from m365_governance import graph
 
     def urlopen(request, timeout=None):
@@ -542,7 +542,7 @@ def test_uma_resposta_boa_devolve_estado_corpo_e_cabecalhos(monkeypatch):
     assert headers["Content-Type"] == "application/json"
 
 
-def test_uma_recusa_do_graph_devolve_se_em_vez_de_rebentar(monkeypatch):
+def test_a_refusal_from_graph_is_returned_rather_than_raised(monkeypatch):
     """403 and 429 are answers, not breakages: the caller decides what to do
     with them, and the 429 carries the `Retry-After` the reader honours."""
     from m365_governance import graph
@@ -563,7 +563,7 @@ def test_uma_recusa_do_graph_devolve_se_em_vez_de_rebentar(monkeypatch):
     assert headers["Retry-After"] == "3"
 
 
-def test_um_graph_inalcancavel_e_uma_recusa_com_o_motivo(monkeypatch):
+def test_an_unreachable_graph_is_a_refusal_carrying_the_reason(monkeypatch):
     """With no network there is no answer to interpret at all, which is a
     different thing from an answer that says no. The reason travels, because a
     `Refused` without one leaves the reader guessing between DNS, TLS and a
@@ -577,3 +577,172 @@ def test_um_graph_inalcancavel_e_uma_recusa_com_o_motivo(monkeypatch):
     with pytest.raises(graph.Refused) as refusal:
         graph._https("https://graph.microsoft.com/v1.0/me", "t")
     assert "name or service not known" in str(refusal.value)
+
+
+# ── what a real estate holds, as synthetic shapes ────────────────────────────
+#
+# Two classes were observed on a real tenant on 2026-08-18 and are recorded in
+# NEXT-SLICE.md. Neither is copied here: the shapes are rebuilt, the data is
+# invented, and no identifier, path or name from that tenant appears.
+
+
+PRE_PLATFORM = {
+    "id": "old",
+    "name": "index.js",
+    "size": 512,
+    # 1984, decades before the service existed. A package manager writes a
+    # deterministic timestamp and the upload preserves it, so a real drive
+    # carries dates that predate the thing storing them.
+    "createdDateTime": "1984-06-22T21:50:00Z",
+    "lastModifiedDateTime": "1984-06-22T21:50:00Z",
+    "file": {"hashes": {"quickXorHash": "BBBB"}},
+    "createdBy": {"user": {"displayName": "a.pereira@example.test"}},
+}
+
+
+def test_a_timestamp_older_than_the_platform_changes_nothing_in_the_read():
+    """AGE IS NOT A VERDICT, and this test exists so it never becomes one.
+
+    A date from 1984 is semantically absurd and legitimately survives
+    transport. The read carries what it observed and infers nothing from how
+    old it is: no coverage gap, no flag, no absence. If somebody later teaches
+    the producer that an old timestamp means corruption, this goes red, which
+    is the point.
+    """
+    document = migration_graph.read(
+        reader_for({"/root/children": {"value": [PRE_PLATFORM]}}),
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
+    )
+    item = document["items"]["/index.js"]
+    assert item == {
+        "size": 512,
+        "author": "a.pereira@example.test",
+        "content_digest": "BBBB",
+    }
+    assert document["coverage"] == []
+
+
+def test_two_reads_of_the_same_ancient_item_compare_as_unchanged(schemas):
+    """The pair that matters: an item nobody has touched since 1984 must
+    compare equal to itself across a move. An age heuristic anywhere in the
+    chain would turn the most stable file in an estate into a finding."""
+
+    def side():
+        return migration_graph.read(
+            reader_for({"/root/children": {"value": [PRE_PLATFORM]}}),
+            drive="d",
+            read_id="r",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
+        )
+
+    before = side()
+    after = dict(side(), read_id="r2", taken_at="2026-03-08T09:00:00Z")
+    record = migration.record(
+        baseline=before,
+        verification=after,
+        move={"kind": "tenant-to-tenant", "produced_by": "m365-governance 0.1.0"},
+    )
+    assert migration.verify(record, schemas=schemas) == []
+    assert [f for f in record["findings"] if f["outcome"] == "fail"] == []
+
+
+def deep_answers(levels: int) -> dict[str, dict]:
+    """A drive nested `levels` deep, each folder holding the next and the last
+    holding one file. Rebuilt from the shape a real drive showed: seventeen
+    segments with a dependency directory inside another one."""
+    answers: dict[str, dict] = {}
+    answers["/root/children"] = {"value": [{"id": "f0", "name": "d0", "folder": {}}]}
+    for n in range(levels - 1):
+        answers[f"/items/f{n}/children"] = {
+            "value": [{"id": f"f{n + 1}", "name": f"d{n + 1}", "folder": {}}]
+        }
+    answers[f"/items/f{levels - 1}/children"] = {"value": [FILE]}
+    return answers
+
+
+def test_a_deeply_nested_drive_is_walked_to_the_leaf():
+    """Seventeen levels is what a real drive showed, and it is well inside the
+    guard. The margin is measured now rather than assumed: the item at the
+    bottom arrives with its whole path as its identity."""
+    document = migration_graph.read(
+        reader_for(deep_answers(17)),
+        drive="d",
+        read_id="r",
+        taken_at="2026-03-01T09:00:00Z",
+        estate="e",
+    )
+    expected = "/" + "/".join(f"d{n}" for n in range(17)) + "/plan.xlsx"
+    assert list(document["items"]) == [expected]
+    assert document["coverage"] == []
+    assert expected.count("/") == 18
+
+
+def flat_answers(items: int, per_folder: int = 200) -> dict[str, dict]:
+    """A synthetic estate of `items` files in folders of `per_folder`."""
+    folders = (items + per_folder - 1) // per_folder
+    answers: dict[str, dict] = {
+        "/root/children": {
+            "value": [
+                {"id": f"F{i}", "name": f"dir{i}", "folder": {}} for i in range(folders)
+            ]
+        }
+    }
+    for i in range(folders):
+        answers[f"/items/F{i}/children"] = {
+            "value": [
+                {
+                    "id": f"{i}-{j}",
+                    "name": f"f{j}.dat",
+                    "size": 1024,
+                    "file": {"hashes": {"quickXorHash": "AAAA"}},
+                    "createdBy": {"user": {"displayName": "a.pereira@example.test"}},
+                }
+                for j in range(per_folder)
+            ]
+        }
+    return answers
+
+
+def test_the_producer_holds_a_large_estate_at_a_measured_cost():
+    """THE WHOLE ESTATE IS MATERIALISED, and this says what that costs.
+
+    The walk keeps every item and every entered folder id in memory, which is
+    a deliberate trade: an estate held whole can be canonicalised, digested
+    and compared without a second pass. The question was never whether it
+    holds; it is what it costs at the scale a real drive reaches, and a real
+    tenant showed hundreds of thousands of items is an ordinary number.
+
+    Measured on this machine: 250,000 items read in about four seconds at a
+    100 MB peak, and a verification of two such reads at 142 MB. Roughly 410
+    bytes an item, linear. This test runs a twentieth of that so it stays in
+    a suite, and bounds the per-item cost with headroom rather than pinning a
+    number that would go red on a different interpreter.
+    """
+    import tracemalloc
+
+    items = 12_000
+    tracemalloc.start()
+    try:
+        document = migration_graph.read(
+            reader_for(flat_answers(items)),
+            drive="d",
+            read_id="r",
+            taken_at="2026-03-01T09:00:00Z",
+            estate="e",
+        )
+        peak = tracemalloc.get_traced_memory()[1]
+    finally:
+        tracemalloc.stop()
+
+    assert len(document["items"]) == items
+    per_item = peak / items
+    assert per_item < 2048, (
+        f"the read costs {per_item:.0f} bytes an item, and it has cost around "
+        "410. Something now keeps more of each entry than the read carries, "
+        "and at a quarter of a million items that is the difference between "
+        "100 MB and a machine that stops."
+    )

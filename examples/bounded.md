@@ -151,7 +151,7 @@ The storage figures for this site were not read, so how full it is remains unkno
 
 ### SPO-SPFX-001 v1.0
 
-The catalog was not read, so whether any solution is behind the version it holds is not known. This is not a pass.
+Whether any solution is behind the version the catalog holds is not known: either the catalog was not read, or it was read and no solution in it reports an installed version to compare against. The evidence beside this finding says which. This is not a pass.
 
 - Basis: **convention** — widely held practice, not documented as a rule
 - Severity: low

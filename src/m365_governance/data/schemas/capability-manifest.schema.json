@@ -113,9 +113,11 @@
       "additionalProperties": false,
       "required": [
         "kind",
-        "reads",
+        "live_validation",
+        "live_validation_state",
+        "needs_tenant_surface",
         "permissions",
-        "live_validation"
+        "reads"
       ],
       "properties": {
         "kind": {
@@ -147,7 +149,21 @@
         "live_validation": {
           "type": "string",
           "minLength": 1,
-          "description": "What a run against a real tenant has established. `not live-validated` means offline tests only — the collector has been proved to behave as somebody believed the API behaves. No rule should rest on that alone."
+          "description": "What a run against a real tenant has established, as a person reads it: the state, followed by anything specific to this slice. Rendered from `live_validation_state`, never written beside it."
+        },
+        "needs_tenant_surface": {
+          "type": "boolean",
+          "description": "Whether this collector reads the tenant administration surface as well as a site. It is published because least privilege has to exist in the COMPOSITION and not only in the documentation: an identity that can read sites and not the tenant runs everything here that is false, and a consumer must be able to see which capabilities that leaves them without rather than discovering it as a refusal at run time."
+        },
+        "live_validation_state": {
+          "type": "string",
+          "enum": [
+            "none",
+            "negative-only",
+            "provider-only",
+            "full"
+          ],
+          "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the surface was absent or empty, so it is proved to report nothing correctly and not to report something correctly. `provider-only` means the transport underneath read a real tenant and this slice's own path did not. `full` means the path that produces this slice's evidence was observed against a real tenant. This field exists because the sentence beside it could not be derived from: five slices carried five phrasings and any consumer asking whether a question is answerable had to interpret prose."
         }
       }
     },

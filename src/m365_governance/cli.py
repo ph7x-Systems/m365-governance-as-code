@@ -143,6 +143,14 @@ def _build_parser() -> argparse.ArgumentParser:
         default="text",
         help="json is the published capability-manifest contract",
     )
+    caps.add_argument(
+        "--questions",
+        action="store_true",
+        help=(
+            "what can be answered about a real tenant, rather than what is "
+            "collected: one line per rule, with what decides it and why"
+        ),
+    )
 
     connect = sub.add_parser(
         "connect",
@@ -393,9 +401,19 @@ def _cmd_capabilities(args) -> int:
     contract a consumer projects; the text form is the same document for
     somebody reading rather than parsing.
     """
-    document = capabilities.manifest(args.rules)
+    # TWO QUESTIONS, AND THEY ARE NOT THE SAME ONE. The manifest answers "what
+    # does this product touch"; `--questions` answers "what can it tell me
+    # about my tenant", which is the one somebody has. A count of rules is a
+    # count of files.
+    document = (
+        capabilities.questions(args.rules)
+        if args.questions
+        else capabilities.manifest(args.rules)
+    )
     if args.format == "json":
         print(json.dumps(document, indent=2, ensure_ascii=False))
+    elif args.questions:
+        print(capabilities.describe_questions(document), end="")
     else:
         print(capabilities.describe(document), end="")
     return 0

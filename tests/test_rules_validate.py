@@ -7,6 +7,9 @@ a guard nobody has tested.
 
 from __future__ import annotations
 
+import pathlib
+import re
+
 import pytest
 
 from conftest import RULES, rule, sabotage
@@ -65,32 +68,38 @@ def test_authored_rules_pass_every_layer(rule_id):
 
 
 def test_every_rule_file_is_covered_by_a_test():
-    """A rule added without a test would otherwise pass silently."""
+    """A rule added without a test would otherwise pass silently, and two of
+    them did exactly that.
+
+    This used to compare the rule files against a list written here by hand.
+    It caught a rule being ADDED or RENAMED, which is what it was for, and it
+    could not catch the thing its own failure message asks for: SPO-SITE-002
+    and SPO-SITE-003 sat in the list for months with fixtures on disk, every
+    outcome reachable, and nothing in `test_engine.py` asserting which fixture
+    produced which. The list said they were covered. The list was the only
+    thing that said so.
+
+    So it reads the behaviour suite now. A rule is covered when its id appears
+    in a test that evaluates it, and the honour system is gone.
+    """
     on_disk = {p.stem for p in RULES.rglob("*.yaml")}
-    assert on_disk == {
-        "SPO-ACTIVITY-001",
-        "SPO-CLASS-001",
-        "SPO-CLASS-002",
-        "SPO-CLASS-003",
-        "SPO-CLASS-004",
-        "SPO-LIST-001",
-        "SPO-LIST-002",
-        "SPO-LIST-003",
-        "SPO-MODERN-001",
-        "SPO-MODERN-003",
-        "SPO-MODERN-004",
-        "SPO-SHARE-001",
-        "SPO-SHARE-002",
-        "SPO-SHARE-003",
-        "SPO-SHARE-004",
-        "SPO-SHARE-005",
-        "SPO-SPFX-001",
-        "SPO-SITE-001",
-        "SPO-SITE-002",
-        "SPO-SITE-003",
-    }, (
-        "a rule was added or renamed. Add its cases to tests/test_engine.py "
-        "and list it here."
+    # conftest too: the two oldest rules are loaded through the `list_rule`
+    # and `site_rule` fixtures, so their ids live there rather than in the
+    # test bodies. That is a fixture, not a gap.
+    aqui = pathlib.Path(__file__).parent
+    suite = "\n".join(
+        (aqui / n).read_text(encoding="utf-8")
+        for n in ("test_engine.py", "conftest.py")
+    )
+    # Comments do not test anything: a rule id mentioned in prose above a
+    # parametrize block is exactly the false comfort this test exists to end.
+    sem_comentarios = re.sub(r"^\s*#.*$", "", suite, flags=re.M)
+    sem_comentarios = re.sub(r'"""(?:.|\n)*?"""', "", sem_comentarios)
+    sem_testes = sorted(r for r in on_disk if r not in sem_comentarios)
+    assert not sem_testes, (
+        f"rules with no case in tests/test_engine.py: {sem_testes}. A rule "
+        "that only passes schema validation is a rule nobody proved decides "
+        "anything."
     )
 
 
