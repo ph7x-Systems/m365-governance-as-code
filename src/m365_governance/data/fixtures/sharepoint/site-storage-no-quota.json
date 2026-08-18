@@ -63,6 +63,14 @@
       "storage_used_percent": {
         "state": "missing",
         "detail": "Derived from used and quota, and one of them was not read."
+      },
+      "storage_limit_set": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "StorageQuota above zero and below the 25 TB per-site maximum",
+          "value": false
+        }
       }
     }
   }

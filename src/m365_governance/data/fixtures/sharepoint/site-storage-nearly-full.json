@@ -67,6 +67,14 @@
           "field": "StorageUsageCurrent/StorageQuota",
           "value": 94
         }
+      },
+      "storage_limit_set": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "StorageQuota above zero and below the 25 TB per-site maximum",
+          "value": true
+        }
       }
     }
   }

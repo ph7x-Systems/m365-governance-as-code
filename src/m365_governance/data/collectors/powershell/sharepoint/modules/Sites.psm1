@@ -16,6 +16,11 @@ $ErrorActionPreference = 'Stop'
 
 Import-Module (Join-Path $PSScriptRoot 'Evidence.psm1')  # no -Force: see Activity.psm1
 
+#: The maximum storage per site collection, in MB, on every Microsoft 365 plan
+#: that includes SharePoint: 25 TB, documented as 25600 GB.
+#: https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits
+$script:MaxSiteStorageMb = 26214400
+
 function Get-SiteInventoryFacts {
     param($TenantSite)
 
@@ -93,6 +98,37 @@ function Get-SiteInventoryFacts {
     else {
         $facts.site['storage_used_percent'] = New-AbsentFact -State 'missing' `
             -Detail 'Derived from used and quota, and one of them was not read.'
+    }
+
+    # WHETHER ANYBODY SET A LIMIT ON THIS SITE.
+    #
+    # 25 TB is the maximum storage per site collection on every Microsoft 365
+    # plan, and it is also the number SharePoint writes when nobody is managing
+    # limits: with site storage limits set to Automatic the organisation's
+    # storage is a pool that sites draw from, and Microsoft documents that
+    # switching from manual to pooled `resets all the limits to 25 TB`.
+    #
+    # So a quota of exactly the maximum is not a limit. It is the absence of
+    # one, and a percentage of it answers nothing: on a real tenant every site
+    # read 0 per cent of 25 TB while the whole estate held 2.7 GB. What
+    # constrains those sites is the ORGANISATION's pooled storage, which is a
+    # different number this document does not carry.
+    #
+    # Published as a fact rather than left for a rule to infer, because the
+    # constant belongs beside the figure it qualifies, with the citation.
+    # A limit is a number BETWEEN nothing and the maximum. Zero is a quota
+    # nobody recorded and the maximum is the absence of one; both leave the
+    # rule without a denominator worth dividing by, and only the middle is a
+    # decision somebody made about this site.
+    if ($quota.state -eq 'observed') {
+        $value = [double] $quota.value
+        $isSet = $value -gt 0 -and $value -lt $script:MaxSiteStorageMb
+        $facts.site['storage_limit_set'] = New-ScalarFact -Value $isSet `
+            -RawField 'StorageQuota above zero and below the 25 TB per-site maximum'
+    }
+    else {
+        $facts.site['storage_limit_set'] = New-AbsentFact -State $quota.state `
+            -Detail 'The quota was not read, so whether one was set is not known.'
     }
 
     # Derived, and derived from something observed: an empty GroupId is how a

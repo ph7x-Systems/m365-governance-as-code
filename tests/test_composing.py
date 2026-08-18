@@ -295,3 +295,76 @@ def test_every_observation_fixture_says_how_it_authenticated():
         # identity -- filling it in from memory would be worse.
         assert provenance.get("identity_method"), f"{relative}: no identity_method"
         assert provenance.get("identity_kind"), f"{relative}: no identity_kind"
+
+
+# ---------------------------------------------------------------------------
+# a rule that could not be near a limit nobody set
+# ---------------------------------------------------------------------------
+
+
+def test_a_site_at_the_platform_maximum_has_no_limit_to_be_near():
+    """53 passes, each one 0 per cent of a quota nobody chose.
+
+    Microsoft documents 25 TB as the maximum storage per site collection, and
+    documents that switching to pooled storage `resets all the limits to
+    25 TB`. So a site carrying exactly that is not a site with a generous
+    limit: it is a site with none, drawing from the organisation's pool. The
+    rule divided by it anyway and reported that everything was fine.
+
+    A pass says the question was asked and the answer was good. There was no
+    question.
+    """
+    from m365_governance import engine
+    from m365_governance.loader import load_rule
+
+    rule = load_rule(packaged("rules") / "sharepoint" / "SPO-SITE-003.yaml").data
+    pooled = _load("site-storage-comfortable")
+    pooled["facts"]["site"]["storage_quota_mb"]["value"] = 26214400
+    pooled["facts"]["site"]["storage_limit_set"]["value"] = False
+
+    assert engine._evaluate(rule, pooled).outcome.value == "not-applicable"
+
+
+def test_the_rule_still_decides_where_a_limit_was_set():
+    """Adjudicating it must not blunt it: a manual limit is where it earns its
+    place, and that tenant is the one it was written for."""
+    from m365_governance import engine
+    from m365_governance.loader import load_rule
+
+    rule = load_rule(packaged("rules") / "sharepoint" / "SPO-SITE-003.yaml").data
+    for name, expected in (
+        ("site-storage-comfortable", "pass"),
+        ("site-storage-nearly-full", "fail"),
+        ("site-storage-no-quota", "not-applicable"),
+    ):
+        assert engine._evaluate(rule, _load(name)).outcome.value == expected, name
+
+
+def test_a_resource_with_nothing_to_read_does_not_fill_the_report():
+    """Making the rule honest made the document ten times worse.
+
+    The report collapsed a group only when every result was a PASS, so 53
+    sites that had gone from `pass` to `not-applicable` went from one line to
+    279 of the identical paragraph. `attention` already puts both outcomes in
+    `settled`; the report was not asking it.
+    """
+    from m365_governance import engine
+    from m365_governance.loader import load_rules
+    from m365_governance.reporting import many_to_markdown
+    from m365_governance.results import RunSet
+
+    rules = [r.data for r in load_rules(packaged("rules"))]
+    pooled = _load("site-storage-comfortable")
+    pooled["facts"]["site"]["storage_quota_mb"]["value"] = 26214400
+    pooled["facts"]["site"]["storage_limit_set"]["value"] = False
+
+    rendered = many_to_markdown(
+        RunSet([engine.evaluate(rules, pooled, only_collected=True)])
+    )
+    assert "nothing to read" in rendered
+    assert "nothing but passes" not in rendered, (
+        "the collapse still claims passes it did not have"
+    )
+    assert "No storage limit is set on this site" not in rendered, (
+        "a settled resource was printed in full"
+    )

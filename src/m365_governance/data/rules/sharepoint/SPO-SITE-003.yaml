@@ -33,10 +33,25 @@ severity:
     moment it blocks them.
   configurable: true
 
+# WHETHER ANYBODY SET A LIMIT, not whether a number is present.
+#
+# This asked `storage_quota_mb > 0`, which is true of every site in a tenant
+# nobody manages storage for: with site storage limits set to Automatic the
+# organisation's storage is a pool and SharePoint writes 25 TB, the per-site
+# maximum, on every site. Run against a real tenant the rule returned 53
+# passes, each one 0 per cent of a limit nobody chose, while the whole estate
+# held 2.7 GB.
+#
+# A pass says the question was asked and the answer was fine. There was no
+# question: the site was not near a limit because there is no limit to be near,
+# and what actually constrains those sites is the organisation's pooled
+# storage, which this evidence does not carry. `not-applicable` is the honest
+# answer and it keeps the rule sharp where limits ARE set, which is the tenant
+# it was written for.
 applicability:
-  operator: greater-than
-  evidence: site.storage_quota_mb
-  value: 0
+  operator: equals
+  evidence: site.storage_limit_set
+  value: true
 
 evidence_requirements:
   - path: site.storage_used_mb
@@ -47,6 +62,9 @@ evidence_requirements:
     required: true
   - path: site.storage_used_percent
     type: integer
+    required: true
+  - path: site.storage_limit_set
+    type: boolean
     required: true
 
 condition:
@@ -71,8 +89,12 @@ outcomes:
       remains unknown. This is not a pass.
   not_applicable:
     message: >
-      This site has no quota recorded, so a percentage of it cannot be
-      calculated. That is not the same as having room.
+      No storage limit is set on this site, so there is nothing here to be
+      near. Either no quota was recorded, or the site carries the 25 TB
+      per-site maximum, which is what SharePoint writes when the organisation's
+      storage is a pool that sites draw from. In that case what can run out is
+      the organisation's total storage, and that is not a fact about this site.
+      The figure this rule read is in the evidence beside this finding.
   invalid_evidence:
     message: >
       The storage figures were returned in a form this rule cannot evaluate.
@@ -97,3 +119,8 @@ limitations:
       The percentage is derived from the two figures beside it. Where the
       quota is unlimited or not recorded, the rule reports not-applicable
       rather than assuming a denominator.
+    - >
+      It says nothing about the organisation's storage. In a tenant using
+      pooled storage the site limit is not the constraint, and every site can
+      pass this rule while the organisation runs out. That number is a tenant
+      fact and no site document carries it.
