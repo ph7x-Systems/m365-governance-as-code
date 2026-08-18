@@ -87,7 +87,17 @@ class Slice:
     #: written here was wrong and only a real run showed it: `sites` gathers
     #: inventory, not owners, and pointing it at the ownership profile
     #: produced 106 `unknown` results across 53 sites.
+    #:
+    #: ONE FIXTURE IS ONE SHAPE, AND A COLLECTOR CAN HAVE SEVERAL. The
+    #: capability manifest reads this to say which rules a slice feeds, by
+    #: running them against it, and a collector whose fixture shows one branch
+    #: under-reports the rest: `permissions` collects a unique scope count in
+    #: the branch that walks items, and the fixture it was paired with does
+    #: not carry one, so the published catalogue said this collector fed one
+    #: rule when it feeds three. `also_shaped_like` carries the other shapes,
+    #: and the manifest takes the union.
     shaped_like: str
+    also_shaped_like: tuple[str, ...] = ()
     #: Whether any rule consumes what this slice collects.
     #:
     #: The standing twin rule is that a collection path no rule can consume
@@ -255,6 +265,10 @@ SLICES = {
             writes_many=True,
             describes="every visible list on a site, and its inheritance",
             shaped_like="list-within-limit",
+            # The branch that walks items and counts unique scopes. Without
+            # it the catalogue published this collector as feeding one rule,
+            # and it feeds three.
+            also_shaped_like=("list-scopes-within-recommended",),
             reads=("Get-PnPList", "Get-PnPListItem"),
             permissions=(),
             live="live-validated",

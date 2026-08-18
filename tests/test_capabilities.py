@@ -81,12 +81,16 @@ def test_the_rules_a_capability_supports_are_the_ones_that_can_decide():
         chosen = collecting.SLICES[capability["name"]]
         if not chosen.produces_findings:
             continue
-        document = _fixture(chosen.shaped_like, load_json)
-        decidable = {
-            result.rule_id
-            for result in evaluate(rules, document).results
-            if result.outcome is not Outcome.UNKNOWN
-        }
+        # Every shape the slice declares, not one of them: a collector with
+        # a branch feeds rules its primary fixture never reaches.
+        decidable = set()
+        for name in (chosen.shaped_like, *chosen.also_shaped_like):
+            document = _fixture(name, load_json)
+            decidable |= {
+                result.rule_id
+                for result in evaluate(rules, document).results
+                if result.outcome is not Outcome.UNKNOWN
+            }
         assert set(capability["consumed_by"]) == decidable, chosen.name
         assert decidable, f"{chosen.name} supports no rule and claims to"
 
@@ -196,3 +200,52 @@ def _fixture(name: str, load_json):
         if path.is_file():
             return load_json(path)
     raise AssertionError(f"no fixture {name}")
+
+
+def test_every_published_rule_is_fed_by_a_published_capability():
+    """THE CATALOGUE'S OWN COVERAGE, and the metric this phase is measured by.
+
+    A rule nobody can collect for answers `unknown` against every tenant, for
+    ever, which is honest and is also product debt. The manifest is where that
+    debt has to be visible, so this asserts the number rather than trusting a
+    reading of it.
+
+    It caught a real one. The manifest said `permissions` fed a single rule
+    when it feeds three: a collector with a branch produces more than one
+    shape, and the catalogue asked one of them which rules it decides. Two
+    published rules looked uncollectable and were not.
+    """
+    from m365_governance import capabilities
+
+    document = capabilities.manifest()
+    fed = set()
+    for capability in document["capabilities"]:
+        fed |= set(capability.get("consumed_by") or [])
+    published = {rule["id"] for rule in document["rules"]}
+    assert not published - fed, (
+        f"published rules no capability feeds: {sorted(published - fed)}. Each "
+        "one answers unknown against every tenant, and the catalogue is where "
+        "that has to be visible."
+    )
+
+
+def test_a_collector_with_a_branch_declares_every_shape_it_produces():
+    """`permissions` collects a unique scope count only in the branch that
+    walks items. Pairing it with a fixture from the other branch published a
+    collector as feeding one rule while it fed three, and nothing went red."""
+    from m365_governance import capabilities, collecting
+
+    chosen = collecting.SLICES["permissions"]
+    assert chosen.also_shaped_like, (
+        "the permissions slice stopped declaring its second shape, and the "
+        "catalogue will under-report it again"
+    )
+    rules = [r.data for r in load_rules(packaged("rules"))]
+    primary = capabilities._decidable(rules, capabilities._named(chosen.shaped_like))
+    every = set().union(
+        *(capabilities._decidable(rules, d) for d in capabilities._shapes(chosen))
+    )
+    assert every > primary, (
+        "the second shape adds nothing, so either the fixture is wrong or the "
+        "declaration is decoration"
+    )

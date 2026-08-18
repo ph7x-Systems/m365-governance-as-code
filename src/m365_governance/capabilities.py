@@ -66,7 +66,13 @@ def _capability(
     resource = document.get("resource", {})
     workload = str(resource.get("workload", ""))
     resource_type = str(resource.get("type", ""))
-    consuming = sorted(_decidable(rules, document))
+    # The union across every shape: a rule this collector can decide in one
+    # of its branches is a rule it feeds.
+    consuming = sorted(
+        set().union(*(_decidable(rules, d) for d in _shapes(chosen)))
+        if _shapes(chosen)
+        else set()
+    )
 
     return {
         "name": chosen.name,
@@ -119,13 +125,28 @@ def _fixture(chosen: collecting.Slice) -> dict[str, Any]:
     One place has to be right for the profile pairing test to pass, and this is
     it. A second declaration on the slice would be a second thing to keep true.
     """
+    return _named(chosen.shaped_like)
+
+
+def _named(name: str) -> dict[str, Any]:
     from .loader import load_json
 
     for folder in ("sharepoint", "entra"):
-        path = packaged("fixtures") / folder / f"{chosen.shaped_like}.json"
+        path = packaged("fixtures") / folder / f"{name}.json"
         if path.is_file():
             return load_json(path)
     return {}
+
+
+def _shapes(chosen: collecting.Slice) -> list[dict[str, Any]]:
+    """Every shape this slice can produce, primary first.
+
+    A collector with a branch produces more than one shape, and asking one of
+    them which rules it feeds answers for that branch alone.
+    """
+    documents = [_fixture(chosen)]
+    documents += [_named(n) for n in chosen.also_shaped_like]
+    return [d for d in documents if d]
 
 
 def _rule(rule: dict[str, Any]) -> dict[str, Any]:
