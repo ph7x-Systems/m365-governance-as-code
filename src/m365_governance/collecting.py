@@ -162,7 +162,7 @@ SLICES = {
             describes="the Copilot agents in one site, and the sources each declares",
             shaped_like="site-agents-with-sources",
             reads=("Get-PnPWeb", "Get-PnPCopilotAgent"),
-            permissions=(),
+            permissions=("Sites.Read.All",),
             live="live-validated",
         ),
         Slice(
@@ -175,7 +175,14 @@ SLICES = {
             describes="every site this identity can enumerate",
             shaped_like="site-storage-comfortable",
             reads=("Get-PnPTenantSite",),
-            permissions=("AllSites.FullControl",),
+            # NOT ESTABLISHED, and deliberately empty. This declared
+            # `AllSites.FullControl`, which is not an application role in the
+            # Entra model at all: it is a name from the retired ACS one. The
+            # tenant read was refused with Sites.Read.All on the administration
+            # surface as well as the site one, so the surface is not the
+            # reason and the minimum is simply unknown. An invented name is
+            # worse than an admitted gap.
+            permissions=(),
             live="fully live-validated",
         ),
         Slice(
@@ -187,7 +194,7 @@ SLICES = {
             describes="who administers one site",
             shaped_like="site-named-and-group-admins",
             reads=("Get-PnPWeb", "Get-PnPSiteCollectionAdmin"),
-            permissions=(),
+            permissions=("Sites.Read.All",),
             live="live-validated",
         ),
         Slice(
@@ -199,7 +206,7 @@ SLICES = {
             describes="how one site is built: template, branding, publishing",
             shaped_like="site-modern-publishing-on",
             reads=("Get-PnPWeb", "Get-PnPList", "Get-PnPFeature", "Get-PnPPage"),
-            permissions=(),
+            permissions=("Sites.Read.All",),
             live="live-validated",
         ),
         Slice(
@@ -253,7 +260,7 @@ SLICES = {
             describes="what a site records about the kind of content it holds",
             shaped_like="site-class-group-unlabelled",
             reads=("Get-PnPWeb", "Get-PnPSite"),
-            permissions=(),
+            permissions=("Sites.Read.All",),
             live="live-validated",
         ),
         Slice(
@@ -270,7 +277,7 @@ SLICES = {
             # and it feeds three.
             also_shaped_like=("list-scopes-within-recommended",),
             reads=("Get-PnPList", "Get-PnPListItem"),
-            permissions=(),
+            permissions=("Sites.Read.All",),
             live="live-validated",
         ),
         # SpfxCatalog only. The catalog is one call and feeds SPO-SPFX-001;
@@ -286,7 +293,7 @@ SLICES = {
             describes="a site's app catalog: which solutions lag their version",
             shaped_like="site-spfx-behind",
             reads=("Get-PnPApp",),
-            permissions=(),
+            permissions=("Sites.Read.All",),
             live="negative path validated",
         ),
         Slice(

@@ -85,6 +85,12 @@ def _capability(
             # recorded where a source establishes it, and invented nowhere.
             "permissions": list(chosen.permissions) or ["not-established"],
             "live_validation": chosen.live,
+            # Least privilege belongs in the composition, not only in the
+            # documentation: an identity that reads sites and not the tenant
+            # runs every collector where this is false, and the catalogue is
+            # where a consumer sees which capabilities that leaves them
+            # without.
+            "needs_tenant_surface": chosen.needs_tenant,
         },
         "produces": {"workload": workload, "resource_type": resource_type},
         "consumed_by": consuming if chosen.produces_findings else [],

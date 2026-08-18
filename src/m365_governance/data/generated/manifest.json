@@ -33,7 +33,7 @@
       "path": "schemas/assessment.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0": {
-      "digest": "5c223a670d66b70c4a0900449dd4281a36d637b729e0ea43170d61a7260ca939",
+      "digest": "5fdba2171e75b757b172e38b8be61710064021ca9ced29f7c80b37787caaa128",
       "path": "schemas/capability-manifest.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
@@ -101,5 +101,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "59d878586ac7615d4192f7cc86fb1032cd57397ca783191af56bd063f3e4de35"
+  "set_digest": "35b8692bc3639b2695433c1ee5a66d3714cc0fdb2f080196476fa4871c893429"
 }
