@@ -64,6 +64,14 @@
       "digest": "ae3ccd32345293ec7e19d82e65296947d28fd19c9c33e20ea02e607f59b3acc4",
       "path": "schemas/evidence.schema.json"
     },
+    "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0": {
+      "digest": "21494b38bcee9fb996e49a98e466ea5668c23c58e49e8f7b71571e757d98d3fb",
+      "path": "schemas/migration-read.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/migration-verification/1.0.0": {
+      "digest": "b04efd5c1b8fb6a5c421e502bfc2290ea85d830fe8f8981221c5146459bbbae0",
+      "path": "schemas/migration-verification.schema.json"
+    },
     "https://ph7x.com/schemas/m365-governance/rule/1.0.0": {
       "digest": "8c3a17f97163c703c434f95bc3b79c85e50d120312cf61797374eb8815c184ee",
       "path": "schemas/rule.schema.json"
@@ -93,5 +101,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "147407309abd322ef4f555cc5e99308e078122552dc64edff7e0f61e9c9844b2"
+  "set_digest": "59d878586ac7615d4192f7cc86fb1032cd57397ca783191af56bd063f3e4de35"
 }

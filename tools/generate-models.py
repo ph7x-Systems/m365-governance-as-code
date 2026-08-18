@@ -529,6 +529,13 @@ def check_closure(schemas: dict) -> None:
             # persists it, and a consumer projects it as JSON. Generating a
             # record for it would put a type in the bundle nobody deserialises.
             "capability-manifest",
+            # The record a third party recomputes. Nothing references it
+            # because nothing contains it: it is the outermost document of the
+            # migration pair, the way an assessment is for a run set. It names
+            # the two reads by identity rather than carrying them, so the
+            # reference points the other way and the closure check sees a
+            # resource with no parent.
+            "migration-verification",
         )
     }
     orphans = declared - reached - roots
