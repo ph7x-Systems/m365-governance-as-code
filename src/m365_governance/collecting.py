@@ -170,6 +170,21 @@ class Slice:
     #: Anything about this slice's live state that the four words do not carry.
     #: Rendered after the sentence, never instead of it.
     live_note: str = ""
+    #: Whether a tenant address, when given, CHANGES WHAT THIS SLICE READS.
+    #:
+    #: `needs_tenant` says the slice cannot run without one. This says it can
+    #: run either way and reads something different when it has one, which is
+    #: not the same thing and had no way to be expressed.
+    #:
+    #: FOUND BY RUNNING IT. `spfx` reads a site collection app catalog or the
+    #: tenant one, and the script already chose between them by whether it was
+    #: given a tenant address. It never was: the argument is forwarded only
+    #: when `needs_tenant` is true, and this slice declares false because a
+    #: site catalog is a real target. So the tenant branch existed, was
+    #: documented, and could not be reached from the command line. On the
+    #: tenant this was first run against, the app catalog is the tenant one,
+    #: and the collector answered `missing` for a catalog that is there.
+    optional_tenant: bool = False
     #: Which collector answers this slice: `powershell` or `graph`.
     #:
     #: ONE REGISTRY AND TWO COLLECTORS. The alternative was a second list for
@@ -334,7 +349,16 @@ SLICES = {
             shaped_like="site-spfx-behind",
             reads=("Get-PnPApp",),
             permissions=("Sites.Read.All",),
-            live=Live.NEGATIVE_ONLY,
+            # A tenant address is not required and is not ignored: with one
+            # this reads the tenant app catalog, without one the site's own.
+            optional_tenant=True,
+            live=Live.FULL,
+            live_note=(
+                "both scopes observed: a tenant catalog of ten solutions and a "
+                "site catalog of one. No solution in either was behind its "
+                "catalog version, so the finding branch has not been produced "
+                "by a real catalog"
+            ),
         ),
         Slice(
             "conditional-access",
@@ -547,6 +571,9 @@ def run_slice(
         argv += ["-SiteUrl", site_url or ""]
     if chosen.needs_tenant:
         argv += ["-TenantUrl", tenant_url or ""]
+    elif chosen.optional_tenant and tenant_url:
+        # Given, so it decides the scope; absent, so the slice reads the site.
+        argv += ["-TenantUrl", tenant_url]
     if device_login:
         argv.append("-DeviceLogin")
     if count_unique_scopes and chosen.mode == "UniquePermissions":

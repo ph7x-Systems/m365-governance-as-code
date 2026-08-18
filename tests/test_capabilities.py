@@ -48,7 +48,9 @@ def test_each_capability_carries_what_its_slice_declares():
 
         assert collector["kind"] == chosen.source
         assert collector["reads"] == list(chosen.reads)
-        assert collector["live_validation"] == chosen.live
+        # The sentence, which is rendered from the state and any note.
+        assert collector["live_validation"] == chosen.live_sentence()
+        assert collector["live_validation_state"] == chosen.live.name.lower().replace("_", "-")
         assert capability["describes"] == chosen.describes
 
 

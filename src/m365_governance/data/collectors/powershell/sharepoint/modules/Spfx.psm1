@@ -51,18 +51,47 @@ function Get-SpfxCatalogFacts {
     # from CanUpgrade alone: that flag and the version pair should agree, and
     # a rule reading the pair can be checked by a reader against the numbers
     # printed beside it.
-    $behind = @($solutions | Where-Object {
-            $_.catalog_version -and $_.installed_version -and
+    #
+    # COMPARABLE FIRST, AND IT IS NOT A DETAIL. A tenant-scope catalog reports
+    # no InstalledVersion at all: installation is per site, so the field is
+    # empty on every solution. The filter below requires both numbers, so it
+    # counted zero, and zero satisfied `greater-than 0` as false -- the rule
+    # returned PASS, "every solution is installed at the version the catalog
+    # holds", having compared nothing. Found on the first real tenant catalog
+    # this ever read: ten solutions, none comparable, a clean pass.
+    #
+    # A count of zero out of nothing is not a finding, and this engine exists
+    # to not do that. Where no solution reports an installed version the count
+    # is ABSENT and the rule is unknown.
+    $comparable = @($solutions | Where-Object {
+            $_.catalog_version -and $_.installed_version
+        })
+    $behind = @($comparable | Where-Object {
             $_.catalog_version -ne $_.installed_version
         })
+
+    $upgradable = if ($solutions.Count -gt 0 -and $comparable.Count -eq 0) {
+        New-AbsentFact -State 'not-supported' -Detail (
+            "$($solutions.Count) solutions in a $Scope catalog, none reporting " +
+            'an installed version. A tenant catalog records installation per ' +
+            'site, so whether any solution is behind cannot be decided from ' +
+            'here. Collect the site that hosts the solution to answer it.')
+    }
+    else {
+        New-ScalarFact -Value $behind.Count `
+            -RawField 'AppCatalogVersion vs InstalledVersion'
+    }
 
     return [ordered]@{
         spfx = [ordered]@{
             catalog_scope    = New-ScalarFact -Value $Scope -RawField 'Get-PnPApp -Scope'
             solutions        = New-ScalarFact -Value $solutions -RawField 'AppMetadata'
             solution_count   = New-ScalarFact -Value $solutions.Count -RawField 'AppMetadata'
-            upgradable_count = New-ScalarFact -Value $behind.Count `
-                -RawField 'AppCatalogVersion vs InstalledVersion'
+            # The denominator, published: a reader can check the count above
+            # against it instead of taking the arithmetic on trust.
+            comparable_count = New-ScalarFact -Value $comparable.Count `
+                -RawField 'AppCatalogVersion and InstalledVersion both present'
+            upgradable_count = $upgradable
         }
     }
 }

@@ -55,8 +55,10 @@ outcomes:
       claims the update.
   unknown:
     message: >
-      The catalog was not read, so whether any solution is behind the version
-      it holds is not known. This is not a pass.
+      Whether any solution is behind the version the catalog holds is not
+      known: either the catalog was not read, or it was read and no solution
+      in it reports an installed version to compare against. The evidence
+      beside this finding says which. This is not a pass.
   not_applicable:
     message: >
       This rule does not apply to this resource.

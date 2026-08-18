@@ -433,6 +433,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-spfx-tenant-catalog-not-comparable.json",
+      "origin": "sanitized-observation",
+      "purpose": "a tenant app catalog read on 2026-08-18: ten solutions, none of them reporting an installed version, with the tenant, the site path and every solution title and id replaced. It is here because it is the shape that produced a false pass: a tenant catalog records installation per site, so nothing was comparable and the count of solutions behind was zero out of nothing",
+      "may_be_presented_as_tenant_observation": true
+    },
+    {
       "path": "fixtures/sharepoint/site-storage-comfortable.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
