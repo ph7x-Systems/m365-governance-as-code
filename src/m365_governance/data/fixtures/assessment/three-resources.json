@@ -998,7 +998,7 @@
                 "native_id": "contoso,site,finance"
               },
               "outcome": "unknown",
-              "message": "The catalog was not read, so whether any solution is behind the version it holds is not known. This is not a pass.",
+              "message": "Whether any solution is behind the version the catalog holds is not known: either the catalog was not read, or it was read and no solution in it reports an installed version to compare against. The evidence beside this finding says which. This is not a pass.",
               "basis": "convention",
               "severity": "low",
               "evidence_used": [
@@ -2202,17 +2202,17 @@
           "collected"
         ]
       },
-      "assessment_id": "84ed46ae573f7c58e2b0e35121841eee9e0a1a08d61962967790df5f235e95dc"
+      "assessment_id": "d27a6088afcbffbbfa1e0892d35b9abf9f63c89acd28e0385fb5dd393b6b2fc6"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "b797667a7de13b702e57f0b63113488667ef2567729addb09ae33d5d2bf93c80",
+        "run_set": "d31ef3adc2dd15adfe10d91fe4f0a11c8f5cfb5f8d55c62d826e64562084ef62",
         "evidence": "f28860a02a4b822eeb6353e9c356f3bd004046109959f71b6990782d9b0fe79f",
         "versions": "2421ae26ce1dc570f9a24c96e188ed0c4fb6e0e5c60018aefc1f0c27b98692a9",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "84ed46ae573f7c58e2b0e35121841eee9e0a1a08d61962967790df5f235e95dc"
+      "canonical_hash": "d27a6088afcbffbbfa1e0892d35b9abf9f63c89acd28e0385fb5dd393b6b2fc6"
     }
   }
 }

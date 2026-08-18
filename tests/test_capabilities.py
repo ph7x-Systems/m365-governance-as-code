@@ -50,7 +50,8 @@ def test_each_capability_carries_what_its_slice_declares():
         assert collector["reads"] == list(chosen.reads)
         # The sentence, which is rendered from the state and any note.
         assert collector["live_validation"] == chosen.live_sentence()
-        assert collector["live_validation_state"] == chosen.live.name.lower().replace("_", "-")
+        expected_state = chosen.live.name.lower().replace("_", "-")
+        assert collector["live_validation_state"] == expected_state
         assert capability["describes"] == chosen.describes
 
 
@@ -295,7 +296,9 @@ def test_every_answerable_question_has_the_evidence_it_requires():
 
     document = capabilities.questions(None)
     missing = [
-        entry["id"] for entry in document["questions"] if not entry["evidence_available"]
+        entry["id"]
+        for entry in document["questions"]
+        if not entry["evidence_available"]
     ]
     assert not missing, f"rules whose evidence no collector produces: {missing}"
 
@@ -314,4 +317,5 @@ def test_the_live_state_is_a_value_and_the_sentence_comes_from_it():
         collector = capability["collector"]
         state = collector["live_validation_state"]
         assert state in {"none", "negative-only", "provider-only", "full"}
-        assert collector["live_validation"].startswith(str(Live[state.upper().replace("-", "_")]))
+        expected = Live[state.upper().replace("-", "_")]
+        assert collector["live_validation"].startswith(str(expected))

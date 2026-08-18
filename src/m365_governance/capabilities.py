@@ -22,7 +22,7 @@ than being left out to look better.
 from __future__ import annotations
 
 import json
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from typing import Any
 
@@ -295,9 +295,14 @@ def questions(rules: Path | None = None) -> dict[str, Any]:
 def _because(state: str, available: bool) -> str:
     """Why a question is not a yes, in the words of what is missing."""
     if not available:
-        return "the collector that feeds this rule does not produce the evidence it requires"
+        return (
+            "the collector that feeds this rule does not produce the evidence "
+            "it requires"
+        )
     return {
-        "full": "the path that produces this evidence was observed against a real tenant",
+        "full": (
+            "the path that produces this evidence was observed against a real tenant"
+        ),
         "negative-only": (
             "the collector has only been observed against a surface that was "
             "absent or empty, so reporting a finding is unproved"
@@ -327,7 +332,7 @@ def _produced(sources: list[str], path: str) -> bool:
     return False
 
 
-@lru_cache(maxsize=None)
+@cache
 def _shape_facts(name: str) -> tuple[dict[str, Any], ...]:
     from .collecting import SLICES
 
@@ -337,7 +342,8 @@ def _shape_facts(name: str) -> tuple[dict[str, Any], ...]:
         for root in ("sharepoint", "entra", "."):
             candidate = packaged("fixtures") / root / f"{shape}.json"
             if candidate.exists():
-                found.append(json.loads(candidate.read_text(encoding="utf-8")).get("facts", {}))
+                document = json.loads(candidate.read_text(encoding="utf-8"))
+                found.append(document.get("facts", {}))
                 break
     return tuple(found)
 
