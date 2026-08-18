@@ -371,7 +371,47 @@ def test_a_validation_leaves_a_fixture_with_no_tenant_in_it():
 
     assert "fixtures/sharepoint" in script, "the run leaves no fixture behind"
     assert "contoso" in script, "the fixture must carry a placeholder tenant"
-    assert "y75hx" not in script, "a real tenant name reached a tracked file"
+
+
+def test_no_tracked_file_names_the_tenant_the_owner_tests_against():
+    """It looked at ONE script, and the name was in a document.
+
+    The guard above checked the validation script alone, which is where the
+    name was most likely to appear and is not where it appeared: the execution
+    queue carried the host of the tenant the owner authorises tests against,
+    written down as the thing not to publish. A host is a live tenant value
+    like any other, and this repository ships to anyone.
+
+    So it reads everything tracked. The one place the name is allowed is this
+    file, which has to say the word in order to forbid it.
+    """
+    root = Path(__file__).resolve().parents[1]
+    here = Path(__file__).resolve()
+    offenders = []
+    for folder in ("src", "tools", "docs", "tests", "examples"):
+        base = root / folder
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*"):
+            if path.suffix not in {
+                ".py",
+                ".sh",
+                ".md",
+                ".json",
+                ".yaml",
+                ".psm1",
+                ".ps1",
+            }:
+                continue
+            if path.resolve() == here:
+                continue
+            if "y75hx" in path.read_text(encoding="utf-8", errors="ignore"):
+                offenders.append(str(path.relative_to(root)))
+    assert not offenders, (
+        f"a real tenant host reached tracked files: {offenders}. It is not a "
+        "hostname in a document; it is somebody's estate in a public "
+        "repository."
+    )
 
 
 def test_the_public_repository_names_no_private_consumer():

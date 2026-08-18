@@ -146,6 +146,64 @@ above:
 **So `migration-read` still has no positive live read**, and the small drive that
 account carries is the known estate to run it against first.
 
+### Least privilege, measured on 2026-08-18
+
+A dedicated application identity was registered for this, with no permissions
+at all, and permissions were added only when a named operation failed. No
+tenant identifier, host or site name is recorded here.
+
+**Two facts about the setup, before any permission.**
+
+`PnP.PowerShell 3.3.0` accepts a client secret **only** in the retired ACS
+parameter set. Entra application-only requires a certificate, and an
+administrator following a secret-based instruction gets a parameter-binding
+error rather than an authorisation one. That belongs in the connect
+documentation before it belongs anywhere else.
+
+`Connect-PnPOnline` **succeeds with zero permissions**. Connection is
+authentication; nothing about authorisation is established by connecting, and
+a collector that treats a successful connect as a green light is reading the
+wrong signal.
+
+**Measured, with the SharePoint application role `Sites.Read.All` and nothing
+else.**
+
+| Operation | Result | Capability it serves |
+|---|---|---|
+| `Get-PnPWeb` | established | activity, agents, classification, modernity, owners, sharing |
+| `Get-PnPSite` | established | classification, sharing |
+| `Get-PnPList` | established | modernity, permissions |
+| `Get-PnPListItem` | established | permissions |
+| `Get-PnPSiteCollectionAdmin` | established | owners |
+| `Get-PnPFeature -Scope Web` | established | modernity |
+| `Get-PnPPage` | established | modernity |
+| `Get-PnPApp` | established | spfx |
+| `Get-PnPCopilotAgent` | established | agents |
+| `Get-PnPTenantSite` | refused | sites |
+| `Get-PnPTenant` | refused | tenant-sharing |
+
+**Nine of the eleven collector operations need `Sites.Read.All` and nothing
+more.** That is the minimum available for them: the SharePoint application
+roles offer nothing narrower that still reads a site, so it is recorded as the
+floor rather than as a search that gave up.
+
+The two refusals are clean authorisation errors, `Attempted to perform an
+unauthorized operation`, on the tenant administration surface as well as the
+site one, so the surface is not the reason. The collector's failure classifier
+maps that message to `permission-denied` and not to `missing`, which was
+checked rather than assumed.
+
+**A correction to what the manifest publishes.** The `sites` capability
+declares `AllSites.FullControl`, and that value does not exist among the
+SharePoint application roles: it is a name from the retired ACS model. What
+the two tenant reads actually need is unestablished, and the next step is one
+role wider, `Sites.Manage.All`, then `Sites.FullControl.All` only if the
+narrower one is refused.
+
+**Not established, and why.** Granting the wider role was refused by this
+machine's own guard rails, so the tenant pair stops here. Nothing about
+`Sites.Manage.All` is claimed, in either direction.
+
 ### What is missing, in order
 
 1. **Live validation** of `migration-read` against a tenant with a Graph token,
@@ -357,13 +415,14 @@ guard makes the contract fail.
 
 ## Authorised live observation
 
-The owner authorised read-only tests against:
+The owner authorised read-only tests against a named tenant and its
+administration surface. **The two addresses are not written here.** They were
+recorded in this file until 2026-08-18, which is a repository that ships to
+anyone: a host name is a live tenant value like any other, and the sentence
+under them already said not to publish one. The addresses live with the owner;
+what belongs here is that the authorisation exists.
 
-- `https://y75hx-admin.sharepoint.com/`
-- `https://y75hx.sharepoint.com/`
-
-The two addresses were already observed resolving publicly to the same directory.
-Do not publish the directory ID or any live tenant value.
+Do not publish the directory ID, a host, or any other live tenant value.
 
 Use existing authentication only, in this precedence:
 
