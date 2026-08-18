@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0",
+  "title": "Migration read",
+  "description": "One read of an estate at one moment, and the input a verification is built from. It exists as its own contract because the question `what do we need from you` has to have an answer before anybody can be asked for anything: a comparison whose inputs had no shape could not be requested, only improvised. A read states what it found AND what it could not reach, and the second half is what makes it evidence rather than a listing — an inventory that cannot say where it failed to look is indistinguishable from one that looked everywhere.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "read_id",
+    "taken_at",
+    "estate",
+    "produced_by",
+    "coverage",
+    "items",
+    "read_by"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it."
+    },
+    "read_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How this read is named. Two reads of one estate need distinguishing by more than their order in a command line."
+    },
+    "taken_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the estate was read, which decides which side of the move this is. It is the only field that establishes that a baseline is a baseline."
+    },
+    "estate": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What was read, as the operator named it. Deliberately not a tenant: a move from a file share has no tenant on one side."
+    },
+    "produced_by": {
+      "type": "string",
+      "minLength": 1,
+      "description": "What produced this read. Recorded so a reader can see whether it was the same thing that performed the move."
+    },
+    "coverage": {
+      "type": "array",
+      "description": "What this read could NOT establish, and why. An empty array is a claim, not a default: it says the whole declared estate was reached.",
+      "items": {
+        "$ref": "#/$defs/gap"
+      }
+    },
+    "items": {
+      "type": "object",
+      "description": "What was found, keyed by the identity used on both sides. An object rather than an array because the identity is the key a comparison joins on, and an array would let one identity appear twice with different attributes.",
+      "additionalProperties": {
+        "$ref": "#/$defs/item"
+      }
+    },
+    "unsupported": {
+      "type": "array",
+      "uniqueItems": true,
+      "description": "Dimensions this source CANNOT provide, ever. Declared by the producer because nothing downstream can infer it: a read with no `author` looks identical whether the surface does not expose authorship or whether this run simply did not ask. Those are different sentences — one is a structural limit of the method, the other is a gap in an execution — and a comparison that renders them the same way manufactures false conclusions the moment a second source appears.",
+      "items": {
+        "type": "string",
+        "enum": [
+          "size",
+          "content",
+          "authorship",
+          "versions",
+          "permissions",
+          "sharing-links"
+        ]
+      }
+    },
+    "content_digest_algorithm": {
+      "type": "string",
+      "minLength": 1,
+      "description": "How `content_digest` was computed, for every item this read carries one. Recorded because a digest without its algorithm is not comparable: a quickXorHash and a SHA-256 of the same bytes differ, and a comparison that did not know would report every single item as changed. Present only when the read carries digests at all."
+    },
+    "read_by": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "scopes"
+      ],
+      "description": "WHO TOOK THIS READ, and it is not a courtesy field. An estate read by an identity that cannot see all of it is byte-identical to a smaller estate: the items it could not see are simply absent, with no gap to mark them, because nothing refused — nothing was ever offered. Compare a read taken by an administrator against one taken by an ordinary user and every item the second could not see reports as missing, which is the most damaging false positive this product could produce. The identity is recorded so a comparison can refuse to make that mistake. Never the token: an identity that travelled with its bearer would put a credential into every archive a report is copied into.",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "application",
+            "delegated",
+            "not-established"
+          ],
+          "description": "From the token's own claims. An application token acts as itself with app roles; a delegated one acts as a person with their scopes AND their effective permissions, which is why two delegated reads by different people are not comparable."
+        },
+        "principal": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who the read acted as, when known. Two reads by different principals see different estates, and the difference does not appear anywhere else in the document."
+        },
+        "scopes": {
+          "type": "array",
+          "uniqueItems": true,
+          "description": "Granted scopes or app roles, values only. A narrower scope set is a narrower estate, and it is visible here rather than inferred from what came back.",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "tenant": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The directory the session was opened in, as the issuer states it. Two reads of different tenants are a move; two reads of the same tenant by different identities are a measurement problem."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "gap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "state"
+      ],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What could not be read. Declared over a container, because that is how reading fails: a folder refuses, not a file at a time."
+        },
+        "state": {
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/absentState"
+        },
+        "detail": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "One item, with whatever this read established about it. Every attribute is optional and absence means the read did not carry it, which a comparison reports as `unknown` rather than treating as equal. A read that omits an attribute for every item is a thinner read than one that carries it, and the comparison says so instead of concluding from silence.",
+      "properties": {
+        "size": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "content_digest": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "A digest of the item's content, or null where it was not hashed. Null is deliberate rather than absent: it distinguishes `we chose not to hash` from `this read does not carry digests at all`."
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who created the item, as the estate reports it. The attribute a move most often rewrites to whatever account performed it, and the loss nobody notices until somebody asks who wrote something."
+        },
+        "versions": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "permissions": {
+          "type": "array",
+          "description": "Principals and roles, as pairs. Sorted by the producer so that two reads of an unchanged item compare equal without the comparison having to know how to order them.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "sharing_links": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

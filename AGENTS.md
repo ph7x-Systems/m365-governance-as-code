@@ -68,12 +68,72 @@ After a release, `./tools/post-release-check.sh` proves the published artefact
 installs from the public index and runs — a release that only built is not a
 release that shipped.
 
-Every commit carries `Signed-off-by` (`tools/dco-check.sh`).
+Every commit carries `Signed-off-by` (`tools/dco-check.sh`), and everything written is English (`tools/language-check.sh`, inside the gate).
+
+## Product policy
+
+Programme-level decisions — purpose, principles, scope, constitutional
+properties and the open-source position — are recorded once, outside this
+repository, and bind it.
+
+**No implementation may define product policy.** A decision about what this
+product is for, who may use it and on what terms, or how it is shaped over
+years, is recorded as a decision before it exists in code. Where this repository's behaviour and that
+record disagree, one of them is a defect and neither may be assumed correct.
 
 ## Language
 
-This repository is public. Everything in it — code, comments, tests,
-documentation, commit messages, branch names — is written in English.
+> **Repository language: English only. All implementation, comments, tests,
+> documentation, operational instructions, commit messages, pull requests, and
+> release text must be in English. Localized product content and verbatim
+> external evidence are the only exceptions.**
+
+That covers source code, comments, tests and test names, exception and error
+messages, CLI output, docs, `README.md`, this file, `docs/NEXT-SLICE.md`,
+architecture documents, schema descriptions, fixtures we wrote, commit
+messages, pull request titles and bodies, release notes, issue text, and any
+comment or metadata our own code generates.
+
+**The two exceptions, and they are narrow.** Content the product is
+deliberately presenting in another language — a localized page, a fixture whose
+purpose is to exercise localization. And verbatim external evidence, where
+changing the text would destroy the proof: an error message a vendor returned
+is quoted as it arrived.
+
+Live conversation between people is not a repository artefact and is not
+covered. The moment something is written into the repository, a commit, a pull
+request or an issue, it is English.
+
+`tools/language-check.sh` catches the obvious regressions. It reads technical
+and operational files and stays away from localized content, because a guard
+that flags legitimate localization is a guard people learn to skip.
+
+### Merging a branch that carries older non-conforming messages
+
+Squash, and write the subject and body explicitly in English. Never accept the
+default text: it concatenates the branch's own messages and drags whatever they
+say onto the main branch.
+
+A merge commit is refused where it would carry non-conforming messages into
+`main`. History already published stays as it is — rewriting a shared branch is
+real risk for no product — and this rule applies from here forward.
+
+## Presentation layers
+
+> **Presentation layers may explain, group, translate or visualize contract
+> values. They may never redefine their meaning or create an alternative
+> semantic model.**
+
+This is a product rule, not a rule of any one repository. It binds the site,
+the desktop product, the reports, every export, every future API and every
+integration. A layer that renames `unknown` to something friendlier on screen
+is explaining; a layer that decides `unknown` may be counted as a pass is
+redefining, and that is the second authority this programme spends its effort
+removing.
+
+Translation is allowed and must be **declared where it happens**, so a reader
+can always recover the contract value behind the word they were shown. A silent
+relabel is a redefinition that nobody has noticed yet.
 
 ## Search scope
 

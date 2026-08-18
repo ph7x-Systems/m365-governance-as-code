@@ -112,6 +112,18 @@ class Slice:
     #: internal error from another language, to somebody with no way to know
     #: they passed the wrong kind of path.
     writes_many: bool = False
+    #: Which Microsoft surface this slice reads, in that surface's own words.
+    #:
+    #: Declared rather than inferred, because nothing else in this repository
+    #: knows it: the PowerShell collector names cmdlets and the Graph reader
+    #: names paths, and a consumer asking "what does this product touch" was
+    #: reading a prose table that nothing kept true.
+    reads: tuple[str, ...] = ()
+    #: Least privilege for this slice, as Microsoft documents it.
+    permissions: tuple[str, ...] = ()
+    #: What a run against a real tenant has established. The vocabulary is the
+    #: matrix's, and this is now where it lives: the document is a projection.
+    live: str = "not live-validated"
     #: Which collector answers this slice: `powershell` or `graph`.
     #:
     #: ONE REGISTRY AND TWO COLLECTORS. The alternative was a second list for
@@ -139,6 +151,9 @@ SLICES = {
             consumed_by="the agent inventory in a report, and any viewer",
             describes="the Copilot agents in one site, and the sources each declares",
             shaped_like="site-agents-with-sources",
+            reads=("Get-PnPWeb", "Get-PnPCopilotAgent"),
+            permissions=(),
+            live="live-validated",
         ),
         Slice(
             "sites",
@@ -149,6 +164,9 @@ SLICES = {
             writes_many=True,
             describes="every site this identity can enumerate",
             shaped_like="site-storage-comfortable",
+            reads=("Get-PnPTenantSite",),
+            permissions=("AllSites.FullControl",),
+            live="fully live-validated",
         ),
         Slice(
             "owners",
@@ -158,6 +176,9 @@ SLICES = {
             profile="ownership",
             describes="who administers one site",
             shaped_like="site-named-and-group-admins",
+            reads=("Get-PnPWeb", "Get-PnPSiteCollectionAdmin"),
+            permissions=(),
+            live="live-validated",
         ),
         Slice(
             "modernity",
@@ -167,6 +188,9 @@ SLICES = {
             profile="modernisation",
             describes="how one site is built: template, branding, publishing",
             shaped_like="site-modern-publishing-on",
+            reads=("Get-PnPWeb", "Get-PnPList", "Get-PnPFeature", "Get-PnPPage"),
+            permissions=(),
+            live="live-validated",
         ),
         Slice(
             "sharing",
@@ -176,6 +200,9 @@ SLICES = {
             profile="sharing",
             describes="what one site permits, and its default link",
             shaped_like="site-sharing-anyone-default-anyone",
+            reads=("Get-PnPWeb", "Get-PnPSite", "Get-PnPTenantSite"),
+            permissions=(),
+            live="live-validated",
         ),
         Slice(
             "tenant-sharing",
@@ -187,6 +214,9 @@ SLICES = {
                 "what the organisation permits, which every site inherits by default"
             ),
             shaped_like="tenant-sharing-default-anyone-and-edit",
+            reads=("Get-PnPTenant",),
+            permissions=(),
+            live="live-validated",
         ),
         Slice(
             "activity",
@@ -196,6 +226,9 @@ SLICES = {
             profile="activity",
             describes="when a person last changed something on one site",
             shaped_like="site-activity-stale",
+            reads=("Get-PnPWeb", "Get-PnPTenantSite"),
+            permissions=(),
+            live="live-validated",
         ),
         Slice(
             "classification",
@@ -209,6 +242,9 @@ SLICES = {
             profile="default",
             describes="what a site records about the kind of content it holds",
             shaped_like="site-class-group-unlabelled",
+            reads=("Get-PnPWeb", "Get-PnPSite"),
+            permissions=(),
+            live="live-validated",
         ),
         Slice(
             "permissions",
@@ -219,6 +255,9 @@ SLICES = {
             writes_many=True,
             describes="every visible list on a site, and its inheritance",
             shaped_like="list-within-limit",
+            reads=("Get-PnPList", "Get-PnPListItem"),
+            permissions=(),
+            live="live-validated",
         ),
         # SpfxCatalog only. The catalog is one call and feeds SPO-SPFX-001;
         # SpfxPages is a second, expensive mode whose evidence no rule reads
@@ -232,6 +271,9 @@ SLICES = {
             profile="spfx",
             describes="a site's app catalog: which solutions lag their version",
             shaped_like="site-spfx-behind",
+            reads=("Get-PnPApp",),
+            permissions=(),
+            live="negative path validated",
         ),
         Slice(
             "conditional-access",
@@ -259,6 +301,13 @@ SLICES = {
                 "Defaults state of one tenant"
             ),
             shaped_like="entra-conditional-access-mfa-for-admins",
+            reads=(
+                "GET /v1.0/identity/conditionalAccess/policies",
+                "GET /v1.0/identity/conditionalAccess/namedLocations",
+                "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy",
+            ),
+            permissions=("Policy.Read.All",),
+            live="provider live-validated, slice not live-validated",
         ),
     ]
 }

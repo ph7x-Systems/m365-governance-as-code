@@ -1,0 +1,54 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0",
+  "read_id": "after-cutover",
+  "taken_at": "2026-03-09T08:30:00Z",
+  "estate": "projects.example (target)",
+  "produced_by": "m365-governance fixture",
+  "coverage": [
+    {
+      "scope": "/Shared Documents/Archive",
+      "state": "permission-denied",
+      "detail": "the reading identity was not granted access to the archive library"
+    }
+  ],
+  "items": {
+    "/Shared Documents/Handover.docx": {
+      "size": 48211,
+      "content_digest": null,
+      "author": "svc-migration@example.test",
+      "versions": 1,
+      "permissions": [
+        [
+          "Project Members",
+          "edit"
+        ],
+        [
+          "Project Owners",
+          "full"
+        ]
+      ],
+      "sharing_links": []
+    },
+    "/Shared Documents/Budget 2025.xlsx": {
+      "size": 120344,
+      "content_digest": null,
+      "author": "m.costa@example.test",
+      "versions": 31,
+      "permissions": [
+        [
+          "Finance",
+          "edit"
+        ]
+      ],
+      "sharing_links": []
+    }
+  },
+  "read_by": {
+    "kind": "delegated",
+    "principal": "an operator",
+    "scopes": [
+      "Files.Read.All",
+      "Sites.Read.All"
+    ]
+  }
+}

@@ -47,6 +47,110 @@ Slice       OPEN
 post-release gate has proven it from there. Only then does `IDENTITY-APPS-001`
 start.
 
+## MIGRATION-VERIFY-001 — what a move actually moved
+
+**State:** contract and comparison landed on `public-manifest-001`; collectors not
+started. Anybody picking this up starts at *What is missing*, in that order.
+
+### What exists
+
+- `migration-read/1.0.0` — the input contract. One read of an estate at one
+  moment: what was found, and what could not be reached.
+- `migration-verification/1.0.0` — the record. Two reads named by digest, the
+  dimensions compared, and one finding per item that did not pass silently.
+- `src/m365_governance/migration.py` — comparison, derived dimensions, the
+  Markdown report, and four coherence rules a schema cannot express.
+- `migration-verify BASELINE VERIFICATION [--out] [--report]` in the CLI.
+- `tests/test_migration.py`, and a synthetic read pair under
+  `data/fixtures/migration/`, classified in the fixture registry.
+
+### The rule the whole slice turns on
+
+**A migration cannot be verified after the fact.** Decommissioning the source is
+the point of the exercise, so a record produced at sign-off has nothing left to
+compare against. Every document names two reads, and a baseline that is not
+earlier than the verification is refused rather than recorded.
+
+### Which source each dimension needs
+
+**Not a decision — a consequence.** Established by running the connector against
+a real estate and reading what came back:
+
+| Dimension | Minimum source |
+|---|---|
+| Presence · Count | a **search** surface |
+| Size · Authorship · Versions · Permissions · Sharing links | **Graph** |
+| Content | a **download**, and nothing weaker: equal size is not equal content |
+
+That table answers *what is the next collector* without anybody choosing. A
+search surface establishes that items exist and how many; every other dimension
+needs a source that carries the attribute.
+
+**And a read declares what its source can never provide.** `unsupported` on a
+read separates two sentences that look identical from the outside: *this API
+never exposes authorship* and *this run did not ask for it*. The first is a
+permanent limit of the method, the second is a fixable gap, and a product that
+renders them the same way reports structural limits as execution failures the
+moment a second connector appears.
+
+### The cost model, measured rather than assumed
+
+| Request | Buys |
+|---|---|
+| one **per page** of a folder listing | size · authorship · content digest |
+| one **per item** | versions |
+| one **per item** | permissions · sharing links |
+
+**Graph cannot expand permissions on a driveItem or a collection of them** — it
+is documented, not a limitation of this client. On a quarter of a million items
+that is a quarter of a million requests, so the expensive two are opt-in and a
+read that did not ask for them records `out-of-scope`, which reads differently
+from a gap.
+
+**The digest is `quickXorHash`**, the only hash Graph guarantees across both
+OneDrive flavours; `sha256Hash` is documented as unsupported. It compares
+against another Graph read and means nothing against a SHA-256 of the same
+bytes, so the read records the algorithm and the comparison refuses to cross
+two.
+
+### What a tenant has confirmed, and what it has not
+
+**Observed, 2026-08-17, through an interactive Microsoft 365 connector against a
+real tenant.** No identifier, drive, path or file name from it is recorded here.
+
+| Confirmed | |
+|---|---|
+| Traversal | an account carries several drives; children are folders or files, and the producer's folder-versus-file branch matches what the service returns |
+| Size | present on real items, as an integer, and it is the shape the producer reads |
+| Scale | one drive returned a total in the hundreds of thousands of items, against a surface that pages fifty at a time. The coverage a read writes for that is not hypothetical |
+
+| Not confirmed, and why |
+|---|
+| **Authorship, digest, versions, permissions.** The connector renders a summary; it does not expose `createdBy`, `file.hashes`, versions or permissions at all. Nothing about those four is established by having looked |
+| **The collector's own path.** The connector is a different surface from `GraphReader`. Confirming a field through one does not establish that the other reads it, and treating it as though it did is the substitution this repository's evidence ranking exists to prevent |
+
+**So `migration-read` still has no positive live read**, and the small drive that
+account carries is the known estate to run it against first.
+
+### What is missing, in order
+
+1. **Live validation** of `migration-read` against a tenant with a Graph token,
+   under the same observation rules as every other collector here. Everything
+   below it is blocked on this.
+2. **Scale.** The enumeration follows the service's own next links, and nothing
+   has yet run it against an estate of the size the connector measured.
+3. **Content across systems.** `quickXorHash` is a Microsoft hash; a move from
+   a file share has nothing to compare it to. That needs a download and a real
+   digest on both sides, and it is deliberately not started.
+4. **Release**: the capability is not shipped until it is installable from the
+   public index.
+
+### What is deliberately not here
+
+No remediation, no ranking, no score. The record never claims something was not
+migrated when it could not be read: that is `unknown`, with the side and the
+reason, and it is the single behaviour the contract exists to protect.
+
 ## PUBLIC-MANIFEST-001 — one published description of what this engine can do
 
 **Accepted 2026-08-17, and it runs before the Identity surface expands further.**

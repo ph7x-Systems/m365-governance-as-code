@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# The gates that must not be discovered after the fact, run before the commit.
+#
+# WHY A HOOK AND NOT A RULE IN A DOCUMENT. A document is read by whoever
+# remembers to read it, and the two failures this repository has actually had
+# -- a commercial phrase in a comment, a private product's name in a docstring
+# -- were both committed by somebody who had read the rule and was thinking
+# about something else. A gate that runs is worth more than a paragraph that
+# is agreed with.
+#
+# WHY IT IS VERSIONED. `.git/hooks` does not travel with a clone, so a hook
+# living there protects one machine and one person. This directory travels, and
+# `git config core.hooksPath .githooks` is a single command in the setup
+# instructions. Any human or any model that clones and follows them inherits
+# the same refusal.
+#
+# WHAT IT DELIBERATELY DOES NOT DO. Run the suite. A hook slow enough to be
+# resented is a hook people pass --no-verify to, and then nothing runs at all.
+# Only the checks that read what is about to become permanent live here; the
+# rest belong to the release gate.
+
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+python="${PH7X_PYTHON:-.venv/bin/python}"
+[ -x "$python" ] || python="$(command -v python3)"
+
+echo "▸ pre-commit"
+
+"$python" -m pytest -q --no-header \
+  "tests/test_decisions.py::test_the_public_repository_explains_the_software_not_the_strategy" \
+  >/dev/null 2>&1 || {
+  echo
+  echo "  Commercial scope. This repository explains the software; who pays"
+  echo "  for it and on what terms lives outside it. Run:"
+  echo
+  echo "    $python -m pytest tests/test_decisions.py -q"
+  echo
+  echo "  A comment, a schema description and a commit message are all public."
+  exit 1
+}
+
+./tools/language-check.sh >/dev/null 2>&1 || {
+  echo
+  echo "  Repository language. Run: ./tools/language-check.sh"
+  exit 1
+}
+
+echo "  ✓ scope, language"

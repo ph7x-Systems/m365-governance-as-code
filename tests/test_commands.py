@@ -669,6 +669,7 @@ def test_the_default_profile_runs_every_rule():
 # the support link, and where it may not appear
 # ---------------------------------------------------------------------------
 
+# public-scope-check: this file names the words it forbids
 SUPPORT = ("buymeacoffee", "buy me a coffee", "sponsor", "donate", "support the")
 
 

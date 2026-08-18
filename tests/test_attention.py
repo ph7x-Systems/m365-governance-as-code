@@ -252,7 +252,7 @@ def test_a_real_run_carries_attention_on_every_result_and_on_itself():
 def test_the_published_rank_orders_a_real_run():
     """Ordering carries governance meaning, so the engine publishes the order.
 
-    The Workbench sorted `fail`, `invalid-evidence`, `unknown`, `pass`,
+    The desktop surface sorted `fail`, `invalid-evidence`, `unknown`, `pass`,
     `not-applicable` in C#, and the CLI never knew about it: two surfaces of
     one product disagreeing about what mattered, each internally consistent.
     """
@@ -297,7 +297,7 @@ def test_the_command_line_no_longer_holds_a_priority_of_its_own():
     """The duplication this step removed, asserted so it cannot come back.
 
     The CLI ordered `fail, invalid-evidence, unknown, error, not-applicable,
-    pass`. The Workbench ordered `fail, invalid-evidence, unknown, pass,
+    pass`. The desktop surface ordered `fail, invalid-evidence, unknown, pass,
     not-applicable`. Both were hand-written, neither knew about the other, and
     they disagreed about where a pass and an engine error belonged.
     """

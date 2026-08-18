@@ -196,7 +196,7 @@ _ATTENTION_LABEL = {
 def _attention_lines(run: Run) -> list[str]:
     """What the engine says needs a person, and why.
 
-    THE SAME SENTENCE THE WORKBENCH SHOWS, from the same field. The two
+    THE SAME SENTENCE THE DESKTOP SURFACE SHOWS, from the same field. The two
     surfaces used to answer this separately — one decided from counts
     that `fail > 0` meant act, and the command line never asked the question at
     all — so a report and a window over one run could lead with different

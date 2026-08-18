@@ -147,13 +147,17 @@ def test_two_facts_are_expressed_as_applicability_plus_condition():
 # public architecture, private strategy
 # ---------------------------------------------------------------------------
 
+# public-scope-check: this file names the words it forbids
 #: What a commercial strategy leaks, and none of it helps somebody using or
 #: contributing to the project today. Published once, it is indexed, quoted and
 #: copied, and a figure written before there is anything to sell becomes a
 #: public promise the product may not want to keep a year later.
 STRATEGY = (
-    r"€\s*\d",
-    r"\$\s*\d",
+    # Two digits or a separator: `$0` and `$1` are shell positional parameters
+    # and a price is never written as a lone digit. The first version flagged
+    # every script in tools/, which is how a guard teaches people to skip it.
+    r"€\s*\d[\d,.]",
+    r"\$\s*\d[\d,.]",
     r"\bpricing\b",
     r"\bperpetual licen[cs]e\b",
     r"\bbuy licen[cs]e\b",
@@ -183,7 +187,30 @@ STRATEGY = (
     r"\bbuy me a coffee\b",
     r"\bsponsor\b",
     r"\bdonate\b",
+    # Who pays and why. Added after a comment reading "the report a buyer
+    # actually reads" and a commit message saying "nobody buys JSON" reached
+    # this repository with every gate green: the vocabulary did not cover them
+    # and the scan did not look at code or at commit messages. Both halves were
+    # the hole.
+    r"\bbuyer\b",
+    r"\bbuyers\b",
+    r"\bwho buys\b",
+    r"\bnobody buys\b",
+    r"\bselling\b",
+    r"\bgo-to-market\b",
+    r"\brevenue\b",
+    r"\bwillingness to pay\b",
+    r"\bARR\b",
 )
+
+#: DELIBERATELY ABSENT, and it is not an oversight. `customer`, `commercial`
+#: and `sell` all have legitimate technical uses here: evidence a customer
+#: receives, the licence's own wording, `no commercial licence is available`.
+#: Forbidding them would fail on correct text, and a guard that fails on
+#: correct text is one people learn to skip. Where a regex cannot separate a
+#: technical use from a strategic one, the reviewer decides and this guard
+#: stays quiet rather than crying wolf.
+AMBIGUOUS_AND_ALLOWED = ("customer", "commercial", "sell")
 
 
 def test_the_public_repository_explains_the_software_not_the_strategy():
@@ -201,13 +228,33 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
     # tree and flagged AGENTS.md, which is excluded and never leaves the
     # machine: a guard that fails on files it does not ship teaches people to
     # ignore it.
-    tracked = subprocess.run(
-        ["git", "ls-files", "*.md", "docs/*.md"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        check=True,
-    ).stdout.split()
+    # EVERYTHING GIT CARRIES, not only the Markdown. The first version scanned
+    # `*.md` because that is where a roadmap would obviously go, and a section
+    # comment inside a module reached the repository untouched. A schema
+    # description ships to every consumer that vendors the bundle; a code
+    # comment is read by everyone who opens the file. Neither is more private
+    # than a document.
+    tracked = [
+        path
+        for path in subprocess.run(
+            ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+        ).stdout.split()
+        if path.rsplit(".", 1)[-1]
+        in ("md", "py", "json", "yaml", "yml", "sh", "ps1", "psm1", "toml", "cs")
+        # Fixtures record what a system returned. They are read, not written.
+        and not path.startswith("src/m365_governance/data/fixtures/")
+    ]
+
+    # A guard has to be able to name what it forbids, and so does a test that
+    # asserts absence. The exemption is a marker inside the file rather than a
+    # list here: a list of exempt paths is edited by whoever is being caught,
+    # and a marker is visible to whoever opens the file.
+    EXEMPT = "public-scope-check: this file names the words it forbids"
+    tracked = [
+        path
+        for path in tracked
+        if EXEMPT not in (ROOT / path).read_text(encoding="utf-8", errors="ignore")
+    ]
 
     # The changelog records what happened, including decisions later reversed.
     # A changelog that cannot say "this was added" because it was afterwards
@@ -222,6 +269,43 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
             for hit in re.finditer(pattern, text, re.IGNORECASE):
                 line = text.count("\n", 0, hit.start()) + 1
                 offenders.append(f"{path.name}:{line} {hit.group(0)!r}")
+    # The commit messages this branch adds. A message is published forever the
+    # moment the branch is, it is quoted in release notes and read on GitHub,
+    # and until today nothing looked at one. Published history stays as it is.
+    base = "origin/main"
+    if (
+        subprocess.run(
+            ["git", "rev-parse", "--verify", "--quiet", base],
+            cwd=ROOT,
+            capture_output=True,
+        ).returncode
+        == 0
+    ):
+        unpublished = subprocess.run(
+            ["git", "rev-list", f"{base}..HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
+        for commit in unpublished:
+            message = subprocess.run(
+                ["git", "log", "-1", "--format=%B", commit],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                check=True,
+            ).stdout
+            # A message describing this guard has to be able to quote it, on
+            # the same terms as a file: the marker is in the message, where a
+            # reader of the log sees it, and not in a list of exempt hashes
+            # that nobody reviews.
+            if EXEMPT in message:
+                continue
+            for pattern in STRATEGY:
+                for hit in re.finditer(pattern, message, re.IGNORECASE):
+                    offenders.append(f"commit {commit[:8]} {hit.group(0)!r}")
+
     assert not offenders, "commercial strategy in the public repository: " + str(
         offenders
     )

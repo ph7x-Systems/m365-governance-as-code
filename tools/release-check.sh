@@ -67,6 +67,12 @@ ruff check src tools tests
 step "ruff format --check"
 ruff format --check src tools tests
 
+# ── 1b. the repository language ──────────────────────────────────────────────
+# English only. Cheap, and it runs beside the other lint rather than at the end,
+# because the cost of finding a whole document in the wrong language after the
+# suite has run is the suite having run.
+./tools/language-check.sh
+
 # ── 2. every rule, all four layers ───────────────────────────────────────────
 # No --rules: the packaged set is what an installed copy uses, so it is what
 # gets validated. Passing the checkout's directory here is how the examples

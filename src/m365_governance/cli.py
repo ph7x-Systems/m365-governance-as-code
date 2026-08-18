@@ -35,11 +35,16 @@ from pathlib import Path
 from . import (
     __version__,
     assessment,
+    canonical,
+    capabilities,
     collecting,
     comparison,
     conditional_access,
     connecting,
     explaining,
+    graph,
+    migration,
+    migration_graph,
     reporting,
 )
 from . import doctor as doctor_module
@@ -125,6 +130,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     collect.add_argument(
         "--dry-run", action="store_true", help="print the command and reach no tenant"
+    )
+
+    caps = sub.add_parser(
+        "capabilities",
+        help="what this engine collects, decides and promises. Reaches no tenant",
+    )
+    caps.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
+    caps.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="json is the published capability-manifest contract",
     )
 
     connect = sub.add_parser(
@@ -256,6 +273,64 @@ def _build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="exit non-zero when any rule left `pass`",
     )
+    reading = sub.add_parser(
+        "migration-read",
+        help="read one estate at one moment, as the input a verification is built from",
+    )
+    reading.add_argument("--drive", required=True, help="the drive to enumerate")
+    reading.add_argument("--folder", default=None, help="an item id to start at")
+    reading.add_argument("--read-id", required=True)
+    reading.add_argument(
+        "--taken-at",
+        required=True,
+        help="when this read was taken, ISO 8601. Supplied rather than read "
+        "from the clock: it decides which side of the move this is",
+    )
+    reading.add_argument(
+        "--estate", required=True, help="what was read, as you name it"
+    )
+    reading.add_argument(
+        "--with-versions",
+        action="store_true",
+        help="one extra request PER ITEM. Without it, version history is out "
+        "of scope for this read rather than missing from it",
+    )
+    reading.add_argument(
+        "--with-permissions",
+        action="store_true",
+        help="one extra request PER ITEM; Graph cannot expand permissions on a "
+        "collection. Also carries sharing links",
+    )
+    reading.add_argument("--out", type=Path, help="write the read here")
+
+    moved = sub.add_parser(
+        "migration-verify",
+        help="what a move actually moved, from a read taken before it and one "
+        "taken after",
+    )
+    moved.add_argument("baseline", type=Path, help="a read taken BEFORE the move")
+    moved.add_argument("verification", type=Path, help="a read taken after it")
+    moved.add_argument("--kind", default="unstated", help="what kind of move it was")
+    moved.add_argument(
+        "--performed-by",
+        default=None,
+        help="what performed the move, so a reader can see it was not us",
+    )
+    moved.add_argument("--out", type=Path, help="write the record here")
+    moved.add_argument(
+        "--report-format",
+        choices=("markdown", "html"),
+        default=None,
+        help="defaults to the report file's own suffix, then markdown",
+    )
+    moved.add_argument(
+        "--report",
+        type=Path,
+        help="write the readable report here. The record is the evidence and "
+        "this is the document; both are delivered and neither replaces the "
+        "other",
+    )
+
     contracts = sub.add_parser(
         "contracts",
         help="write the contract bundle a consumer vendors: schemas, models, "
@@ -309,6 +384,21 @@ def _report_manifest(outcome) -> None:
     """
     if outcome.manifest_path is not None:
         print(f"  the collection is described in {outcome.manifest_path}")
+
+
+def _cmd_capabilities(args) -> int:
+    """What this engine can do, derived from the objects that do it.
+
+    It reaches no tenant and reads no evidence. The JSON form is the published
+    contract a consumer projects; the text form is the same document for
+    somebody reading rather than parsing.
+    """
+    document = capabilities.manifest(args.rules)
+    if args.format == "json":
+        print(json.dumps(document, indent=2, ensure_ascii=False))
+    else:
+        print(capabilities.describe(document), end="")
+    return 0
 
 
 def _cmd_collect(args) -> int:
@@ -862,6 +952,138 @@ def _cmd_assess(args) -> int:
     return 0
 
 
+def _cmd_migration_read(args) -> int:
+    """One estate, one moment, one authenticated session.
+
+    The token is spent, never acquired. Every dimension this read carries comes
+    from the same session: an interactive sign-in per dimension is the mistake
+    this product already measured once, and repeating it here would multiply it
+    by the number of things worth comparing.
+    """
+    token = os.environ.get(migration_graph_token := "M365_GOVERNANCE_GRAPH_TOKEN")
+    if not token:
+        print(
+            f"{migration_graph_token} is not set. This command spends a token "
+            "somebody already holds; it never acquires one.",
+            file=sys.stderr,
+        )
+        return 2
+
+    try:
+        reader = graph.GraphReader(token)
+        document = migration_graph.read(
+            reader,
+            drive=args.drive,
+            folder=args.folder,
+            read_id=args.read_id,
+            taken_at=args.taken_at,
+            estate=args.estate,
+            with_versions=args.with_versions,
+            with_permissions=args.with_permissions,
+        )
+    except (graph.Refused, migration_graph.Unreadable) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_bytes(canonical.encode(document) + b"\n")
+
+    carried = sorted({key for item in document["items"].values() for key in item})
+    print(f"{document['estate']}")
+    print(f"  read          {document['read_id']} ({document['taken_at']})")
+    print(f"  items         {len(document['items'])}")
+    print(f"  carried       {', '.join(carried) or 'identity only'}")
+    if document.get("content_digest_algorithm"):
+        print(f"  digest        {document['content_digest_algorithm']}")
+    for gap in document["coverage"]:
+        print(f"  not read      {gap['scope']} ({gap['state']})")
+    print(f"  digest        {canonical.digest(document)}")
+
+    # Coverage is not failure. A read that states what it could not reach is
+    # doing its job; only an estate nobody could enumerate at all is an error,
+    # and that raised before reaching here.
+    return 0
+
+
+def _cmd_migration_verify(args) -> int:
+    """Two reads in, a verification record out, and refusals said out loud.
+
+    The record is refused rather than produced when the inputs cannot support
+    it — a baseline that is not earlier, or one read handed in twice. Printing
+    a warning and continuing would put the operator's mistake inside a document
+    that then travels as evidence.
+    """
+    reads = []
+    # `which` is not read: the pair exists so the two sides are walked in a
+    # fixed order, and the name documents which is which at the call site.
+    for _which, path in (
+        ("baseline", args.baseline),
+        ("verification", args.verification),
+    ):
+        document = load_evidence(path).data
+        if document.get("$schema") != migration.read_contract():
+            print(
+                f"{path}: not a migration read. It must declare "
+                f"{migration.read_contract()}",
+                file=sys.stderr,
+            )
+            return 2
+        reads.append(document)
+
+    move = {"kind": args.kind, "produced_by": f"m365-governance {__version__}"}
+    if args.performed_by:
+        move["performed_by"] = args.performed_by
+
+    try:
+        document = migration.record(baseline=reads[0], verification=reads[1], move=move)
+    except migration.Unverifiable as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    if args.out:
+        args.out.parent.mkdir(parents=True, exist_ok=True)
+        args.out.write_bytes(canonical.encode(document) + b"\n")
+    if args.report:
+        fmt = args.report_format or (
+            "html" if args.report.suffix.lower() in (".html", ".htm") else "markdown"
+        )
+        args.report.parent.mkdir(parents=True, exist_ok=True)
+        args.report.write_text(migration.report(document, fmt), encoding="utf-8")
+
+    compared = [d["name"] for d in document["dimensions"] if d["state"] == "compared"]
+    skipped = [d for d in document["dimensions"] if d["state"] != "compared"]
+    counts: dict[str, int] = {}
+    for finding in document["findings"]:
+        counts[finding["outcome"]] = counts.get(finding["outcome"], 0) + 1
+
+    print(f"{document['baseline']['estate']}")
+    print(
+        f"  baseline      {document['baseline']['read_id']} "
+        f"({document['baseline']['taken_at']})"
+    )
+    print(
+        f"  verification  {document['verification']['read_id']} "
+        f"({document['verification']['taken_at']})"
+    )
+    print(f"  compared      {', '.join(compared)}")
+    for entry in skipped:
+        print(f"  not compared  {entry['name']}: {entry['reason']}")
+    for gap in document["baseline"]["coverage"] + document["verification"]["coverage"]:
+        print(f"  not read      {gap['scope']} ({gap['state']})")
+    if not document["findings"]:
+        print("  nothing to report, within the coverage above")
+    for outcome in ("fail", "unknown", "invalid-evidence"):
+        if counts.get(outcome):
+            print(f"  {outcome:<13} {counts[outcome]}")
+    print(f"  digest        {migration.digest(document)}")
+
+    # `unknown` is not a failure and does not become one here. An operator who
+    # could not read half the estate has a coverage problem, not a migration
+    # problem, and conflating them is what this whole contract refuses.
+    return 1 if counts.get("fail") or counts.get("invalid-evidence") else 0
+
+
 def _cmd_verify(args) -> int:
     """What is wrong with an assessment that arrived, or nothing.
 
@@ -1047,6 +1269,7 @@ def _cmd_contracts(args) -> int:
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
+    "capabilities": _cmd_capabilities,
     "collect": _cmd_collect,
     "connect": _cmd_connect,
     "explain": _cmd_explain,
@@ -1056,6 +1279,8 @@ _COMMANDS = {
     "evaluate": _cmd_evaluate,
     "assess": _cmd_assess,
     "verify": _cmd_verify,
+    "migration-read": _cmd_migration_read,
+    "migration-verify": _cmd_migration_verify,
     "report": _cmd_report,
     "diff": _cmd_diff,
     "contracts": _cmd_contracts,

@@ -225,7 +225,7 @@ def test_the_model_carries_the_whole_result_on_each_side():
 
 
 def test_the_diff_resource_has_the_same_shape_as_every_other():
-    """Found by the Workbench refusing to parse it. A resource reference
+    """Found by the desktop surface refusing to parse it. A resource reference
     without a type is not one, and emitting a narrower shape here would make
     the diff the only document a consumer has to special-case."""
     from m365_governance import diffing
@@ -248,3 +248,182 @@ def test_a_result_carries_the_rules_own_name():
     result = evaluate_rule(rule("SPO-SHARE-003"), evidence("tenant-sharing-mitigated"))
     assert result.title == "The organisation default sharing link should not be Anyone"
     assert result.to_dict()["title"] == result.title
+
+
+# ── the migration commands ───────────────────────────────────────────────────
+#
+# `migration-verify` was the largest untested block in this module: sixty-eight
+# lines that load two reads, refuse the ones that cannot support a record, and
+# decide the exit code. The exit code is the part that matters most, because it
+# is what a pipeline acts on — and the rule it encodes is the one this whole
+# contract exists for: `unknown` is not a failure. An operator who could not
+# read half the estate has a coverage problem, not a migration problem.
+
+
+def _read(tmp_path, name, *, taken_at, items, coverage=None):
+    """A migration read on disk, as the command expects to find one."""
+    from m365_governance import migration
+
+    document = {
+        "$schema": migration.read_contract(),
+        "read_id": name,
+        "taken_at": taken_at,
+        "estate": "contoso-projects",
+        "produced_by": "m365-governance 0.1.0",
+        "coverage": coverage or [],
+        "items": items,
+        "read_by": {
+            "kind": "delegated",
+            "principal": "an operator",
+            "scopes": ["Files.Read.All"],
+        },
+    }
+    path = tmp_path / f"{name}.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    return path
+
+
+PLAN = "/Shared Documents/plan.xlsx"
+
+
+def test_migration_verify_reports_nothing_when_the_move_carried_everything(
+    capsys, tmp_path
+):
+    before = _read(
+        tmp_path,
+        "baseline",
+        taken_at="2026-03-01T09:00:00Z",
+        items={PLAN: {"size": 12}},
+    )
+    after = _read(
+        tmp_path,
+        "verification",
+        taken_at="2026-03-08T09:00:00Z",
+        items={PLAN: {"size": 12}},
+    )
+    code, out, _ = run(
+        capsys,
+        "migration-verify",
+        str(before),
+        str(after),
+        "--kind",
+        "tenant-to-tenant",
+    )
+    # ZERO, and `unknown` is why this test exists. Both sides carry a size and
+    # nothing else, so content was never established: the record says `unknown`
+    # rather than `pass`, and the exit code is still zero. A size that matches
+    # does not prove a file that matches, and an unknown is not a failed
+    # migration; it is a thin read.
+    assert code == 0
+    assert "contoso-projects" in out
+    assert "unknown" in out
+    assert "fail" not in out
+    assert "digest" in out
+
+
+def test_migration_verify_exits_one_when_something_did_not_arrive(capsys, tmp_path):
+    before = _read(
+        tmp_path,
+        "baseline",
+        taken_at="2026-03-01T09:00:00Z",
+        items={PLAN: {"size": 12}},
+    )
+    after = _read(tmp_path, "verification", taken_at="2026-03-08T09:00:00Z", items={})
+    code, out, _ = run(
+        capsys,
+        "migration-verify",
+        str(before),
+        str(after),
+        "--kind",
+        "tenant-to-tenant",
+    )
+    assert code == 1
+    assert "fail" in out
+
+
+def test_migration_verify_refuses_a_document_that_is_not_a_read(capsys, tmp_path):
+    """A wrong file is refused by CONTRACT, not by guessing at its shape."""
+    stranger = tmp_path / "strange.json"
+    stranger.write_text(
+        json.dumps({"$schema": "https://example.test/other"}), encoding="utf-8"
+    )
+    other = _read(tmp_path, "verification", taken_at="2026-03-08T09:00:00Z", items={})
+    code, _, err = run(
+        capsys, "migration-verify", str(stranger), str(other), "--kind", "t"
+    )
+    assert code == 2
+    assert "not a migration read" in err
+
+
+def test_migration_verify_refuses_a_baseline_that_is_not_earlier(capsys, tmp_path):
+    """The refusal is the product. A record built from a baseline taken after
+    the verification would travel as evidence of a move it cannot describe."""
+    before = _read(tmp_path, "baseline", taken_at="2026-03-08T09:00:00Z", items={})
+    after = _read(tmp_path, "verification", taken_at="2026-03-01T09:00:00Z", items={})
+    code, _, err = run(
+        capsys, "migration-verify", str(before), str(after), "--kind", "t"
+    )
+    assert code == 1
+    assert err.strip()
+
+
+def test_migration_verify_writes_the_record_and_a_report(capsys, tmp_path):
+    before = _read(
+        tmp_path,
+        "baseline",
+        taken_at="2026-03-01T09:00:00Z",
+        items={PLAN: {"size": 12}},
+    )
+    after = _read(
+        tmp_path,
+        "verification",
+        taken_at="2026-03-08T09:00:00Z",
+        items={PLAN: {"size": 12}},
+    )
+    record_path = tmp_path / "out" / "record.json"
+    report_path = tmp_path / "out" / "report.html"
+    code, _, _ = run(
+        capsys,
+        "migration-verify",
+        str(before),
+        str(after),
+        "--kind",
+        "tenant-to-tenant",
+        "--performed-by",
+        "a migration tool",
+        "--out",
+        str(record_path),
+        "--report",
+        str(report_path),
+    )
+    assert code == 0
+    written = json.loads(record_path.read_text())
+    assert written["move"]["performed_by"] == "a migration tool"
+    # The extension chooses the format: an `.html` that came out as Markdown
+    # would be a file that opens in a browser and shows its own source.
+    assert report_path.read_text().lstrip().startswith("<")
+
+
+def test_migration_verify_says_what_could_not_be_read(capsys, tmp_path):
+    """A gap is not a failure, and the exit code says so: the operator has a
+    coverage problem, and conflating the two is what this contract refuses."""
+    gap = [{"scope": "/Shared Documents/Archive", "state": "permission-denied"}]
+    before = _read(
+        tmp_path,
+        "baseline",
+        taken_at="2026-03-01T09:00:00Z",
+        items={PLAN: {"size": 12}},
+        coverage=gap,
+    )
+    after = _read(
+        tmp_path,
+        "verification",
+        taken_at="2026-03-08T09:00:00Z",
+        items={PLAN: {"size": 12}},
+    )
+    code, out, _ = run(
+        capsys, "migration-verify", str(before), str(after), "--kind", "t"
+    )
+    assert code == 0
+    assert "not read" in out
+    assert "permission-denied" in out
