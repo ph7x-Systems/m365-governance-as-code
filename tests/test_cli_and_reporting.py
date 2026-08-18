@@ -427,3 +427,118 @@ def test_migration_verify_says_what_could_not_be_read(capsys, tmp_path):
     assert code == 0
     assert "not read" in out
     assert "permission-denied" in out
+
+
+def test_a_read_written_to_disk_is_consumed_by_verify_without_editing(capsys, tmp_path):
+    """THE PIPE, END TO END, THROUGH THE COMMANDS.
+
+    `migration-read --out` writes an artefact and `migration-verify` reads two
+    of them. Both halves are tested on their own; what was never tested is
+    that they agree about the file, and that is the join where a pipe breaks
+    silently. A read whose output needs a human to reshape it before the next
+    command accepts it is not a pipeline, it is two tools.
+
+    The read is produced through the library with a stated transport rather
+    than against Graph, because a test that needs a tenant is not a test. What
+    is real here is the file on disk and the command that consumes it.
+    """
+    import base64
+    import json as _json
+
+    from m365_governance import migration_graph
+    from m365_governance.graph import GraphReader
+
+    token = (
+        "eyJhbGciOiJub25lIn0."
+        + base64.urlsafe_b64encode(
+            _json.dumps({"tid": "t", "aud": "https://graph.microsoft.com"}).encode()
+        )
+        .decode()
+        .rstrip("=")
+        + "."
+    )
+
+    def transport_for(answers):
+        def transport(url, _token):
+            for suffix, body in answers.items():
+                if url.endswith(suffix):
+                    return 200, _json.dumps(body), {}
+            raise AssertionError(url)
+
+        return transport
+
+    plan = {
+        "id": "1",
+        "name": "plan.xlsx",
+        "size": 4096,
+        "file": {"hashes": {"quickXorHash": "AAAA"}},
+        "createdBy": {"user": {"displayName": "a.pereira@example.test"}},
+    }
+    # The item nobody has touched since 1984 travels the whole pipe, and the
+    # report must not carry it as a difference.
+    ancient = {
+        "id": "2",
+        "name": "index.js",
+        "size": 512,
+        "lastModifiedDateTime": "1984-06-22T21:50:00Z",
+        "file": {"hashes": {"quickXorHash": "BBBB"}},
+        "createdBy": {"user": {"displayName": "a.pereira@example.test"}},
+    }
+
+    def read(items, read_id, taken_at):
+        return migration_graph.read(
+            GraphReader(
+                token, transport=transport_for({"/root/children": {"value": items}})
+            ),
+            drive="d",
+            read_id=read_id,
+            taken_at=taken_at,
+            estate="contoso-projects",
+        )
+
+    before = tmp_path / "baseline.json"
+    after = tmp_path / "verification.json"
+    before.write_text(
+        _json.dumps(read([plan, ancient], "baseline-001", "2026-07-04T06:10:22Z")),
+        encoding="utf-8",
+    )
+    # plan.xlsx did not arrive; the 1984 file did.
+    after.write_text(
+        _json.dumps(read([ancient], "verification-001", "2026-08-11T05:58:41Z")),
+        encoding="utf-8",
+    )
+
+    record_path = tmp_path / "out" / "record.json"
+    report_path = tmp_path / "out" / "report.md"
+    code, out, _ = run(
+        capsys,
+        "migration-verify",
+        str(before),
+        str(after),
+        "--kind",
+        "tenant-to-tenant",
+        "--out",
+        str(record_path),
+        "--report",
+        str(report_path),
+    )
+
+    # One item lost and a count that moved with it: exit 1, because a pipeline
+    # acts on that.
+    assert code == 1
+    record = _json.loads(record_path.read_text())
+    lost = {
+        (f["item"], f["dimension"])
+        for f in record["findings"]
+        if f["outcome"] == "fail"
+    }
+    assert ("/plan.xlsx", "presence") in lost
+    assert not any(f["item"] == "/index.js" for f in record["findings"]), (
+        "the 1984 item became a finding: something in the pipe reads age"
+    )
+    report = report_path.read_text()
+    assert "contoso-projects" in report
+    assert "%" not in report.split("## Differences established")[0], (
+        "a percentage reached the summary, which this contract refuses"
+    )
+    assert "digest" in out
