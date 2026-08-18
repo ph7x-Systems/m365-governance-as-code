@@ -401,10 +401,68 @@ def test_the_two_classification_rules_are_not_duplicates():
     # A string satisfies one and says nothing to the other.
     assert engine._evaluate(one, legacy).outcome.value == "pass"
 
-    # And where they do coincide, the message says what the second one adds,
-    # so a reader seeing two findings knows why there are two.
+    # And where they do coincide, the finding says what the second one adds in
+    # one sentence. It carried the whole comparison for a while, which made it
+    # the longest line in a real report and taught the rule catalogue inside a
+    # finding: a finding says what is wrong and why it matters.
     both = _load("site-class-group-unlabelled")
     assert engine._evaluate(one, both).outcome.value == "fail"
     result = engine._evaluate(three, both)
     assert result.outcome.value == "fail"
-    assert "SPO-CLASS-001" in result.message
+    assert "does not pin a group" in result.message
+    assert len(result.message) < 300, "the finding is teaching again"
+
+
+def test_every_visible_line_earns_the_attention_it_asks_for():
+    """Four of nine printed lines used to say `not this`.
+
+    A `not-applicable` is not a finding, and it was printed like one: a full
+    paragraph, beside the paragraphs that said what was wrong. Some of them
+    earn a line, because they hand the question to a neighbour and without that
+    a reader wonders why a question they can see three rules for appears once.
+    That hand-off is all they add here, so it is all that prints; the reasoning
+    stays in the rule and in `explain`.
+    """
+    from m365_governance import engine
+    from m365_governance.loader import load_rules
+    from m365_governance.reporting import many_to_markdown
+    from m365_governance.results import RunSet
+
+    rules = [r.data for r in load_rules(packaged("rules"))]
+    unlabelled = _load("site-class-group-unlabelled")
+    rendered = many_to_markdown(
+        RunSet([engine.evaluate(rules, unlabelled, only_collected=True)])
+    )
+
+    # The one that hands the question over is one line, and names where it went.
+    assert "SPO-CLASS-002 — covered by SPO-CLASS-001." in rendered
+    assert "there is nothing to resolve" not in rendered, (
+        "the not-applicable paragraph is printing again"
+    )
+
+    # A `not-applicable` that names nobody says nothing, and does not print.
+    for result in engine.evaluate(rules, unlabelled, only_collected=True).results:
+        if (
+            result.outcome.value == "not-applicable"
+            and "CLASS-00" not in result.message
+        ):
+            assert result.rule_id not in rendered, result.rule_id
+
+
+def test_the_heading_does_not_repeat_a_class_the_classifier_does_not_know():
+    """`unknown` on every heading of a site-only report fills a line and never
+    varies. It was labelled so it could not be read as an outcome; labelling a
+    constant does not make it inform."""
+    from m365_governance import engine
+    from m365_governance.loader import load_rules
+    from m365_governance.reporting import many_to_html, many_to_markdown
+    from m365_governance.results import RunSet
+
+    rules = [r.data for r in load_rules(packaged("rules"))]
+    run = engine.evaluate(
+        rules, _load("site-class-group-unlabelled"), only_collected=True
+    )
+    assert run.resource_class == "unknown", "the fixture stopped being the case"
+
+    for rendered in (many_to_markdown(RunSet([run])), many_to_html(RunSet([run]))):
+        assert "kind: unknown" not in rendered

@@ -81,11 +81,8 @@ outcomes:
     message: >
       This site is connected to a Microsoft 365 group and carries no
       sensitivity label. Privacy and external user access rest on the settings
-      of the group itself, and nothing pins them. Where SPO-CLASS-001 also
-      reports, the two are asking different questions: that one asks whether
-      anything on the site records what it holds, and a classification string
-      answers it. A string cannot pin a group's privacy or its guest access,
-      so it does not answer this.
+      of the group itself, and nothing pins them. A classification string does not
+      pin a group's access.
   unknown:
     message: >
       Whether this group-connected site carries a sensitivity label was not

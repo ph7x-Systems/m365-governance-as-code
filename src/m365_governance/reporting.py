@@ -11,6 +11,7 @@ absence of an answer.
 from __future__ import annotations
 
 import json
+import re
 
 from . import attention
 from . import identity as identity_module
@@ -577,6 +578,34 @@ def _all_settled(runs) -> str:
     return f"{len(runs)} resources, nothing to read: {detail}."
 
 
+#: A rule identifier as it appears inside a message, so a `not-applicable`
+#: that hands the question to a neighbour can be recognised without the
+#: renderer knowing the rule catalogue.
+_NAMES_A_RULE = re.compile(r"\b[A-Z][A-Z0-9]{1,5}-[A-Z]+-\d{3}\b")
+
+
+def _covered_by(result) -> str | None:
+    """The rule a `not-applicable` hands the question to, when it names one.
+
+    A NOT-APPLICABLE IS NOT A FINDING, AND IT WAS PRINTED LIKE ONE. On a real
+    single-site report four of the nine printed lines were rules explaining
+    that they had nothing to say, in full paragraphs, beside four that said
+    what was wrong. A reader scanning for what to do read four `not this`.
+
+    Some of them earn their line: SPO-CLASS-002 says the label question belongs
+    to SPO-CLASS-001, and without it somebody wonders why a question they can
+    see three rules for appears once. That is the whole of what those messages
+    add here, so that is all this prints. The reasoning stays in the rule and
+    in `explain`, which is where somebody asking goes.
+    """
+    if result.outcome is not Outcome.NOT_APPLICABLE:
+        return None
+    named = [
+        name for name in _NAMES_A_RULE.findall(result.message) if name != result.rule_id
+    ]
+    return named[0] if named else None
+
+
 def many_to_markdown(value: list[Run] | RunSet) -> str:
     """One report over many documents, with the set-aside ones at the end."""
     run_set = value if isinstance(value, RunSet) else RunSet(value)
@@ -663,11 +692,26 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
             continue
         for run in interesting:
             name = identity_module.label(run.resource)
-            klass = f" · kind: {run.resource_class}" if run.resource_class else ""
+            # `unknown` is the classifier saying it does not know, and printing
+            # that on every heading of a site-only report fills a line
+            # without ever varying.
+            klass = (
+                f" · kind: {run.resource_class}"
+                if run.resource_class and run.resource_class != "unknown"
+                else ""
+            )
             lines.append(f"### {_esc_md(name)}{klass}")
             lines.append("")
             for result in run.results:
                 if result.outcome is Outcome.PASS:
+                    continue
+                if result.outcome is Outcome.NOT_APPLICABLE:
+                    covered = _covered_by(result)
+                    if covered:
+                        lines.append(
+                            f"- **{_LABEL[result.outcome]}** · {result.rule_id} "
+                            f"— covered by {covered}."
+                        )
                     continue
                 lines.append(
                     f"- **{_LABEL[result.outcome]}** · {result.rule_id} "
@@ -784,7 +828,14 @@ def many_to_html(value: list[Run] | RunSet) -> str:
             continue
         for run in interesting:
             name = identity_module.label(run.resource)
-            klass = f" · kind: {run.resource_class}" if run.resource_class else ""
+            # `unknown` is the classifier saying it does not know, and printing
+            # that on every heading of a site-only report fills a line
+            # without ever varying.
+            klass = (
+                f" · kind: {run.resource_class}"
+                if run.resource_class and run.resource_class != "unknown"
+                else ""
+            )
             parts.append(f"<h3>{_esc(name)}{_esc(klass)}</h3>")
             for result in run.results:
                 if result.outcome is Outcome.PASS:
