@@ -542,6 +542,41 @@ def _class_lines(runs: list[Run]) -> list[str]:
     return lines
 
 
+def _needs_a_look(run) -> bool:
+    """Whether this resource has anything a person has to read.
+
+    IT ASKED "IS ANY RESULT NOT A PASS", AND THAT IS NOT THE SAME QUESTION.
+    A `not-applicable` is not a finding: the rule did not speak about this
+    resource, which is less to act on than a pass, and the report printed every
+    one of them in full. Measured on a real tenant the day SPO-SITE-003 started
+    answering `not-applicable` where it had answered `pass`: the same 53 sites
+    went from one line, `53 resources, nothing but passes`, to 279 lines of the
+    identical paragraph. Making a rule more honest made the document ten times
+    worse.
+
+    `attention` already owns this judgement and puts both outcomes in
+    `settled`. Restating it here would make the report a second authority on
+    what deserves reading, which is the thing that module exists to prevent.
+    """
+    return any(
+        attention.STATE_OF_TIER[
+            attention.TIERS[attention.rank_of_outcome(r.outcome.value)]
+        ]
+        != "none"
+        for r in run.results
+    )
+
+
+def _all_settled(runs) -> str:
+    """What to say when nothing in a group needs reading."""
+    counted: dict[str, int] = {}
+    for run in runs:
+        for result in run.results:
+            counted[result.outcome.value] = counted.get(result.outcome.value, 0) + 1
+    detail = ", ".join(f"{n} {name}" for name, n in sorted(counted.items()))
+    return f"{len(runs)} resources, nothing to read: {detail}."
+
+
 def many_to_markdown(value: list[Run] | RunSet) -> str:
     """One report over many documents, with the set-aside ones at the end."""
     run_set = value if isinstance(value, RunSet) else RunSet(value)
@@ -611,11 +646,7 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
         ("Findings", [r for r in runs if not r.set_aside]),
         ("Set aside by profile", [r for r in runs if r.set_aside]),
     ):
-        interesting = [
-            run
-            for run in selected
-            if any(r.outcome is not Outcome.PASS for r in run.results)
-        ]
+        interesting = [run for run in selected if _needs_a_look(run)]
         if not selected:
             continue
         lines.append(f"## {heading}")
@@ -627,7 +658,7 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
             )
             lines.append("")
         if not interesting:
-            lines.append(f"{len(selected)} resources, nothing but passes.")
+            lines.append(_all_settled(selected))
             lines.append("")
             continue
         for run in interesting:
@@ -747,13 +778,9 @@ def many_to_html(value: list[Run] | RunSet) -> str:
                 "was removed, and a finding here counts the same as one above "
                 "it.</p>"
             )
-        interesting = [
-            run
-            for run in selected
-            if any(r.outcome is not Outcome.PASS for r in run.results)
-        ]
+        interesting = [run for run in selected if _needs_a_look(run)]
         if not interesting:
-            parts.append(f"<p>{len(selected)} resources, nothing but passes.</p>")
+            parts.append(f"<p>{_esc(_all_settled(selected))}</p>")
             continue
         for run in interesting:
             name = identity_module.label(run.resource)
