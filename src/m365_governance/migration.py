@@ -216,17 +216,23 @@ def _same_eyes_rule(document: dict) -> list[str]:
 
     problems = []
     if before.get("principal") != after.get("principal"):
+        # The two names come out first. Splitting a replacement field across
+        # lines inside an f-string is 3.12 syntax, and this package supports
+        # 3.11: written that way the module did not parse there at all.
+        um = before.get("principal") or "an unnamed identity"
+        outro = after.get("principal") or "an unnamed identity"
         problems.append(
-            f"the baseline was read as {before.get('principal') or 'an unnamed '
-            'identity'} and the verification as {after.get('principal') or 'an '
-            'unnamed identity'}. What one identity cannot see is absent rather "
-            "than refused, so every missing item here may be a permission "
-            "difference wearing the clothes of a loss"
+            f"the baseline was read as {um} and the verification as {outro}. "
+            "What one identity cannot see is absent rather than refused, so "
+            "every missing item here may be a permission difference wearing "
+            "the clothes of a loss"
         )
     if sorted(before.get("scopes", [])) != sorted(after.get("scopes", [])):
         problems.append(
             "the two reads were taken with different scopes ("
-            + ", ".join(sorted(set(before.get("scopes", [])) ^ set(after.get("scopes", []))))
+            + ", ".join(
+                sorted(set(before.get("scopes", [])) ^ set(after.get("scopes", [])))
+            )
             + "), so they did not have the same estate available to them"
         )
     return problems
@@ -505,7 +511,9 @@ def _count(baseline: dict, verification: dict) -> list[dict]:
     ]
 
 
-def compare(*, baseline: dict, verification: dict, dimensions: list[dict]) -> list[dict]:
+def compare(
+    *, baseline: dict, verification: dict, dimensions: list[dict]
+) -> list[dict]:
     """Findings for every declared dimension, and none for any other.
 
     A dimension declared `not-compared` produces nothing, which is the only
@@ -590,7 +598,11 @@ def dimensions_for(baseline: dict, verification: dict) -> list[dict]:
         verification.get("content_digest_algorithm"),
     }
 
-    if "content" not in unsupported and carried("content_digest") and len(algorithms) > 1:
+    if (
+        "content" not in unsupported
+        and carried("content_digest")
+        and len(algorithms) > 1
+    ):
         dimensions.append(
             {
                 "name": "content",
@@ -971,10 +983,18 @@ def _html(lines: list[str], title: str) -> str:
         head, *body = [row for row in table if not set(row.strip()) <= {"|", "-", " "}]
         cells = lambda row, tag: (  # noqa: E731
             "<tr>"
-            + "".join(f"<{tag}>{_inline(c.strip())}</{tag}>" for c in row.strip("|").split("|"))
+            + "".join(
+                f"<{tag}>{_inline(c.strip())}</{tag}>"
+                for c in row.strip("|").split("|")
+            )
             + "</tr>"
         )
-        out.append("<table>" + cells(head, "th") + "".join(cells(r, "td") for r in body) + "</table>")
+        out.append(
+            "<table>"
+            + cells(head, "th")
+            + "".join(cells(r, "td") for r in body)
+            + "</table>"
+        )
         table.clear()
 
     def close_list() -> None:

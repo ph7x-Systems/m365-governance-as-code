@@ -10,8 +10,8 @@ weighed.
 from __future__ import annotations
 
 import pytest
-from conftest import SCHEMAS
 
+from conftest import SCHEMAS
 from m365_governance import canonical, migration, registry
 
 
@@ -593,7 +593,9 @@ def test_digests_present_produce_a_digest_comparison():
 def test_permissions_in_a_different_order_are_not_a_change():
     """The same two grants, reordered by the move. Noise, and expensive noise."""
     findings = migration.compare(
-        baseline=side({PLAN: {"permissions": [["Owners", "full"], ["Members", "edit"]]}}),
+        baseline=side(
+            {PLAN: {"permissions": [["Owners", "full"], ["Members", "edit"]]}}
+        ),
         verification=side(
             {PLAN: {"permissions": [["Members", "edit"], ["Owners", "full"]]}}
         ),
@@ -641,7 +643,9 @@ def test_the_fixture_pair_produces_a_record_that_verifies(schemas):
     assert ("Handover.docx", "permissions") not in outcomes
     # Nothing anywhere claims content matched.
     assert all(
-        f["outcome"] != "pass" for f in document["findings"] if f["dimension"] == "content"
+        f["outcome"] != "pass"
+        for f in document["findings"]
+        if f["dimension"] == "content"
     )
 
 
@@ -695,7 +699,8 @@ def test_what_could_not_be_read_is_a_section_and_not_a_footnote(delivered):
     text = migration.report(delivered)
     assert "the reading identity was refused" in text
     assert "not established for these items" in text.replace(
-        "Compared, but not established for these items", "not established for these items"
+        "Compared, but not established for these items",
+        "not established for these items",
     )
 
 
@@ -897,7 +902,8 @@ def test_two_reads_by_different_people_are_refused(schemas):
 
 def test_two_reads_with_different_scopes_are_refused(schemas):
     narrower = record(
-        baseline=BEFORE | {"read_by": eyes(scopes=["Files.Read.All", "Sites.Read.All"])},
+        baseline=BEFORE
+        | {"read_by": eyes(scopes=["Files.Read.All", "Sites.Read.All"])},
         verification=AFTER | {"read_by": eyes(scopes=["Files.Read.All"])},
     )
     problems = migration.verify(narrower, schemas=schemas)
@@ -953,7 +959,11 @@ def test_an_estate_cannot_inject_markup_through_its_own_file_names(schemas):
         baseline=dict(observed, read_id="a", taken_at="2026-03-01T09:00:00Z",
                       estate="e", produced_by="p"),
         verification=dict(
-            {"items": {}, "coverage": [], "read_by": {"kind": "delegated", "scopes": []}},
+            {
+                "items": {},
+                "coverage": [],
+                "read_by": {"kind": "delegated", "scopes": []},
+            },
             read_id="b", taken_at="2026-03-09T09:00:00Z", estate="e", produced_by="p",
         ),
         move={"kind": "t", "produced_by": "test"},

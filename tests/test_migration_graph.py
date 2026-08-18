@@ -14,8 +14,8 @@ from __future__ import annotations
 import json
 
 import pytest
-from conftest import SCHEMAS
 
+from conftest import SCHEMAS
 from m365_governance import migration, migration_graph, registry
 from m365_governance.graph import GraphReader
 
@@ -188,7 +188,9 @@ def test_grants_are_sorted_so_two_unchanged_reads_compare_equal():
 
     reads = [
         migration_graph.read(
-            reader_for({"/root/children": {"value": [FILE]}, "/items/1/permissions": order}),
+            reader_for(
+                {"/root/children": {"value": [FILE]}, "/items/1/permissions": order}
+            ),
             drive="d", read_id="r", taken_at="2026-03-01T09:00:00Z", estate="e",
             with_permissions=True,
         )
@@ -367,7 +369,8 @@ def test_a_throttled_read_is_retried_and_then_reported():
 
     def transport(url: str, token: str):
         attempts["n"] += 1
-        return 429, json.dumps({"error": {"message": "slow down"}}), {"Retry-After": "0"}
+        corpo = json.dumps({"error": {"message": "slow down"}})
+        return 429, corpo, {"Retry-After": "0"}
 
     reader = GraphReader(TOKEN, transport=transport, sleep=lambda _: None)
     with pytest.raises(migration_graph.Unreadable):

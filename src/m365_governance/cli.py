@@ -287,7 +287,9 @@ def _build_parser() -> argparse.ArgumentParser:
         help="when this read was taken, ISO 8601. Supplied rather than read "
         "from the clock: it decides which side of the move this is",
     )
-    reading.add_argument("--estate", required=True, help="what was read, as you name it")
+    reading.add_argument(
+        "--estate", required=True, help="what was read, as you name it"
+    )
     reading.add_argument(
         "--with-versions",
         action="store_true",
@@ -1016,7 +1018,12 @@ def _cmd_migration_verify(args) -> int:
     that then travels as evidence.
     """
     reads = []
-    for which, path in (("baseline", args.baseline), ("verification", args.verification)):
+    # `which` is not read: the pair exists so the two sides are walked in a
+    # fixed order, and the name documents which is which at the call site.
+    for _which, path in (
+        ("baseline", args.baseline),
+        ("verification", args.verification),
+    ):
         document = load_evidence(path).data
         if document.get("$schema") != migration.read_contract():
             print(
