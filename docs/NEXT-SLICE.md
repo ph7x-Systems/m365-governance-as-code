@@ -129,6 +129,20 @@ real tenant.** No identifier, drive, path or file name from it is recorded here.
 | **Authorship, digest, versions, permissions.** The connector renders a summary; it does not expose `createdBy`, `file.hashes`, versions or permissions at all. Nothing about those four is established by having looked |
 | **The collector's own path.** The connector is a different surface from `GraphReader`. Confirming a field through one does not establish that the other reads it, and treating it as though it did is the substitution this repository's evidence ranking exists to prevent |
 
+**Observed again, 2026-08-18, same surface, same discipline.** Three facts the
+first observation did not carry, and none of them changes what is confirmed
+above:
+
+| What a real estate holds that no fixture models | |
+|---|---|
+| Pre-platform timestamps | items whose `lastModifiedDateTime` is 1984 and 1985, decades before the platform existed. They are a package manager's deterministic timestamps, preserved through upload. A read that reasons about item age has to survive dates that predate the service, and the fixture corpus contains nothing older than the project |
+| Depth and repetition | seventeen path segments, 215 characters, with `node_modules` nested inside `node_modules`. Well inside the producer's 64-level guard, which is now a measured margin rather than a chosen number |
+| Scale, again | 24,129 items answered a single search term on one drive. Consistent with the earlier total, and it is the shape of the estate a first read will meet |
+
+| Not confirmed, and one new reason why |
+|---|
+| **A summary surface's nulls are not the service's nulls.** The connector returned `size: null` on every item in a search result, while the earlier observation established size as present and integer on real items through the same connector's item view. Two projections of one service disagreeing about a field is exactly why a field confirmed through one surface says nothing about another |
+
 **So `migration-read` still has no positive live read**, and the small drive that
 account carries is the known estate to run it against first.
 
