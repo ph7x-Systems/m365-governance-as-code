@@ -75,8 +75,18 @@ def to_markdown(run: Run) -> str:
 
     lines.append(f"# Governance report: {name}")
     lines.append("")
+    # THE IDENTITY, WHICH HAS NEVER BEEN CALLED `id`. Identity is structured --
+    # workload, type, native_id -- and was deliberately never collapsed into a
+    # parsed string. This line read `resource["id"]`, a key no evidence
+    # document has ever carried, so the fallback fired every time: every
+    # markdown report this engine has produced printed `<unknown>` in its
+    # second line, beside a title that had the display name in it all along.
+    #
+    # Printed, never parsed. `native_id` may be a URL, a GUID or a path full of
+    # colons, and identity.py is explicit that nothing anywhere reads inside it.
     lines.append(
-        f"- Resource: `{resource.get('id', '<unknown>')}` ({resource.get('type', '?')})"
+        f"- Resource: `{resource.get('native_id', '<unknown>')}` "
+        f"({resource.get('type', '?')})"
     )
     lines.extend(_provenance_lines(run))
     lines.extend(_coverage_lines(run))

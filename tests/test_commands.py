@@ -7,6 +7,7 @@ testing: `list-rules`, `show-rule`, `doctor` and `stats` never evaluate, and
 
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 
@@ -1319,3 +1320,83 @@ def test_a_directory_where_one_document_was_expected_says_so(capsys, tmp_path):
 
     assert code == 2
     assert "directory" in err
+
+
+# ---------------------------------------------------------------------------
+# The residual defects the 2026-08-20 audit recorded
+
+
+def test_the_report_names_the_resource_it_is_about(capsys):
+    """It printed `<unknown>` on every report this engine has ever produced.
+
+    Identity is structured -- workload, type, native_id -- and was deliberately
+    never collapsed into a parsed string, so `resource["id"]` is a key no
+    evidence document has ever carried. The fallback fired every time, on the
+    second line, beside a title that had the display name in it all along.
+    """
+    code, out, _err = run(
+        capsys,
+        "evaluate",
+        "--evidence",
+        str(FIXTURES / "list-catalog-over-hard-limit.json"),
+    )
+
+    assert code == 0
+    assert "<unknown>" not in out
+    assert "contoso,list,catalog-over-limit" in out
+
+
+def test_a_rules_path_that_is_not_there_is_not_a_rule_that_does_not_validate(
+    capsys, tmp_path
+):
+    """Two different problems arrived as one message.
+
+    A missing directory used to be reported as "the rules do not validate. Run
+    validate", which sends a person to inspect rules that are fine -- and the
+    one thing they will not check is the path they just typed.
+    """
+    code, _out, err = run(
+        capsys,
+        "evaluate",
+        "--evidence",
+        str(FIXTURES / "list-catalog-over-hard-limit.json"),
+        "--rules",
+        str(tmp_path / "no-such-directory"),
+    )
+
+    assert code == 2
+    assert "not a directory" in err
+    assert "do not validate" not in err
+
+
+def test_every_help_text_reaches_the_manual(capsys):
+    """A documentation set nobody can reach from the tool is one for people who
+    already knew where it was."""
+    from m365_governance.cli import DOCS, _build_parser
+
+    parser = _build_parser()
+    subcommands = [
+        action
+        for action in parser._actions
+        if isinstance(action, argparse._SubParsersAction)
+    ][0].choices
+
+    assert DOCS in parser.format_help()
+    for name, sub in subcommands.items():
+        assert DOCS in sub.format_help(), f"{name} --help names no documentation"
+
+
+def test_doctor_says_what_to_do_about_a_missing_powershell():
+    """Naming what is missing is half a diagnosis.
+
+    The check below it gives the command that installs PnP.PowerShell. This one
+    is the earlier of the two and gave the reader nothing to do.
+    """
+    from m365_governance import doctor as doctor_module
+
+    checks = doctor_module._powershell()
+    powershell = next(check for check in checks if check.name == "PowerShell 7")
+
+    if powershell.ok:
+        pytest.skip("PowerShell is installed here; the remedy is not rendered")
+    assert "aka.ms/powershell" in powershell.detail

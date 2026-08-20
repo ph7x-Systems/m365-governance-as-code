@@ -52,8 +52,7 @@ this section is a coherent beta from which the site derives, proven by
 
 ```text
 FIRST-RUN 001-006   CONTRACT-PROVEN
-AUDIT               OPEN              residual defects recorded below;
-                                      no onboarding blocker known
+AUDIT               CONTRACT-PROVEN   the four residual defects are closed
 LIVE-OBSERVED       not established   no run has been performed against a tenant.
                                       Costs a credential. Highest risk reduction
                                       per unit of effort
@@ -80,14 +79,16 @@ Four separate closures over things that already exist, and none of them needs ne
 architecture. Three of the four are not engineering: a release needs an owner's
 authorization, an observation needs a credential, and a market needs interviews.
 
-**What is NOT covered by that line.** The audit of 2026-08-20 also recorded smaller
-defects that no slice above claimed, and they are open: the report header renders
-`Resource: <unknown>` where a fixture carries no display name; `--rules` pointed at a
-directory that does not exist reports that the rules do not validate, which sends a
-reader to investigate rules that are fine; no `--help` links to the documentation that
-exists; and `doctor` gives a remedy for a missing PnP.PowerShell and none for a missing
-`pwsh`. None blocks a first result, which is why none was done. Saying the first-run
-journey is closed is true. Saying the audit is closed would not be.
+**The four residual defects are closed, 2026-08-20.** One was worse than the audit
+recorded. `Resource: <unknown>` was not a fixture without a display name: the line read
+`resource["id"]`, a key no evidence document has ever carried, because identity is
+structured and was deliberately never collapsed into a parsed string — so **every
+markdown report this engine has produced printed `<unknown>`**, on the second line,
+beside a title that had the name in it all along. A `--rules` path that is not there no
+longer arrives as "the rules do not validate", which sent a reader to inspect rules that
+were fine. Every `--help`, from the one place parsers are built, names the manual. And
+`doctor` gives a remedy for a missing `pwsh` as it already did for a missing
+PnP.PowerShell.
 
 **The recurring defect, named so that the next executor looks for it.** Four instances in
 one day, and one shape: **a step producing a verdict from a source that could not have

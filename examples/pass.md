@@ -2,7 +2,7 @@
 
 # Governance report: Documents
 
-- Resource: `<unknown>` (list)
+- Resource: `contoso,list,documents` (list)
 - Collected: 2026-08-05T14:02:11Z by `spo-collector` 0.1.0
 - Source: SharePoint Online via PnP.PowerShell / CSOM
 - Rules: shipped with this version

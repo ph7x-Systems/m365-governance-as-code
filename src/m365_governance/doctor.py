@@ -151,7 +151,11 @@ def _powershell() -> list[Check]:
             Check(
                 "PowerShell 7",
                 False,
-                "not found. Only the collector needs it",
+                # NAMING WHAT IS MISSING IS HALF A DIAGNOSIS. The check below
+                # gives the command that installs PnP.PowerShell; this one gave
+                # the reader nothing to do, and it is the earlier of the two.
+                "not found. Only the collector needs it. Install PowerShell 7: "
+                "https://aka.ms/powershell-release",
                 required=False,
             ),
             Check("PnP.PowerShell", False, "not checked", required=False),

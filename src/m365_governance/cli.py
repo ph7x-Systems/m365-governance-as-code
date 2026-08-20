@@ -84,13 +84,34 @@ PROFILE_HELP = (
 )
 
 
+#: Where the manual is. Printed by every `--help`, because a documentation set
+#: nobody can reach from the tool is a documentation set for people who already
+#: knew where it was: not one line of help named it, and the manual explaining
+#: every command below lives on a different site, in a different repository.
+DOCS = "Documentation: https://ph7x.com/tools/m365-governance-as-code/docs/"
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="m365-governance",
         description="Microsoft 365 governance checks that show their work.",
+        epilog=DOCS,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=__version__)
     sub = parser.add_subparsers(dest="command", required=True)
+
+    # Wrapped so that every parser created below carries the manual without
+    # each of sixteen call sites remembering to. One that forgot would be the
+    # command whose reader most needed it.
+    add_parser = sub.add_parser
+
+    def _with_docs(name, **kwargs):
+        kwargs.setdefault("epilog", DOCS)
+        kwargs.setdefault("formatter_class", argparse.RawDescriptionHelpFormatter)
+        return add_parser(name, **kwargs)
+
+    sub.add_parser = _with_docs
 
     listing = sub.add_parser(
         "list-rules", help="every rule, with the kind of claim it makes"
@@ -1232,7 +1253,23 @@ def _render_many(run_set: RunSet, fmt: str) -> str:
 
 
 def _rule_source(args) -> Source:
-    return resolve("rules", getattr(args, "rules", None))
+    """Where the rules come from, and a refusal that names the real problem.
+
+    A `--rules` pointing at a directory that is not there used to arrive at the
+    caller as "the rules do not validate. Run `m365-governance validate`",
+    because a missing directory and a malformed rule both come back as a
+    problem from the same function. That sends a person to inspect rules that
+    are fine, and the one thing they will not check is the path they just
+    typed.
+    """
+    supplied = getattr(args, "rules", None)
+    if supplied is not None and not Path(supplied).is_dir():
+        raise DocumentError(
+            f"--rules {supplied}: not a directory. Nothing was read, so no "
+            f"rule failed to validate. Omit --rules to use the set that "
+            f"shipped with this version."
+        )
+    return resolve("rules", supplied)
 
 
 class ProfileNotFound(SystemExit):

@@ -42,6 +42,16 @@ Rules carry their own versions, independently of this file. See
   under exit `1` — the code reserved for a negative governance result — so a
   typed path reached a pipeline as a failing rule. It is exit `2` and one
   sentence now.
+- **A report names the resource it is about.** The header read
+  `resource["id"]`, a key no evidence document has ever carried — identity is
+  structured, and was deliberately never collapsed into a parsed string — so
+  every markdown report printed `<unknown>` beside a title that had the name in
+  it all along.
+- **A `--rules` path that is not there says so**, instead of reporting that the
+  rules do not validate and sending a reader to inspect rules that are fine.
+- **Every `--help` names the manual.**
+- **`doctor` says how to install PowerShell 7**, as it already did for
+  PnP.PowerShell.
 - **Provenance says how it knows which tenant a document is about.**
   `evidence/3.1.0` adds `tenant.how` — `requested`, `public-discovery` or
   `observed`. `tenant.id` is null throughout this engine, so the host carries
