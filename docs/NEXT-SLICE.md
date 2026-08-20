@@ -203,12 +203,19 @@ further out. A collection that fails does not end the run.
 Not `LIVE-OBSERVED`: the plan, the refusals and the composition are proven; no collection
 has been performed against a tenant.
 
-### FIRST-RUN-005 — the front door is the journey
+### FIRST-RUN-005 — the front door is the journey — `CONTRACT-PROVEN`
 
-**Done when:** the README opens with install, setup, connect, run, report, and the
-epistemology follows it rather than preceding it by a hundred and forty lines; `connect`
-appears in the table of commands, which today lists ten of the shipped commands and omits
-it; and the quick start reaches a tenant instead of ending at fixtures.
+**Done, 2026-08-20.** Install is at the top and the journey follows it; the
+epistemology, which used to run for a hundred and forty lines before a reader could
+install anything, follows both. The command table carries every shipped command. The
+opening path reaches a tenant, and the fixtures are a section of their own for a reader
+who has none.
+
+**Three false claims went with it**, all in the section a sceptical reader reads first:
+`Two rules` where there are twenty, `One profile` where there are nine, and application
+authentication described as not implemented after it had been implemented and shipped.
+Counts are no longer restated in prose at all — `list-rules`, `doctor` and `--help` are
+the answer, and a number in a README is a second place for it to be wrong.
 
 
 
