@@ -92,7 +92,9 @@ licence for a producer to omit a field and leave every consumer carrying a fallb
 consumer tells a legacy document by the version it declares. `connection/1.0.0` is
 archived rather than deleted.
 
-**State, 2026-08-20:** `IMPLEMENTED → TESTED → READY FOR LIVE PROOF`.
+**State, 2026-08-20:** `CONTRACT-PROVEN`. Not `LIVE-OBSERVED` for its main path, and
+the four states are charter decision `D46`: a green gate proves the contract and nothing
+above it.
 
 Application-only reaches the collector, the session reports the identity it actually
 holds, authorization is asked and answered separately from authentication, and every
@@ -108,7 +110,9 @@ instead of the sentence that named the problem. Both are fixed and both are now 
 a certificate uploaded to it and `Sites.Read.All` consented. Without it, no run can
 demonstrate `reach: established` with `identity_kind: application`, and
 `authorization: established` has never been observed — only its `denied` and
-`not-attempted` branches. The slice is not `LIVE-PROVEN` until it has been.
+`not-attempted` branches. The slice does not reach `LIVE-OBSERVED` for application identity until it has been, and
+does not reach `PRODUCT-PROVEN` until somebody completes the published journey through
+the surface a user is given.
 
 ### FIRST-RUN-003 — a configured target, and no secrets in it
 

@@ -143,20 +143,11 @@ Translation is allowed and must be **declared where it happens**, so a reader
 can always recover the contract value behind the word they were shown. A silent
 relabel is a redefinition that nobody has noticed yet.
 
-**No layer may publish an aggregate score derived from outcomes.** Owner
-decision, 2026-08-20. A single number over complete, partial and unknown
-observations is exactly the artefact this product exists to replace, and it
-fails its own test on contact: a reader who asks why the number is what it is
-gets a weighting nobody authored, with no basis, no source and no rationale.
-Coverage and trust are reported as the facts they are — so many complete, so
-many partial, so many unknown — and a layer that folds them into one figure has
-created the second authority, not visualised the first.
-
-**`convention` is not "industry best practice".** It is a defensible
-operational convention, documented by nobody, and the distinction is the
-product rather than a nicety: relabelling it as consensus lends it an authority
-the basis vocabulary deliberately withholds. A layer may explain the word. It
-may not promote it.
+**No layer publishes an aggregate score, percentage or grade.** That is charter
+decision `D5`, and it is written there rather than here: an aggregate proposed
+as a "trust score" over complete, partial and unknown observations is the
+artefact this product exists to replace, and it fails the product's own test on
+contact. Coverage is reported as the facts it is made of.
 
 ## Search scope
 
