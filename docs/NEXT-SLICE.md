@@ -219,6 +219,10 @@ meets**, not what the tests assert.
 It is `D46`'s `PRODUCT-PROVEN` minus the tenant, and it is the cheapest evidence left that
 nobody has collected.
 
+**It repeats at every release candidate.** Rule 5 of the charter's continuation procedure
+is a routine and not a virtue: an environment nobody has used is where the defects that
+survive a green gate live, and one clean run does not immunise the next release.
+
 **Run 2026-08-20: fresh `HOME`, bare `PATH`, no PowerShell, no PnP, no checkout.** The
 journey holds. `doctor` names both absences and gives the command for the one it can;
 `setup` prints the registration command and writes the project file; `setup` again, with
@@ -234,6 +238,33 @@ reports `Plan: 0 of 11` with a reason against every line and exit `2`.
 **State:** `LIVE-OBSERVED` for everything that does not need a tenant. The three claims
 that do — `authorization: established`, `identity_kind: application`, `tenant.how:
 observed` — are unchanged and remain the owner's hour.
+
+### ENGINE-QUEUE-CLAIM-001 — `nothing remains` becomes a claim a gate can refuse
+
+**Opened 2026-08-20.** Rule 8 of the charter's continuation procedure says a
+`nothing remains` claim is established by enumeration and never by fatigue. As prose it
+is advice, and advice is what an executor at the end of a long session is least able to
+follow — twice on the day it was written.
+
+**The slice.** Every open card in this queue declares two fields:
+
+```text
+authority:     repository · observation · owner · interviews
+next action:   the one thing that happens when that authority arrives
+```
+
+A gate reads them. A card missing either fails the build, and the queue may not be
+described as exhausted while one exists. It is `unknown ≠ pass` pointed at the queue: a
+card whose authority nobody wrote down is a card nobody can establish is blocked, and the
+honest state for it is `not established` rather than `done`.
+
+**Why here and not in the site's queue too.** One implementation, in the repository that
+already runs a language gate over its own operational documents. The site adopts it after
+it has proven itself here, and not before: a gate copied into two repositories before it
+has been exercised in one is two gates to keep true.
+
+**Done when:** the gate exists, is tested, runs in `release-check.sh`, and every card in
+this file carries both fields.
 
 ### ENGINE-RELEASE-TRAIN-001 — make the authorization a non-event
 
