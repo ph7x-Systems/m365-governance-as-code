@@ -56,7 +56,7 @@ BECAUSE: dict[Planned, str] = {
     ),
     Planned.NO_POWERSHELL: (
         "runs through PowerShell 7, and this machine has none: `doctor` "
-        "gives the command that installs it"
+        "gives the command for this system"
     ),
 }
 

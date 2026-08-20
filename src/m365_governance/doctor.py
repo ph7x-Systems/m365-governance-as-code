@@ -143,6 +143,40 @@ def _profiles(root: Path | None) -> list[Check]:
     return checks or [Check("profiles", False, "no profiles")]
 
 
+#: How to install PowerShell 7, on the system asking.
+#:
+#: THE ONLY PLACE THIS ENGINE BRANCHES ON A PLATFORM, and it decides nothing:
+#: it selects a sentence. Everything else here is platform-blind on purpose,
+#: because a governance conclusion that differed by operating system would be a
+#: conclusion about the operating system.
+#:
+#: IT WAS A URL, AND THAT IS HALF A DIAGNOSIS. The contract asks for the whole
+#: of it — name what is missing AND how to obtain it — and the check below has
+#: given the exact command for PnP.PowerShell all along, while the earlier one
+#: sent the reader to a download page to work out which of six installers
+#: applies. `run` compounded it by telling people that `doctor` gives the
+#: command, which was not true until now.
+#:
+#: Linux keeps the link, and that is the honest answer rather than a gap: the
+#: command differs by distribution, and printing one distribution's would be
+#: wrong for most readers of it.
+POWERSHELL_INSTALL = {
+    "Darwin": "brew install --cask powershell",
+    "Windows": "winget install --id Microsoft.PowerShell",
+}
+
+#: Where to go when no single command is right. Microsoft's own page, which
+#: keeps the per-distribution instructions current so that this file does not.
+POWERSHELL_DOCS = "https://aka.ms/powershell-release"
+
+
+def _powershell_remedy() -> str:
+    command = POWERSHELL_INSTALL.get(platform.system())
+    if command:
+        return f"install it with: {command}"
+    return f"install it for your distribution: {POWERSHELL_DOCS}"
+
+
 def _powershell() -> list[Check]:
     """The collector only. Absent is not a failure: the engine never needs it."""
     pwsh = shutil.which("pwsh")
@@ -151,11 +185,7 @@ def _powershell() -> list[Check]:
             Check(
                 "PowerShell 7",
                 False,
-                # NAMING WHAT IS MISSING IS HALF A DIAGNOSIS. The check below
-                # gives the command that installs PnP.PowerShell; this one gave
-                # the reader nothing to do, and it is the earlier of the two.
-                "not found. Only the collector needs it. Install PowerShell 7: "
-                "https://aka.ms/powershell-release",
+                f"not found. Only the collector needs it. {_powershell_remedy()}",
                 required=False,
             ),
             Check("PnP.PowerShell", False, "not checked", required=False),

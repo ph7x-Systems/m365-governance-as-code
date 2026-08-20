@@ -185,7 +185,8 @@ survive the person who made them.
 
 Charter `D51` binds: a missing authority is neither an inference nor a stop. The
 procedure that follows from it is written once, in the charter beside that
-decision, and these are its rules by name — enough to work from, never enough to
+decision — `charter/DECISIONS.md`, section *Continuing when there is no
+decision*, digest `02097826e829c09a`. These are its rules by name — enough to work from, never enough to
 replace it:
 
 1. A card is blocked only when **every** resolution it names is blocked.

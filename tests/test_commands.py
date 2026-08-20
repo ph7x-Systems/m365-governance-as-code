@@ -1400,3 +1400,46 @@ def test_doctor_says_what_to_do_about_a_missing_powershell():
     if powershell.ok:
         pytest.skip("PowerShell is installed here; the remedy is not rendered")
     assert "aka.ms/powershell" in powershell.detail
+
+
+PLATFORM_REMEDIES = [
+    ("Darwin", "brew install"),
+    ("Windows", "winget install"),
+    ("Linux", "aka.ms/powershell-release"),
+]
+
+
+@pytest.mark.parametrize("system,expected", PLATFORM_REMEDIES, ids=lambda v: str(v))
+def test_the_powershell_remedy_is_a_command_where_a_command_exists(
+    monkeypatch, system, expected
+):
+    """Naming what is missing is half a diagnosis.
+
+    It was a link to a download page for every reader on every system, while
+    the check beside it has given the exact command for PnP.PowerShell all
+    along — and `run` told people `doctor` gives the command, which was not
+    true. Linux keeps the link because the command differs by distribution and
+    printing one distribution's would be wrong for most of them.
+    """
+    from m365_governance import doctor as doctor_module
+
+    monkeypatch.setattr(doctor_module.platform, "system", lambda: system)
+
+    assert expected in doctor_module._powershell_remedy()
+
+
+def test_the_platform_branch_decides_nothing_but_a_sentence():
+    """The only place this engine branches on an operating system.
+
+    A governance conclusion that differed by platform would be a conclusion
+    about the platform, so the branch may select a remedy and nothing else.
+    """
+    from m365_governance import doctor as doctor_module
+
+    remedies = {
+        system: doctor_module.POWERSHELL_INSTALL.get(system)
+        for system in ("Darwin", "Windows", "Linux")
+    }
+
+    assert remedies["Linux"] is None
+    assert all("powershell" in value.lower() for value in remedies.values() if value)
