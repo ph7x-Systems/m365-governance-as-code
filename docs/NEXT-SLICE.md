@@ -48,10 +48,17 @@ this section is a coherent beta from which the site derives, proven by
 
 ```text
 FIRST-RUN 001-006   CONTRACT-PROVEN
+AUDIT               OPEN              residual defects recorded below;
+                                      no onboarding blocker known
 LIVE-OBSERVED       not established   no run has been performed against a tenant
 SHIPPED             not established   the public index is behind this branch
 MARKET              not established   FIRST-PRODUCT.md names no product
 ```
+
+`FIRST-RUN` being `CONTRACT-PROVEN` and the audit being closed are different claims, and
+only the first is true. The audit line is carried here rather than in a paragraph
+underneath, because a state somebody has to read prose to discover is a state that gets
+reported as absent.
 
 Four separate closures over things that already exist, and none of them needs new
 architecture. Three of the four are not engineering: a release needs an owner's
