@@ -266,6 +266,32 @@ has been exercised in one is two gates to keep true.
 **Done when:** the gate exists, is tested, runs in `release-check.sh`, and every card in
 this file carries both fields.
 
+### ENGINE-CLEAN-MACHINE-002 — the journey had met one operating system
+
+**Run 2026-08-21. State:** `LIVE-OBSERVED` on Linux. **authority:** owner, for Windows ·
+**next action:** a Windows machine.
+
+**Rule 5 applied where the product risk is largest.** The clean-machine run of the day
+before was macOS. The reader of this product is a Microsoft 365 administrator and is
+mostly on Windows, and this engine branches on no platform anywhere: `platform.system()`
+is reported by `doctor` and decides nothing.
+
+**Linux, in a container, today.** `doctor`, `setup`, the project file, `run --dry-run` and
+every refusal behave as they do on macOS. Exit codes hold, the plan reports `0 of 11` with
+a reason on every line, and no path, encoding or environment assumption surfaced.
+
+**One defect, and it was the predicted one.** The missing-PowerShell remedy was a URL
+where the contract asks for the whole of a diagnosis, and `run` told the reader that
+`doctor` gives the command — which was not true on any platform. It is a command now on
+macOS and Windows; Linux keeps the link, because the command differs by distribution and
+printing one distribution's would be wrong for most readers of it. It is the only place
+this engine branches on an operating system, and it selects a sentence.
+
+**Windows is unobserved and needs a machine.** What it would settle: PowerShell 7 beside
+Windows PowerShell 5.1 and which one `shutil.which("pwsh")` finds; a PFX and
+`--certificate-password-env` under a different credential store; and where
+`m365-governance.toml` is looked for when `HOME` is `USERPROFILE`.
+
 ### ENGINE-RELEASE-TRAIN-001 — make the authorization a non-event
 
 **Opened 2026-08-20.** The owner's publication decision should cost minutes, not a
@@ -309,6 +335,11 @@ authorization: established    only `denied` and `not-attempted` have been seen
 identity_kind: application    end to end through `connect`, not only `collect`
 tenant.how: observed          still needs-tenant-validation
 ```
+
+**`LIVE-OBSERVED` is one tenant AND one operating system, not one tenant.** If the hour
+can be spent on Windows it settles two questions instead of one. If it cannot, the runbook
+says which half stays unobserved rather than letting a macOS and Linux run stand for the
+journey the reader will actually take.
 
 **It records nothing as observed**, and it may not: writing an expected result down is not
 observing one. What it removes is a second session spent discovering what the first should
