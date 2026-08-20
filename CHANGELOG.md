@@ -42,6 +42,19 @@ Rules carry their own versions, independently of this file. See
   under exit `1` — the code reserved for a negative governance result — so a
   typed path reached a pipeline as a failing rule. It is exit `2` and one
   sentence now.
+- **`setup` and `run`.** The journey is three commands: `setup` prepares the
+  machine and writes the target down, `connect` proves the identity can work,
+  `run` collects, evaluates and reports. Choosing among ten slices was a
+  decision this engine can make from the target it was given, and asking
+  somebody to make it before they had seen one finding was asking them to learn
+  the architecture in order to use the tool.
+- **`setup` names the command that produces an application registration**,
+  which nothing in this product named before. It registers nothing itself: this
+  engine reads and acquires nothing.
+- **A slice that will not be attempted is reported, never dropped.** `run`
+  prints the whole catalogue with a verdict against each, because a run that
+  quietly skipped half its slices would produce a report that looks complete to
+  the only person who could tell that it is not.
 - **The target is written down once.** `m365-governance.toml` carries the
   tenant and site addresses, the application registration and the
   authentication mode; the command line always wins over it, the file that was

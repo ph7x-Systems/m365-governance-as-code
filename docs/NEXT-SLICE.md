@@ -181,6 +181,28 @@ target to an assessment and a report. `slice`, evidence directories, `profile` a
 sets stop being prerequisites for a first result and become what they are — the
 vocabulary of the report, and material for the reference documentation.
 
+**State, 2026-08-20:** `CONTRACT-PROVEN`.
+
+`setup` runs `doctor`'s own report, then names the one command that produces an
+application registration — which nothing in this product named before, the only
+instruction anywhere being "register an Entra ID app, or use one your tenant already
+has": the hardest step written as an aside. It registers nothing itself. This engine
+reads and acquires nothing, and a read-only product that quietly wrote to a directory
+during setup would have a write path after all; the gate that proves the collector never
+mutates a tenant does not read the CLI, so a test does.
+
+`run` plans from the target, collects what the target can reach, evaluates and reports.
+**Every slice appears in the plan with a verdict**, including the ones that will not be
+attempted and why: a run that quietly skipped half its slices would produce a report that
+looks complete to the only person who could tell that it is not. It is `D49` one layer
+further out. A collection that fails does not end the run.
+
+`slice` is no longer on the path to a first result. The journey is `setup` · `connect` ·
+`run`.
+
+Not `LIVE-OBSERVED`: the plan, the refusals and the composition are proven; no collection
+has been performed against a tenant.
+
 ### FIRST-RUN-005 — the front door is the journey
 
 **Done when:** the README opens with install, setup, connect, run, report, and the

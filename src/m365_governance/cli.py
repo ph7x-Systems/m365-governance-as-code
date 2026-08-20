@@ -48,6 +48,7 @@ from . import (
     migration,
     migration_graph,
     reporting,
+    running,
 )
 from . import doctor as doctor_module
 from . import inspect as inspect_module
@@ -240,6 +241,75 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=("text", "json"),
         default="text",
         help="json for a consumer. Not a contract: a session is not a document",
+    )
+
+    setup = sub.add_parser(
+        "setup",
+        help="prepare a machine and write a project file. Reaches no tenant",
+    )
+    setup.add_argument("--client-id", help="an Entra ID application registration")
+    setup.add_argument("--site-url")
+    setup.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
+    setup.add_argument("--tenant-id")
+    setup.add_argument("--certificate-path", type=Path)
+    setup.add_argument("--certificate-password-env", metavar="NAME")
+    setup.add_argument(
+        "--out",
+        type=Path,
+        default=Path(project_file.NAME),
+        help=f"where to write. Default {project_file.NAME} here",
+    )
+    setup.add_argument(
+        "--force",
+        action="store_true",
+        help="overwrite an existing project file",
+    )
+
+    run_cmd = sub.add_parser(
+        "run",
+        help="a configured target to a report, in one command",
+    )
+    run_cmd.add_argument(
+        "--project",
+        type=Path,
+        help=f"a project file. Omit to use the nearest {project_file.NAME} "
+        f"from here upwards, if there is one",
+    )
+    run_cmd.add_argument("--client-id")
+    run_cmd.add_argument("--site-url")
+    run_cmd.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
+    run_cmd.add_argument(
+        "--output",
+        type=Path,
+        default=Path("./evidence"),
+        help="where the evidence is written. Kept: it is what the conclusions "
+        "were decided from, and a report without it cannot be checked",
+    )
+    run_cmd.add_argument(
+        "--device-login",
+        action="store_true",
+        help="authenticate with a device code, for hosts with no browser",
+    )
+    run_cmd.add_argument("--tenant-id")
+    run_cmd.add_argument("--certificate-path", type=Path)
+    run_cmd.add_argument("--certificate-password-env", metavar="NAME")
+    run_cmd.add_argument("--profile", type=Path, default=None, help=PROFILE_HELP)
+    run_cmd.add_argument("--rules", type=Path, default=None, help=RULES_HELP)
+    run_cmd.add_argument(
+        "--format", choices=("markdown", "json", "html"), default="markdown"
+    )
+    run_cmd.add_argument("--out", type=Path, help="write the report here")
+    run_cmd.add_argument(
+        "--fail-on",
+        choices=("nothing", "fail", "unresolved"),
+        default="nothing",
+        help="exit 1 on findings. `unresolved` counts unknown and "
+        "invalid-evidence alongside fail",
+    )
+    run_cmd.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print the plan and reach no tenant",
     )
 
     explain = sub.add_parser(
@@ -882,6 +952,230 @@ def _cmd_connect(args) -> int:
     return 0 if established.reach is connecting.Reach.ESTABLISHED else 1
 
 
+def _cmd_run(args) -> int:
+    """A configured target to a report, without learning what a slice is.
+
+    IT COMPOSES; IT DECIDES NOTHING NEW. Every step here is a command that
+    already exists, called in the order somebody would have called them, and
+    the reason it exists is that choosing among ten slices is a decision this
+    engine can make from the target it was given. Asking a person to make it
+    before they have seen one finding is asking them to learn the architecture
+    in order to use the tool.
+
+    A COLLECTION THAT FAILED DOES NOT END THE RUN. Six of fifty-three sites
+    refusing a collector is a fact about coverage, not a reason to produce
+    nothing; the manifest carries what each collection turned out to be, and
+    the report is built over what was actually gathered.
+    """
+    try:
+        _project(args)
+        _authentication(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
+
+    steps = running.plan(
+        site_url=args.site_url,
+        tenant_url=args.tenant_url,
+        has_graph_token=bool(os.environ.get(conditional_access.TOKEN_VARIABLE)),
+    )
+    doing = running.attempted(steps)
+    sys.stderr.write(running.describe(steps))
+
+    if not doing:
+        print(
+            "\nnothing to collect: the target names neither a site nor an "
+            "admin address. Add one to the project file, or pass --site-url "
+            "or --tenant-url.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if args.dry_run:
+        return 0
+
+    for problem in collecting.preflight():
+        print(problem, file=sys.stderr)
+        return 2
+
+    for step in doing:
+        print(f"\ncollecting {step.name}", file=sys.stderr, flush=True)
+        outcome = collecting.run_slice(
+            step.name,
+            client_id=args.client_id,
+            output=args.output,
+            site_url=args.site_url,
+            tenant_url=args.tenant_url,
+            device_login=args.device_login,
+            tenant_id=args.tenant_id,
+            certificate_path=args.certificate_path,
+            certificate_password_env=args.certificate_password_env,
+            on_progress=lambda line: print(f"  {line}", file=sys.stderr, flush=True),
+        )
+        # Reported, never fatal. What a collection turned out to be is carried
+        # in its own manifest, and a run that stopped at the first refusal
+        # would throw away every slice that did work.
+        print(f"  {step.name}: {outcome.state}", file=sys.stderr)
+
+    # From here it is `evaluate`, on the evidence just gathered. The arguments
+    # it reads are set rather than a second implementation of it: two ways to
+    # evaluate would eventually disagree, and the one nobody tested would win.
+    args.evidence = args.output
+    try:
+        runs, _documents = _evaluate_all(args)
+    except _Refused:
+        return 2
+    if not runs:
+        print(f"{args.output}: nothing was collected", file=sys.stderr)
+        return 2
+
+    report = _render_many(RunSet(runs), args.format)
+    if args.out:
+        args.out.write_text(report, encoding="utf-8")
+        print(f"\n{args.out}", file=sys.stderr)
+    else:
+        sys.stdout.write(report)
+
+    return _exit_for(runs, args.fail_on)
+
+
+def _exit_for(runs: list[Run], fail_on: str) -> int:
+    """One reading of `--fail-on`, shared by `evaluate` and `run`."""
+    counts = {outcome.value: 0 for outcome in Outcome}
+    for run in runs:
+        for key, value in run.counts().items():
+            counts[key] += value
+    if fail_on == "fail" and counts[Outcome.FAIL.value]:
+        return 1
+    if fail_on == "unresolved":
+        unresolved = (
+            counts[Outcome.FAIL.value]
+            + counts[Outcome.UNKNOWN.value]
+            + counts[Outcome.INVALID_EVIDENCE.value]
+            + counts[Outcome.ERROR.value]
+        )
+        if unresolved:
+            return 1
+    return 0
+
+
+#: How to obtain the one input nothing works without. It is a single command,
+#: it is documented by PnP, and until now this product named neither: the only
+#: instruction anywhere was "register an Entra ID app, or use one your tenant
+#: already has", which is the hardest step described as an aside.
+REGISTRATION = """Register-PnPEntraIDAppForInteractiveLogin \\
+    -ApplicationName "M365 Governance" \\
+    -Tenant <your-tenant>.onmicrosoft.com"""
+
+
+def _cmd_setup(args) -> int:
+    """Prepare a machine, and write down the target once. Reaches no tenant.
+
+    THE HALF OF `doctor` THAT TOLD NOBODY WHAT TO DO. `doctor` says what is
+    missing, and for one dependency it says how to fix it; for the step that
+    actually stops people -- obtaining an application registration -- nothing
+    in this product said anything at all, and the answer is one documented
+    command.
+
+    IT REGISTERS NOTHING ITSELF. This engine reads and acquires nothing:
+    creating a registration changes a directory, and a read-only product that
+    quietly wrote to a tenant during setup would have a write path after all.
+    It prints the command; a person runs it, in their own tenant, knowingly.
+    """
+    # `doctor`'s own report, whole. A second rendering of the same checks would
+    # be a second thing to keep true, and the two would disagree the first time
+    # a check was added to one of them.
+    text, healthy = doctor_module.report()
+    sys.stdout.write(text)
+
+    if not healthy:
+        print(
+            "\nSetup stops here: the environment is not sound yet, and a "
+            "project file naming a tenant would be the least of the problems.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if not args.client_id:
+        print(
+            "\nNext: an application registration.\n\n"
+            "  Every connection needs one, and there is no default: "
+            "PnP.PowerShell has\n"
+            "  shipped no application of its own since 2.12.0. One "
+            "registration serves\n"
+            "  every run. In PowerShell, in your own tenant:\n\n"
+            f"    {REGISTRATION}\n\n"
+            "  It prints the id it registered. Then run this again with it:\n\n"
+            "    m365-governance setup --client-id <id> "
+            "--tenant-url https://<tenant>-admin.sharepoint.com\n"
+        )
+        # Not a failure. The environment is sound and the person has been told
+        # the one thing they did not have; exiting non-zero would report a
+        # broken installation to a pipeline that has none.
+        return 0
+
+    try:
+        _application_id(args.client_id)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to write: {refusal}", file=sys.stderr)
+        return 2
+
+    if not args.site_url and not args.tenant_url:
+        print(
+            "setup needs --tenant-url or --site-url: a project file with no "
+            "target names nothing to assess.",
+            file=sys.stderr,
+        )
+        return 2
+
+    if args.out.exists() and not args.force:
+        print(
+            f"{args.out} already exists. It carries a target somebody chose, "
+            f"and overwriting it silently would repoint every later run. "
+            f"Pass --force to replace it.",
+            file=sys.stderr,
+        )
+        return 2
+
+    args.out.write_text(_project_text(args), encoding="utf-8")
+    print(f"\nWrote {args.out}\n")
+    print("Next:\n")
+    print("  m365-governance connect        # prove the identity can work here")
+    print("  m365-governance run            # collect, assess and report\n")
+    return 0
+
+
+def _project_text(args) -> str:
+    """The project file, written for a person to read and edit afterwards.
+
+    NO CREDENTIAL IS EVER WRITTEN HERE, and the header says so in the file
+    rather than only in the documentation: this file is committed, copied into
+    tickets and pasted into chats, and the person who would put a password in
+    one is not reading the manual at that moment.
+    """
+    lines = [
+        "# Written by `m365-governance setup`. Edit it freely.",
+        "#",
+        "# NO SECRET BELONGS IN THIS FILE. It is committed, copied into tickets",
+        "# and pasted into chats. A certificate password is named here by the",
+        "# environment variable that holds it, never by its value.",
+        "",
+        "[target]",
+    ]
+    if args.tenant_url:
+        lines.append(f'tenant_url = "{args.tenant_url}"')
+    if args.site_url:
+        lines.append(f'site_url = "{args.site_url}"')
+    lines += ["", "[identity]", f'client_id = "{args.client_id}"']
+    if args.tenant_id:
+        lines.append(f'tenant_id = "{args.tenant_id}"')
+    if args.certificate_path:
+        lines.append(f'certificate_path = "{args.certificate_path}"')
+    if args.certificate_password_env:
+        lines.append(f'certificate_password_env = "{args.certificate_password_env}"')
+    return "\n".join(lines) + "\n"
+
+
 def _cmd_explain(args) -> int:
     sys.stdout.write(explaining.explain(args.outcome))
     return 0
@@ -1165,22 +1459,7 @@ def _cmd_evaluate(args) -> int:
     else:
         sys.stdout.write(_render_many(RunSet(runs), args.format))
 
-    counts = {o.value: 0 for o in Outcome}
-    for run in runs:
-        for key, value in run.counts().items():
-            counts[key] += value
-    if args.fail_on == "fail" and counts[Outcome.FAIL.value]:
-        return 1
-    if args.fail_on == "unresolved":
-        unresolved = (
-            counts[Outcome.FAIL.value]
-            + counts[Outcome.UNKNOWN.value]
-            + counts[Outcome.INVALID_EVIDENCE.value]
-            + counts[Outcome.ERROR.value]
-        )
-        if unresolved:
-            return 1
-    return 0
+    return _exit_for(runs, args.fail_on)
 
 
 def _cmd_assess(args) -> int:
@@ -1553,6 +1832,8 @@ _COMMANDS = {
     "capabilities": _cmd_capabilities,
     "collect": _cmd_collect,
     "connect": _cmd_connect,
+    "run": _cmd_run,
+    "setup": _cmd_setup,
     "explain": _cmd_explain,
     "doctor": _cmd_doctor,
     "stats": _cmd_stats,
