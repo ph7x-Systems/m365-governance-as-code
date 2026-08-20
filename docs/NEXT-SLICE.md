@@ -203,6 +203,32 @@ and a certificate still proceeds because `-Tenant` names the directory.
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
 
+### ENGINE-CLEAN-MACHINE-001 — run the journey where nothing is installed
+
+**Opened 2026-08-20.** Every defect found that day was found by running, none by reading,
+with a green gate standing over all of them. **The journey has never been run on a machine
+that is not this one**, and this one has a project checkout, a warm PowerShell, a PnP
+module, a configured shell and — as it turned out — a stale release on `PATH` that
+shadowed the engine under test for a whole session.
+
+**The slice.** Build the wheel, install it into a fresh environment with a fresh `HOME`,
+and execute the published journey as far as it goes without a tenant: `doctor`, `setup`,
+`connect --dry-run`, `run --dry-run`, and every refusal. **Record what a first-time reader
+meets**, not what the tests assert.
+
+It is `D46`'s `PRODUCT-PROVEN` minus the tenant, and it is the cheapest evidence left that
+nobody has collected.
+
+### ENGINE-RELEASE-TRAIN-001 — make the authorization a non-event
+
+**Opened 2026-08-20.** The owner's publication decision should cost minutes, not a
+session. What can be prepared without taking it: the CHANGELOG closed, the version bump
+staged rather than applied, `tools/post-release-check.sh` rehearsed against a locally
+built wheel, and the ordered steps from authorization to a proven install from the public
+index written down.
+
+**Not authorised by this card:** tagging, publishing, or bumping the version on `main`.
+
 ### ENGINE-SHIPPABLE-001 — a release must not recreate the drift in mirror image
 
 **Opened 2026-08-20.** `SHIPPED` was being treated as one decision. It is not. The
