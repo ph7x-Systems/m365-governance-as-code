@@ -17,9 +17,106 @@ and continues in order without conversation, scratchpads, roadmap ratification o
 new owner approval. Completed work is removed from the active queue rather than kept
 as queue history; its PR, commits and release evidence remain the historical record.
 
-The first active slice is `IDENTITY-CA-001`. Its full contract follows. The remaining
-cards are executable contracts combined with the common contract below; they are not
-ideas, options or a backlog requiring refinement by the Executor.
+The first active slice is `FIRST-RUN-001`. The cards are executable contracts combined
+with the common contract below; they are not ideas, options or a backlog requiring
+refinement by the Executor.
+
+## FIRST-RUN — the journey has an owner, and functional expansion is frozen until it works
+
+**Owner decision, 2026-08-20.** An independent product audit found that this engine is
+good and that its product begins too late: quality is reachable only after a new user
+has crossed, unaided, the most ordinary part of any Microsoft 365 tool — install, obtain
+an identity, connect, prove access, run, receive a result. The audit's central finding is
+not that a `run` command is missing. It is that **the first-run journey had no owner**,
+so the Engine, the site and the desktop product each told a different version of the
+truth and no gate could fail.
+
+Ownership is now recorded: `docs/FIRST-RUN-CONTRACT.md`, and in `AGENTS.md`.
+
+**The freeze.** No new collector, workload, rule, output format or report capability
+starts until the slices in this section are `SHIPPED`. That includes Exchange, Teams,
+further Entra work, SARIF, additional rules and report sophistication. `IDENTITY-CA-001`,
+`IDENTITY-APPS-001` and `MIGRATION-VERIFY-001` keep their contracts, in their present
+order, and resume after this section — they do not resume before it.
+
+**The version position.** No further product is added on top of `1.0.0b6` while the
+published documentation describes commands that version does not contain. The exit of
+this section is a coherent beta from which the site derives, proven by
+`tools/post-release-check.sh`.
+
+**The test that replaces the old one.** The measure of readiness stops being coverage of
+rules by evidence path. It becomes: *on a clean machine, a person who knows Microsoft 365
+but has never seen this product can install it, obtain and configure the identity, prove
+they have access, and open a first report — without reading code, editing JSON, or
+guessing internal architecture.*
+
+### FIRST-RUN-001 — nothing interactive begins on an input that could be refused locally
+
+**State:** the path half is closed. `evaluate`, `assess`, `stats`, `report`, `verify` and
+`diff` refuse a path that is not there with exit `2` and one sentence, and the exit-code
+contract they are measured against is published on the site.
+
+**What is missing.** `--client-id` is accepted in any shape. A value that is not a GUID
+starts PowerShell, opens a browser and fails in the directory, so the product's own worst
+error is diagnosed by Microsoft, in a window, outside the terminal. Audited on
+2026-08-20 against a live tenant: `--client-id not-a-guid` reached `AADSTS700016`.
+
+**Done when:** an identifier that cannot be an application registration is refused before
+a process is started, with exit `2`; and the `AADSTS` codes a caller can act on are
+carried as a reason rather than as the collector's last three lines of output. The
+engine's own rule already says the cheapest place to stop is before the network — it is
+enforced today for authentication modes and for nothing else.
+
+### FIRST-RUN-002 — `connect` means "this identity can work here"
+
+**What is wrong.** `connect` accepts `--certificate-path`, `--tenant-id` and
+`--certificate-password-env`, validates them, and then does not pass them:
+`connecting.py` does not contain the word. `collect` passes them, and the PowerShell
+collector supports application-only in every mode including `Connect`. The one command
+whose purpose is to prove an application registration can reach a tenant cannot prove it
+for the identity an unattended run uses.
+
+**Second half.** Authentication and authorization are two answers. A session opens with
+zero permissions granted, and a product that stops after the first has reported the
+second.
+
+**Done when:** application-only works end to end through `connect`; the result
+distinguishes "signed in" from "can read what the rules need"; and the failure carries an
+enumerated reason beside `reach`, so that no consumer — the desktop product first among
+them — has to regular-express English out of PnP.PowerShell.
+
+**Owner decision required before this ships:** `connection/1.0.0` is published, and a new
+required field changes what a published contract means. The version this lands as is the
+owner's to choose.
+
+### FIRST-RUN-003 — a configured target, and no secrets in it
+
+**What is wrong.** There is no project file and no sanctioned defaults. Ten slices are ten
+commands, each retyping `--client-id` and an address; the audit counted the same two
+arguments written eleven times. The refusal to read PnP's ambient client id is correct —
+evidence must be able to name the identity that observed it — but it was never replaced.
+
+**Done when:** a project file carries client id, tenant and site targets, authentication
+mode and profile defaults; secrets are not in it and there is no option that would put
+them there; and the resolved identity is recorded in the evidence provenance, which is
+what the original objection actually asked for.
+
+### FIRST-RUN-004 — the golden path exists as commands
+
+**Done when:** `setup` prepares and diagnoses an environment, including how to obtain an
+application registration; `connect` proves the identity; and `run` takes a configured
+target to an assessment and a report. `slice`, evidence directories, `profile` and run
+sets stop being prerequisites for a first result and become what they are — the
+vocabulary of the report, and material for the reference documentation.
+
+### FIRST-RUN-005 — the front door is the journey
+
+**Done when:** the README opens with install, setup, connect, run, report, and the
+epistemology follows it rather than preceding it by a hundred and forty lines; `connect`
+appears in the table of commands, which today lists ten of the shipped commands and omits
+it; and the quick start reaches a tenant instead of ending at fixtures.
+
+
 
 ## A capability is not shipped until it is installable
 
@@ -36,16 +133,16 @@ keeps adding surfaces ahead of its own published releases accumulates capability
 nobody can install, and the gap is invisible from inside the branch that created it.
 
 ```text
-IDENTITY-CA-001
+FIRST-RUN       ACTIVE
 
-Engine      IN PROGRESS
+IDENTITY-CA-001 FROZEN, contract unchanged
 
-Slice       OPEN
+Slice           OPEN
 ```
 
-`IN PROGRESS` becomes `SHIPPED` when the release is on the public index and the
-post-release gate has proven it from there. Only then does `IDENTITY-APPS-001`
-start.
+`ACTIVE` becomes `SHIPPED` when the release is on the public index and the
+post-release gate has proven it from there. Only then does `IDENTITY-CA-001` resume, and
+`IDENTITY-APPS-001` after it.
 
 ## MIGRATION-VERIFY-001 — what a move actually moved
 

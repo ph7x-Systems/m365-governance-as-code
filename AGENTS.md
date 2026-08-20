@@ -11,6 +11,14 @@ findings, Assessments, comparisons, the CLI and its public contracts. It
 collects what a Microsoft 365 tenant is configured to do, and decides only what
 a written rule says it may decide.
 
+**It also owns the first-run contract**, recorded in
+`docs/FIRST-RUN-CONTRACT.md`: the journey from an empty machine to a first
+report — prerequisites, identity, authentication, authorization, target, run,
+assessment, report. It is owned here because this is the only repository where
+it is executable, and therefore the only one where a gate can prove it. The
+README, the website and the desktop product consume that contract; none of them
+restates it.
+
 ## Sources of truth
 
 - The contracts are the JSON Schemas under

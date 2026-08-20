@@ -1280,3 +1280,42 @@ def test_an_assessment_renders_and_compares_like_what_it_carries(capsys, tmp_pat
     code, out, err = run(capsys, "diff", path, path)
     assert code == 0, err
     assert "Nothing changed" in out
+
+
+# ---------------------------------------------------------------------------
+# A path that is not there
+
+
+MISSING_PATH_COMMANDS = [
+    ("evaluate", "--evidence", "{path}"),
+    ("assess", "--evidence", "{path}"),
+    ("stats", "{path}"),
+    ("report", "{path}"),
+    ("verify", "{path}"),
+    ("diff", "{path}", "{path}"),
+]
+
+
+@pytest.mark.parametrize("argv", MISSING_PATH_COMMANDS, ids=lambda a: a[0])
+def test_a_path_that_is_not_there_is_a_refusal_and_not_a_result(capsys, tmp_path, argv):
+    """Exit 2, one sentence, and never a traceback.
+
+    THE EXIT CODE IS THE POINT, not the tidier message. `1` is documented as a
+    run whose governance result was negative, and a caller that reads it takes
+    a typed path for a rule that failed. Nothing was read here, so nothing was
+    decided, and a refusal is `2`.
+    """
+    missing = tmp_path / "absent.json"
+    code, _out, err = run(capsys, *(a.format(path=missing) for a in argv))
+
+    assert code == 2
+    assert "Traceback" not in err
+    assert str(missing) in err
+
+
+def test_a_directory_where_one_document_was_expected_says_so(capsys, tmp_path):
+    """Not the same mistake as a typo, and not the same correction."""
+    code, _out, err = run(capsys, "verify", str(tmp_path))
+
+    assert code == 2
+    assert "directory" in err

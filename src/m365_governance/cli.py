@@ -905,6 +905,12 @@ def _evidence_documents(path: Path) -> list[Path]:
             for found in path.rglob("*.json")
             if not found.name.startswith("collection-manifest")
         )
+    if not path.exists():
+        # Named here rather than left to the loader, because at this point the
+        # caller may have meant either a document or a directory of them, and
+        # a message that guessed one of the two would send half of them looking
+        # for the wrong mistake.
+        raise DocumentError(f"{path}: no such file or directory")
     return [path]
 
 
