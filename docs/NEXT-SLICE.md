@@ -50,10 +50,22 @@ this section is a coherent beta from which the site derives, proven by
 FIRST-RUN 001-006   CONTRACT-PROVEN
 AUDIT               OPEN              residual defects recorded below;
                                       no onboarding blocker known
-LIVE-OBSERVED       not established   no run has been performed against a tenant
-SHIPPED             not established   the public index is behind this branch
-MARKET              not established   FIRST-PRODUCT.md names no product
+LIVE-OBSERVED       not established   no run has been performed against a tenant.
+                                      Costs a credential. Highest risk reduction
+                                      per unit of effort
+SHIPPED             not established   the public index is behind this branch.
+                                      Blocked by an owner's publication decision
+MARKET              not established   FIRST-PRODUCT.md names no product.
+                                      Decided outside this repository
 ```
+
+**They are independent questions and they are not equally cheap to get wrong.** Observing
+needs a credential and no release: the wheel this branch already builds is enough.
+Publishing is the step that cannot be taken back — after it, a defect is no longer an
+internal finding, and the person who meets it met it first. Publishing before observing
+therefore delivers a journey nobody has run, and the four defects found on 2026-08-20
+were found by running rather than by testing, with a green gate and ninety per cent
+coverage standing over every one of them. The reverse dependency does not exist.
 
 `FIRST-RUN` being `CONTRACT-PROVEN` and the audit being closed are different claims, and
 only the first is true. The audit line is carried here rather than in a paragraph
