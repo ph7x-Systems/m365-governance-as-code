@@ -68,6 +68,13 @@ def expect_in(said: str, fragment: str, what: str) -> None:
         )
 
 
+# The same reason the CLI reconfigures its own streams: this gate crashed on a
+# Windows runner printing the tick that says the journey held. It had held.
+for _stream in (sys.stdout, sys.stderr):
+    if hasattr(_stream, "reconfigure"):
+        _stream.reconfigure(encoding="utf-8", errors="replace")
+
+
 def main() -> int:
     # WHICH EXECUTABLE, PRINTED FIRST AND ALWAYS. This resolves the console
     # script from PATH, because that is what a reader has — and on a developer

@@ -1900,7 +1900,33 @@ _COMMANDS = {
 }
 
 
+def _readable_output() -> None:
+    """Say what this engine says on a console that is not UTF-8.
+
+    THE READER OF THIS PRODUCT IS MOSTLY ON WINDOWS, where Python encodes
+    stdout with the ANSI code page unless something says otherwise. This engine
+    writes an em dash beside every detail, a middot between fields and an arrow
+    between two outcomes in a comparison. `cp1252` has the first two and not the
+    arrow, so `compare` did not print a wrong character on a Windows console: it
+    raised `UnicodeEncodeError` and exited `1` - the code reserved for a
+    governance result that came back negative, on a run that produced a result
+    and then failed to say it.
+
+    Found by the journey job on a Windows runner, which crashed printing its own
+    green tick. That is the whole argument for running the artefact on the
+    reader's operating system rather than on the author's.
+
+    `replace` rather than `strict`: a console that cannot draw an arrow should
+    show a question mark and the answer, never a traceback instead of both.
+    """
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8", errors="replace")
+
+
 def main(argv: list[str] | None = None) -> int:
+    _readable_output()
     args = _build_parser().parse_args(argv)
     try:
         return _COMMANDS[args.command](args)
