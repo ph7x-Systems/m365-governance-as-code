@@ -186,7 +186,7 @@ survive the person who made them.
 Charter `D51` binds: a missing authority is neither an inference nor a stop. The
 procedure that follows from it is written once, in the charter beside that
 decision — `charter/DECISIONS.md`, section *Continuing when there is no
-decision*, digest `02097826e829c09a`. These are its rules by name — enough to work from, never enough to
+decision*, digest `a0ec410b8b05ca20`. These are its rules by name — enough to work from, never enough to
 replace it:
 
 1. A card is blocked only when **every** resolution it names is blocked.
@@ -197,6 +197,9 @@ replace it:
    nobody has run it. A routine at every release candidate, not a virtue.
 6. Declare the state that is true, in both directions.
 7. Escalate the dependency, never the task, and say what continued beside it.
+   **Repository state is never a dependency**: a fact about the tree or a
+   contract is established by reading, never escalated. `Not mine` and
+   `not established` are different sentences.
 8. `Nothing remains` is established by enumeration, never by fatigue.
 9. Continuing finds authorised work; it never invents scope.
 
