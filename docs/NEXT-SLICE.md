@@ -126,6 +126,26 @@ mode and profile defaults; secrets are not in it and there is no option that wou
 them there; and the resolved identity is recorded in the evidence provenance, which is
 what the original objection actually asked for.
 
+**State, 2026-08-20:** `CONTRACT-PROVEN`. A project file carries the target and the
+identity, the command line always wins over it, a key naming a credential is refused
+rather than ignored, and the file that was read is named on every run. Not
+`LIVE-OBSERVED`: it has not been exercised against a tenant.
+
+**Found while proving it, and it is the sharpest defect of the day.** `connect` resolves
+which directory owns an address, by public discovery, before signing in. Where nothing
+owned the address it signed in anyway — and an interactive sign-in with no directory to
+go to lands in whichever one the browser is already signed into, then reports what it
+found there as an answer about the address that was typed. Observed twice on 2026-08-20
+against a live tenant, the second time from a host that does not exist: the browser
+opened against an unrelated directory and returned `AADSTS700016`, a true sentence about
+the wrong tenant. **The engine had the evidence and used it for nothing**, which is the
+failure this product exists to make impossible. It is refused now, before the sign-in,
+and a certificate still proceeds because `-Tenant` names the directory.
+
+`connect` also gained `--dry-run`. `collect` has had one since it existed; the command
+somebody runs while working out how any of this fits together had no way to be tried, so
+the only way to see what it would do was to let it do it.
+
 ### FIRST-RUN-004 — the golden path exists as commands
 
 **Done when:** `setup` prepares and diagnoses an environment, including how to obtain an

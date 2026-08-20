@@ -25,6 +25,7 @@ from m365_governance import connecting
 from m365_governance.connecting import (
     Connection,
     Reach,
+    Reason,
     connect,
     describe,
     document,
@@ -620,3 +621,24 @@ def test_because_carries_the_reason_rather_than_the_trace_id():
     said = "\n".join(attempt.because)
     assert "AADSTS90002" in said
     assert "Correlation ID" not in said
+
+
+def test_a_dry_run_reaches_nothing_and_says_it_reached_nothing():
+    """`collect` has had this since it existed.
+
+    `connect` — the command somebody runs while working out how any of this
+    fits together — had no way to be tried, so the only way to see what it
+    would do was to let it do it.
+    """
+    reached = []
+
+    def run(argv, on_progress):
+        reached.append(argv)
+        return 0, "", "", False
+
+    attempt = _attempt(dry_run=True, engine=run)
+
+    assert not reached
+    assert attempt.reach is Reach.CANCELLED
+    assert attempt.reason is Reason.CANCELLED
+    assert "-Mode" in attempt.output[0]

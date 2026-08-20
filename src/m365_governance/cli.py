@@ -51,6 +51,7 @@ from . import (
 )
 from . import doctor as doctor_module
 from . import inspect as inspect_module
+from . import project as project_file
 from .engine import evaluate
 from .loader import DocumentError, load_evidence, load_profile, load_rules
 from .reporting import (
@@ -113,11 +114,18 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     collect.add_argument(
         "--client-id",
-        required=True,
         help="an Entra ID app registration. Required: PnP.PowerShell has "
         "shipped no application of its own since 2.12.0",
     )
     collect.add_argument("--output", type=Path, required=True)
+    collect.add_argument(
+        "--project",
+        type=Path,
+        help=(
+            f"a project file. Omit to use the nearest {project_file.NAME} "
+            f"from here upwards, if there is one"
+        ),
+    )
     collect.add_argument("--site-url")
     collect.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
     collect.add_argument(
@@ -181,12 +189,26 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     connect.add_argument(
         "--client-id",
-        required=True,
         help="an Entra ID app registration. Required: PnP.PowerShell has "
         "shipped no application of its own since 2.12.0",
     )
     connect.add_argument("--site-url")
+    connect.add_argument(
+        "--project",
+        type=Path,
+        help=(
+            f"a project file. Omit to use the nearest {project_file.NAME} "
+            f"from here upwards, if there is one"
+        ),
+    )
     connect.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
+    connect.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="print the command and reach no tenant. `collect` has had this "
+        "since it existed; the command more likely to be run while finding "
+        "out how any of this works had no way to be tried",
+    )
     connect.add_argument(
         "--device-login",
         action="store_true",
@@ -500,6 +522,29 @@ def _application_id(value: str) -> None:
         )
 
 
+def _project(args) -> None:
+    """Fill the target and the identity from a project file, and say so.
+
+    BEFORE EVERY OTHER REFUSAL. `--client-id` is no longer required by the
+    parser, because a project file may hold it; the requirement did not go
+    away, it moved to where both sources have been read. A parser that still
+    demanded it would refuse a command the file could have completed.
+
+    Which file was read is printed, always. A value that arrived from a file
+    the caller did not know about would be the ambient configuration this
+    exists instead of, and a message is the difference between the two.
+    """
+    named = getattr(args, "project", None)
+    path = Path(named) if named else project_file.find()
+    if path is None:
+        return
+
+    found = project_file.load(path)
+    filled = found.apply(args)
+    if filled and getattr(args, "format", "text") == "text":
+        print(f"{path}: {', '.join(filled)}", file=sys.stderr)
+
+
 def _authentication(args) -> None:
     """Two modes, and the caller has to have chosen exactly one.
 
@@ -514,8 +559,14 @@ def _authentication(args) -> None:
     tenant and this does not: the cheapest place to stop is before the network.
     """
     client_id = getattr(args, "client_id", None)
-    if client_id is not None:
-        _application_id(client_id)
+    if client_id is None:
+        raise AmbiguousIdentity(
+            "no --client-id, and no identity in a project file. Every "
+            "connection needs an Entra ID application registration: "
+            "PnP.PowerShell has shipped no application of its own since "
+            f"2.12.0. Write it once in {project_file.NAME} to stop repeating it."
+        )
+    _application_id(client_id)
 
     certificate = getattr(args, "certificate_path", None)
     device = getattr(args, "device_login", False)
@@ -558,6 +609,7 @@ def _cmd_collect(args) -> int:
     # them, or half of one, used to be settled by whichever branch the script
     # tested first.
     try:
+        _project(args)
         _authentication(args)
     except AmbiguousIdentity as refusal:
         print(f"refusing to run: {refusal}", file=sys.stderr)
@@ -650,6 +702,10 @@ def _collect_from_graph(args, chosen) -> int:
     The token comes from the environment because this engine never obtains one.
     A missing token is a refusal with the command that produces it, not a stack
     trace and not an attempt to sign somebody in.
+
+    The project file is not read again here: `collect` resolved it before
+    choosing a slice, and reading it twice would report the same file twice to
+    somebody who has already been told.
     """
     try:
         _authentication(args)
@@ -771,6 +827,7 @@ def _cmd_connect(args) -> int:
     problem rather than a consent problem.
     """
     try:
+        _project(args)
         _authentication(args)
     except AmbiguousIdentity as refusal:
         print(f"refusing to run: {refusal}", file=sys.stderr)
@@ -802,11 +859,16 @@ def _cmd_connect(args) -> int:
         site_url=args.site_url,
         tenant_url=args.tenant_url,
         device_login=args.device_login,
+        dry_run=args.dry_run,
         certificate_path=str(args.certificate_path) if args.certificate_path else None,
         tenant_id=args.tenant_id,
         certificate_password_env=args.certificate_password_env,
-        on_progress=report,
+        on_progress=None if args.dry_run else report,
     )
+
+    if args.dry_run:
+        print(established.output[0])
+        return 0
 
     if args.format == "json":
         # The contract, not a rendering of the object. A consumer validates this

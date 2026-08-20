@@ -310,6 +310,7 @@ def connect(
     site_url: str | None = None,
     tenant_url: str | None = None,
     device_login: bool = False,
+    dry_run: bool = False,
     certificate_path: str | None = None,
     tenant_id: str | None = None,
     certificate_password_env: str | None = None,
@@ -350,6 +351,31 @@ def connect(
         argv += ["-TenantId", tenant_id]
     if certificate_password_env:
         argv += ["-CertificatePasswordEnv", certificate_password_env]
+
+    if dry_run:
+        # THE COMMAND, AND NOTHING ELSE HAPPENS. `collect` has had this since it
+        # existed, and `connect` -- the command somebody runs while working out
+        # how any of this fits together -- had no way to be tried. Returned as
+        # a cancelled attempt rather than as a special kind of success: nothing
+        # was reached, and a document saying otherwise would be the first thing
+        # in this engine to claim an observation it did not make.
+        return Connection(
+            reach=Reach.CANCELLED,
+            returncode=0,
+            seconds=0.0,
+            attempted_at=_now(),
+            requested={
+                "site_url": site_url,
+                "tenant_url": tenant_url,
+                "client_id": client_id,
+                "device_login": device_login,
+                "certificate": bool(certificate_path),
+                "tenant_id": tenant_id,
+            },
+            reason=Reason.CANCELLED,
+            output=[" ".join(argv)],
+            because=["a dry run: the command was printed and no tenant reached"],
+        )
 
     attempted_at = _now()
     started = time.monotonic()

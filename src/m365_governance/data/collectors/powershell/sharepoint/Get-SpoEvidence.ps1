@@ -244,6 +244,30 @@ if ($Mode -eq 'Connect') {
     $addressUrl = if ($TenantUrl) { $TenantUrl } else { $SiteUrl }
     $resolved = Resolve-TenantAddress -Url $addressUrl
     Write-Host ('RESOLVED ' + ($resolved | ConvertTo-Json -Depth 4 -Compress))
+
+    # AN INTERACTIVE SIGN-IN GOES SOMEWHERE. If public discovery could not say
+    # which directory owns this address, it will not be this one: a delegated
+    # sign-in falls back to the directory the person is already signed into,
+    # and reports whatever it finds there as an answer about the address the
+    # caller typed. Observed on 2026-08-20: a host that does not exist opened a
+    # browser against an unrelated tenant, which then said the application was
+    # not in it -- a true sentence about the wrong directory.
+    #
+    # THE ENGINE HAD THE EVIDENCE AND USED IT FOR NOTHING. It asked which
+    # directory owns the address, was told nothing does, and signed in anyway.
+    # Acting on evidence that establishes nothing is the failure this product
+    # exists to make impossible.
+    #
+    # A certificate is different and proceeds: -Tenant names the directory, so
+    # the caller said where the token comes from and discovery is not the only
+    # thing that knew.
+    if (-not $resolved.resolved_tenant_id -and -not $CertificatePath) {
+        throw ("No directory owns $addressUrl, so an interactive sign-in " +
+            'would authenticate against whichever directory this browser is ' +
+            'already signed into, and report the result as an answer about ' +
+            'this address. Check the address, or name the directory with a ' +
+            'certificate. Discovery said: ' + $resolved.detail)
+    }
 }
 
 # --- connect (read-only) -----------------------------------------------------

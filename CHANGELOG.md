@@ -42,6 +42,19 @@ Rules carry their own versions, independently of this file. See
   under exit `1` — the code reserved for a negative governance result — so a
   typed path reached a pipeline as a failing rule. It is exit `2` and one
   sentence now.
+- **The target is written down once.** `m365-governance.toml` carries the
+  tenant and site addresses, the application registration and the
+  authentication mode; the command line always wins over it, the file that was
+  read is named on every run, and a key that names a credential is refused
+  rather than ignored. Ten slices against one tenant were ten commands, each
+  repeating the same two arguments.
+- **An interactive sign-in no longer goes wherever the browser happens to be
+  signed in.** `connect` resolves which directory owns an address before
+  signing in, and where nothing owned it, it signed in anyway — landing in an
+  unrelated directory and reporting what it found there as an answer about the
+  address that was typed. It is refused now. A certificate proceeds: `-Tenant`
+  names the directory.
+- **`connect --dry-run`**, which `collect` has had since it existed.
 - **The first-run journey has an owner**, recorded in
   [docs/FIRST-RUN-CONTRACT.md](docs/FIRST-RUN-CONTRACT.md).
 
