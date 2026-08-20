@@ -632,7 +632,17 @@ def _project(args) -> None:
 
     found = project_file.load(path)
     filled = found.apply(args)
-    if filled and getattr(args, "format", "text") == "text":
+    if filled:
+        # ALWAYS, AND ON STDERR. This was conditional on `--format` being
+        # `text`, which silently excluded every command whose formats are named
+        # something else: `run` reads a project file found in a parent
+        # directory and said nothing about it, which is the ambient
+        # configuration this file exists instead of. Observed by walking the
+        # journey, 2026-08-21.
+        #
+        # stderr was always the right stream and makes the condition
+        # unnecessary: a consumer parsing a document on stdout is unaffected by
+        # a line that never goes there.
         print(f"{path}: {', '.join(filled)}", file=sys.stderr)
 
 

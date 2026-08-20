@@ -305,10 +305,25 @@ macOS and Windows; Linux keeps the link, because the command differs by distribu
 printing one distribution's would be wrong for most readers of it. It is the only place
 this engine branches on an operating system, and it selects a sentence.
 
-**Windows is unobserved and needs a machine.** What it would settle: PowerShell 7 beside
+**Windows was never blocked on a machine.** CI ran `ubuntu-latest` with a Python matrix
+and no OS matrix, and `windows-latest` is the same class of free runner. The card
+inherited *needs a machine* as if it were the only resolution — rule 1, missed by its own
+author on the day it was written. `.github/workflows/ci.yml` now walks the journey on
+Windows, Linux and macOS from the built wheel, per push, which also makes rule 5 a routine
+rather than a container run once by hand.
+
+**The walk found a second defect.** `run` read a project file from a parent directory and
+never said which one: the message was conditional on `--format text`, and `run`'s formats
+are `markdown`, `json` and `html`. A file nobody was told about is the ambient
+configuration the project file exists instead of. It is on stderr unconditionally now,
+which was always the right stream.
+
+**What Windows will settle:** PowerShell 7 beside
 Windows PowerShell 5.1 and which one `shutil.which("pwsh")` finds; a PFX and
 `--certificate-password-env` under a different credential store; and where
-`m365-governance.toml` is looked for when `HOME` is `USERPROFILE`.
+`m365-governance.toml` is looked for when `HOME` is `USERPROFILE`. **It does not settle a
+PFX under another credential store**, and saying so keeps a green job from standing for
+the whole question.
 
 ### ENGINE-RELEASE-TRAIN-001 — make the authorization a non-event
 

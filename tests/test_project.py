@@ -142,3 +142,28 @@ def test_without_a_file_the_identity_is_still_required(tmp_path, monkeypatch, ca
     assert "no --client-id" in err
     assert project.NAME in err
     assert "Traceback" not in err
+
+
+def test_the_file_that_was_read_is_named_whatever_the_format_is_called(
+    tmp_path, monkeypatch, capsys
+):
+    """It was conditional on `--format text`, and `run` has no such format.
+
+    So `run` read a project file found in a parent directory and said nothing
+    about it — the ambient configuration this file exists instead of, restored
+    by a condition that assumed every command names its formats the same way.
+    Observed by walking the journey on 2026-08-21.
+
+    stderr was always the right stream: a consumer parsing a document on stdout
+    is unaffected by a line that never goes there.
+    """
+    _project(tmp_path)
+    deep = tmp_path / "evidence" / "august"
+    deep.mkdir(parents=True)
+    monkeypatch.chdir(deep)
+
+    main(["run", "--dry-run"])
+    err = capsys.readouterr().err
+
+    assert project.NAME in err
+    assert "client_id" in err
