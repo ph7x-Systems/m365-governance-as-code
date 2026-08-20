@@ -30,6 +30,12 @@ INSTALL_GATES=1
 red()   { printf '\033[31m%s\033[0m\n' "$*"; }
 green() { printf '\033[32m%s\033[0m\n' "$*"; }
 step()  { printf '\n\033[1m▸ %s\033[0m\n' "$*"; }
+# WHAT A STEP IS DOING WHILE IT IS DOING IT. Several steps printed a heading
+# and then nothing for minutes because the work underneath was redirected to
+# /dev/null, which on a CI runner is indistinguishable from a hang - and the
+# reader's only remedy was to wait and hope. A line per unit of work costs
+# nothing and turns a silence into progress.
+note()  { printf '  · %s\n' "$*"; }
 
 TMP=""
 cleanup() { local rc=$?; [[ -n "$TMP" ]] && rm -rf "$TMP"; exit $rc; }
@@ -110,7 +116,9 @@ rm -f "$OUT"
 # per cent: nearly the whole table published in ARCHITECTURE.md had never
 # executed. A documented claim that nothing runs is a claim that drifts.
 step "coverage"
-coverage run -m pytest -q >/dev/null
+# NOT REDIRECTED. `-q` already reduces pytest to one character per test, and
+# those characters are the only sign the longest step in this gate is alive.
+coverage run -m pytest -q
 coverage report
 
 # ── 6. the examples are current ──────────────────────────────────────────────
@@ -126,10 +134,13 @@ step "Every fixture evaluates"
 # kind of green that means nothing was checked. Named rather than globbed: the
 # other directories under fixtures hold assessments and comparisons, which are
 # not evidence and are not evaluated.
+FIXTURES=0
 for f in src/m365_governance/data/fixtures/{sharepoint,entra}/*.json; do
+  note "$(basename "$(dirname "$f")")/$(basename "$f")"
   m365-governance evaluate --evidence "$f" --format json > /dev/null
+  FIXTURES=$((FIXTURES + 1))
 done
-echo "  ✓ all fixtures evaluated"
+echo "  ✓ $FIXTURES fixtures evaluated"
 
 # ── 8. the collector holds no write path ─────────────────────────────────────
 # What this proves is narrower than its name. It establishes that the file is
@@ -246,6 +257,7 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   TMP="$(mktemp -d)"
 
   step "Build the wheel"
+  note "python -m build --wheel"
   "$PY" -m build --wheel -o "$TMP/dist" >/dev/null
   ls "$TMP/dist"/*.whl
 
@@ -278,18 +290,25 @@ PY
   # `cd` out of the checkout is the whole point. Run from the repository and
   # these steps prove nothing at all.
   step "Install into an empty environment and run from outside any checkout"
+  note "creating an empty virtual environment"
   "$PY" -m venv "$TMP/env"
+  note "installing the wheel into it"
   "$TMP/env/bin/pip" install --quiet "$TMP"/dist/*.whl
   mkdir -p "$TMP/empty"
   (
     cd "$TMP/empty"
     G="$TMP/env/bin/m365-governance"
+    note "doctor"
     "$G" doctor > doctor.txt
+    note "list-rules"
     "$G" list-rules > /dev/null
+    note "validate"
     "$G" validate > /dev/null
     FIXTURE=$("$TMP/env/bin/python" -c \
       'from m365_governance.resources import packaged; print(packaged("fixtures")/"sharepoint"/"list-over-limit.json")')
+    note "evaluate, against a packaged fixture"
     "$G" evaluate --evidence "$FIXTURE" --format json > /dev/null
+    note "collect --dry-run"
     "$G" collect sites --dry-run --tenant-url https://x-admin.sharepoint.com \
       --client-id 00000000-0000-0000-0000-000000000000 --output out.json > /dev/null
 
