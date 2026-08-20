@@ -50,6 +50,10 @@
     },
     "https://ph7x.com/schemas/m365-governance/connection/1.0.0": {
       "digest": "054ad3ffb0bce5ed1183d78fed8f310034d8de7707a7989e288c70877ce7c12c",
+      "path": "schemas/archive/connection-1.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/connection/1.1.0": {
+      "digest": "7ee460551b47a4c892322f2faadcb868816bb7e836e5349a7d0719bbfbc63d7f",
       "path": "schemas/connection.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/evidence/1.2.0": {
@@ -101,5 +105,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "840594cf2ca189731536bab7a898b68ba1c7597c0bc33463041b323edd9bc64e"
+  "set_digest": "ed471a29f8d9fe3fbfa158a83f4719d4d4e82bcd82a23b49140dd078dd3dd693"
 }

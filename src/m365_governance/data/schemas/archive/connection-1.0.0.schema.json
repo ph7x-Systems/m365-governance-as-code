@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/connection/1.1.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/connection/1.0.0",
   "title": "Connection",
-  "description": "What one attempt to reach a tenant turned out to be. WHY THIS IS A CONTRACT, HAVING BEEN ARGUED NOT TO BE. The first version of `connect` published this shape and declared it deliberately unversioned, on the reasoning that a session ends when the process does and therefore has no document to version. That reasoning answered the wrong question. Persistence is not the test; DEPENDENCE is. A consumer already parses this to decide whether a collection may be started, and a shape somebody depends on is a contract whether or not it is called one — the only difference being whether it can change without anybody noticing. IT DESCRIBES AN ATTEMPT AND NOT A RESOURCE, and that is why it is a contract of its own rather than a corner of the evidence. Nothing here is evidence about a tenant: no rule reads it, no assessment carries it, and it produces no finding. It is the answer to a question asked before any evidence exists — can this application registration reach this tenant, and as whom. VERSION 1.1.0 ADDS `reason` AND `authorization`, BOTH OPTIONAL, AND THE OPTIONALITY IS FOR OLD DOCUMENTS RATHER THAN FOR NEW PRODUCERS. Anything writing this contract at 1.1.0 emits both, always; a consumer holding a document tells a legacy one by the version it declares, and never by a missing key. `reason` exists because `reach` was the only machine-readable field: consent that was never granted, an application absent from the directory and a policy that blocked the sign-in all arrive as `refused`, and a consumer wanting to say which had to match on whatever PnP.PowerShell printed. `authorization` exists because signing in is not being authorised: Connect-PnPOnline succeeds with zero permissions granted, and a product that stops at the sign-in reports authorization while verifying authentication.",
+  "description": "What one attempt to reach a tenant turned out to be. WHY THIS IS A CONTRACT, HAVING BEEN ARGUED NOT TO BE. The first version of `connect` published this shape and declared it deliberately unversioned, on the reasoning that a session ends when the process does and therefore has no document to version. That reasoning answered the wrong question. Persistence is not the test; DEPENDENCE is. A consumer already parses this to decide whether a collection may be started, and a shape somebody depends on is a contract whether or not it is called one — the only difference being whether it can change without anybody noticing. IT DESCRIBES AN ATTEMPT AND NOT A RESOURCE, and that is why it is a contract of its own rather than a corner of the evidence. Nothing here is evidence about a tenant: no rule reads it, no assessment carries it, and it produces no finding. It is the answer to a question asked before any evidence exists — can this application registration reach this tenant, and as whom.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -19,7 +19,7 @@
   "properties": {
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/connection/1.1.0",
+      "const": "https://ph7x.com/schemas/m365-governance/connection/1.0.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword."
     },
     "reach": {
@@ -71,53 +71,6 @@
         "minLength": 1
       },
       "description": "The observable facts that produced the verdict, in the order they were established, and including the collector's own last words on a failure. Never empty: a verdict with nothing behind it is the message this product exists to stop shipping."
-    },
-    "reason": {
-      "enum": [
-        "established",
-        "consent-required",
-        "application-not-in-directory",
-        "directory-not-found",
-        "blocked-by-policy",
-        "certificate-rejected",
-        "address-not-resolved",
-        "collector-unavailable",
-        "cancelled",
-        "not-classified"
-      ],
-      "description": "WHY the attempt ended as it did, where `reach` says how. Read from the directory's own error codes, which are the only part of a failure whose meaning is documented by the party that produced it. `not-classified` is an answer and not a gap: an attempt this engine does not recognise is reported as unrecognised, with the collector's own words intact in `because`, rather than forced into the nearest label. Absent only on a document written before 1.1.0."
-    },
-    "authorization": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "state",
-        "detail",
-        "read"
-      ],
-      "description": "WHETHER THIS IDENTITY MAY READ, which is a different question from whether it signed in, and the reason they are two fields. One read is attempted -- the cheapest the rules actually need -- so that a denial is observed rather than predicted. `not-attempted` is never reported as established: without an address there was nothing to read, and saying so is honest where inventing a target would not be. An established read proves that read and no other; it is not a statement about every permission a collection will need.",
-      "properties": {
-        "state": {
-          "enum": [
-            "established",
-            "denied",
-            "not-attempted"
-          ]
-        },
-        "detail": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "read": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "What was read, where something was. Null otherwise."
-        }
-      }
     }
   },
   "$defs": {
@@ -128,9 +81,7 @@
         "site_url",
         "tenant_url",
         "client_id",
-        "device_login",
-        "certificate",
-        "tenant_id"
+        "device_login"
       ],
       "description": "The addresses and the application. All four keys always, with nulls rather than omissions: an absent key and a null would make 'not supplied' and 'not applicable' read alike.",
       "properties": {
@@ -155,17 +106,6 @@
         "device_login": {
           "type": "boolean",
           "description": "Whether the code flow was used, for a host with no browser. A fact about how somebody signed in, not about what they could see."
-        },
-        "certificate": {
-          "type": "boolean",
-          "description": "Whether the application authenticated itself with a certificate. A fact about which identity was asked for, never the certificate."
-        },
-        "tenant_id": {
-          "type": [
-            "string",
-            "null"
-          ],
-          "description": "The directory an application-only token was requested from. Null for a delegated sign-in, where the directory comes from the address and the person signing in."
         }
       }
     },

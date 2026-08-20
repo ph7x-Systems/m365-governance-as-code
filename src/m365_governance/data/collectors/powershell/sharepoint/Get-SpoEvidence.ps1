@@ -250,6 +250,15 @@ if ($Mode -eq 'Connect') {
 
 # Read where a function can carry the analyzer's exception: a script body
 # cannot, and the conversion needs one. See Connection.psm1.
+# The identity is decided by HOW the connection is made, once, before it is
+# made. It used to be derived after the Connect mode had already returned, so
+# `Get-ConnectionFacts` reported a hardcoded 'delegated' and a run holding a
+# certificate described itself as a person.
+$identityKind = if ($CertificatePath) { 'application' } else { 'delegated' }
+$identityMethod = if ($CertificatePath) { 'certificate' }
+elseif ($DeviceLogin) { 'device-code' }
+else { 'interactive' }
+
 $certificatePassword = Read-CertificatePassword -VariableName $CertificatePasswordEnv
 
 $TenantHost = Connect-Collector -Mode $Mode -ClientId $ClientId -SiteUrl $SiteUrl `
@@ -267,7 +276,15 @@ $TenantHost = Connect-Collector -Mode $Mode -ClientId $ClientId -SiteUrl $SiteUr
 # whatever PnP.PowerShell printed on the way, including a device code somebody
 # has to read.
 if ($Mode -eq 'Connect') {
-    $facts = Get-ConnectionFacts -TenantHost $TenantHost
+    # AUTHORIZATION IS A SECOND QUESTION AND IT IS ASKED SEPARATELY. Signing in
+    # proves who you are; one read proves what you may see. Emitted on its own
+    # line so that a session which opened and then could not read anything
+    # cannot be reported as a working connection.
+    $access = Test-CollectorAuthorization -SiteUrl $SiteUrl
+    Write-Host ('AUTHORIZATION ' + ($access | ConvertTo-Json -Depth 4 -Compress))
+
+    $facts = Get-ConnectionFacts -TenantHost $TenantHost `
+        -IdentityKind $identityKind -IdentityMethod $identityMethod
     Write-Host ('CONNECTION ' + ($facts | ConvertTo-Json -Depth 4 -Compress))
     return
 }
@@ -275,13 +292,6 @@ if ($Mode -eq 'Connect') {
 if (-not $OutputPath) {
     throw "Mode $Mode writes evidence and needs -OutputPath."
 }
-
-# The identity is decided by how the connection was made, one line above where
-# it is recorded, so the two cannot drift.
-$identityKind = if ($CertificatePath) { 'application' } else { 'delegated' }
-$identityMethod = if ($CertificatePath) { 'certificate' }
-elseif ($DeviceLogin) { 'device-code' }
-else { 'interactive' }
 
 Initialize-Evidence -CollectorName $CollectorName `
     -CollectorVersion $CollectorVersion -TenantHost $TenantHost `

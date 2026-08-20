@@ -85,9 +85,30 @@ distinguishes "signed in" from "can read what the rules need"; and the failure c
 enumerated reason beside `reach`, so that no consumer — the desktop product first among
 them — has to regular-express English out of PnP.PowerShell.
 
-**Owner decision required before this ships:** `connection/1.0.0` is published, and a new
-required field changes what a published contract means. The version this lands as is the
-owner's to choose.
+**Contract decision, taken:** `connection/1.1.0`. `reason` and `authorization` are
+optional in the schema so that a document written before the change still validates, and
+every producer at 1.1.0 emits both. Optionality is compatibility with the past, never
+licence for a producer to omit a field and leave every consumer carrying a fallback — a
+consumer tells a legacy document by the version it declares. `connection/1.0.0` is
+archived rather than deleted.
+
+**State, 2026-08-20:** `IMPLEMENTED → TESTED → READY FOR LIVE PROOF`.
+
+Application-only reaches the collector, the session reports the identity it actually
+holds, authorization is asked and answered separately from authentication, and every
+failure carries `reason`. Proven from the installed wheel against a directory that does
+not exist: `reason: directory-not-found`, exit `1`, no traceback, no browser.
+
+Two defects were found by that live run and not by any test, which is the argument for
+running it: the collector's own protocol lines and another product's terminal colour
+were printed to the reader, and `because` carried a trace id and a correlation id
+instead of the sentence that named the problem. Both are fixed and both are now tests.
+
+**The one action that unblocks the rest:** an application registration in a tenant, with
+a certificate uploaded to it and `Sites.Read.All` consented. Without it, no run can
+demonstrate `reach: established` with `identity_kind: application`, and
+`authorization: established` has never been observed — only its `denied` and
+`not-attempted` branches. The slice is not `LIVE-PROVEN` until it has been.
 
 ### FIRST-RUN-003 — a configured target, and no secrets in it
 

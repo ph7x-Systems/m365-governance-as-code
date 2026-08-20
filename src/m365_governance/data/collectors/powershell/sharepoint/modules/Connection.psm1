@@ -256,7 +256,18 @@ function Get-ConnectionFacts {
         # Passed in rather than read from a script variable. `$script:TenantHost`
         # belongs to Evidence.psm1, and a module scope is not shared: reading it
         # here would have silently produced an empty host.
-        [Parameter(Mandatory = $true)] [string] $TenantHost
+        [Parameter(Mandatory = $true)] [string] $TenantHost,
+
+        # WHICH IDENTITY SIGNED IN, decided by the caller from how the
+        # connection was made rather than guessed from the session object.
+        # It was hardcoded to 'delegated' here, which meant that a run
+        # authenticating as the application reported itself as a person -- in
+        # the one field that decides what an empty result means.
+        [Parameter()] [ValidateSet('delegated', 'application')]
+        [string] $IdentityKind = 'delegated',
+
+        [Parameter()] [ValidateSet('interactive', 'device-code', 'certificate')]
+        [string] $IdentityMethod = 'interactive'
     )
 
     $connection = Get-PnPConnection
@@ -269,7 +280,8 @@ function Get-ConnectionFacts {
         host             = $TenantHost
         url              = [string] $connection.Url
         client_id        = [string] $connection.ClientId
-        identity_kind    = 'delegated'
+        identity_kind    = $IdentityKind
+        identity_method  = $IdentityMethod
         connection_type  = [string] $connection.ConnectionType
         scopes           = @($connection.Scopes)
         # WHICH DIRECTORY THIS SESSION IS OPERATING IN, and null until something
@@ -280,4 +292,55 @@ function Get-ConnectionFacts {
     }
 }
 
-Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress
+function Test-CollectorAuthorization {
+    <#
+        .SYNOPSIS
+        Whether this identity may READ, which is a different question from
+        whether it signed in.
+
+        .DESCRIPTION
+        Connect-PnPOnline succeeds with zero permissions granted. A product
+        that stops at the sign-in has verified authentication and reported
+        authorization, and the reader cannot tell the difference until a
+        collection several minutes long comes back empty.
+
+        One read, the cheapest that the rules actually need: the web at the
+        address the caller gave. It is read-only, it is the same call the
+        collectors make first, and it is the smallest thing that can prove a
+        denial rather than predict one.
+
+        NOT ATTEMPTED IS AN ANSWER. Without a site address there is nothing to
+        read yet, and saying so is honest where inventing a target would not
+        be. It is never reported as established.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter()] [string] $SiteUrl
+    )
+
+    if (-not $SiteUrl) {
+        return [ordered]@{
+            state  = 'not-attempted'
+            detail = 'no site address was given, so no read was attempted'
+            read   = $null
+        }
+    }
+
+    try {
+        $web = Get-PnPWeb -ErrorAction Stop
+        return [ordered]@{
+            state  = 'established'
+            detail = 'read one web at the address given'
+            read   = [string] $web.Url
+        }
+    }
+    catch {
+        return [ordered]@{
+            state  = 'denied'
+            detail = [string] $_.Exception.Message
+            read   = $null
+        }
+    }
+}
+
+Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization

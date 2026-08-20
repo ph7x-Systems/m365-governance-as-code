@@ -10,6 +10,43 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
+**`connect` now answers the question a person actually has**, which is not
+"did a sign-in succeed" but "can this identity work here".
+
+- **A certificate reaches the tenant.** `connect` accepted
+  `--certificate-path`, `--tenant-id` and `--certificate-password-env`,
+  validated every incoherent combination of them, and then dropped them: the
+  session opened as a person while the caller had asked for the application.
+  The one command whose purpose is to prove an application registration can
+  reach a tenant could not prove it for the identity an unattended run uses.
+- **The session says which identity it is.** `identity_kind` was hardcoded to
+  `delegated` in the connection facts, so a run holding a certificate described
+  itself as a person — in the field that decides what an empty result means.
+- **Authentication and authorization are two answers.**
+  `Connect-PnPOnline` succeeds with zero permissions granted, so one read is
+  now attempted and reported separately. `not-attempted` is never reported as
+  established.
+- **A failure carries a reason a program can act on.** `connection/1.1.0` adds
+  `reason`: consent that was never granted, an application absent from the
+  directory and a policy that blocked the sign-in all arrived as `refused`, and
+  a consumer wanting to tell them apart had to match on whatever
+  PnP.PowerShell printed. `reason` and `authorization` are optional in the
+  schema so documents written before 1.1.0 still validate; every producer at
+  1.1.0 emits both. `not-classified` is an answer, not a gap.
+- **An identifier that cannot be an application registration is refused before
+  the network.** A value of the wrong shape used to start PowerShell, open a
+  browser and fail in the directory, so the product's own worst error was
+  diagnosed by Microsoft, in a window, outside the terminal.
+- **A path that is not there is a refusal, not a result.** `evaluate`,
+  `assess`, `stats`, `report`, `verify` and `diff` raised `FileNotFoundError`
+  under exit `1` — the code reserved for a negative governance result — so a
+  typed path reached a pipeline as a failing rule. It is exit `2` and one
+  sentence now.
+- **The first-run journey has an owner**, recorded in
+  [docs/FIRST-RUN-CONTRACT.md](docs/FIRST-RUN-CONTRACT.md).
+
+### Entra ID
+
 Microsoft Entra ID, starting with the access-policy surface, and the first
 collector in this product that does not run PowerShell.
 

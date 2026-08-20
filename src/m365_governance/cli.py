@@ -27,6 +27,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 from datetime import UTC, datetime
@@ -466,6 +467,39 @@ class AmbiguousIdentity(Exception):
     """The command line names two ways of authenticating, or half of one."""
 
 
+#: What an Entra ID application registration is: a GUID. Matched here rather
+#: than parsed, because nothing in this engine reads inside it.
+_APPLICATION_ID = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
+    r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def _application_id(value: str) -> None:
+    """Refuse an identifier that cannot be an application registration.
+
+    BEFORE ANYTHING LEAVES THIS PROCESS. A value of the wrong shape used to
+    start PowerShell, open a browser and fail in the directory, so the product's
+    own worst error was diagnosed by Microsoft, in a window, outside the
+    terminal a person was looking at. Audited on 2026-08-20 against a live
+    tenant: `--client-id not-a-guid` reached `AADSTS700016`.
+
+    This engine already holds the rule -- the cheapest place to stop is before
+    the network -- and applied it to authentication modes and to nothing else.
+
+    IT PROVES NOTHING ABOUT THE REGISTRATION. A well-formed GUID may name no
+    application at all, and that answer needs the directory. What this removes
+    is the class of failure the directory should never have been asked about.
+    """
+    if not _APPLICATION_ID.match(value.strip()):
+        raise AmbiguousIdentity(
+            f"--client-id is not an application registration: {value!r}. "
+            f"An Entra ID application id is a GUID. If you do not have one, "
+            f"register an application in your own tenant: PnP.PowerShell has "
+            f"shipped no application of its own since 2.12.0."
+        )
+
+
 def _authentication(args) -> None:
     """Two modes, and the caller has to have chosen exactly one.
 
@@ -479,6 +513,10 @@ def _authentication(args) -> None:
     Refused here rather than in the collector, because the collector reaches a
     tenant and this does not: the cheapest place to stop is before the network.
     """
+    client_id = getattr(args, "client_id", None)
+    if client_id is not None:
+        _application_id(client_id)
+
     certificate = getattr(args, "certificate_path", None)
     device = getattr(args, "device_login", False)
     tenant_id = getattr(args, "tenant_id", None)
@@ -753,14 +791,20 @@ def _cmd_connect(args) -> int:
     # sign-in prints a code somebody has to read off the screen, so buffering
     # would ask a person to wait for something they had already been shown.
     def report(line: str) -> None:
-        if args.format == "text":
-            print(line, flush=True)
+        if args.format != "text":
+            return
+        shown = connecting.readable(line)
+        if shown is not None:
+            print(shown, flush=True)
 
     established = connecting.connect(
         client_id=args.client_id,
         site_url=args.site_url,
         tenant_url=args.tenant_url,
         device_login=args.device_login,
+        certificate_path=str(args.certificate_path) if args.certificate_path else None,
+        tenant_id=args.tenant_id,
+        certificate_password_env=args.certificate_password_env,
         on_progress=report,
     )
 
