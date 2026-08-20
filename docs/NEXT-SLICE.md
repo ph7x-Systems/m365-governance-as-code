@@ -17,9 +17,492 @@ and continues in order without conversation, scratchpads, roadmap ratification o
 new owner approval. Completed work is removed from the active queue rather than kept
 as queue history; its PR, commits and release evidence remain the historical record.
 
-The first active slice is `IDENTITY-CA-001`. Its full contract follows. The remaining
-cards are executable contracts combined with the common contract below; they are not
+**Where to start, 2026-08-20.** `ENGINE-SHIPPABLE-001` and `ENGINE-OBSERVE-PREP-001`,
+below, opened after the queue was wrongly declared exhausted: work was escalated as
+blocked because part of it was, which the charter's `D51` names as the second half of the
+same mistake as inventing an answer. `FIRST-RUN-001` to `006` are `CONTRACT-PROVEN` and
+are not restarted; the position block in the next section says what each of the remaining
+closures needs, and three of them are not engineering. The first slice with engineering
+left in it is the residual-defect list recorded under `FIRST-RUN-006`.
+
+The cards are executable contracts combined with the common contract below; they are not
 ideas, options or a backlog requiring refinement by the Executor.
+
+## FIRST-RUN — the journey has an owner, and functional expansion is frozen until it works
+
+**Owner decision, 2026-08-20.** An independent product audit found that this engine is
+good and that its product begins too late: quality is reachable only after a new user
+has crossed, unaided, the most ordinary part of any Microsoft 365 tool — install, obtain
+an identity, connect, prove access, run, receive a result. The audit's central finding is
+not that a `run` command is missing. It is that **the first-run journey had no owner**,
+so the Engine, the site and the desktop product each told a different version of the
+truth and no gate could fail.
+
+Ownership is now recorded: `docs/FIRST-RUN-CONTRACT.md`, and in `AGENTS.md`.
+
+**The freeze.** No new collector, workload, rule, output format or report capability
+starts until the slices in this section are `SHIPPED`. That includes Exchange, Teams,
+further Entra work, SARIF, additional rules and report sophistication. `IDENTITY-CA-001`,
+`IDENTITY-APPS-001` and `MIGRATION-VERIFY-001` keep their contracts, in their present
+order, and resume after this section — they do not resume before it.
+
+**The version position.** No further product is added on top of `1.0.0b6` while the
+published documentation describes commands that version does not contain. The exit of
+this section is a coherent beta from which the site derives, proven by
+`tools/post-release-check.sh`.
+
+**Position, 2026-08-20, after 001 to 006.** In the vocabulary of charter `D46`:
+
+```text
+FIRST-RUN 001-006   CONTRACT-PROVEN
+AUDIT               CONTRACT-PROVEN   the four residual defects are closed
+LIVE-OBSERVED       not established   no run has been performed against a tenant.
+                                      Costs a credential. Highest risk reduction
+                                      per unit of effort
+SHIPPED             not established   the public index is behind this branch.
+                                      Blocked by an owner's publication decision
+MARKET              not established   FIRST-PRODUCT.md names no product.
+                                      Decided outside this repository
+```
+
+**They are independent questions and they are not equally cheap to get wrong.** Observing
+needs a credential and no release: the wheel this branch already builds is enough.
+Publishing is the step that cannot be taken back — after it, a defect is no longer an
+internal finding, and the person who meets it met it first. Publishing before observing
+therefore delivers a journey nobody has run, and the four defects found on 2026-08-20
+were found by running rather than by testing, with a green gate and ninety per cent
+coverage standing over every one of them. The reverse dependency does not exist.
+
+`FIRST-RUN` being `CONTRACT-PROVEN` and the audit being closed are different claims, and
+only the first is true. The audit line is carried here rather than in a paragraph
+underneath, because a state somebody has to read prose to discover is a state that gets
+reported as absent.
+
+Four separate closures over things that already exist, and none of them needs new
+architecture. Three of the four are not engineering: a release needs an owner's
+authorization, an observation needs a credential, and a market needs interviews.
+
+**The four residual defects are closed, 2026-08-20.** One was worse than the audit
+recorded. `Resource: <unknown>` was not a fixture without a display name: the line read
+`resource["id"]`, a key no evidence document has ever carried, because identity is
+structured and was deliberately never collapsed into a parsed string — so **every
+markdown report this engine has produced printed `<unknown>`**, on the second line,
+beside a title that had the name in it all along. A `--rules` path that is not there no
+longer arrives as "the rules do not validate", which sent a reader to inspect rules that
+were fine. Every `--help`, from the one place parsers are built, names the manual. And
+`doctor` gives a remedy for a missing `pwsh` as it already did for a missing
+PnP.PowerShell.
+
+**The recurring defect, named so that the next executor looks for it.** Four instances in
+one day, and one shape: **a step producing a verdict from a source that could not have
+produced it.** `unknown` read as an answer; discovery failing and the sign-in proceeding;
+a requested address standing in as the tenant an assessment is about; and seventy-one
+tests skipping while the suite stayed green. Charter `D49` states the rule. What it does
+not do is find the next one — and every one of these four was found by running the thing,
+never by reading it.
+
+**The test that replaces the old one.** The measure of readiness stops being coverage of
+rules by evidence path. It becomes: *on a clean machine, a person who knows Microsoft 365
+but has never seen this product can install it, obtain and configure the identity, prove
+they have access, and open a first report — without reading code, editing JSON, or
+guessing internal architecture.*
+
+### FIRST-RUN-001 — nothing interactive begins on an input that could be refused locally
+
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`, shipped by the release
+
+**State:** the path half is closed. `evaluate`, `assess`, `stats`, `report`, `verify` and
+`diff` refuse a path that is not there with exit `2` and one sentence, and the exit-code
+contract they are measured against is published on the site.
+
+**What is missing.** `--client-id` is accepted in any shape. A value that is not a GUID
+starts PowerShell, opens a browser and fails in the directory, so the product's own worst
+error is diagnosed by Microsoft, in a window, outside the terminal. Audited on
+2026-08-20 against a live tenant: `--client-id not-a-guid` reached `AADSTS700016`.
+
+**Done when:** an identifier that cannot be an application registration is refused before
+a process is started, with exit `2`; and the `AADSTS` codes a caller can act on are
+carried as a reason rather than as the collector's last three lines of output. The
+engine's own rule already says the cheapest place to stop is before the network — it is
+enforced today for authentication modes and for nothing else.
+
+### FIRST-RUN-002 — `connect` means "this identity can work here"
+
+**authority:** observation · **next action:** the owner's hour: application identity end to end
+
+**What is wrong.** `connect` accepts `--certificate-path`, `--tenant-id` and
+`--certificate-password-env`, validates them, and then does not pass them:
+`connecting.py` does not contain the word. `collect` passes them, and the PowerShell
+collector supports application-only in every mode including `Connect`. The one command
+whose purpose is to prove an application registration can reach a tenant cannot prove it
+for the identity an unattended run uses.
+
+**Second half.** Authentication and authorization are two answers. A session opens with
+zero permissions granted, and a product that stops after the first has reported the
+second.
+
+**Done when:** application-only works end to end through `connect`; the result
+distinguishes "signed in" from "can read what the rules need"; and the failure carries an
+enumerated reason beside `reach`, so that no consumer — the desktop product first among
+them — has to regular-express English out of PnP.PowerShell.
+
+**Contract decision, taken:** `connection/1.1.0`. `reason` and `authorization` are
+optional in the schema so that a document written before the change still validates, and
+every producer at 1.1.0 emits both. Optionality is compatibility with the past, never
+licence for a producer to omit a field and leave every consumer carrying a fallback — a
+consumer tells a legacy document by the version it declares. `connection/1.0.0` is
+archived rather than deleted.
+
+**State, 2026-08-20:** `CONTRACT-PROVEN`. Not `LIVE-OBSERVED` for its main path, and
+the four states are charter decision `D46`: a green gate proves the contract and nothing
+above it.
+
+Application-only reaches the collector, the session reports the identity it actually
+holds, authorization is asked and answered separately from authentication, and every
+failure carries `reason`. Proven from the installed wheel against a directory that does
+not exist: `reason: directory-not-found`, exit `1`, no traceback, no browser.
+
+Two defects were found by that live run and not by any test, which is the argument for
+running it: the collector's own protocol lines and another product's terminal colour
+were printed to the reader, and `because` carried a trace id and a correlation id
+instead of the sentence that named the problem. Both are fixed and both are now tests.
+
+**The one action that unblocks the rest:** an application registration in a tenant, with
+a certificate uploaded to it and `Sites.Read.All` consented. Without it, no run can
+demonstrate `reach: established` with `identity_kind: application`, and
+`authorization: established` has never been observed — only its `denied` and
+`not-attempted` branches. The slice does not reach `LIVE-OBSERVED` for application identity until it has been, and
+does not reach `PRODUCT-PROVEN` until somebody completes the published journey through
+the surface a user is given.
+
+### FIRST-RUN-003 — a configured target, and no secrets in it
+
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`
+
+**What is wrong.** There is no project file and no sanctioned defaults. Ten slices are ten
+commands, each retyping `--client-id` and an address; the audit counted the same two
+arguments written eleven times. The refusal to read PnP's ambient client id is correct —
+evidence must be able to name the identity that observed it — but it was never replaced.
+
+**Done when:** a project file carries client id, tenant and site targets, authentication
+mode and profile defaults; secrets are not in it and there is no option that would put
+them there; and the resolved identity is recorded in the evidence provenance, which is
+what the original objection actually asked for.
+
+**State, 2026-08-20:** `CONTRACT-PROVEN`. A project file carries the target and the
+identity, the command line always wins over it, a key naming a credential is refused
+rather than ignored, and the file that was read is named on every run. Not
+`LIVE-OBSERVED`: it has not been exercised against a tenant.
+
+**Found while proving it, and it is the sharpest defect of the day.** `connect` resolves
+which directory owns an address, by public discovery, before signing in. Where nothing
+owned the address it signed in anyway — and an interactive sign-in with no directory to
+go to lands in whichever one the browser is already signed into, then reports what it
+found there as an answer about the address that was typed. Observed twice on 2026-08-20
+against a live tenant, the second time from a host that does not exist: the browser
+opened against an unrelated directory and returned `AADSTS700016`, a true sentence about
+the wrong tenant. **The engine had the evidence and used it for nothing**, which is the
+failure this product exists to make impossible. It is refused now, before the sign-in,
+and a certificate still proceeds because `-Tenant` names the directory.
+
+`connect` also gained `--dry-run`. `collect` has had one since it existed; the command
+somebody runs while working out how any of this fits together had no way to be tried, so
+the only way to see what it would do was to let it do it.
+
+### ENGINE-CLEAN-MACHINE-001 — run the journey where nothing is installed
+
+**authority:** repository · **next action:** re-run at the next release candidate
+
+**Opened 2026-08-20.** Every defect found that day was found by running, none by reading,
+with a green gate standing over all of them. **The journey has never been run on a machine
+that is not this one**, and this one has a project checkout, a warm PowerShell, a PnP
+module, a configured shell and — as it turned out — a stale release on `PATH` that
+shadowed the engine under test for a whole session.
+
+**The slice.** Build the wheel, install it into a fresh environment with a fresh `HOME`,
+and execute the published journey as far as it goes without a tenant: `doctor`, `setup`,
+`connect --dry-run`, `run --dry-run`, and every refusal. **Record what a first-time reader
+meets**, not what the tests assert.
+
+It is `D46`'s `PRODUCT-PROVEN` minus the tenant, and it is the cheapest evidence left that
+nobody has collected.
+
+**It repeats at every release candidate.** Rule 5 of the charter's continuation procedure
+is a routine and not a virtue: an environment nobody has used is where the defects that
+survive a green gate live, and one clean run does not immunise the next release.
+
+**Run 2026-08-20: fresh `HOME`, bare `PATH`, no PowerShell, no PnP, no checkout.** The
+journey holds. `doctor` names both absences and gives the command for the one it can;
+`setup` prints the registration command and writes the project file; `setup` again, with
+an id, hands over to `connect` and `run`; every refusal is one sentence and exit `2`.
+
+**And it found one defect that no test could have.** `run --dry-run` printed
+`Plan: 2 of 11 collections` and exited `0` on a machine with no PowerShell — and a dry run
+is precisely what somebody uses to find out whether they are ready. The Graph slice
+already reported its missing token; the ten that need an interpreter said nothing about
+it, while `doctor` and the preflight both knew. The plan asks now, and the same machine
+reports `Plan: 0 of 11` with a reason against every line and exit `2`.
+
+**State:** `LIVE-OBSERVED` for everything that does not need a tenant. The three claims
+that do — `authorization: established`, `identity_kind: application`, `tenant.how:
+observed` — are unchanged and remain the owner's hour.
+
+### ENGINE-QUEUE-CLAIM-001 — `nothing remains` becomes a claim a gate can refuse
+
+**Opened 2026-08-20.** Rule 8 of the charter's continuation procedure says a
+`nothing remains` claim is established by enumeration and never by fatigue. As prose it
+is advice, and advice is what an executor at the end of a long session is least able to
+follow — twice on the day it was written.
+
+**The slice.** Every open card in this queue declares two fields:
+
+```text
+authority:     repository · observation · owner · interviews
+next action:   the one thing that happens when that authority arrives
+```
+
+A gate reads them. A card missing either fails the build, and the queue may not be
+described as exhausted while one exists. It is `unknown ≠ pass` pointed at the queue: a
+card whose authority nobody wrote down is a card nobody can establish is blocked, and the
+honest state for it is `not established` rather than `done`.
+
+**Why here and not in the site's queue too.** One implementation, in the repository that
+already runs a language gate over its own operational documents. The site adopts it after
+it has proven itself here, and not before: a gate copied into two repositories before it
+has been exercised in one is two gates to keep true.
+
+**Done, 2026-08-20.** The gate exists, is tested, runs in `release-check.sh`, and every
+card carries both fields. Its first run answered the question that had been getting the
+wrong answer:
+
+```text
+✓ 15 cards, all claimed: 2 observation, 4 owner, 9 repository
+  9 of them need no external authority
+```
+
+**Nine.** That line is what `no independent executable work remains` was competing with,
+and it is now printed by a gate rather than assembled from memory at the end of a long
+session.
+
+### ENGINE-SPFX-CLASSIFICATION-001 — a capability declared above its own note
+
+**Closed 2026-08-21.** **authority:** repository · **next action:** none.
+
+`spfx` was `live_validation_state: full` while the `live_note` beside it said *"no
+solution in either was behind its catalog version, so the finding branch has not been
+produced by a real catalog"*. **The capability declared more than the sentence under it**,
+and the site read the classification and published *proved against a real tenant*.
+
+**No new contract value was needed, and one was nearly added.** `negative-only` already
+means what happened; its description had narrowed it to *"absent or empty"*, which is a
+fact about the surface rather than about which path was exercised. A catalog of ten
+solutions with none of them behind its version leaves the finding exactly as unproved as
+an empty one does. The description is widened and `spfx` is reclassified — **a correction,
+not a version**. Adding a fifth value would have been architecture covering for data, in a
+published contract, where it is expensive to undo.
+
+### ENGINE-CLEAN-MACHINE-002 — the journey had met one operating system
+
+**Run 2026-08-21. State:** `LIVE-OBSERVED` on Linux. **authority:** owner, for Windows ·
+**next action:** a Windows machine.
+
+**Rule 5 applied where the product risk is largest.** The clean-machine run of the day
+before was macOS. The reader of this product is a Microsoft 365 administrator and is
+mostly on Windows, and this engine branches on no platform anywhere: `platform.system()`
+is reported by `doctor` and decides nothing.
+
+**Linux, in a container, today.** `doctor`, `setup`, the project file, `run --dry-run` and
+every refusal behave as they do on macOS. Exit codes hold, the plan reports `0 of 11` with
+a reason on every line, and no path, encoding or environment assumption surfaced.
+
+**One defect, and it was the predicted one.** The missing-PowerShell remedy was a URL
+where the contract asks for the whole of a diagnosis, and `run` told the reader that
+`doctor` gives the command — which was not true on any platform. It is a command now on
+macOS and Windows; Linux keeps the link, because the command differs by distribution and
+printing one distribution's would be wrong for most readers of it. It is the only place
+this engine branches on an operating system, and it selects a sentence.
+
+**Windows was never blocked on a machine.** CI ran `ubuntu-latest` with a Python matrix
+and no OS matrix, and `windows-latest` is the same class of free runner. The card
+inherited *needs a machine* as if it were the only resolution — rule 1, missed by its own
+author on the day it was written. `.github/workflows/ci.yml` now walks the journey on
+Windows, Linux and macOS from the built wheel, per push, which also makes rule 5 a routine
+rather than a container run once by hand.
+
+**The walk found a second defect.** `run` read a project file from a parent directory and
+never said which one: the message was conditional on `--format text`, and `run`'s formats
+are `markdown`, `json` and `html`. A file nobody was told about is the ambient
+configuration the project file exists instead of. It is on stderr unconditionally now,
+which was always the right stream.
+
+**What Windows will settle:** PowerShell 7 beside
+Windows PowerShell 5.1 and which one `shutil.which("pwsh")` finds; a PFX and
+`--certificate-password-env` under a different credential store; and where
+`m365-governance.toml` is looked for when `HOME` is `USERPROFILE`. **It does not settle a
+PFX under another credential store**, and saying so keeps a green job from standing for
+the whole question.
+
+### ENGINE-RELEASE-TRAIN-001 — make the authorization a non-event
+
+**authority:** repository · **next action:** rehearse `post-release-check.sh` against a local wheel
+
+**Opened 2026-08-20.** The owner's publication decision should cost minutes, not a
+session. What can be prepared without taking it: the CHANGELOG closed, the version bump
+staged rather than applied, `tools/post-release-check.sh` rehearsed against a locally
+built wheel, and the ordered steps from authorization to a proven install from the public
+index written down.
+
+**Not authorised by this card:** tagging, publishing, or bumping the version on `main`.
+
+### ENGINE-SHIPPABLE-001 — a release must not recreate the drift in mirror image
+
+**authority:** repository · **next action:** none: the manual is written, behind `unreleased`
+
+**Opened 2026-08-20.** `SHIPPED` was being treated as one decision. It is not. The
+published manual documents the old journey: there is no `cli/setup.md` and no
+`cli/run.md`. A release carrying `setup`, `connect` and `run` against a manual that
+documents none of them produces the same defect that `DOCS-AGAINST-PUBLISHED-001` exists
+to catch, pointing the other way — and `docs/FIRST-RUN-CONTRACT.md` obliges the site to
+document each step against a published release.
+
+**The slice.** The manual pages for the journey are drafted behind the mechanism
+`SITE-UNRELEASED-001` provides: declared as documenting an unreleased tree, checked
+against that tree, and not composed into the published artefact. They become publishable
+by the release, not by an edit made on the day.
+
+**Not authorised by this card:** publishing, tagging, or touching the version. Those are
+the owner's.
+
+**Done when:** the journey has pages, they are proven unpublished, and the day the release
+happens the site has nothing left to write.
+
+### ENGINE-OBSERVE-PREP-001 — reduce the cost of the hour that is blocked
+
+**authority:** repository · **next action:** write the runbook, in two dimensions
+
+**Opened 2026-08-20.** `LIVE-OBSERVED` is blocked on one credential and the credential is
+the owner's. **The plan for spending it is not blocked.**
+
+**The slice.** A runbook: the exact commands, in order, and which claim each one settles.
+Three have never been observed and each needs a different command —
+
+```text
+authorization: established    only `denied` and `not-attempted` have been seen
+identity_kind: application    end to end through `connect`, not only `collect`
+tenant.how: observed          still needs-tenant-validation
+```
+
+**`LIVE-OBSERVED` is one tenant AND one operating system, not one tenant.** If the hour
+can be spent on Windows it settles two questions instead of one. If it cannot, the runbook
+says which half stays unobserved rather than letting a macOS and Linux run stand for the
+journey the reader will actually take.
+
+**It records nothing as observed**, and it may not: writing an expected result down is not
+observing one. What it removes is a second session spent discovering what the first should
+have run.
+
+**Done when:** an hour with a tenant produces every observation this engine currently
+lacks, in one pass, without anybody deciding what to type while a credential is live.
+
+### FIRST-RUN-006 — provenance must not name a tenant the session never established — `CONTRACT-PROVEN`
+
+**authority:** observation · **next action:** read the directory from a session, once a tenant exists
+
+**Opened 2026-08-20, from the generalisation of the sign-in defect.** Charter `D49`: an
+absence never authorises the step that depends on it.
+
+**What is closed.** The guard now runs for every mode, from the one place that decides
+which URL is connected to. It used to live in the script, inside `if ($Mode -eq
+'Connect')`, so the single command that writes nothing was protected and the ten that
+write evidence were not.
+
+**What is still open, and it is a contract question.** `tenant.id` is null throughout this
+engine, and the evidence contract says in as many words that the host therefore carries
+the identity. That host is derived from the URL the caller asked for — `Get-TenantHost
+-Url $connectUrl` — and never from the session. This engine is fanatical about the same
+distinction one contract away: `observed_tenant_id` may never be filled from
+`resolved_tenant_id`, "in the one field a reader trusts to mean what was seen". Evidence
+does the equivalent by construction, in the field that currently identifies the tenant an
+assessment is about.
+
+The guard removes the path that made it dangerous. It does not make the provenance say
+what was observed rather than what was asked for.
+
+**Done, 2026-08-20, and deliberately not by inventing the observation.**
+`evidence/3.1.0` adds `tenant.how`: `requested` · `public-discovery` · `observed`, the
+vocabulary `connection` already uses for the same distinction. Every document this engine
+writes says `requested`, which is the truth: the host is the address the caller gave, and
+no step in a collection reads the directory the session is operating in.
+
+**Nothing claims `observed` and nothing may until a path is proven on a tenant.**
+`Get-PnPTenantId -TenantUrl` is validated but it is public discovery — a lookup anybody
+can perform without reaching the tenant — and copying it here is precisely what
+`connection` forbids for `observed_tenant_id`. The `-Connection` parameter set would be
+an observation and stays `needs-tenant-validation` in `docs/COLLECTION-PATH-AUDIT.md`.
+That question is unchanged; what changed is that a reader is no longer left to infer the
+answer from a field that looks like a fact.
+
+**The report says it**, because a contract nobody reads is a distinction that does not
+exist for the person holding the report.
+
+**Two defects fell out of it.** The tenant block was built inline in the envelope as well
+as in `New-TenantIdentity` — the duplication the note above that function warns about,
+and the two disagreed the moment one learned to say how the identity was established.
+And the run-schema tests shelled out to whatever `m365-governance` was on `PATH`, which
+on a developer machine is an installed release: they had been validating a published
+build rather than the code under test, and when the contract moved, seventy-one of them
+turned into skips without the suite going red once. They run the engine under test now,
+and a wholesale skip fails.
+
+### FIRST-RUN-004 — the golden path exists as commands
+
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`
+
+**Done when:** `setup` prepares and diagnoses an environment, including how to obtain an
+application registration; `connect` proves the identity; and `run` takes a configured
+target to an assessment and a report. `slice`, evidence directories, `profile` and run
+sets stop being prerequisites for a first result and become what they are — the
+vocabulary of the report, and material for the reference documentation.
+
+**State, 2026-08-20:** `CONTRACT-PROVEN`.
+
+`setup` runs `doctor`'s own report, then names the one command that produces an
+application registration — which nothing in this product named before, the only
+instruction anywhere being "register an Entra ID app, or use one your tenant already
+has": the hardest step written as an aside. It registers nothing itself. This engine
+reads and acquires nothing, and a read-only product that quietly wrote to a directory
+during setup would have a write path after all; the gate that proves the collector never
+mutates a tenant does not read the CLI, so a test does.
+
+`run` plans from the target, collects what the target can reach, evaluates and reports.
+**Every slice appears in the plan with a verdict**, including the ones that will not be
+attempted and why: a run that quietly skipped half its slices would produce a report that
+looks complete to the only person who could tell that it is not. It is `D49` one layer
+further out. A collection that fails does not end the run.
+
+`slice` is no longer on the path to a first result. The journey is `setup` · `connect` ·
+`run`.
+
+Not `LIVE-OBSERVED`: the plan, the refusals and the composition are proven; no collection
+has been performed against a tenant.
+
+### FIRST-RUN-005 — the front door is the journey — `CONTRACT-PROVEN`
+
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`
+
+**Done, 2026-08-20.** Install is at the top and the journey follows it; the
+epistemology, which used to run for a hundred and forty lines before a reader could
+install anything, follows both. The command table carries every shipped command. The
+opening path reaches a tenant, and the fixtures are a section of their own for a reader
+who has none.
+
+**Three false claims went with it**, all in the section a sceptical reader reads first:
+`Two rules` where there are twenty, `One profile` where there are nine, and application
+authentication described as not implemented after it had been implemented and shipped.
+Counts are no longer restated in prose at all — `list-rules`, `doctor` and `--help` are
+the answer, and a number in a README is a second place for it to be wrong.
+
+
 
 ## A capability is not shipped until it is installable
 
@@ -36,18 +519,20 @@ keeps adding surfaces ahead of its own published releases accumulates capability
 nobody can install, and the gap is invisible from inside the branch that created it.
 
 ```text
-IDENTITY-CA-001
+FIRST-RUN       ACTIVE
 
-Engine      IN PROGRESS
+IDENTITY-CA-001 FROZEN, contract unchanged
 
-Slice       OPEN
+Slice           OPEN
 ```
 
-`IN PROGRESS` becomes `SHIPPED` when the release is on the public index and the
-post-release gate has proven it from there. Only then does `IDENTITY-APPS-001`
-start.
+`ACTIVE` becomes `SHIPPED` when the release is on the public index and the
+post-release gate has proven it from there. Only then does `IDENTITY-CA-001` resume, and
+`IDENTITY-APPS-001` after it.
 
 ## MIGRATION-VERIFY-001 — what a move actually moved
+
+**authority:** owner · **next action:** frozen by the FIRST-RUN freeze; resumes when it ships
 
 **State:** contract and comparison landed on `public-manifest-001`; collectors not
 started. Anybody picking this up starts at *What is missing*, in that order.
@@ -224,6 +709,8 @@ migrated when it could not be read: that is `unknown`, with the side and the
 reason, and it is the single behaviour the contract exists to protect.
 
 ## PUBLIC-MANIFEST-001 — one published description of what this engine can do
+
+**authority:** owner · **next action:** frozen by the FIRST-RUN freeze; resumes when it ships
 
 **Accepted 2026-08-17, and it runs before the Identity surface expands further.**
 
@@ -481,6 +968,8 @@ Configuration, access control and telemetry remain separate evidence dimensions.
 - [ ] PR is mergeable, clean and has no unresolved review; the Executor does not merge.
 
 ## RULE-MESSAGES-001 — editorial debt in the `unknown` messages
+
+**authority:** owner · **next action:** frozen by the FIRST-RUN freeze; resumes when it ships
 
 **State:** measured, not started. Owner decision 2026-08-20: a pass of its own,
 rule by rule.

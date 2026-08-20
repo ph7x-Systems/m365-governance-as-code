@@ -131,7 +131,7 @@
           "description": "What could not be read. Declared over a container, because that is how reading fails: a folder refuses, not a file at a time."
         },
         "state": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/absentState"
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/absentState"
         },
         "detail": {
           "type": "string",

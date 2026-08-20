@@ -25,6 +25,7 @@ from m365_governance import connecting
 from m365_governance.connecting import (
     Connection,
     Reach,
+    Reason,
     connect,
     describe,
     document,
@@ -268,7 +269,7 @@ def test_what_was_asked_is_carried_beside_what_was_established():
 def test_connect_refuses_without_an_address(capsys):
     from m365_governance.cli import main
 
-    assert main(["connect", "--client-id", "an-id"]) == 2
+    assert main(["connect", "--client-id", "11111111-2222-3333-4444-555555555555"]) == 2
     assert "an address to reach" in capsys.readouterr().err
 
 
@@ -284,7 +285,7 @@ def test_connect_reports_json_for_a_consumer(monkeypatch, capsys):
         [
             "connect",
             "--client-id",
-            "an-id",
+            "11111111-2222-3333-4444-555555555555",
             "--tenant-url",
             "https://contoso-admin.sharepoint.com",
             "--format",
@@ -312,7 +313,7 @@ def test_connect_exits_one_when_it_could_not_reach(monkeypatch, capsys):
         [
             "connect",
             "--client-id",
-            "an-id",
+            "11111111-2222-3333-4444-555555555555",
             "--tenant-url",
             "https://contoso-admin.sharepoint.com",
         ]
@@ -407,7 +408,7 @@ def test_every_outcome_is_a_document_of_the_contract(lines, code, cancelled):
     """
     doc = document(_attempt(engine=_engine(lines, code, cancelled)))
 
-    assert doc["$schema"].endswith("/connection/1.0.0")
+    assert doc["$schema"].endswith("/connection/1.1.0")
     assert _valid(doc) == []
 
 
@@ -447,3 +448,197 @@ def test_the_document_carries_no_credential():
     assert "s3cret" not in json.dumps(doc)
     assert "a-thumbprint" not in json.dumps(doc)
     assert _valid(doc) == []
+
+
+# ---------------------------------------------------------------------------
+# The application identity, the reason, and the second question
+
+
+def test_a_certificate_reaches_the_collector():
+    """It used to be validated and then dropped.
+
+    `connect` accepted `--certificate-path`, refused every incoherent
+    combination of it, and then signed in as a person. The one command whose
+    purpose is to prove an application registration can reach a tenant could
+    not prove it for the identity an unattended run uses.
+    """
+    seen: dict = {}
+
+    def run(argv, on_progress):
+        seen["argv"] = argv
+        return 1, "", "", False
+
+    _attempt(
+        certificate_path="./app.pfx",
+        tenant_id="contoso.onmicrosoft.com",
+        certificate_password_env="M365_TEST_PASSWORD",
+        engine=run,
+    )
+
+    argv = seen["argv"]
+    assert "-CertificatePath" in argv and "./app.pfx" in argv
+    assert "-TenantId" in argv and "contoso.onmicrosoft.com" in argv
+    assert "-CertificatePasswordEnv" in argv
+
+
+def test_the_document_records_which_identity_was_asked_for():
+    document_ = document(
+        _attempt(
+            certificate_path="./app.pfx",
+            tenant_id="contoso.onmicrosoft.com",
+            engine=_engine([], 1),
+        )
+    )
+    assert document_["requested"]["certificate"] is True
+    assert document_["requested"]["tenant_id"] == "contoso.onmicrosoft.com"
+
+
+DIRECTORY_FAILURES = [
+    (
+        "AADSTS700016: Application with identifier 'x' was not found",
+        "application-not-in-directory",
+    ),
+    ("AADSTS65001: The user or administrator has not consented", "consent-required"),
+    ("AADSTS90002: Tenant 'x' not found", "directory-not-found"),
+    ("AADSTS53003: Access has been blocked by Conditional Access", "blocked-by-policy"),
+    (
+        "AADSTS700027: Client assertion contains an invalid signature",
+        "certificate-rejected",
+    ),
+]
+
+
+@pytest.mark.parametrize("line,expected", DIRECTORY_FAILURES, ids=lambda v: str(v)[:24])
+def test_a_directory_failure_carries_a_reason_a_consumer_can_act_on(line, expected):
+    """The vocabulary exists so that nobody has to match on PnP's prose.
+
+    All five of these arrive as `refused`. They send a person to five different
+    places, and a consumer that could only read `reach` had to find the
+    difference by matching whatever PnP.PowerShell happened to print.
+    """
+    attempt = _attempt(engine=_engine([_resolved(), line], 1))
+
+    assert attempt.reach is Reach.REFUSED
+    assert document(attempt)["reason"] == expected
+
+
+def test_an_unrecognised_failure_says_so_rather_than_guessing():
+    """`not-classified` is an answer. The collector's own words survive it."""
+    attempt = _attempt(engine=_engine([_resolved(), "something new happened"], 1))
+
+    assert document(attempt)["reason"] == "not-classified"
+    assert "something new happened" in attempt.because
+
+
+def test_an_address_nothing_owns_is_not_a_consent_problem():
+    attempt = _attempt(engine=_engine([_resolved(tenant_id=None), "no"], 1))
+
+    assert document(attempt)["reason"] == "address-not-resolved"
+
+
+def test_a_session_that_established_carries_established_as_its_reason():
+    attempt = _attempt(engine=_engine([_resolved(), _established()]))
+
+    assert document(attempt)["reason"] == "established"
+
+
+def test_signing_in_is_not_being_authorised():
+    """A session opens with zero permissions granted.
+
+    The two answers are separate fields because a product that reported the
+    first as the second would be answering a question nobody asked with the
+    word a reader takes for the answer to the one they did.
+    """
+    denied = json.dumps(
+        {"state": "denied", "detail": "Access denied.", "read": None},
+        separators=(",", ":"),
+    )
+    attempt = _attempt(
+        engine=_engine([_resolved(), "AUTHORIZATION " + denied, _established()])
+    )
+
+    assert attempt.reach is Reach.ESTABLISHED
+    assert document(attempt)["authorization"]["state"] == "denied"
+    assert "denied" in describe(attempt)
+
+
+def test_authorization_is_always_present_even_where_nothing_was_read():
+    """Always emitted. The schema's optionality is for documents, not producers."""
+    attempt = _attempt(engine=_engine([_resolved(), _established()]))
+
+    assert document(attempt)["authorization"]["state"] == "not-attempted"
+
+
+def test_terminal_colour_never_reaches_the_document():
+    """Observed on a live refusal, 2026-08-20.
+
+    PnP.PowerShell writes colour into its error stream, and the escape
+    sequences travelled into `because` — a field a consumer displays. The words
+    are the evidence; the colour is formatting for somebody else's screen.
+    """
+    coloured = "\x1b[31;1mno active subscriptions for the tenant\x1b[0m"
+    attempt = _attempt(engine=_engine([_resolved(), coloured], 1))
+
+    assert "\x1b" not in "".join(attempt.because)
+    assert "no active subscriptions for the tenant" in attempt.because
+
+
+def test_the_engines_own_protocol_is_not_printed_to_a_person():
+    """`RESOLVED {...}` is this engine talking to itself.
+
+    Observed on a live refusal, 2026-08-20: the marker lines and another
+    product's colour codes were printed straight to the terminal, above the
+    summary written for a reader.
+    """
+    from m365_governance.connecting import readable
+
+    assert readable(_resolved()) is None
+    assert readable("CONNECTION {}") is None
+    assert readable("AUTHORIZATION {}") is None
+    assert readable("\x1b[31;1mConnect-PnPOnline: failed\x1b[0m") == (
+        "Connect-PnPOnline: failed"
+    )
+    assert readable("   ") is None
+
+
+def test_because_carries_the_reason_rather_than_the_trace_id():
+    """Observed on a live refusal, 2026-08-20.
+
+    A directory failure ends with a trace id, a correlation id and a timestamp.
+    Taking the last three lines returned exactly those, and left the sentence
+    that named the problem out of the document.
+    """
+    lines = [
+        _resolved(tenant_id=None),
+        "AADSTS90002: Tenant 'nope' not found. Check to make sure you have the",
+        "correct tenant ID and are signing into the correct cloud.",
+        "Trace ID: 43081c66-103f-437e-870e-a953e0930300",
+        "Correlation ID: b8946607-95fb-4d10-ad29-f08bed0f51ce",
+        "Timestamp: 2026-08-20 16:28:09Z",
+    ]
+    attempt = _attempt(engine=_engine(lines, 1))
+
+    said = "\n".join(attempt.because)
+    assert "AADSTS90002" in said
+    assert "Correlation ID" not in said
+
+
+def test_a_dry_run_reaches_nothing_and_says_it_reached_nothing():
+    """`collect` has had this since it existed.
+
+    `connect` — the command somebody runs while working out how any of this
+    fits together — had no way to be tried, so the only way to see what it
+    would do was to let it do it.
+    """
+    reached = []
+
+    def run(argv, on_progress):
+        reached.append(argv)
+        return 0, "", "", False
+
+    attempt = _attempt(dry_run=True, engine=run)
+
+    assert not reached
+    assert attempt.reach is Reach.CANCELLED
+    assert attempt.reason is Reason.CANCELLED
+    assert "-Mode" in attempt.output[0]

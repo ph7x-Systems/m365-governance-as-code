@@ -10,6 +10,88 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
+**`connect` now answers the question a person actually has**, which is not
+"did a sign-in succeed" but "can this identity work here".
+
+- **A certificate reaches the tenant.** `connect` accepted
+  `--certificate-path`, `--tenant-id` and `--certificate-password-env`,
+  validated every incoherent combination of them, and then dropped them: the
+  session opened as a person while the caller had asked for the application.
+  The one command whose purpose is to prove an application registration can
+  reach a tenant could not prove it for the identity an unattended run uses.
+- **The session says which identity it is.** `identity_kind` was hardcoded to
+  `delegated` in the connection facts, so a run holding a certificate described
+  itself as a person — in the field that decides what an empty result means.
+- **Authentication and authorization are two answers.**
+  `Connect-PnPOnline` succeeds with zero permissions granted, so one read is
+  now attempted and reported separately. `not-attempted` is never reported as
+  established.
+- **A failure carries a reason a program can act on.** `connection/1.1.0` adds
+  `reason`: consent that was never granted, an application absent from the
+  directory and a policy that blocked the sign-in all arrived as `refused`, and
+  a consumer wanting to tell them apart had to match on whatever
+  PnP.PowerShell printed. `reason` and `authorization` are optional in the
+  schema so documents written before 1.1.0 still validate; every producer at
+  1.1.0 emits both. `not-classified` is an answer, not a gap.
+- **An identifier that cannot be an application registration is refused before
+  the network.** A value of the wrong shape used to start PowerShell, open a
+  browser and fail in the directory, so the product's own worst error was
+  diagnosed by Microsoft, in a window, outside the terminal.
+- **A path that is not there is a refusal, not a result.** `evaluate`,
+  `assess`, `stats`, `report`, `verify` and `diff` raised `FileNotFoundError`
+  under exit `1` — the code reserved for a negative governance result — so a
+  typed path reached a pipeline as a failing rule. It is exit `2` and one
+  sentence now.
+- **A report names the resource it is about.** The header read
+  `resource["id"]`, a key no evidence document has ever carried — identity is
+  structured, and was deliberately never collapsed into a parsed string — so
+  every markdown report printed `<unknown>` beside a title that had the name in
+  it all along.
+- **A `--rules` path that is not there says so**, instead of reporting that the
+  rules do not validate and sending a reader to inspect rules that are fine.
+- **Every `--help` names the manual.**
+- **`doctor` says how to install PowerShell 7**, as it already did for
+  PnP.PowerShell.
+- **Provenance says how it knows which tenant a document is about.**
+  `evidence/3.1.0` adds `tenant.how` — `requested`, `public-discovery` or
+  `observed`. `tenant.id` is null throughout this engine, so the host carries
+  the identity, and that host is the address the caller asked for, verified by
+  nothing. Every document written today says `requested`, and nothing claims
+  `observed` until a collection path for the directory identity is proven on a
+  tenant. The report says it too.
+- **`setup` and `run`.** The journey is three commands: `setup` prepares the
+  machine and writes the target down, `connect` proves the identity can work,
+  `run` collects, evaluates and reports. Choosing among ten slices was a
+  decision this engine can make from the target it was given, and asking
+  somebody to make it before they had seen one finding was asking them to learn
+  the architecture in order to use the tool.
+- **`setup` names the command that produces an application registration**,
+  which nothing in this product named before. It registers nothing itself: this
+  engine reads and acquires nothing.
+- **A slice that will not be attempted is reported, never dropped.** `run`
+  prints the whole catalogue with a verdict against each, because a run that
+  quietly skipped half its slices would produce a report that looks complete to
+  the only person who could tell that it is not.
+- **The target is written down once.** `m365-governance.toml` carries the
+  tenant and site addresses, the application registration and the
+  authentication mode; the command line always wins over it, the file that was
+  read is named on every run, and a key that names a credential is refused
+  rather than ignored. Ten slices against one tenant were ten commands, each
+  repeating the same two arguments.
+- **An interactive sign-in no longer goes wherever the browser happens to be
+  signed in.** The collector resolves which directory owns an address before
+  signing in, and where nothing owned it, it signed in anyway — landing in an
+  unrelated directory and reporting what it found there as an answer about the
+  address that was typed. It is refused now, for **every** mode: the guard sits
+  with the one place that decides which URL is connected to, so the ten
+  commands that write evidence are covered and not only the one that writes
+  nothing. A certificate proceeds: `-Tenant` names the directory.
+- **`connect --dry-run`**, which `collect` has had since it existed.
+- **The first-run journey has an owner**, recorded in
+  [docs/FIRST-RUN-CONTRACT.md](docs/FIRST-RUN-CONTRACT.md).
+
+### Entra ID
+
 Microsoft Entra ID, starting with the access-policy surface, and the first
 collector in this product that does not run PowerShell.
 

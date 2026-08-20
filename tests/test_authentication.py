@@ -11,12 +11,12 @@ from __future__ import annotations
 
 import pytest
 
-from m365_governance.cli import AmbiguousIdentity, _authentication
+from m365_governance.cli import AmbiguousIdentity, _authentication, main
 
 
 class _Args:
     def __init__(self, **fields):
-        self.client_id = "an-app"
+        self.client_id = "11111111-2222-3333-4444-555555555555"
         self.device_login = False
         self.tenant_id = None
         self.certificate_path = None
@@ -104,7 +104,7 @@ def test_the_certificate_run_is_recorded_as_an_application(tmp_path):
 
     outcome = run_slice(
         "owners",
-        client_id="an-app",
+        client_id="11111111-2222-3333-4444-555555555555",
         output=tmp_path / "out.json",
         site_url="https://contoso.sharepoint.com/sites/one",
         certificate_path=tmp_path / "app.pfx",
@@ -121,14 +121,14 @@ def test_the_certificate_run_is_recorded_as_an_application(tmp_path):
     manifest = build_manifest(
         ran,
         directory=tmp_path,
-        client_id="an-app",
+        client_id="11111111-2222-3333-4444-555555555555",
         site_url="https://contoso.sharepoint.com/sites/one",
         tenant_url=None,
         device_login=False,
         certificate_path=tmp_path / "app.pfx",
     )
     assert manifest["identity"]["method"] == "certificate"
-    assert manifest["identity"]["client_id"] == "an-app"
+    assert manifest["identity"]["client_id"] == "11111111-2222-3333-4444-555555555555"
     # Nothing about the credential itself.
     assert "app.pfx" not in json.dumps(manifest)
 
@@ -140,7 +140,7 @@ def test_no_secret_reaches_the_collector_as_an_argument(tmp_path, monkeypatch):
     monkeypatch.setenv("M365_TEST_PW", "hunter2")
     outcome = run_slice(
         "owners",
-        client_id="an-app",
+        client_id="11111111-2222-3333-4444-555555555555",
         output=tmp_path / "out.json",
         site_url="https://contoso.sharepoint.com/sites/one",
         certificate_path=tmp_path / "app.pfx",
@@ -150,3 +150,51 @@ def test_no_secret_reaches_the_collector_as_an_argument(tmp_path, monkeypatch):
     )
     assert "M365_TEST_PW" in outcome.stdout
     assert "hunter2" not in outcome.stdout
+
+
+# ---------------------------------------------------------------------------
+# An identifier that cannot be an application registration
+
+
+MALFORMED = [
+    "not-a-guid",
+    "",
+    "   ",
+    "1111",
+    "11111111-2222-3333-4444-5555555555",
+    "an-app",
+]
+
+
+@pytest.mark.parametrize("value", MALFORMED, ids=lambda v: repr(v))
+def test_an_identifier_that_cannot_be_a_registration_is_refused_before_the_network(
+    capsys, value
+):
+    """Exit 2, and no process is started.
+
+    Audited on 2026-08-20 against a live tenant: a value of the wrong shape
+    started PowerShell, opened a browser, and failed in the directory with
+    `AADSTS700016`. The product's own worst error was diagnosed by Microsoft,
+    in a window, outside the terminal a person was looking at.
+    """
+    code = main(
+        [
+            "connect",
+            "--client-id",
+            value,
+            "--tenant-url",
+            "https://contoso-admin.sharepoint.com",
+        ]
+    )
+
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "not an application registration" in err
+    assert "Traceback" not in err
+
+
+def test_a_well_formed_identifier_is_not_a_claim_that_it_exists():
+    """The shape check removes a class of failure. It proves nothing else."""
+    from m365_governance.cli import _application_id
+
+    _application_id("11111111-2222-3333-4444-555555555555")

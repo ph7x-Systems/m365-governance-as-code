@@ -48,7 +48,7 @@
           "format": "date-time"
         },
         "tenant": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/tenant",
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/tenant",
           "description": "Which tenant both sides are about, copied from the assessments rather than restated. It was a bare string, which put a hostname where an organisation belongs."
         },
         "canonical_hash": {
@@ -91,7 +91,7 @@
       ],
       "properties": {
         "resource": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/resource_ref",
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/resource_ref",
           "description": "The resource whose finding moved, as a reference rather than a string two documents had to spell identically."
         },
         "rule": {

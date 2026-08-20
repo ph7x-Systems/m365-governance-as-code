@@ -352,7 +352,21 @@ SLICES = {
             # A tenant address is not required and is not ignored: with one
             # this reads the tenant app catalog, without one the site's own.
             optional_tenant=True,
-            live=Live.FULL,
+            # CLASSIFIED ABOVE WHAT ITS OWN NOTE DESCRIBES, until 2026-08-21.
+            # This was `FULL` while the note beside it said the finding branch
+            # had never been produced — the capability declaring more than the
+            # sentence under it, which is the shape this product exists to
+            # refuse. The site read the classification and published "proved
+            # against a real tenant".
+            #
+            # `NEGATIVE_ONLY` is what happened: the read is proved and the
+            # branch that reports a finding is not. The value's description
+            # said "absent or empty", which is a fact about the surface; what
+            # decides is which path was exercised, and a full catalog with
+            # nothing behind its version leaves the finding exactly as unproved
+            # as an empty one does. The description is widened rather than a
+            # fifth value added: the value already meant this.
+            live=Live.NEGATIVE_ONLY,
             live_note=(
                 "both scopes observed: a tenant catalog of ten solutions and a "
                 "site catalog of one. No solution in either was behind its "

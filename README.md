@@ -27,6 +27,14 @@ which evidence it came from, and what it does not establish.
 Nothing here changes anything in a tenant. There is no write path, no
 remediation command, and no `--fix-all`.
 
+**Where this sits.** `m365-governance-as-code` is the engine, and it is MIT.
+A commercial operator experience is being built on top of it, and saying so
+here from the start is the point: reading an assessment and verifying one never
+require a licence, an account or pH7x Systems, and if the commercial work stops,
+the engine stays open. That is what the licence was chosen to guarantee rather
+than a promise made in prose. There is nothing to buy in this repository and
+there never will be.
+
 **Scope.** This project evaluates the Microsoft 365 tenant that exists today.
 It does not infer the characteristics of an estate it has not observed. There
 are two modes, and the engine never knows which one produced the evidence it
@@ -40,101 +48,16 @@ whether the finding was a rule Microsoft enforces, a limit it imposes, advice
 it gives, or our own opinion. This project is that distinction, made
 executable and made impossible to skip.
 
-**Status:** `1.0.0b6`. 20 rules, a thirteen-mode collector validated
-against a live tenant, 9 profiles, 14 commands and 835 tests at 90 per
-cent coverage. Beta because the model has stopped moving: the outcomes, the
+**Status:** `1.0.0b6`. A thirteen-mode collector validated against a live
+tenant, and a suite at 90 per cent coverage. What ships is what `doctor`,
+`list-rules` and `--help` report; counts are not restated here, because a
+number in prose is a second place for them to be wrong.
+
+Beta because the model has stopped moving: the outcomes, the
 resolution order, the basis types and the evidence schema are frozen, and
 [docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md) records what closing SharePoint
 end to end actually cost. The rule set is still small, and that is the next
 milestone rather than a caveat on this one.
-
----
-
-## The problem
-
-Most governance tooling produces a green box. A green box has no grammar for
-the difference between these four sentences:
-
-- the product **enforces** this;
-- the product **imposes** this boundary, and here is the number;
-- Microsoft **recommends** this, and permits the alternative;
-- **we think** this is a good idea.
-
-Those four produce different conversations, different budgets and different
-arguments with an auditor. A tool that renders them identically has removed
-the only information the reader needed.
-
-And a green box has no grammar for the most common outcome of all: *we could
-not read this*. Missing evidence is a fact about collection, not a fact about
-the resource, and the moment it renders as a pass the whole report becomes
-unreliable in a way nobody can see.
-
----
-
-## The trust model
-
-Every rule declares a `basis`. There are five, and the distinction between
-them is the point of the project:
-
-| basis | Meaning | Requires |
-|---|---|---|
-| `requirement` | The product enforces this | a source |
-| `documented-limit` | A boundary the product imposes, with a number | a source, and the limit stated next to the observed value |
-| `documented-guidance` | Microsoft recommends it; the alternative is permitted | a source |
-| `convention` | Widely held practice, documented by nobody | a rationale |
-| `opinion` | Our position, stated as ours | a rationale |
-
-**A source never decides the type.** An opinion may cite documentation. A
-convention may cite documentation. The source explains the claim; it does not
-change what kind of claim it is.
-
-**The engine never classifies.** `basis` is authored by a person and carried
-into the report unchanged. The schema verifies that it is present and
-justified; it never infers what it should be. That boundary is the whole
-difference between automation that verifies and automation that strengthens.
-
-Six outcomes, and `unknown` is never a pass:
-
-```
-pass · fail · unknown · not-applicable · invalid-evidence · error
-```
-
-`error` is the only one a rule may not author a message for: it describes the
-engine, not the resource.
-
-Full model in [docs/TRUST-MODEL.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/TRUST-MODEL.md).
-
----
-
-## Architecture
-
-```
-collectors  ─→  evidence  ─→  engine  ─→  results  ─→  reports
-                   ▲            ▲
-                schemas      rules + profile
-```
-
-Evidence flows one way. Nothing downstream writes back.
-
-Validation happens in six layers, ordered by **scope**, and every constraint
-has exactly one owner — a constraint enforced in two places will diverge the
-first time one of them is corrected:
-
-| Layer | Scope | Example |
-|---|---|---|
-| 1 | the file is a document | duplicate YAML keys |
-| 2 | one field | `basis` is one of five |
-| 3 | one file, references followed | `required` equals what the rule consumes |
-| 4 | every file | duplicate ids |
-| 5 | the outside world | the source URL resolves |
-| 6 | a person | the source still says what the rule claims |
-
-Layer 6 is numbered like the others on purpose. No validator can prove that a
-rule represents a document correctly, and pretending otherwise would be the
-exact failure the trust model exists to prevent.
-
-Details in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/ARCHITECTURE.md) and
-[docs/JSON-SCHEMA-PLAN.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/JSON-SCHEMA-PLAN.md).
 
 ---
 
@@ -245,8 +168,84 @@ which of the two it used.
 
 ---
 
-## Quick start
+---
 
+## Start here
+
+Three commands from an empty machine to a report about your own tenant.
+
+```bash
+m365-governance setup     # 1. check this machine, and write the target down once
+m365-governance connect   # 2. prove the identity can reach the tenant, and read
+m365-governance run       # 3. collect, evaluate, and write the report
+```
+
+**`setup` reaches no tenant and registers nothing.** It runs the same checks as
+`doctor`, and then names the one thing nothing here works without: an Entra ID
+application registration. There is no default and no way around it —
+PnP.PowerShell has shipped no application of its own since 2.12.0 — and one
+registration serves every run. In PowerShell, in your own tenant:
+
+```powershell
+Register-PnPEntraIDAppForInteractiveLogin \
+    -ApplicationName "M365 Governance" \
+    -Tenant <your-tenant>.onmicrosoft.com
+```
+
+It prints the id it registered. Give it to `setup` with an address, and the two
+are written to `m365-governance.toml` so that nothing is retyped again:
+
+```bash
+m365-governance setup \
+    --client-id <id> \
+    --tenant-url https://<tenant>-admin.sharepoint.com
+```
+
+**No secret ever goes in that file.** A certificate password is named there by
+the environment variable that holds it, never by its value: the file is
+committed, copied into tickets and pasted into chats.
+
+**`connect` answers two questions and not one.** `Connect-PnPOnline` succeeds
+with zero permissions granted, so signing in and being allowed to read are
+reported separately:
+
+```text
+Summary
+  identity       application
+  method         certificate
+  authentication established
+  authorization  established
+  reason         established
+```
+
+Every failure carries a `reason` a program can act on — `consent-required`,
+`application-not-in-directory`, `blocked-by-policy` — rather than leaving a
+consumer to match on whatever PnP.PowerShell printed.
+
+**`run` says what it will not do before it does anything.** Every collection
+this engine holds appears in the plan with a verdict, including the ones your
+target cannot reach:
+
+```text
+Plan: 10 of 11 collections
+
+  run      sites            every site this identity can enumerate
+  ...
+  not run  conditional-access  reads Microsoft Graph, and this engine never
+                              acquires a token: set one to include it
+```
+
+A collection that was not attempted is not a resource that is not there, and no
+rule over the evidence can recover what it would have said. `--dry-run` on
+`setup`'s target prints the plan and reaches nothing at all.
+
+---
+
+## Without a tenant
+
+Everything above needs Microsoft 365. Everything here does not: the rules, the
+outcomes and the reports can be read, run and argued with against fixtures that
+ship inside the package.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
@@ -274,20 +273,28 @@ the source, and how the rule can pass while the problem survives.
 
 ---
 
+---
+
 ## The commands
 
 | | |
 |---|---|
-| `explain OUTCOME` | What `pass`, `fail`, `unknown`, `not-applicable`, `invalid-evidence` and `error` mean, and what each is not. `explain all` for the six |
-| `collect SLICE` | Run a collector against a tenant and write evidence. Evaluates nothing. Reports progress as it arrives, and writes a manifest saying whether the collection was `completed`, `partial`, `failed` or `cancelled` |
-| `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around. Says what it found, not only whether it liked it |
-| `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
-| `show-rule ID` | One rule in full, including what it does not establish |
-| `stats EVIDENCE` | What a collector managed to see, before anything is evaluated |
-| `validate` | Every rule against the schemas and the invariants |
+| `setup` | Check this machine, name what is missing, and write the target down. Reaches no tenant and registers nothing |
+| `connect` | Reach a tenant and say what was established: whether the sign-in worked, whether the identity may read, and why not where it did not. Collects nothing |
+| `run` | A configured target to a report. Plans, collects what the target reaches, evaluates and renders — and says which collections it did not attempt |
+| `collect SLICE` | One collection against a tenant, for a caller who wants the parts. Evaluates nothing, and writes a manifest saying whether it was `completed`, `partial`, `failed` or `cancelled` |
 | `evaluate` | Rules against evidence: one document or a directory of them. Markdown, JSON or self-contained HTML |
+| `assess` | Evaluate, and package the result so somebody else can check it without this engine |
+| `verify` | Check an assessment that arrived, without the engine that made it |
 | `report RUN.json` | Re-render a stored run in another format, without evaluating again |
 | `diff BEFORE AFTER` | What moved between two assessments, and what that does not establish |
+| `stats EVIDENCE` | What a collector managed to see, before anything is evaluated |
+| `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around. Says what it found, not only whether it liked it |
+| `explain OUTCOME` | What `pass`, `fail`, `unknown`, `not-applicable`, `invalid-evidence` and `error` mean, and what each is not. `explain all` for the six |
+| `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
+| `show-rule ID` | One rule in full, including what it does not establish |
+| `validate` | Every rule against the schemas and the invariants |
+| `contracts` | The contract bundle a consumer vendors: schemas, models, samples and a manifest |
 
 `diff` is the one a periodic audit needs:
 
@@ -309,6 +316,93 @@ removed an owner. `--fail-on-regression` exits non-zero when any rule left
 `pass`, including for `unknown`: losing the answer is a regression too.
 
 ---
+
+## The problem
+
+Most governance tooling produces a green box. A green box has no grammar for
+the difference between these four sentences:
+
+- the product **enforces** this;
+- the product **imposes** this boundary, and here is the number;
+- Microsoft **recommends** this, and permits the alternative;
+- **we think** this is a good idea.
+
+Those four produce different conversations, different budgets and different
+arguments with an auditor. A tool that renders them identically has removed
+the only information the reader needed.
+
+And a green box has no grammar for the most common outcome of all: *we could
+not read this*. Missing evidence is a fact about collection, not a fact about
+the resource, and the moment it renders as a pass the whole report becomes
+unreliable in a way nobody can see.
+
+---
+
+## The trust model
+
+Every rule declares a `basis`. There are five, and the distinction between
+them is the point of the project:
+
+| basis | Meaning | Requires |
+|---|---|---|
+| `requirement` | The product enforces this | a source |
+| `documented-limit` | A boundary the product imposes, with a number | a source, and the limit stated next to the observed value |
+| `documented-guidance` | Microsoft recommends it; the alternative is permitted | a source |
+| `convention` | Widely held practice, documented by nobody | a rationale |
+| `opinion` | Our position, stated as ours | a rationale |
+
+**A source never decides the type.** An opinion may cite documentation. A
+convention may cite documentation. The source explains the claim; it does not
+change what kind of claim it is.
+
+**The engine never classifies.** `basis` is authored by a person and carried
+into the report unchanged. The schema verifies that it is present and
+justified; it never infers what it should be. That boundary is the whole
+difference between automation that verifies and automation that strengthens.
+
+Six outcomes, and `unknown` is never a pass:
+
+```
+pass · fail · unknown · not-applicable · invalid-evidence · error
+```
+
+`error` is the only one a rule may not author a message for: it describes the
+engine, not the resource.
+
+Full model in [docs/TRUST-MODEL.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/TRUST-MODEL.md).
+
+---
+
+## Architecture
+
+```
+collectors  ─→  evidence  ─→  engine  ─→  results  ─→  reports
+                   ▲            ▲
+                schemas      rules + profile
+```
+
+Evidence flows one way. Nothing downstream writes back.
+
+Validation happens in six layers, ordered by **scope**, and every constraint
+has exactly one owner — a constraint enforced in two places will diverge the
+first time one of them is corrected:
+
+| Layer | Scope | Example |
+|---|---|---|
+| 1 | the file is a document | duplicate YAML keys |
+| 2 | one field | `basis` is one of five |
+| 3 | one file, references followed | `required` equals what the rule consumes |
+| 4 | every file | duplicate ids |
+| 5 | the outside world | the source URL resolves |
+| 6 | a person | the source still says what the rule claims |
+
+Layer 6 is numbered like the others on purpose. No validator can prove that a
+rule represents a document correctly, and pretending otherwise would be the
+exact failure the trust model exists to prevent.
+
+Details in [docs/ARCHITECTURE.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/ARCHITECTURE.md) and
+[docs/JSON-SCHEMA-PLAN.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/JSON-SCHEMA-PLAN.md).
+
 
 ## A rule
 
@@ -429,17 +523,20 @@ rule cannot author one, so an example of it would be an example of a bug.
 
 Stated here rather than discovered:
 
-- **Two rules.** This is a model with a working engine, not a coverage tool.
-- **The collector runs delegated, never as an application.** It has been run
-  read-only against a real tenant and validated against PnP.PowerShell 3.3.0,
-  but a delegated run sees what one person sees. Every report says so on its
-  first line. A tenant-wide inventory needs an application identity with
-  `Sites.Read.All` and admin consent, and that is not implemented.
+- **A small rule set.** This is a model with a working engine, not a coverage
+  tool, and the count is deliberately not repeated here: `list-rules` is the
+  answer, and a number in prose goes stale the day after it is written.
+- **A delegated run sees what one person sees.** Both identities work — a
+  certificate authenticates the application, and every report and every
+  evidence document records which one produced it — but nothing infers a
+  tenant-wide statement from a delegated run, and `unknown` is what a fact that
+  identity could not read comes back as.
 - **No group expansion.** The collector emits `minimum_count` and declares
   the expansion `not-attempted`. That is honest and the engine handles it; it
   is not the same as counting.
-- **One profile.** A second one is created when a concrete rule needs to
-  differ, not before.
+- **Profiles select; they never soften.** A profile chooses which rules run.
+  It cannot change what one concludes, and there is no setting anywhere that
+  turns a `fail` into something quieter.
 - **Source liveness is not checked**, and whether a source still supports the
   claim can only be checked by a person.
 - **The model has not been reviewed by anyone outside its authors.** Two
@@ -501,7 +598,7 @@ to somebody else soonest rather than by what is most interesting to build.
 | **More SharePoint rules** | Retention, site lifecycle, and the classification rules a tenant that uses labels would need. The engine is done; the work is authoring claims honestly. |
 | **Coverage across a run** | Six of 53 sites refused the collector, and a report over the other 47 says 47 without saying "of 53". The envelope records coverage per document; nothing records it per run. |
 | **Group expansion** | A group owner is one principal and may be forty people. The collector declares the expansion `not-attempted` and emits a lower bound; expanding it turns bounds into counts. |
-| **Application authentication** | Delegated runs see what one person sees, and every count in this repository carries that clause. A tenant-wide inventory needs an app identity with `Sites.Read.All` and admin consent. |
+| **Coverage under an application identity** | Application authentication works; what is unproven is the shape of a tenant-wide run under it. A delegated run and an application run answer differently, and the difference is recorded rather than smoothed. |
 | **Exchange, Teams and Entra collectors** | The evidence schema is service-agnostic. Each collector is new code and no new model. |
 | **HTML reporting** | Markdown and JSON exist. HTML is for the reader who is not in a terminal. |
 | **SARIF output** | So findings appear where code findings already appear, in a pipeline's own UI. Blocked until `unknown` has an agreed representation: SARIF has six `kind` values and this project has six outcomes, and they are not the same six. |

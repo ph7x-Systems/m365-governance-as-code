@@ -75,8 +75,18 @@ def to_markdown(run: Run) -> str:
 
     lines.append(f"# Governance report: {name}")
     lines.append("")
+    # THE IDENTITY, WHICH HAS NEVER BEEN CALLED `id`. Identity is structured --
+    # workload, type, native_id -- and was deliberately never collapsed into a
+    # parsed string. This line read `resource["id"]`, a key no evidence
+    # document has ever carried, so the fallback fired every time: every
+    # markdown report this engine has produced printed `<unknown>` in its
+    # second line, beside a title that had the display name in it all along.
+    #
+    # Printed, never parsed. `native_id` may be a URL, a GUID or a path full of
+    # colons, and identity.py is explicit that nothing anywhere reads inside it.
     lines.append(
-        f"- Resource: `{resource.get('id', '<unknown>')}` ({resource.get('type', '?')})"
+        f"- Resource: `{resource.get('native_id', '<unknown>')}` "
+        f"({resource.get('type', '?')})"
     )
     lines.extend(_provenance_lines(run))
     lines.extend(_coverage_lines(run))
@@ -99,6 +109,22 @@ def to_markdown(run: Run) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+#: HOW A CLASSIFICATION IS SHOWN, and it exists because one word was doing two
+#: jobs on one page. The classifier's `unknown` means the kind was never
+#: established; the outcome `unknown` means a rule could not be decided. A
+#: specimen read as a document, 2026-08-21, opened with `unknown  2` in the
+#: breakdown and `Unknown  2` in the outcome table — different dimensions,
+#: same word, four lines apart, and a caption two lines above trying to hold
+#: them apart. A caption defending a rendering is the tell that the rendering
+#: is wrong.
+#:
+#: THE CONTRACT VALUE IS CARRIED, not replaced. A presentation layer may
+#: explain a contract value and must declare the translation so a reader can
+#: recover what was published; renaming it silently is the redefinition this
+#: programme exists to remove.
+_KIND = {"unknown": "kind not established (`unknown`)"}
+
+
 def _provenance_lines(run: Run) -> list[str]:
     prov = run.provenance
     if not prov:
@@ -112,6 +138,25 @@ def _provenance_lines(run: Run) -> list[str]:
     ]
     if run.rule_source:
         lines.append(f"- Rules: {run.rule_source}")
+
+    # WHICH TENANT, AND HOW THAT WAS ESTABLISHED. The directory id is null
+    # throughout this engine, so the host carries the identity -- and today
+    # that host is the address the caller asked for, verified by nothing. A
+    # reader deciding whether this report is about the tenant they think it is
+    # about was left to infer that, from a field that looks like a fact.
+    #
+    # Only the weak case is printed. `observed` needs no sentence: it is what a
+    # reader already assumes, and a line saying so on every report would train
+    # people to skip the line that matters.
+    tenant = prov.get("tenant") or {}
+    if tenant.get("how") == "requested":
+        lines.append(
+            f"- **Tenant: `{tenant.get('host', '?')}`, as requested.** The "
+            f"address this collection was pointed at. Nothing read the "
+            f"directory the session was operating in, so this is what was "
+            f"asked for rather than what was observed."
+        )
+
     identity_kind = prov.get("identity_kind")
     # Keyed on acquisition, not on identity. They were one field, so this
     # warning was asking who observed the evidence in order to answer how it
@@ -564,8 +609,13 @@ def _class_lines(runs: list[Run]) -> list[str]:
     # constant, above them, costing three times as much.
     if by_class and set(by_class) - {"unknown", "unclassified"}:
         lines.append("  by kind of resource, which is not an outcome:")
-        for name in sorted(by_class):
-            lines.append(f"    {name:<16}{by_class[name]}")
+        shown = {name: _KIND.get(name, name) for name in sorted(by_class)}
+        # Width from the labels rather than a constant: one of them grew when
+        # the translation was declared, and a fixed column would have run the
+        # count into the word.
+        width = max(len(label) for label in shown.values()) + 2
+        for name, label in shown.items():
+            lines.append(f"    {label:<{width}}{by_class[name]}")
     if aside:
         answered = sum(
             1 for r in aside for result in r.results if result.outcome.is_answer

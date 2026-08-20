@@ -39,6 +39,16 @@ from .collecting import COLLECTOR, _now, _run
 #: pick the wrong line.
 ESTABLISHED = re.compile(r"^CONNECTION (\{.*\})\s*$")
 
+#: Terminal colour, which PnP.PowerShell writes into its error stream. It is
+#: formatting for a screen, and a document that carried it would hand every
+#: consumer an escape sequence in the middle of a sentence it has to display.
+#: Stripped rather than rendered: the words are the evidence, the colour is not.
+ANSI = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+
+#: What the collector prints for the SECOND question: not who signed in, but
+#: what that identity may read. Emitted whether or not the read succeeded.
+AUTHORIZED = re.compile(r"^AUTHORIZATION (\{.*\})\s*$")
+
 #: What the collector prints for the OTHER question, before any sign-in.
 #:
 #: TWO QUESTIONS, AND ONE FIELD WOULD ANSWER NEITHER WELL. Which directory owns
@@ -49,6 +59,31 @@ ESTABLISHED = re.compile(r"^CONNECTION (\{.*\})\s*$")
 #: and putting both in one field would make a lookup indistinguishable from an
 #: observation.
 RESOLVED = re.compile(r"^RESOLVED (\{.*\})\s*$")
+
+
+#: The protocol between the collector and this engine. A person reading the
+#: screen has no use for it: it is this engine talking to itself, and printing
+#: it puts a JSON object in the middle of a sentence somebody is trying to read.
+_MARKERS = (ESTABLISHED, RESOLVED, AUTHORIZED)
+
+
+def readable(line: str) -> str | None:
+    """One collector line as a person should see it, or None to withhold it.
+
+    STREAMED RATHER THAN BUFFERED, and that is not a convenience: a device-code
+    sign-in prints a code somebody has to read off the screen and type
+    elsewhere, so a caller that waited for the process would be asking a person
+    to wait for something they had already been shown.
+
+    What is withheld is this engine's own protocol, and what is cleaned is
+    terminal colour belonging to another product. The vendor's words survive
+    both, because an error quoted as it arrived is evidence and rewriting it
+    would destroy what it proves.
+    """
+    cleaned = ANSI.sub("", line).rstrip()
+    if any(marker.match(cleaned) for marker in _MARKERS):
+        return None
+    return cleaned or None
 
 
 class Reach(StrEnum):
@@ -71,6 +106,90 @@ class Reach(StrEnum):
 
     CANCELLED = "cancelled"
     """Stopped deliberately. Never inferred from an exit code."""
+
+
+class Reason(StrEnum):
+    """WHY the attempt ended as it did, in a word a program can act on.
+
+    `reach` says how it ended; this says why, and the difference decides what a
+    caller does next. Consent that was never granted, an application that is
+    not in this directory and a policy that blocked the sign-in all arrive as
+    `refused`, and they send a person to three different places.
+
+    IT EXISTS BECAUSE THE ALTERNATIVE WAS ENGLISH. Before this, the only
+    machine-readable field was `reach`, and every consumer wanting to say
+    something useful had to match on whatever PnP.PowerShell happened to print
+    -- the desktop product first among them. A layer forced to parse another
+    product's prose ends up inventing its own vocabulary, and an alternative
+    vocabulary is the second authority this programme exists to remove.
+
+    `NOT_CLASSIFIED` is a real answer and not a gap. An attempt this engine did
+    not recognise is reported as unrecognised, with the collector's own words
+    intact in `because`, rather than forced into the nearest label.
+    """
+
+    ESTABLISHED = "established"
+    """Nothing went wrong. Present so that every document carries a reason."""
+
+    CONSENT_REQUIRED = "consent-required"
+    """The directory knows the application and nobody has consented to it."""
+
+    APPLICATION_NOT_IN_DIRECTORY = "application-not-in-directory"
+    """No application with that id here. Usually the wrong id, or another tenant's."""
+
+    DIRECTORY_NOT_FOUND = "directory-not-found"
+    """The directory named does not exist, or does not answer to that name."""
+
+    BLOCKED_BY_POLICY = "blocked-by-policy"
+    """The tenant answered and a policy stopped the sign-in. Not a permission."""
+
+    CERTIFICATE_REJECTED = "certificate-rejected"
+    """The certificate did not authenticate the application."""
+
+    ADDRESS_NOT_RESOLVED = "address-not-resolved"
+    """Nothing owns that address, so there was no directory to ask."""
+
+    COLLECTOR_UNAVAILABLE = "collector-unavailable"
+    """The local environment could not run the collector at all."""
+
+    CANCELLED = "cancelled"
+    """Stopped deliberately. Never inferred from an exit code."""
+
+    NOT_CLASSIFIED = "not-classified"
+    """It failed, and this engine does not recognise how. An honest answer."""
+
+
+class Access(StrEnum):
+    """Whether the identity may READ, which is not whether it signed in.
+
+    `Connect-PnPOnline` succeeds with zero permissions granted. A product that
+    reports a working connection after the sign-in has answered a question
+    nobody asked with the word the reader will take for the answer to the one
+    they did.
+    """
+
+    ESTABLISHED = "established"
+    """One read succeeded. Not a statement about every read the rules need."""
+
+    DENIED = "denied"
+    """The read was refused. The session is fine; the grant is not."""
+
+    NOT_ATTEMPTED = "not-attempted"
+    """There was nothing to read yet. Never reported as established."""
+
+
+#: Directory failures this engine recognises, most specific first. The codes are
+#: Microsoft's and are matched as they arrive: an error quoted verbatim is
+#: evidence, and rewriting it would destroy what it proves.
+_DIRECTORY_CODES: tuple[tuple[str, Reason], ...] = (
+    ("AADSTS700016", Reason.APPLICATION_NOT_IN_DIRECTORY),
+    ("AADSTS700027", Reason.CERTIFICATE_REJECTED),
+    ("AADSTS700025", Reason.CERTIFICATE_REJECTED),
+    ("AADSTS50011", Reason.BLOCKED_BY_POLICY),
+    ("AADSTS53003", Reason.BLOCKED_BY_POLICY),
+    ("AADSTS65001", Reason.CONSENT_REQUIRED),
+    ("AADSTS90002", Reason.DIRECTORY_NOT_FOUND),
+)
 
 
 #: The suffix Microsoft documents for the admin centre, which is the only label
@@ -129,11 +248,24 @@ class Connection:
     #: What the session said about itself. Empty unless `reach` is established.
     established: dict[str, Any] = field(default_factory=dict)
 
+    #: What the identity may read. A second question, asked separately.
+    access: dict[str, Any] = field(default_factory=dict)
+
+    #: Why it ended this way, in a word a consumer can act on.
+    reason: Reason = Reason.NOT_CLASSIFIED
+
     #: Every line the collector printed, in order. Carried whole because the
     #: device code, the consent prompt and the failure all arrive here.
     output: list[str] = field(default_factory=list)
 
     because: list[str] = field(default_factory=list)
+
+    @property
+    def method(self) -> str:
+        """How the identity authenticated. A fact about the flow, not the grant."""
+        if self.requested.get("certificate"):
+            return "certificate"
+        return "device-code" if self.requested.get("device_login") else "interactive"
 
     @property
     def host(self) -> str | None:
@@ -178,6 +310,10 @@ def connect(
     site_url: str | None = None,
     tenant_url: str | None = None,
     device_login: bool = False,
+    dry_run: bool = False,
+    certificate_path: str | None = None,
+    tenant_id: str | None = None,
+    certificate_password_env: str | None = None,
     on_progress: Callable[[str], None] | None = None,
     engine: Callable[..., tuple[int, str, str, bool]] | None = None,
 ) -> Connection:
@@ -204,6 +340,42 @@ def connect(
         argv += ["-TenantUrl", tenant_url]
     if device_login:
         argv.append("-DeviceLogin")
+    # APP-ONLY, AND IT REACHES THE COLLECTOR. These were accepted on the command
+    # line, validated against each other, and then dropped: `connect` signed in
+    # as a person while the caller had asked for the application. The one
+    # command whose purpose is to prove an application registration can reach a
+    # tenant could not prove it for the identity an unattended run uses.
+    if certificate_path:
+        argv += ["-CertificatePath", certificate_path]
+    if tenant_id:
+        argv += ["-TenantId", tenant_id]
+    if certificate_password_env:
+        argv += ["-CertificatePasswordEnv", certificate_password_env]
+
+    if dry_run:
+        # THE COMMAND, AND NOTHING ELSE HAPPENS. `collect` has had this since it
+        # existed, and `connect` -- the command somebody runs while working out
+        # how any of this fits together -- had no way to be tried. Returned as
+        # a cancelled attempt rather than as a special kind of success: nothing
+        # was reached, and a document saying otherwise would be the first thing
+        # in this engine to claim an observation it did not make.
+        return Connection(
+            reach=Reach.CANCELLED,
+            returncode=0,
+            seconds=0.0,
+            attempted_at=_now(),
+            requested={
+                "site_url": site_url,
+                "tenant_url": tenant_url,
+                "client_id": client_id,
+                "device_login": device_login,
+                "certificate": bool(certificate_path),
+                "tenant_id": tenant_id,
+            },
+            reason=Reason.CANCELLED,
+            output=[" ".join(argv)],
+            because=["a dry run: the command was printed and no tenant reached"],
+        )
 
     attempted_at = _now()
     started = time.monotonic()
@@ -211,9 +383,10 @@ def connect(
     returncode, out, _err, cancelled = run(argv, on_progress)
     elapsed = time.monotonic() - started
 
-    lines = out.splitlines()
+    lines = [ANSI.sub("", line) for line in out.splitlines()]
     established = _one(lines, ESTABLISHED)
     address = _one(lines, RESOLVED)
+    access = _one(lines, AUTHORIZED)
 
     if cancelled:
         reach = Reach.CANCELLED
@@ -241,12 +414,44 @@ def connect(
             "tenant_url": tenant_url,
             "client_id": client_id,
             "device_login": device_login,
+            "certificate": bool(certificate_path),
+            "tenant_id": tenant_id,
         },
         address=address,
         established=established,
+        access=access,
+        reason=_reason(reach, address, lines),
         output=lines,
         because=_because(reach, returncode, cancelled, established, lines),
     )
+
+
+def _reason(reach: Reach, address: dict[str, Any], lines: list[str]) -> Reason:
+    """Why it ended this way, from what was observed and nothing else.
+
+    Read from the directory's own error codes where they arrived, because those
+    are the only part of the output whose meaning is documented by the party
+    that produced it. Everything else stays unclassified rather than being
+    guessed from prose that is not a contract.
+    """
+    if reach is Reach.CANCELLED:
+        return Reason.CANCELLED
+    if reach is Reach.ESTABLISHED:
+        return Reason.ESTABLISHED
+    if reach is Reach.UNREACHABLE and not lines:
+        return Reason.COLLECTOR_UNAVAILABLE
+
+    text = "\n".join(lines)
+    for code, reason in _DIRECTORY_CODES:
+        if code in text:
+            return reason
+
+    # No directory code anywhere, and nothing owns the address either: there was
+    # no directory to ask. Checked after the codes, because an address that
+    # resolved and then refused is a consent answer and not an address one.
+    if not address.get("resolved_tenant_id"):
+        return Reason.ADDRESS_NOT_RESOLVED
+    return Reason.NOT_CLASSIFIED
 
 
 def _one(lines: list[str], pattern: re.Pattern[str]) -> dict[str, Any]:
@@ -290,10 +495,17 @@ def _because(
             reasons.append("the collector printed nothing at all")
         elif not established:
             reasons.append("no session was reported")
-        # The last thing it said is usually the reason, and it is the
-        # collector's own words rather than ours.
-        tail = [line for line in lines if line.strip()][-3:]
-        reasons.extend(tail)
+        # THE REASON, NOT THE LAST THING PRINTED. It used to take the final
+        # three lines, and a directory failure ends with a trace id, a
+        # correlation id and a timestamp: three lines of the least useful part
+        # of the message, with the sentence that named the problem scrolled off
+        # the top. Where the directory said something documented, that is what
+        # a reader gets; otherwise the tail is still better than nothing.
+        spoken = [line for line in lines if line.strip()]
+        named = [
+            line for line in spoken if any(code in line for code, _ in _DIRECTORY_CODES)
+        ]
+        reasons.extend(named[:2] if named else spoken[-3:])
     return reasons
 
 
@@ -315,11 +527,23 @@ def document(connection: Connection) -> dict[str, Any]:
         "attempted_at": connection.attempted_at,
         "seconds": round(connection.seconds, 3),
         "exit_code": connection.returncode,
+        # ALWAYS EMITTED, at every version this engine writes. The schema makes
+        # it optional so that a document written before 1.1.0 still validates;
+        # optionality is compatibility with the past, never licence for a
+        # producer to leave it out and make every consumer carry a fallback.
+        "reason": str(connection.reason),
+        "authorization": {
+            "state": connection.access.get("state", str(Access.NOT_ATTEMPTED)),
+            "detail": connection.access.get("detail"),
+            "read": connection.access.get("read"),
+        },
         "requested": {
             "site_url": connection.requested.get("site_url"),
             "tenant_url": connection.requested.get("tenant_url"),
             "client_id": connection.requested.get("client_id", ""),
             "device_login": bool(connection.requested.get("device_login")),
+            "certificate": bool(connection.requested.get("certificate")),
+            "tenant_id": connection.requested.get("tenant_id"),
         },
         "address": {
             # None, not "", when nothing was resolved. A collector that never
@@ -359,7 +583,18 @@ def describe(connection: Connection) -> str:
     reader who saw one GUID under one heading would reasonably conclude that
     the session had been observed in that directory. It has not.
     """
-    out = [f"{connection.reach.upper()}  after {connection.seconds:.1f}s", ""]
+    access = connection.access.get("state", str(Access.NOT_ATTEMPTED))
+    out = [
+        f"{connection.reach.upper()}  after {connection.seconds:.1f}s",
+        "",
+        "Summary",
+        f"  identity       {connection.identity}",
+        f"  method         {connection.method}",
+        f"  authentication {connection.reach}",
+        f"  authorization  {access}",
+        f"  reason         {connection.reason}",
+        "",
+    ]
 
     out.append("Address resolution")
     if connection.resolved_tenant_id:
@@ -394,6 +629,25 @@ def describe(connection: Connection) -> str:
         ]
     else:
         out.append("  none. Nothing was collected and nothing was written.")
+
+    out += ["", "May this identity read"]
+    if access == str(Access.ESTABLISHED):
+        out += [
+            f"  established: {connection.access.get('read')}",
+            "",
+            "  ONE read succeeded. It does not establish every permission a",
+            "  collection needs, and nothing here may be read as a grant.",
+        ]
+    elif access == str(Access.DENIED):
+        out += [
+            f"  denied: {connection.access.get('detail')}",
+            "",
+            "  The session is sound and the grant is not. Signing in and being",
+            "  authorised are two answers, and this is the second one.",
+        ]
+    else:
+        detail = connection.access.get("detail") or "no read was attempted"
+        out.append(f"  not attempted: {detail}")
 
     out += ["", "Because:"]
     out += [f"  {reason}" for reason in connection.because]

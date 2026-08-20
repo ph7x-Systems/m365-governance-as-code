@@ -46,7 +46,7 @@
           "type": "array",
           "description": "Every evidence document the run set was evaluated from, whole. A finding whose evidence was discarded cannot be re-checked, and re-checking is the point.",
           "items": {
-            "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0"
+            "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0"
           }
         },
         "versions": {
@@ -78,7 +78,7 @@
           "format": "date-time"
         },
         "tenant": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/tenant",
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/tenant",
           "description": "Which tenant this describes, read from the evidence rather than supplied. An assessment that does not say is not archivable, because nobody can tell later what it was about; one that says something the documents underneath it contradict is worse, because the digests then prove that contradiction unchanged."
         },
         "label": {

@@ -54,10 +54,39 @@ _StrictLoader.add_constructor(
 )
 
 
+def _text(path: Path) -> str:
+    """The bytes of one document, or a refusal that names the path.
+
+    WHY A PATH THAT IS NOT THERE IS A DOCUMENT ERROR. It used to arrive as a
+    `FileNotFoundError` traceback, and the exit code that came with it was `1`
+    — the code this product reserves for a run whose governance result was
+    negative. A pipeline reading that exit learns that a rule failed. What
+    actually happened is that nothing was read, so nothing was decided at all,
+    and that is a refusal: exit `2`.
+
+    The four cases are separated because they send a reader somewhere
+    different. A missing file is usually a typo; a directory where one document
+    was expected is usually the wrong command; an unreadable file is a
+    permission to fix; anything else is the operating system's own words,
+    quoted rather than summarised.
+    """
+    try:
+        return path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        raise DocumentError(f"{path}: no such file") from None
+    except IsADirectoryError:
+        raise DocumentError(
+            f"{path}: a directory, where this expects one document"
+        ) from None
+    except PermissionError:
+        raise DocumentError(f"{path}: not readable by this user") from None
+    except OSError as exc:
+        raise DocumentError(f"{path}: cannot be read: {exc}") from None
+
+
 def load_yaml(path: Path) -> dict:
     try:
-        with path.open(encoding="utf-8") as handle:
-            data = yaml.load(handle, Loader=_StrictLoader)
+        data = yaml.load(_text(path), Loader=_StrictLoader)
     except yaml.YAMLError as exc:
         raise DocumentError(f"{path}: not valid YAML: {exc}") from exc
     if not isinstance(data, dict):
@@ -67,8 +96,7 @@ def load_yaml(path: Path) -> dict:
 
 def load_json(path: Path) -> dict:
     try:
-        with path.open(encoding="utf-8") as handle:
-            data = json.load(handle)
+        data = json.loads(_text(path))
     except json.JSONDecodeError as exc:
         raise DocumentError(f"{path}: not valid JSON: {exc}") from exc
     if not isinstance(data, dict):

@@ -94,6 +94,55 @@ function Read-CertificatePassword {
     return (ConvertTo-SecureString -String $raw -AsPlainText -Force)
 }
 
+function Assert-AddressIsResolvable {
+    <#
+        .SYNOPSIS
+        Refuses an interactive sign-in to an address no directory owns.
+
+        .DESCRIPTION
+        AN INTERACTIVE SIGN-IN GOES SOMEWHERE. Where public discovery cannot
+        say which directory owns an address, it will not be this one: the
+        sign-in falls back to the directory the browser is already signed into,
+        and whatever comes back is then reported as an answer about the address
+        that was typed.
+
+        Observed on 2026-08-20 against a live tenant, from a host that does not
+        exist: a browser opened against an unrelated directory and returned
+        AADSTS700016 -- a true sentence about the wrong tenant.
+
+        AND IN A COLLECTION IT IS WORSE THAN A WRONG MESSAGE. `tenant.id` is
+        null throughout this engine, so the evidence contract says the host
+        carries the identity -- and the host is derived from the URL the caller
+        asked for, never from the session. A collection that signed in
+        somewhere else would stamp its provenance with a tenant the session
+        never established.
+
+        THE ENGINE HAD THIS EVIDENCE AND USED IT FOR NOTHING. It asked which
+        directory owns the address, was told nothing does, and signed in
+        anyway. An absence never authorises the step that depends on it.
+
+        A CERTIFICATE PROCEEDS. `-Tenant` names the directory, so the caller
+        said where the token comes from and discovery is not the only thing
+        that knew.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string] $Url,
+        [Parameter()] [string] $CertificatePath
+    )
+
+    if ($CertificatePath) { return }
+
+    $resolved = Resolve-TenantAddress -Url $Url
+    if ($resolved.resolved_tenant_id) { return }
+
+    throw ("No directory owns $Url, so an interactive sign-in would " +
+        'authenticate against whichever directory this browser is already ' +
+        'signed into, and report the result as an answer about this address. ' +
+        'Check the address, or name the directory with a certificate. ' +
+        'Discovery said: ' + $resolved.detail)
+}
+
 function Connect-Collector {
     <#
         .SYNOPSIS
@@ -152,6 +201,11 @@ function Connect-Collector {
     if ($CertificatePath -and $DeviceLogin) {
         throw 'Choose one: -CertificatePath authenticates the application, -DeviceLogin authenticates a person.'
     }
+
+    # BEFORE ANY SIGN-IN, AND FOR EVERY MODE. This used to run in the script,
+    # inside `if ($Mode -eq 'Connect')`, so the one command that writes nothing
+    # was guarded and the ten that write evidence were not.
+    Assert-AddressIsResolvable -Url $connectUrl -CertificatePath $CertificatePath
 
     if ($CertificatePath) {
         if (-not $TenantId) { throw '-CertificatePath needs -TenantId.' }
@@ -256,7 +310,18 @@ function Get-ConnectionFacts {
         # Passed in rather than read from a script variable. `$script:TenantHost`
         # belongs to Evidence.psm1, and a module scope is not shared: reading it
         # here would have silently produced an empty host.
-        [Parameter(Mandatory = $true)] [string] $TenantHost
+        [Parameter(Mandatory = $true)] [string] $TenantHost,
+
+        # WHICH IDENTITY SIGNED IN, decided by the caller from how the
+        # connection was made rather than guessed from the session object.
+        # It was hardcoded to 'delegated' here, which meant that a run
+        # authenticating as the application reported itself as a person -- in
+        # the one field that decides what an empty result means.
+        [Parameter()] [ValidateSet('delegated', 'application')]
+        [string] $IdentityKind = 'delegated',
+
+        [Parameter()] [ValidateSet('interactive', 'device-code', 'certificate')]
+        [string] $IdentityMethod = 'interactive'
     )
 
     $connection = Get-PnPConnection
@@ -269,7 +334,8 @@ function Get-ConnectionFacts {
         host             = $TenantHost
         url              = [string] $connection.Url
         client_id        = [string] $connection.ClientId
-        identity_kind    = 'delegated'
+        identity_kind    = $IdentityKind
+        identity_method  = $IdentityMethod
         connection_type  = [string] $connection.ConnectionType
         scopes           = @($connection.Scopes)
         # WHICH DIRECTORY THIS SESSION IS OPERATING IN, and null until something
@@ -280,4 +346,55 @@ function Get-ConnectionFacts {
     }
 }
 
-Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress
+function Test-CollectorAuthorization {
+    <#
+        .SYNOPSIS
+        Whether this identity may READ, which is a different question from
+        whether it signed in.
+
+        .DESCRIPTION
+        Connect-PnPOnline succeeds with zero permissions granted. A product
+        that stops at the sign-in has verified authentication and reported
+        authorization, and the reader cannot tell the difference until a
+        collection several minutes long comes back empty.
+
+        One read, the cheapest that the rules actually need: the web at the
+        address the caller gave. It is read-only, it is the same call the
+        collectors make first, and it is the smallest thing that can prove a
+        denial rather than predict one.
+
+        NOT ATTEMPTED IS AN ANSWER. Without a site address there is nothing to
+        read yet, and saying so is honest where inventing a target would not
+        be. It is never reported as established.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter()] [string] $SiteUrl
+    )
+
+    if (-not $SiteUrl) {
+        return [ordered]@{
+            state  = 'not-attempted'
+            detail = 'no site address was given, so no read was attempted'
+            read   = $null
+        }
+    }
+
+    try {
+        $web = Get-PnPWeb -ErrorAction Stop
+        return [ordered]@{
+            state  = 'established'
+            detail = 'read one web at the address given'
+            read   = [string] $web.Url
+        }
+    }
+    catch {
+        return [ordered]@{
+            state  = 'denied'
+            detail = [string] $_.Exception.Message
+            read   = $null
+        }
+    }
+}
+
+Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization, Assert-AddressIsResolvable

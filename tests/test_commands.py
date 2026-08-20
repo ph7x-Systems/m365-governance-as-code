@@ -7,7 +7,9 @@ testing: `list-rules`, `show-rule`, `doctor` and `stats` never evaluate, and
 
 from __future__ import annotations
 
+import argparse
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -1112,9 +1114,14 @@ def test_the_report_counts_resources_by_class(capsys, tmp_path):
         str(tmp_path),
     )
     assert "4 resources observed" in out
-    assert "content         1" in out
-    assert "system          2" in out
-    assert "application     1" in out
+    # The counts, not the column. The width is computed from the labels since
+    # one of them grew when the classifier's `unknown` stopped being rendered
+    # with the word an outcome uses, and a test pinning the spacing would have
+    # made that correction look like a regression.
+    for kind, count in (("content", 1), ("system", 2), ("application", 1)):
+        assert re.search(rf"^\s+{kind}\s+{count}$", out, re.MULTILINE), (
+            f"{kind} is not counted as {count} in the breakdown:\n{out}"
+        )
 
 
 def test_no_profile_excludes_anything():
@@ -1280,3 +1287,191 @@ def test_an_assessment_renders_and_compares_like_what_it_carries(capsys, tmp_pat
     code, out, err = run(capsys, "diff", path, path)
     assert code == 0, err
     assert "Nothing changed" in out
+
+
+# ---------------------------------------------------------------------------
+# A path that is not there
+
+
+MISSING_PATH_COMMANDS = [
+    ("evaluate", "--evidence", "{path}"),
+    ("assess", "--evidence", "{path}"),
+    ("stats", "{path}"),
+    ("report", "{path}"),
+    ("verify", "{path}"),
+    ("diff", "{path}", "{path}"),
+]
+
+
+@pytest.mark.parametrize("argv", MISSING_PATH_COMMANDS, ids=lambda a: a[0])
+def test_a_path_that_is_not_there_is_a_refusal_and_not_a_result(capsys, tmp_path, argv):
+    """Exit 2, one sentence, and never a traceback.
+
+    THE EXIT CODE IS THE POINT, not the tidier message. `1` is documented as a
+    run whose governance result was negative, and a caller that reads it takes
+    a typed path for a rule that failed. Nothing was read here, so nothing was
+    decided, and a refusal is `2`.
+    """
+    missing = tmp_path / "absent.json"
+    code, _out, err = run(capsys, *(a.format(path=missing) for a in argv))
+
+    assert code == 2
+    assert "Traceback" not in err
+    assert str(missing) in err
+
+
+def test_a_directory_where_one_document_was_expected_says_so(capsys, tmp_path):
+    """Not the same mistake as a typo, and not the same correction."""
+    code, _out, err = run(capsys, "verify", str(tmp_path))
+
+    assert code == 2
+    assert "directory" in err
+
+
+# ---------------------------------------------------------------------------
+# The residual defects the 2026-08-20 audit recorded
+
+
+def test_the_report_names_the_resource_it_is_about(capsys):
+    """It printed `<unknown>` on every report this engine has ever produced.
+
+    Identity is structured -- workload, type, native_id -- and was deliberately
+    never collapsed into a parsed string, so `resource["id"]` is a key no
+    evidence document has ever carried. The fallback fired every time, on the
+    second line, beside a title that had the display name in it all along.
+    """
+    code, out, _err = run(
+        capsys,
+        "evaluate",
+        "--evidence",
+        str(FIXTURES / "list-catalog-over-hard-limit.json"),
+    )
+
+    assert code == 0
+    assert "<unknown>" not in out
+    assert "contoso,list,catalog-over-limit" in out
+
+
+def test_a_rules_path_that_is_not_there_is_not_a_rule_that_does_not_validate(
+    capsys, tmp_path
+):
+    """Two different problems arrived as one message.
+
+    A missing directory used to be reported as "the rules do not validate. Run
+    validate", which sends a person to inspect rules that are fine -- and the
+    one thing they will not check is the path they just typed.
+    """
+    code, _out, err = run(
+        capsys,
+        "evaluate",
+        "--evidence",
+        str(FIXTURES / "list-catalog-over-hard-limit.json"),
+        "--rules",
+        str(tmp_path / "no-such-directory"),
+    )
+
+    assert code == 2
+    assert "not a directory" in err
+    assert "do not validate" not in err
+
+
+def test_every_help_text_reaches_the_manual(capsys):
+    """A documentation set nobody can reach from the tool is one for people who
+    already knew where it was."""
+    from m365_governance.cli import DOCS, _build_parser
+
+    parser = _build_parser()
+    subcommands = [
+        action
+        for action in parser._actions
+        if isinstance(action, argparse._SubParsersAction)
+    ][0].choices
+
+    assert DOCS in parser.format_help()
+    for name, sub in subcommands.items():
+        assert DOCS in sub.format_help(), f"{name} --help names no documentation"
+
+
+def test_doctor_says_what_to_do_about_a_missing_powershell():
+    """Naming what is missing is half a diagnosis.
+
+    The check below it gives the command that installs PnP.PowerShell. This one
+    is the earlier of the two and gave the reader nothing to do.
+    """
+    from m365_governance import doctor as doctor_module
+
+    checks = doctor_module._powershell()
+    powershell = next(check for check in checks if check.name == "PowerShell 7")
+
+    if powershell.ok:
+        pytest.skip("PowerShell is installed here; the remedy is not rendered")
+    assert "aka.ms/powershell" in powershell.detail
+
+
+PLATFORM_REMEDIES = [
+    ("Darwin", "brew install"),
+    ("Windows", "winget install"),
+    ("Linux", "aka.ms/powershell-release"),
+]
+
+
+@pytest.mark.parametrize("system,expected", PLATFORM_REMEDIES, ids=lambda v: str(v))
+def test_the_powershell_remedy_is_a_command_where_a_command_exists(
+    monkeypatch, system, expected
+):
+    """Naming what is missing is half a diagnosis.
+
+    It was a link to a download page for every reader on every system, while
+    the check beside it has given the exact command for PnP.PowerShell all
+    along — and `run` told people `doctor` gives the command, which was not
+    true. Linux keeps the link because the command differs by distribution and
+    printing one distribution's would be wrong for most of them.
+    """
+    from m365_governance import doctor as doctor_module
+
+    monkeypatch.setattr(doctor_module.platform, "system", lambda: system)
+
+    assert expected in doctor_module._powershell_remedy()
+
+
+def test_the_platform_branch_decides_nothing_but_a_sentence():
+    """The only place this engine branches on an operating system.
+
+    A governance conclusion that differed by platform would be a conclusion
+    about the platform, so the branch may select a remedy and nothing else.
+    """
+    from m365_governance import doctor as doctor_module
+
+    remedies = {
+        system: doctor_module.POWERSHELL_INSTALL.get(system)
+        for system in ("Darwin", "Windows", "Linux")
+    }
+
+    assert remedies["Linux"] is None
+    assert all("powershell" in value.lower() for value in remedies.values() if value)
+
+
+def test_a_classification_nobody_established_is_not_shown_as_an_outcome(
+    capsys, tmp_path
+):
+    """One word was doing two jobs on one page.
+
+    A specimen read as a document on 2026-08-21 opened with `unknown  2` in the
+    resource breakdown and `Unknown  2` in the outcome table, four lines apart:
+    the classifier's `unknown` means the kind was never established, and the
+    outcome means a rule could not be decided. A caption two lines above tried
+    to hold them apart, and a caption defending a rendering is the tell that
+    the rendering is wrong.
+
+    The contract value is carried rather than replaced: a presentation layer
+    explains and declares its translation, so a reader can recover what was
+    published.
+    """
+    from m365_governance.reporting import _KIND
+
+    assert _KIND["unknown"] != "unknown"
+    assert "unknown" in _KIND["unknown"], (
+        "the contract value has to survive the explanation, or a reader cannot "
+        "recover what the engine published"
+    )
+    assert "not established" in _KIND["unknown"]

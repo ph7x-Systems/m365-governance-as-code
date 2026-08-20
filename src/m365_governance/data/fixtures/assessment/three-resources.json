@@ -34,7 +34,8 @@
             "source_api": "PnP.PowerShell / CSOM",
             "tenant": {
               "id": null,
-              "host": "contoso.sharepoint.com"
+              "host": "contoso.sharepoint.com",
+              "how": "requested"
             },
             "identity_kind": "application",
             "acquisition": "collected",
@@ -268,7 +269,8 @@
             "source_api": "PnP.PowerShell / CSOM",
             "tenant": {
               "id": null,
-              "host": "contoso.sharepoint.com"
+              "host": "contoso.sharepoint.com",
+              "how": "requested"
             },
             "identity_kind": "delegated",
             "acquisition": "collected",
@@ -349,7 +351,8 @@
             "source_api": "PnP.PowerShell / CSOM",
             "tenant": {
               "id": null,
-              "host": "contoso.sharepoint.com"
+              "host": "contoso.sharepoint.com",
+              "how": "requested"
             },
             "identity_kind": "delegated",
             "acquisition": "collected",
@@ -454,7 +457,7 @@
     },
     "evidence": [
       {
-        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
         "provenance": {
           "collected_at": "2026-08-05T14:02:11Z",
           "collector": "spo-collector",
@@ -463,7 +466,8 @@
           "source_api": "PnP.PowerShell / CSOM",
           "tenant": {
             "id": null,
-            "host": "contoso.sharepoint.com"
+            "host": "contoso.sharepoint.com",
+            "how": "requested"
           },
           "identity_kind": "application",
           "acquisition": "collected",
@@ -565,7 +569,7 @@
         }
       },
       {
-        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
         "provenance": {
           "collected_at": "2026-08-08T18:00:00Z",
           "collector": "spo-collector",
@@ -574,7 +578,8 @@
           "source_api": "PnP.PowerShell / CSOM",
           "tenant": {
             "id": null,
-            "host": "contoso.sharepoint.com"
+            "host": "contoso.sharepoint.com",
+            "how": "requested"
           },
           "identity_kind": "delegated",
           "acquisition": "collected",
@@ -686,7 +691,7 @@
         }
       },
       {
-        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
         "provenance": {
           "collected_at": "2026-08-06T16:00:00Z",
           "collector": "spo-collector",
@@ -695,7 +700,8 @@
           "source_api": "PnP.PowerShell / CSOM",
           "tenant": {
             "id": null,
-            "host": "contoso.sharepoint.com"
+            "host": "contoso.sharepoint.com",
+            "how": "requested"
           },
           "identity_kind": "delegated",
           "acquisition": "collected",
@@ -818,17 +824,17 @@
           "collected"
         ]
       },
-      "assessment_id": "d519e319f745176deeb9fdb022e44847cd5f996195467991b5af656ede61d7b5"
+      "assessment_id": "5269da15d5e8bbb9a9e0bfd4b59fc581352330da57b4fb01b8a3363283147193"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "bffa0cbdde8502908b48040a321e1c45a7a2127f4dc349dc6dfb1e039392582d",
-        "evidence": "f28860a02a4b822eeb6353e9c356f3bd004046109959f71b6990782d9b0fe79f",
+        "run_set": "d5e2e33766c87c2406abde52eae564084fdfb8f7155b02db9be2455c4cef6a5e",
+        "evidence": "7185c638a5439902147f86deb47f1cfa16f386f0e86ede40041af2c2b3c8ef83",
         "versions": "2c570ddafb24e2aeede070a87dcafd69d71db1b580f06fb28a36fdaf50c26ae0",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "d519e319f745176deeb9fdb022e44847cd5f996195467991b5af656ede61d7b5"
+      "canonical_hash": "5269da15d5e8bbb9a9e0bfd4b59fc581352330da57b4fb01b8a3363283147193"
     }
   }
 }

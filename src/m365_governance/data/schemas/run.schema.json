@@ -20,15 +20,15 @@
   ],
   "properties": {
     "provenance": {
-      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/provenance",
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/provenance",
       "description": "Referenced rather than restated, so one definition moves at a time — and so a consumer gets a type. It said `type: object` with no properties, which accepted `{}`: a run could carry no provenance at all and validate."
     },
     "coverage": {
-      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/coverage",
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/coverage",
       "description": "Also from the evidence. Note the name: a RunSet calls the same idea `run_coverage`, and the two envelopes disagree. Recorded, not fixed."
     },
     "resource": {
-      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/resource",
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/resource",
       "description": "The full resource block from the evidence, with display name and url. Each result inside carries a narrower copy holding only id and type."
     },
     "resource_class": {
@@ -155,7 +155,7 @@
           "description": "The rule schema's version. Note what is missing: the Run document itself carries no version at the top level, only each result does, so a stored run cannot be versioned as a document. An imperfection, described rather than repaired."
         },
         "resource": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/resource_ref",
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/resource_ref",
           "description": "Which resource this result is about. The same reference shape the evidence uses, so a consumer compares one thing structurally instead of two strings it has to agree on."
         },
         "outcome": {

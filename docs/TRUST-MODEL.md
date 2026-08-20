@@ -62,6 +62,13 @@ opinion
 
 This field is mandatory. Its value is never inferred.
 
+**`convention` is not "industry best practice", and a layer may not present it
+as one.** It is a defensible operational convention, documented by nobody. The
+distinction is the product rather than a nicety: rendering it as consensus lends
+the claim an authority this vocabulary deliberately withholds, and a reader who
+was told "industry best practice" can no longer recover the fact that nobody
+published it. A layer may explain the word; it may not promote it.
+
 ---
 
 ## The obvious trap

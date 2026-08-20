@@ -11,6 +11,14 @@ findings, Assessments, comparisons, the CLI and its public contracts. It
 collects what a Microsoft 365 tenant is configured to do, and decides only what
 a written rule says it may decide.
 
+**It also owns the first-run contract**, recorded in
+`docs/FIRST-RUN-CONTRACT.md`: the journey from an empty machine to a first
+report — prerequisites, identity, authentication, authorization, target, run,
+assessment, report. It is owned here because this is the only repository where
+it is executable, and therefore the only one where a gate can prove it. The
+README, the website and the desktop product consume that contract; none of them
+restates it.
+
 ## Sources of truth
 
 - The contracts are the JSON Schemas under
@@ -135,6 +143,12 @@ Translation is allowed and must be **declared where it happens**, so a reader
 can always recover the contract value behind the word they were shown. A silent
 relabel is a redefinition that nobody has noticed yet.
 
+**No layer publishes an aggregate score, percentage or grade.** That is charter
+decision `D5`, and it is written there rather than here: an aggregate proposed
+as a "trust score" over complete, partial and unknown observations is the
+artefact this product exists to replace, and it fails the product's own test on
+contact. Coverage is reported as the facts it is made of.
+
 ## Search scope
 
 Anchor every search at this repository's root. Not `~`, not a parent
@@ -166,6 +180,32 @@ when the task itself is to create a persistent service.
 Do not write durable product state outside the repository. Temporary
 directories, home-directory notes and scratch files are not evidence and do not
 survive the person who made them.
+
+### Continuing when there is no decision
+
+Charter `D51` binds: a missing authority is neither an inference nor a stop. The
+procedure that follows from it is written once, in the charter beside that
+decision — `charter/DECISIONS.md`, section *Continuing when there is no
+decision*, digest `a0ec410b8b05ca20`. These are its rules by name — enough to work from, never enough to
+replace it:
+
+1. A card is blocked only when **every** resolution it names is blocked.
+2. The decision is blocked; its **cost** is not. Rehearse it, cost it down.
+3. Removing a false claim needs no authority. Adding a true one does.
+4. Do what **every** branch of the pending decision requires.
+5. With no new authority available, get new **observation** — run it where
+   nobody has run it. A routine at every release candidate, not a virtue.
+6. Declare the state that is true, in both directions.
+7. Escalate the dependency, never the task, and say what continued beside it.
+   **Repository state is never a dependency**: a fact about the tree or a
+   contract is established by reading, never escalated. `Not mine` and
+   `not established` are different sentences.
+8. `Nothing remains` is established by enumeration, never by fatigue.
+9. Continuing finds authorised work; it never invents scope.
+
+**A legitimate stop** enumerates every open card with a named authority and a
+named next action, has already done every unblocked half, and says which
+authority is missing rather than that work has ended.
 
 ### Execution cost
 

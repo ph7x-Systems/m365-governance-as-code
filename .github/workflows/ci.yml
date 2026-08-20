@@ -76,3 +76,61 @@ jobs:
           else
             ./tools/release-check.sh --no-install
           fi
+
+  journey:
+    # THE JOURNEY WHERE NOTHING IS INSTALLED, on the systems a reader has.
+    #
+    # Rule 5 of the charter's continuation procedure: with no new authority
+    # available, get new observation. Every defect found on 2026-08-20 was
+    # found by running, none by reading, with a green gate over all of them —
+    # and the contract job above proves the repository, never the artefact a
+    # person installs.
+    #
+    # WINDOWS IS THE POINT. The reader of this product is a Microsoft 365
+    # administrator and is mostly on Windows, and this engine branches on no
+    # platform anywhere. The queue recorded Windows as needing a machine the
+    # owner would have to supply; it needed a runner of the same class already
+    # in use, which is what happens when a card's state is inherited instead of
+    # its resolutions being read.
+    #
+    # The image carries PowerShell 7 beside Windows PowerShell 5.1, which is
+    # the question itself: which one `shutil.which("pwsh")` resolves.
+    #
+    # WHAT IT DOES NOT SETTLE: a PFX under another credential store. Saying so
+    # here keeps a green job from standing for the whole question.
+    name: The journey, installed
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      # Built here and installed from the wheel, never `pip install -e .`: an
+      # editable install resolves against the checkout, and what a reader has
+      # is a package.
+      - name: Build and install the artefact
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist .
+          # THE WHEEL BY PATH, NOT BY NAME. `--find-links dist` only ADDS the
+          # local wheel as a candidate: PyPI stays in the resolution, and with
+          # the same version number published there, pip installed the RELEASED
+          # package instead of the one just built. The job then walked the
+          # journey of the last release on three operating systems and reported
+          # it as this branch's - which is how a fix committed here failed the
+          # gate written to prove it.
+          #
+          # `--no-index` is not the fix: it blocks the dependencies too, and
+          # this package needs PyYAML from PyPI. Naming the file installs
+          # exactly the artefact and resolves its requirements normally. It is
+          # done in Python because the three runners do not agree on globs.
+          python -c "import glob, subprocess, sys; subprocess.check_call([sys.executable, '-m', 'pip', 'install', glob.glob('dist/*.whl')[0]])"
+
+      - name: The journey a reader walks
+        run: python tools/journey-check.py
