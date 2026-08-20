@@ -109,6 +109,22 @@ def to_markdown(run: Run) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+#: HOW A CLASSIFICATION IS SHOWN, and it exists because one word was doing two
+#: jobs on one page. The classifier's `unknown` means the kind was never
+#: established; the outcome `unknown` means a rule could not be decided. A
+#: specimen read as a document, 2026-08-21, opened with `unknown  2` in the
+#: breakdown and `Unknown  2` in the outcome table — different dimensions,
+#: same word, four lines apart, and a caption two lines above trying to hold
+#: them apart. A caption defending a rendering is the tell that the rendering
+#: is wrong.
+#:
+#: THE CONTRACT VALUE IS CARRIED, not replaced. A presentation layer may
+#: explain a contract value and must declare the translation so a reader can
+#: recover what was published; renaming it silently is the redefinition this
+#: programme exists to remove.
+_KIND = {"unknown": "kind not established (`unknown`)"}
+
+
 def _provenance_lines(run: Run) -> list[str]:
     prov = run.provenance
     if not prov:
@@ -593,8 +609,13 @@ def _class_lines(runs: list[Run]) -> list[str]:
     # constant, above them, costing three times as much.
     if by_class and set(by_class) - {"unknown", "unclassified"}:
         lines.append("  by kind of resource, which is not an outcome:")
-        for name in sorted(by_class):
-            lines.append(f"    {name:<16}{by_class[name]}")
+        shown = {name: _KIND.get(name, name) for name in sorted(by_class)}
+        # Width from the labels rather than a constant: one of them grew when
+        # the translation was declared, and a fixed column would have run the
+        # count into the word.
+        width = max(len(label) for label in shown.values()) + 2
+        for name, label in shown.items():
+            lines.append(f"    {label:<{width}}{by_class[name]}")
     if aside:
         answered = sum(
             1 for r in aside for result in r.results if result.outcome.is_answer

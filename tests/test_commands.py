@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -1113,9 +1114,14 @@ def test_the_report_counts_resources_by_class(capsys, tmp_path):
         str(tmp_path),
     )
     assert "4 resources observed" in out
-    assert "content         1" in out
-    assert "system          2" in out
-    assert "application     1" in out
+    # The counts, not the column. The width is computed from the labels since
+    # one of them grew when the classifier's `unknown` stopped being rendered
+    # with the word an outcome uses, and a test pinning the spacing would have
+    # made that correction look like a regression.
+    for kind, count in (("content", 1), ("system", 2), ("application", 1)):
+        assert re.search(rf"^\s+{kind}\s+{count}$", out, re.MULTILINE), (
+            f"{kind} is not counted as {count} in the breakdown:\n{out}"
+        )
 
 
 def test_no_profile_excludes_anything():
@@ -1443,3 +1449,29 @@ def test_the_platform_branch_decides_nothing_but_a_sentence():
 
     assert remedies["Linux"] is None
     assert all("powershell" in value.lower() for value in remedies.values() if value)
+
+
+def test_a_classification_nobody_established_is_not_shown_as_an_outcome(
+    capsys, tmp_path
+):
+    """One word was doing two jobs on one page.
+
+    A specimen read as a document on 2026-08-21 opened with `unknown  2` in the
+    resource breakdown and `Unknown  2` in the outcome table, four lines apart:
+    the classifier's `unknown` means the kind was never established, and the
+    outcome means a rule could not be decided. A caption two lines above tried
+    to hold them apart, and a caption defending a rendering is the tell that
+    the rendering is wrong.
+
+    The contract value is carried rather than replaced: a presentation layer
+    explains and declares its translation, so a reader can recover what was
+    published.
+    """
+    from m365_governance.reporting import _KIND
+
+    assert _KIND["unknown"] != "unknown"
+    assert "unknown" in _KIND["unknown"], (
+        "the contract value has to survive the explanation, or a reader cannot "
+        "recover what the engine published"
+    )
+    assert "not established" in _KIND["unknown"]
