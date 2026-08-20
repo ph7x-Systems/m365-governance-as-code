@@ -33,6 +33,14 @@ _ORDER = sorted(
     key=lambda o: (attention.rank_of_outcome(o.value), _OUTCOMES.index(o)),
 )
 
+#: Outcomes that describe something going wrong with the evidence or the
+#: engine rather than with the tenant. Every assessment has passes, failures,
+#: unknowns and rules that did not apply, so those rows are the shape of the
+#: document and are printed at zero. `Invalid evidence 0` and `Error 0` say
+#: only that nothing broke, which is the ordinary case, and two rows of the
+#: ordinary case sit in the middle of the table a reader is scanning.
+_ONLY_WHEN_THEY_HAPPEN = frozenset({Outcome.INVALID_EVIDENCE, Outcome.ERROR})
+
 _LABEL = {
     Outcome.PASS: "Pass",
     Outcome.FAIL: "Fail",
@@ -242,6 +250,27 @@ def _summary_lines(run: Run) -> list[str]:
     return lines
 
 
+def _first_action(result) -> str:
+    """The first practical step this result carries, or nothing.
+
+    ONE OWNER, BECAUSE THE TWO RENDERERS HAD DISAGREED. `to_markdown` printed
+    `What to do:` and `many_to_markdown` did not, and the second is the real
+    path: `assess` always writes a run set, and `evaluate` writes one for any
+    directory -- which is what a collection produces, and what `compose` exists
+    to read. So an administrator received four failures and no first action,
+    while a test rendering one file at a time saw the remediation and reported
+    everything was fine.
+
+    Only on a failure. An `unknown` has nothing to remediate: the fix is to
+    collect again, and printing a rule's advice beside an outcome the evidence
+    could not reach would be advice about a resource nobody has established
+    anything about. A `not-applicable` has less than that.
+    """
+    if result.outcome is Outcome.FAIL and result.remediation:
+        return result.remediation.strip()
+    return ""
+
+
 def _result_lines(result) -> list[str]:
     gloss = _BASIS_GLOSS.get(result.basis_type, "")
     lines = [
@@ -271,9 +300,10 @@ def _result_lines(result) -> list[str]:
             f"- Source: [{source['title']}]({source['url']}) "
             f"— checked {source['checked_at']}"
         )
-    if result.outcome is Outcome.FAIL and result.remediation:
+    action = _first_action(result)
+    if action:
         lines.append("")
-        lines.append(f"**What to do:** {result.remediation}")
+        lines.append(f"**What to do:** {action}")
     if result.outcome is Outcome.PASS and result.limitation:
         lines.append("")
         lines.append(f"**This pass does not establish:** {result.limitation}")
@@ -469,11 +499,9 @@ def _html_card(result, outcome: Outcome) -> str:
         )
 
     extra = ""
-    if outcome is Outcome.FAIL and result.remediation:
-        extra += (
-            f'<p class="limit"><strong>What to do:</strong> '
-            f"{_esc(result.remediation)}</p>"
-        )
+    action = _first_action(result)
+    if action:
+        extra += f'<p class="limit"><strong>What to do:</strong> {_esc(action)}</p>'
     if outcome is Outcome.PASS and result.limitation:
         # On the pass, not behind a disclosure. A pass that hides what it does
         # not establish is the green box this project exists to remove.
@@ -520,7 +548,7 @@ def _class_lines(runs: list[Run]) -> list[str]:
         )
     aside = [r for r in runs if r.set_aside]
 
-    lines = [f"{len(runs)} resources observed"]
+    lines = [f"{len(runs)} {'resource' if len(runs) == 1 else 'resources'} observed"]
     # THE CLASS IS NOT AN OUTCOME, AND IT WAS PRINTED AS IF IT WERE.
     # `unknown` names a resource whose kind the classifier could not settle,
     # and it also names a rule that could not be decided. This block sat two
@@ -528,7 +556,13 @@ def _class_lines(runs: list[Run]) -> list[str]:
     # `unknown  53` directly above `Unknown  0`. A reader has no way to know
     # those are different dimensions, and the first number they see is the
     # wrong one.
-    if by_class:
+    #
+    # AND WHEN EVERY RESOURCE IS `unknown` THERE IS NO BREAKDOWN TO PRINT.
+    # Three lines, one of them a caveat explaining that a thing which says
+    # nothing is not an outcome, to report that the classifier settled nothing.
+    # The finding headings stopped repeating that constant; this is the same
+    # constant, above them, costing three times as much.
+    if by_class and set(by_class) - {"unknown", "unclassified"}:
         lines.append("  by kind of resource, which is not an outcome:")
         for name in sorted(by_class):
             lines.append(f"    {name:<16}{by_class[name]}")
@@ -617,7 +651,6 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
     for run in runs:
         for key, value in run.counts().items():
             total[key] += value
-    answered = total[Outcome.PASS.value] + total[Outcome.FAIL.value]
     evaluated = sum(len(run.results) for run in runs)
 
     lines = ["# Governance report", ""]
@@ -652,22 +685,31 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
 
     lines.append("## Summary")
     lines.append("")
+    # WITHOUT `n produced an answer`, WHICH IS PASS PLUS FAIL, BOTH BELOW.
+    # The evaluation count is not in the table and earns its line; the derived
+    # one restated two rows of a table three lines further down.
     lines.append(
-        f"{evaluated} rule evaluations across {len(runs)} resources. "
-        f"**{answered} produced an answer.**"
+        f"{evaluated} rule evaluations across {len(runs)} "
+        f"{'resource' if len(runs) == 1 else 'resources'}."
     )
     lines.append("")
     lines.append("| Outcome | Count |")
     lines.append("|---|---|")
     for outcome in _ORDER:
+        if outcome in _ONLY_WHEN_THEY_HAPPEN and not total[outcome.value]:
+            continue
         lines.append(f"| {_LABEL[outcome]} | {total[outcome.value]} |")
     lines.append("")
 
     unresolved = total[Outcome.UNKNOWN.value] + total[Outcome.INVALID_EVIDENCE.value]
     if unresolved:
+        # WITHOUT THE COUNT, WHICH IS IN THE ROW DIRECTLY ABOVE. What this
+        # sentence is for is the point it makes, not the number it repeats:
+        # a reader who has just seen `Unknown 1` and reads `1 could not be
+        # decided` has been told one thing twice and taught nothing.
         lines.append(
-            f"{unresolved} could not be decided. That is not compliance: missing "
-            f"evidence is a fact about collection, not about the resource."
+            "Undecided is not compliance: missing evidence is a fact about "
+            "collection, not about the resource."
         )
         lines.append("")
 
@@ -718,6 +760,9 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
                     f"v{result.rule_version} · {result.basis_type}"
                 )
                 lines.append(f"  {result.message}")
+                action = _first_action(result)
+                if action:
+                    lines.append(f"  **What to do:** {action}")
             lines.append("")
 
     return "\n".join(lines).rstrip() + "\n"
@@ -745,7 +790,6 @@ def many_to_html(value: list[Run] | RunSet) -> str:
     runs = run_set.runs
 
     total = run_set.counts()
-    answered = total[Outcome.PASS.value] + total[Outcome.FAIL.value]
     evaluated = sum(len(run.results) for run in runs)
 
     parts: list[str] = [
@@ -763,10 +807,14 @@ def many_to_html(value: list[Run] | RunSet) -> str:
         return "\n".join(parts) + "\n"
 
     by_class = run_set.by_class()
-    observed = ", ".join(f"{by_class[name]} {name}" for name in sorted(by_class))
-    parts.append(
-        f'<p class="meta">{len(runs)} resources observed: {_esc(observed)}.</p>'
-    )
+    noun = "resource" if len(runs) == 1 else "resources"
+    if by_class and set(by_class) - {"unknown", "unclassified"}:
+        observed = ", ".join(f"{by_class[name]} {name}" for name in sorted(by_class))
+        parts.append(
+            f'<p class="meta">{len(runs)} {noun} observed: {_esc(observed)}.</p>'
+        )
+    else:
+        parts.append(f'<p class="meta">{len(runs)} {noun} observed.</p>')
 
     coverage = run_set.run_coverage()
     expected = coverage.get("expected")
@@ -790,23 +838,20 @@ def many_to_html(value: list[Run] | RunSet) -> str:
         )
 
     parts.append("<h2>Summary</h2>")
-    parts.append(
-        f"<p>{evaluated} rule evaluations across {len(runs)} resources. "
-        f"<strong>{answered} produced an answer.</strong></p>"
-    )
+    parts.append(f"<p>{evaluated} rule evaluations across {len(runs)} {noun}.</p>")
     parts.append(
         "<table><tr><th>Outcome</th><th>Count</th></tr>"
         + "".join(
-            f"<tr><td>{_LABEL[o]}</td><td>{total[o.value]}</td></tr>" for o in _ORDER
+            f"<tr><td>{_LABEL[o]}</td><td>{total[o.value]}</td></tr>"
+            for o in _ORDER
+            if not (o in _ONLY_WHEN_THEY_HAPPEN and not total[o.value])
         )
         + "</table>"
     )
-    unresolved = total[Outcome.UNKNOWN.value] + total[Outcome.INVALID_EVIDENCE.value]
-    if unresolved:
+    if total[Outcome.UNKNOWN.value] + total[Outcome.INVALID_EVIDENCE.value]:
         parts.append(
-            f'<p class="warn">{unresolved} could not be decided. That is not '
-            "compliance: missing evidence is a fact about collection, not about "
-            "the resource.</p>"
+            '<p class="warn">Undecided is not compliance: missing evidence is '
+            "a fact about collection, not about the resource.</p>"
         )
 
     for heading, selected in (
@@ -839,6 +884,19 @@ def many_to_html(value: list[Run] | RunSet) -> str:
             parts.append(f"<h3>{_esc(name)}{_esc(klass)}</h3>")
             for result in run.results:
                 if result.outcome is Outcome.PASS:
+                    continue
+                if result.outcome is Outcome.NOT_APPLICABLE:
+                    # The same hand-off the Markdown prints, for the same
+                    # reason. A card is the heaviest thing this page has, and
+                    # a rule saying it has nothing to say does not earn one.
+                    covered = _covered_by(result)
+                    if covered:
+                        parts.append(
+                            f'<p class="meta"><strong>'
+                            f"{_LABEL[result.outcome]}</strong> · "
+                            f"{_esc(result.rule_id)} — covered by "
+                            f"{_esc(covered)}.</p>"
+                        )
                     continue
                 parts.append(_html_card(result, result.outcome))
 

@@ -91,7 +91,7 @@ def _weigh(document: str) -> dict[str, int]:
     is context: headings, the summary, and the notes about coverage and
     identity.
     """
-    counts = {"action": 0, "unknown": 0, "hand-off": 0, "context": 0}
+    counts = {"action": 0, "remediation": 0, "unknown": 0, "hand-off": 0, "context": 0}
     current = "context"
     for line in document.splitlines():
         if not line.strip():
@@ -108,6 +108,11 @@ def _weigh(document: str) -> dict[str, int]:
             }.get(outcome, "context")
         elif not line.startswith("  "):
             current = "context"
+        # Counted inside its finding and again on its own, because "does every
+        # failure carry a first step" is the question this slice existed for
+        # and a line total cannot answer it.
+        if line.strip().startswith("**What to do:**"):
+            counts["remediation"] += 1
         counts[current] += 1
     return counts
 
@@ -136,12 +141,27 @@ def test_the_document_is_measured_whole_and_not_only_its_findings():
     document = FROZEN.read_text(encoding="utf-8")
     counts = _weigh(document)
 
-    assert counts == {"action": 8, "unknown": 2, "hand-off": 2, "context": 19}, counts
-    assert len(document) == 1995, len(document)
-    assert sum(counts.values()) == 31, counts
+    assert counts == {
+        "action": 12,
+        "remediation": 4,
+        "unknown": 2,
+        "hand-off": 2,
+        "context": 15,
+    }, counts
+    assert len(document) == 2967, len(document)
+    assert (
+        counts["action"] + counts["unknown"] + counts["hand-off"] + counts["context"]
+        == 31
+    ), counts
 
-    # Twelve lines of findings under nineteen lines of preamble. Not asserted
-    # as a direction -- a gate that demanded the ratio improve every time would
-    # eventually delete something a reader needs. It is here so that the next
-    # person to change the renderer sees which half of the document is larger,
-    # which is the thing measuring only the findings block could not show.
+    # EVERY FAILURE CARRIES A FIRST STEP. This is the assertion the slice was
+    # for: `assess` writes a run set, `many_to_markdown` renders it, and it
+    # rendered the message and stopped. Four failures reached an administrator
+    # with nothing to do about any of them.
+    assert counts["remediation"] == document.count("- **Fail**")
+
+    # Sixteen lines of findings over fifteen of preamble. It was twelve under
+    # nineteen. Not asserted as a direction -- a gate that demanded the ratio
+    # improve every time would eventually delete something a reader needs. It
+    # is here so that the next person to change the renderer sees which half of
+    # the document is larger, which measuring the findings alone could not show.

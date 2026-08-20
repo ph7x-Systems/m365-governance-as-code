@@ -138,9 +138,19 @@ def test_the_report_says_the_resource_class_is_not_an_outcome():
     from m365_governance.results import RunSet
 
     rules = [r.data for r in load_rules(packaged("rules"))]
-    run = engine.evaluate(rules, _load("site-two-owners"))
-    rendered = many_to_markdown(RunSet([run]))
-    assert "which is not an outcome" in rendered
+    settled = engine.evaluate(rules, _load("list-class-content"))
+    assert settled.resource_class == "content", "the fixture stopped being the case"
+    assert "which is not an outcome" in many_to_markdown(RunSet([settled]))
+
+    # AND WHEN NOTHING WAS SETTLED THERE IS NO BREAKDOWN TO LABEL. Three lines
+    # -- a count, the caveat, and `unknown 1` -- to report that the classifier
+    # could not tell. The finding headings stopped repeating that constant in
+    # the same measurement that found this one still printing it above them.
+    unsettled = engine.evaluate(rules, _load("site-two-owners"))
+    assert unsettled.resource_class == "unknown", "the fixture stopped being the case"
+    rendered = many_to_markdown(RunSet([unsettled]))
+    assert "which is not an outcome" not in rendered
+    assert "1 resource observed" in rendered
 
 
 def test_an_unexpanded_group_reaches_the_coverage():

@@ -35,7 +35,7 @@
 
 ### SPO-SITE-001 v1.1
 
-The owner count does not settle whether this site has two: either the owners were not collected, or a group among them was not expanded. The evidence beside this finding says which. This is not a pass.
+The owner count cannot establish whether this site has two administrators: either a group among the owners was not expanded, or the owners could not be read.
 
 - Basis: **convention** — widely held practice, not documented as a rule
 - Severity: medium

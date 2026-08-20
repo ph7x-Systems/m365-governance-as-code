@@ -288,9 +288,11 @@ class RunSet:
             "observed": len(self.runs),
             "expected": None,
             "detail": (
-                f"{len(self.runs)} resources are stored. The total number the "
-                "identity was expected to reach was not recorded, so this run "
-                "does not establish complete coverage."
+                f"{len(self.runs)} "
+                f"{'resource is' if len(self.runs) == 1 else 'resources are'} "
+                "stored. The total number the identity was expected to reach "
+                "was not recorded, so this run does not establish complete "
+                "coverage."
             ),
         }
 
