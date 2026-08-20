@@ -109,6 +109,8 @@ guessing internal architecture.*
 
 ### FIRST-RUN-001 — nothing interactive begins on an input that could be refused locally
 
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`, shipped by the release
+
 **State:** the path half is closed. `evaluate`, `assess`, `stats`, `report`, `verify` and
 `diff` refuse a path that is not there with exit `2` and one sentence, and the exit-code
 contract they are measured against is published on the site.
@@ -125,6 +127,8 @@ engine's own rule already says the cheapest place to stop is before the network 
 enforced today for authentication modes and for nothing else.
 
 ### FIRST-RUN-002 — `connect` means "this identity can work here"
+
+**authority:** observation · **next action:** the owner's hour: application identity end to end
 
 **What is wrong.** `connect` accepts `--certificate-path`, `--tenant-id` and
 `--certificate-password-env`, validates them, and then does not pass them:
@@ -173,6 +177,8 @@ the surface a user is given.
 
 ### FIRST-RUN-003 — a configured target, and no secrets in it
 
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`
+
 **What is wrong.** There is no project file and no sanctioned defaults. Ten slices are ten
 commands, each retyping `--client-id` and an address; the audit counted the same two
 arguments written eleven times. The refusal to read PnP's ambient client id is correct —
@@ -204,6 +210,8 @@ somebody runs while working out how any of this fits together had no way to be t
 the only way to see what it would do was to let it do it.
 
 ### ENGINE-CLEAN-MACHINE-001 — run the journey where nothing is installed
+
+**authority:** repository · **next action:** re-run at the next release candidate
 
 **Opened 2026-08-20.** Every defect found that day was found by running, none by reading,
 with a green gate standing over all of them. **The journey has never been run on a machine
@@ -263,8 +271,18 @@ already runs a language gate over its own operational documents. The site adopts
 it has proven itself here, and not before: a gate copied into two repositories before it
 has been exercised in one is two gates to keep true.
 
-**Done when:** the gate exists, is tested, runs in `release-check.sh`, and every card in
-this file carries both fields.
+**Done, 2026-08-20.** The gate exists, is tested, runs in `release-check.sh`, and every
+card carries both fields. Its first run answered the question that had been getting the
+wrong answer:
+
+```text
+✓ 15 cards, all claimed: 2 observation, 4 owner, 9 repository
+  9 of them need no external authority
+```
+
+**Nine.** That line is what `no independent executable work remains` was competing with,
+and it is now printed by a gate rather than assembled from memory at the end of a long
+session.
 
 ### ENGINE-CLEAN-MACHINE-002 — the journey had met one operating system
 
@@ -294,6 +312,8 @@ Windows PowerShell 5.1 and which one `shutil.which("pwsh")` finds; a PFX and
 
 ### ENGINE-RELEASE-TRAIN-001 — make the authorization a non-event
 
+**authority:** repository · **next action:** rehearse `post-release-check.sh` against a local wheel
+
 **Opened 2026-08-20.** The owner's publication decision should cost minutes, not a
 session. What can be prepared without taking it: the CHANGELOG closed, the version bump
 staged rather than applied, `tools/post-release-check.sh` rehearsed against a locally
@@ -303,6 +323,8 @@ index written down.
 **Not authorised by this card:** tagging, publishing, or bumping the version on `main`.
 
 ### ENGINE-SHIPPABLE-001 — a release must not recreate the drift in mirror image
+
+**authority:** repository · **next action:** none: the manual is written, behind `unreleased`
 
 **Opened 2026-08-20.** `SHIPPED` was being treated as one decision. It is not. The
 published manual documents the old journey: there is no `cli/setup.md` and no
@@ -323,6 +345,8 @@ the owner's.
 happens the site has nothing left to write.
 
 ### ENGINE-OBSERVE-PREP-001 — reduce the cost of the hour that is blocked
+
+**authority:** repository · **next action:** write the runbook, in two dimensions
 
 **Opened 2026-08-20.** `LIVE-OBSERVED` is blocked on one credential and the credential is
 the owner's. **The plan for spending it is not blocked.**
@@ -349,6 +373,8 @@ have run.
 lacks, in one pass, without anybody deciding what to type while a credential is live.
 
 ### FIRST-RUN-006 — provenance must not name a tenant the session never established — `CONTRACT-PROVEN`
+
+**authority:** observation · **next action:** read the directory from a session, once a tenant exists
 
 **Opened 2026-08-20, from the generalisation of the sign-in defect.** Charter `D49`: an
 absence never authorises the step that depends on it.
@@ -398,6 +424,8 @@ and a wholesale skip fails.
 
 ### FIRST-RUN-004 — the golden path exists as commands
 
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`
+
 **Done when:** `setup` prepares and diagnoses an environment, including how to obtain an
 application registration; `connect` proves the identity; and `run` takes a configured
 target to an assessment and a report. `slice`, evidence directories, `profile` and run
@@ -427,6 +455,8 @@ Not `LIVE-OBSERVED`: the plan, the refusals and the composition are proven; no c
 has been performed against a tenant.
 
 ### FIRST-RUN-005 — the front door is the journey — `CONTRACT-PROVEN`
+
+**authority:** repository · **next action:** none: `CONTRACT-PROVEN`
 
 **Done, 2026-08-20.** Install is at the top and the journey follows it; the
 epistemology, which used to run for a hundred and forty lines before a reader could
@@ -469,6 +499,8 @@ post-release gate has proven it from there. Only then does `IDENTITY-CA-001` res
 `IDENTITY-APPS-001` after it.
 
 ## MIGRATION-VERIFY-001 — what a move actually moved
+
+**authority:** owner · **next action:** frozen by the FIRST-RUN freeze; resumes when it ships
 
 **State:** contract and comparison landed on `public-manifest-001`; collectors not
 started. Anybody picking this up starts at *What is missing*, in that order.
@@ -645,6 +677,8 @@ migrated when it could not be read: that is `unknown`, with the side and the
 reason, and it is the single behaviour the contract exists to protect.
 
 ## PUBLIC-MANIFEST-001 — one published description of what this engine can do
+
+**authority:** owner · **next action:** frozen by the FIRST-RUN freeze; resumes when it ships
 
 **Accepted 2026-08-17, and it runs before the Identity surface expands further.**
 
@@ -902,6 +936,8 @@ Configuration, access control and telemetry remain separate evidence dimensions.
 - [ ] PR is mergeable, clean and has no unresolved review; the Executor does not merge.
 
 ## RULE-MESSAGES-001 — editorial debt in the `unknown` messages
+
+**authority:** owner · **next action:** frozen by the FIRST-RUN freeze; resumes when it ships
 
 **State:** measured, not started. Owner decision 2026-08-20: a pass of its own,
 rule by rule.
