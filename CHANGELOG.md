@@ -49,11 +49,13 @@ Rules carry their own versions, independently of this file. See
   rather than ignored. Ten slices against one tenant were ten commands, each
   repeating the same two arguments.
 - **An interactive sign-in no longer goes wherever the browser happens to be
-  signed in.** `connect` resolves which directory owns an address before
+  signed in.** The collector resolves which directory owns an address before
   signing in, and where nothing owned it, it signed in anyway — landing in an
   unrelated directory and reporting what it found there as an answer about the
-  address that was typed. It is refused now. A certificate proceeds: `-Tenant`
-  names the directory.
+  address that was typed. It is refused now, for **every** mode: the guard sits
+  with the one place that decides which URL is connected to, so the ten
+  commands that write evidence are covered and not only the one that writes
+  nothing. A certificate proceeds: `-Tenant` names the directory.
 - **`connect --dry-run`**, which `collect` has had since it existed.
 - **The first-run journey has an owner**, recorded in
   [docs/FIRST-RUN-CONTRACT.md](docs/FIRST-RUN-CONTRACT.md).

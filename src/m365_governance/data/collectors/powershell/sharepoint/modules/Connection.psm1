@@ -94,6 +94,55 @@ function Read-CertificatePassword {
     return (ConvertTo-SecureString -String $raw -AsPlainText -Force)
 }
 
+function Assert-AddressIsResolvable {
+    <#
+        .SYNOPSIS
+        Refuses an interactive sign-in to an address no directory owns.
+
+        .DESCRIPTION
+        AN INTERACTIVE SIGN-IN GOES SOMEWHERE. Where public discovery cannot
+        say which directory owns an address, it will not be this one: the
+        sign-in falls back to the directory the browser is already signed into,
+        and whatever comes back is then reported as an answer about the address
+        that was typed.
+
+        Observed on 2026-08-20 against a live tenant, from a host that does not
+        exist: a browser opened against an unrelated directory and returned
+        AADSTS700016 -- a true sentence about the wrong tenant.
+
+        AND IN A COLLECTION IT IS WORSE THAN A WRONG MESSAGE. `tenant.id` is
+        null throughout this engine, so the evidence contract says the host
+        carries the identity -- and the host is derived from the URL the caller
+        asked for, never from the session. A collection that signed in
+        somewhere else would stamp its provenance with a tenant the session
+        never established.
+
+        THE ENGINE HAD THIS EVIDENCE AND USED IT FOR NOTHING. It asked which
+        directory owns the address, was told nothing does, and signed in
+        anyway. An absence never authorises the step that depends on it.
+
+        A CERTIFICATE PROCEEDS. `-Tenant` names the directory, so the caller
+        said where the token comes from and discovery is not the only thing
+        that knew.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)] [string] $Url,
+        [Parameter()] [string] $CertificatePath
+    )
+
+    if ($CertificatePath) { return }
+
+    $resolved = Resolve-TenantAddress -Url $Url
+    if ($resolved.resolved_tenant_id) { return }
+
+    throw ("No directory owns $Url, so an interactive sign-in would " +
+        'authenticate against whichever directory this browser is already ' +
+        'signed into, and report the result as an answer about this address. ' +
+        'Check the address, or name the directory with a certificate. ' +
+        'Discovery said: ' + $resolved.detail)
+}
+
 function Connect-Collector {
     <#
         .SYNOPSIS
@@ -152,6 +201,11 @@ function Connect-Collector {
     if ($CertificatePath -and $DeviceLogin) {
         throw 'Choose one: -CertificatePath authenticates the application, -DeviceLogin authenticates a person.'
     }
+
+    # BEFORE ANY SIGN-IN, AND FOR EVERY MODE. This used to run in the script,
+    # inside `if ($Mode -eq 'Connect')`, so the one command that writes nothing
+    # was guarded and the ten that write evidence were not.
+    Assert-AddressIsResolvable -Url $connectUrl -CertificatePath $CertificatePath
 
     if ($CertificatePath) {
         if (-not $TenantId) { throw '-CertificatePath needs -TenantId.' }
@@ -343,4 +397,4 @@ function Test-CollectorAuthorization {
     }
 }
 
-Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization
+Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization, Assert-AddressIsResolvable

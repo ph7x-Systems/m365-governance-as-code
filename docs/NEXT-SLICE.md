@@ -146,6 +146,33 @@ and a certificate still proceeds because `-Tenant` names the directory.
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
 
+### FIRST-RUN-006 — provenance must not name a tenant the session never established
+
+**Opened 2026-08-20, from the generalisation of the sign-in defect.** Charter `D49`: an
+absence never authorises the step that depends on it.
+
+**What is closed.** The guard now runs for every mode, from the one place that decides
+which URL is connected to. It used to live in the script, inside `if ($Mode -eq
+'Connect')`, so the single command that writes nothing was protected and the ten that
+write evidence were not.
+
+**What is still open, and it is a contract question.** `tenant.id` is null throughout this
+engine, and the evidence contract says in as many words that the host therefore carries
+the identity. That host is derived from the URL the caller asked for — `Get-TenantHost
+-Url $connectUrl` — and never from the session. This engine is fanatical about the same
+distinction one contract away: `observed_tenant_id` may never be filled from
+`resolved_tenant_id`, "in the one field a reader trusts to mean what was seen". Evidence
+does the equivalent by construction, in the field that currently identifies the tenant an
+assessment is about.
+
+The guard removes the path that made it dangerous. It does not make the provenance say
+what was observed rather than what was asked for.
+
+**Done when:** evidence records what the session established about where it was, distinct
+from what the caller requested, without copying a public lookup into an observed field —
+and `docs/COLLECTION-PATH-AUDIT.md` is settled on whether the directory identity can be
+read from a session at all. It is an evidence contract change and is sized as one.
+
 ### FIRST-RUN-004 — the golden path exists as commands
 
 **Done when:** `setup` prepares and diagnoses an environment, including how to obtain an
