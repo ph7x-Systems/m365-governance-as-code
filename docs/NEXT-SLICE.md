@@ -17,8 +17,11 @@ and continues in order without conversation, scratchpads, roadmap ratification o
 new owner approval. Completed work is removed from the active queue rather than kept
 as queue history; its PR, commits and release evidence remain the historical record.
 
-**Where to start, 2026-08-20.** `FIRST-RUN-001` to `006` are `CONTRACT-PROVEN` and are
-not restarted; the position block in the next section says what each of the remaining
+**Where to start, 2026-08-20.** `ENGINE-SHIPPABLE-001` and `ENGINE-OBSERVE-PREP-001`,
+below, opened after the queue was wrongly declared exhausted: work was escalated as
+blocked because part of it was, which the charter's `D51` names as the second half of the
+same mistake as inventing an answer. `FIRST-RUN-001` to `006` are `CONTRACT-PROVEN` and
+are not restarted; the position block in the next section says what each of the remaining
 closures needs, and three of them are not engineering. The first slice with engineering
 left in it is the residual-defect list recorded under `FIRST-RUN-006`.
 
@@ -199,6 +202,47 @@ and a certificate still proceeds because `-Tenant` names the directory.
 `connect` also gained `--dry-run`. `collect` has had one since it existed; the command
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
+
+### ENGINE-SHIPPABLE-001 — a release must not recreate the drift in mirror image
+
+**Opened 2026-08-20.** `SHIPPED` was being treated as one decision. It is not. The
+published manual documents the old journey: there is no `cli/setup.md` and no
+`cli/run.md`. A release carrying `setup`, `connect` and `run` against a manual that
+documents none of them produces the same defect that `DOCS-AGAINST-PUBLISHED-001` exists
+to catch, pointing the other way — and `docs/FIRST-RUN-CONTRACT.md` obliges the site to
+document each step against a published release.
+
+**The slice.** The manual pages for the journey are drafted behind the mechanism
+`SITE-UNRELEASED-001` provides: declared as documenting an unreleased tree, checked
+against that tree, and not composed into the published artefact. They become publishable
+by the release, not by an edit made on the day.
+
+**Not authorised by this card:** publishing, tagging, or touching the version. Those are
+the owner's.
+
+**Done when:** the journey has pages, they are proven unpublished, and the day the release
+happens the site has nothing left to write.
+
+### ENGINE-OBSERVE-PREP-001 — reduce the cost of the hour that is blocked
+
+**Opened 2026-08-20.** `LIVE-OBSERVED` is blocked on one credential and the credential is
+the owner's. **The plan for spending it is not blocked.**
+
+**The slice.** A runbook: the exact commands, in order, and which claim each one settles.
+Three have never been observed and each needs a different command —
+
+```text
+authorization: established    only `denied` and `not-attempted` have been seen
+identity_kind: application    end to end through `connect`, not only `collect`
+tenant.how: observed          still needs-tenant-validation
+```
+
+**It records nothing as observed**, and it may not: writing an expected result down is not
+observing one. What it removes is a second session spent discovering what the first should
+have run.
+
+**Done when:** an hour with a tenant produces every observation this engine currently
+lacks, in one pass, without anybody deciding what to type while a credential is live.
 
 ### FIRST-RUN-006 — provenance must not name a tenant the session never established — `CONTRACT-PROVEN`
 
