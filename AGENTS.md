@@ -181,6 +181,28 @@ Do not write durable product state outside the repository. Temporary
 directories, home-directory notes and scratch files are not evidence and do not
 survive the person who made them.
 
+### Continuing when there is no decision
+
+Charter `D51` binds: a missing authority is neither an inference nor a stop. The
+procedure that follows from it is written once, in the charter beside that
+decision, and these are its rules by name — enough to work from, never enough to
+replace it:
+
+1. A card is blocked only when **every** resolution it names is blocked.
+2. The decision is blocked; its **cost** is not. Rehearse it, cost it down.
+3. Removing a false claim needs no authority. Adding a true one does.
+4. Do what **every** branch of the pending decision requires.
+5. With no new authority available, get new **observation** — run it where
+   nobody has run it. A routine at every release candidate, not a virtue.
+6. Declare the state that is true, in both directions.
+7. Escalate the dependency, never the task, and say what continued beside it.
+8. `Nothing remains` is established by enumeration, never by fatigue.
+9. Continuing finds authorised work; it never invents scope.
+
+**A legitimate stop** enumerates every open card with a named authority and a
+named next action, has already done every unblocked half, and says which
+authority is missing rather than that work has ended.
+
 ### Execution cost
 
 `release-check.sh` runs the whole suite, builds a wheel in an isolated
