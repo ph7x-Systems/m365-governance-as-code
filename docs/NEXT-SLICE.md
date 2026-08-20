@@ -44,6 +44,36 @@ published documentation describes commands that version does not contain. The ex
 this section is a coherent beta from which the site derives, proven by
 `tools/post-release-check.sh`.
 
+**Position, 2026-08-20, after 001 to 006.** In the vocabulary of charter `D46`:
+
+```text
+FIRST-RUN 001-006   CONTRACT-PROVEN
+LIVE-OBSERVED       not established   no run has been performed against a tenant
+SHIPPED             not established   the public index is behind this branch
+MARKET              not established   FIRST-PRODUCT.md names no product
+```
+
+Four separate closures over things that already exist, and none of them needs new
+architecture. Three of the four are not engineering: a release needs an owner's
+authorization, an observation needs a credential, and a market needs interviews.
+
+**What is NOT covered by that line.** The audit of 2026-08-20 also recorded smaller
+defects that no slice above claimed, and they are open: the report header renders
+`Resource: <unknown>` where a fixture carries no display name; `--rules` pointed at a
+directory that does not exist reports that the rules do not validate, which sends a
+reader to investigate rules that are fine; no `--help` links to the documentation that
+exists; and `doctor` gives a remedy for a missing PnP.PowerShell and none for a missing
+`pwsh`. None blocks a first result, which is why none was done. Saying the first-run
+journey is closed is true. Saying the audit is closed would not be.
+
+**The recurring defect, named so that the next executor looks for it.** Four instances in
+one day, and one shape: **a step producing a verdict from a source that could not have
+produced it.** `unknown` read as an answer; discovery failing and the sign-in proceeding;
+a requested address standing in as the tenant an assessment is about; and seventy-one
+tests skipping while the suite stayed green. Charter `D49` states the rule. What it does
+not do is find the next one — and every one of these four was found by running the thing,
+never by reading it.
+
 **The test that replaces the old one.** The measure of readiness stops being coverage of
 rules by evidence path. It becomes: *on a clean machine, a person who knows Microsoft 365
 but has never seen this product can install it, obtain and configure the identity, prove
