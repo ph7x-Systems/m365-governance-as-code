@@ -17,9 +17,13 @@ and continues in order without conversation, scratchpads, roadmap ratification o
 new owner approval. Completed work is removed from the active queue rather than kept
 as queue history; its PR, commits and release evidence remain the historical record.
 
-The first active slice is `FIRST-RUN-001`. The cards are executable contracts combined
-with the common contract below; they are not ideas, options or a backlog requiring
-refinement by the Executor.
+**Where to start, 2026-08-20.** `FIRST-RUN-001` to `006` are `CONTRACT-PROVEN` and are
+not restarted; the position block in the next section says what each of the remaining
+closures needs, and three of them are not engineering. The first slice with engineering
+left in it is the residual-defect list recorded under `FIRST-RUN-006`.
+
+The cards are executable contracts combined with the common contract below; they are not
+ideas, options or a backlog requiring refinement by the Executor.
 
 ## FIRST-RUN — the journey has an owner, and functional expansion is frozen until it works
 
