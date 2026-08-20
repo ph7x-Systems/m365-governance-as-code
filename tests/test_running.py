@@ -212,3 +212,27 @@ def test_neither_command_registers_anything(command):
     body = body[: body.index("\ndef _cmd_", 1)]
     for forbidden in ("New-", "Register-PnPEntraIDApp", "Set-Pnp", "Remove-"):
         assert f"{forbidden}(" not in body
+
+
+def test_the_plan_does_not_promise_what_the_machine_cannot_run():
+    """Observed on a clean machine, 2026-08-20.
+
+    With no PowerShell installed, `run --dry-run` printed "Plan: 2 of 11
+    collections" and exited 0 — and a dry run is precisely what somebody uses
+    to find out whether they are ready. The Graph slice already reported its
+    missing token; the ten needing an interpreter said nothing, and `doctor`
+    and the preflight both knew.
+    """
+    steps = running.plan(
+        site_url=SITE,
+        tenant_url=TENANT,
+        has_graph_token=True,
+        has_powershell=False,
+    )
+    verdicts = {step.name: step.planned for step in steps}
+
+    assert verdicts["sites"] is running.Planned.NO_POWERSHELL
+    # The Graph slice needs no interpreter and is the only one left, which is
+    # the honest plan on a machine with no PowerShell and a token.
+    assert [step.name for step in running.attempted(steps)] == ["conditional-access"]
+    assert "doctor" in running.describe(steps)

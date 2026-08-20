@@ -999,6 +999,10 @@ def _cmd_run(args) -> int:
         site_url=args.site_url,
         tenant_url=args.tenant_url,
         has_graph_token=bool(os.environ.get(conditional_access.TOKEN_VARIABLE)),
+        # Asked before the plan is printed rather than after it is acted on.
+        # The same check runs below before anything reaches a tenant; what
+        # changed is that a dry run no longer promises what it would refuse.
+        has_powershell=not collecting.preflight(),
     )
     doing = running.attempted(steps)
     sys.stderr.write(running.describe(steps))

@@ -40,6 +40,9 @@ class Planned(StrEnum):
     NO_TOKEN = "no-token"
     """It reads Microsoft Graph and no token is present in the environment."""
 
+    NO_POWERSHELL = "no-powershell"
+    """It runs through PowerShell and this machine has none."""
+
 
 #: Why each refusal, in words a person can act on. Written here rather than
 #: at the point of printing, so that the plan and the report of the run cannot
@@ -50,6 +53,10 @@ BECAUSE: dict[Planned, str] = {
     Planned.NO_TOKEN: (
         "reads Microsoft Graph, and this engine never acquires a token: "
         "set one in the environment to include it"
+    ),
+    Planned.NO_POWERSHELL: (
+        "runs through PowerShell 7, and this machine has none: `doctor` "
+        "gives the command that installs it"
     ),
 }
 
@@ -75,6 +82,7 @@ def plan(
     site_url: str | None,
     tenant_url: str | None,
     has_graph_token: bool,
+    has_powershell: bool = True,
 ) -> list[Step]:
     """Every slice this engine holds, and whether the target reaches it.
 
@@ -91,6 +99,15 @@ def plan(
         chosen = SLICES[name]
         if chosen.source == "graph" and not has_graph_token:
             planned = Planned.NO_TOKEN
+        elif chosen.source == "powershell" and not has_powershell:
+            # A PLAN THAT PROMISES WHAT THE MACHINE CANNOT DO IS THE DEFECT THIS
+            # WHOLE COMMAND EXISTS TO AVOID. Observed on a clean machine,
+            # 2026-08-20: with no PowerShell installed, `run --dry-run` printed
+            # "Plan: 2 of 11 collections" and exited 0 — and a dry run is
+            # precisely what somebody uses to find out whether they are ready.
+            # The Graph slice already said its token was missing; the ten that
+            # need an interpreter said nothing about it, and the engine knew.
+            planned = Planned.NO_POWERSHELL
         elif chosen.needs_site and not site_url:
             planned = Planned.NO_SITE
         elif chosen.needs_tenant and not tenant_url:

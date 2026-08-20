@@ -219,6 +219,22 @@ meets**, not what the tests assert.
 It is `D46`'s `PRODUCT-PROVEN` minus the tenant, and it is the cheapest evidence left that
 nobody has collected.
 
+**Run 2026-08-20: fresh `HOME`, bare `PATH`, no PowerShell, no PnP, no checkout.** The
+journey holds. `doctor` names both absences and gives the command for the one it can;
+`setup` prints the registration command and writes the project file; `setup` again, with
+an id, hands over to `connect` and `run`; every refusal is one sentence and exit `2`.
+
+**And it found one defect that no test could have.** `run --dry-run` printed
+`Plan: 2 of 11 collections` and exited `0` on a machine with no PowerShell — and a dry run
+is precisely what somebody uses to find out whether they are ready. The Graph slice
+already reported its missing token; the ten that need an interpreter said nothing about
+it, while `doctor` and the preflight both knew. The plan asks now, and the same machine
+reports `Plan: 0 of 11` with a reason against every line and exit `2`.
+
+**State:** `LIVE-OBSERVED` for everything that does not need a tenant. The three claims
+that do — `authorization: established`, `identity_kind: application`, `tenant.how:
+observed` — are unchanged and remain the owner's hour.
+
 ### ENGINE-RELEASE-TRAIN-001 — make the authorization a non-event
 
 **Opened 2026-08-20.** The owner's publication decision should cost minutes, not a
