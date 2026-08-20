@@ -8,7 +8,8 @@
     "source_api": "PnP.PowerShell / CSOM",
     "tenant": {
       "id": null,
-      "host": "contoso.sharepoint.com"
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
     },
     "identity_kind": "application",
     "acquisition": "collected",

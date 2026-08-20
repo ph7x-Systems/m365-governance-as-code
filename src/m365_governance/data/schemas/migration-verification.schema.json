@@ -111,7 +111,7 @@
           "description": "What could not be read — a container, a path, a class of item."
         },
         "state": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/absentState",
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/absentState",
           "description": "Why it is absent, from the vocabulary the evidence contract owns. Referenced rather than restated, because a second copy of an enum is a second definition of it."
         },
         "detail": {
@@ -300,7 +300,7 @@
           "description": "Which read could not establish the item, for `unknown`. Not knowing on which side the gap fell is a different and weaker statement than not knowing at all."
         },
         "state": {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/absentState",
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/absentState",
           "description": "Why the item could not be established, for `unknown`."
         },
         "method": {

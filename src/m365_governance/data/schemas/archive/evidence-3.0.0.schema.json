@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
   "title": "Evidence document",
   "description": "What a collector is allowed to hand to the engine. Structure only. See docs/EVIDENCE-SCHEMA.md.",
   "type": "object",
@@ -27,7 +27,7 @@
     },
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+      "const": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     }
   },
@@ -572,7 +572,7 @@
         "id",
         "host"
       ],
-      "description": "Which tenant this is about. Two fields because a tenant has one canonical identity and any number of endpoints: the admin centre, the primary host and every multi-geo satellite are all addresses of the same organisation, and treating an address as the identity is what made one tenant read as two. VERSION 3.1.0 ADDS `how`, BECAUSE THIS BLOCK WAS ANSWERING A QUESTION IT HAD NOT BEEN ASKED. `id` is null throughout this engine, so the host carries the identity -- and the host is derived from the address the caller asked for, never from the session that read the resource. A collection that authenticated somewhere else would stamp its provenance with a tenant nothing established. The engine already refuses the equivalent one contract away: `connection` may never fill `observed_tenant_id` from `resolved_tenant_id`, because a lookup anybody can perform must not be indistinguishable from an observation. `how` says which of the two this is, so that a reader can stop inferring it. Optional so that documents written before 3.1.0 still validate; every producer at 3.1.0 emits it.",
+      "description": "Which tenant this is about. Two fields because a tenant has one canonical identity and any number of endpoints: the admin centre, the primary host and every multi-geo satellite are all addresses of the same organisation, and treating an address as the identity is what made one tenant read as two.",
       "properties": {
         "id": {
           "type": [
@@ -585,14 +585,6 @@
           "type": "string",
           "minLength": 1,
           "description": "The SharePoint host, which is an endpoint rather than an identity. Normalised from the admin centre form documented by Microsoft as `{prefix}-admin`, so one tenant reached two ways produces one value. That normalisation is a compatibility mechanism for as long as the directory id is unobserved, not the definition of a tenant: a multi-geo satellite still carries its own host and is not silently folded into the primary."
-        },
-        "how": {
-          "enum": [
-            "requested",
-            "public-discovery",
-            "observed"
-          ],
-          "description": "HOW THE IDENTITY IN THIS BLOCK WAS ESTABLISHED, in the vocabulary `connection` already uses for the same distinction. `requested` is the address the caller gave, carried forward and verified by nothing -- which is what every document this engine writes today carries, and saying so is the point. `public-discovery` is a lookup anybody can perform without reaching the tenant: authoritative about an address and never evidence that a collection looked at it. `observed` is read from the session that collected the facts, and nothing may claim it until a collection path for it is proven on a tenant -- the candidate is recorded in docs/COLLECTION-PATH-AUDIT.md as needs-tenant-validation. A value that moved from `requested` to `observed` changed what it means, not only where it came from."
         }
       }
     },

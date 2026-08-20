@@ -112,6 +112,25 @@ def _provenance_lines(run: Run) -> list[str]:
     ]
     if run.rule_source:
         lines.append(f"- Rules: {run.rule_source}")
+
+    # WHICH TENANT, AND HOW THAT WAS ESTABLISHED. The directory id is null
+    # throughout this engine, so the host carries the identity -- and today
+    # that host is the address the caller asked for, verified by nothing. A
+    # reader deciding whether this report is about the tenant they think it is
+    # about was left to infer that, from a field that looks like a fact.
+    #
+    # Only the weak case is printed. `observed` needs no sentence: it is what a
+    # reader already assumes, and a line saying so on every report would train
+    # people to skip the line that matters.
+    tenant = prov.get("tenant") or {}
+    if tenant.get("how") == "requested":
+        lines.append(
+            f"- **Tenant: `{tenant.get('host', '?')}`, as requested.** The "
+            f"address this collection was pointed at. Nothing read the "
+            f"directory the session was operating in, so this is what was "
+            f"asked for rather than what was observed."
+        )
+
     identity_kind = prov.get("identity_kind")
     # Keyed on acquisition, not on identity. They were one field, so this
     # warning was asking who observed the evidence in order to answer how it

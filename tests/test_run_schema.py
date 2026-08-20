@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import sys
 
 import jsonschema
 import pytest
@@ -44,8 +45,30 @@ def validator(name: str) -> jsonschema.Draft202012Validator:
 
 
 def evaluated(path) -> dict | None:
+    """Evaluate one fixture with THIS interpreter's engine.
+
+    IT USED TO INVOKE WHATEVER WAS ON PATH. `m365-governance` on a developer
+    machine is frequently an installed release -- a pipx copy several versions
+    behind -- so these tests validated a published build rather than the code
+    under test. Nothing said so: the run schema they check moves rarely enough
+    that an old engine agreed with a new one for months.
+
+    It surfaced the day the evidence contract moved. The installed copy refused
+    documents declaring a version it had never heard of, every case returned
+    non-zero, and seventy-one tests turned into seventy-one skips without the
+    suite going red once.
+    """
     done = subprocess.run(
-        ["m365-governance", "evaluate", "--evidence", str(path), "--format", "json"],
+        [
+            sys.executable,
+            "-m",
+            "m365_governance.cli",
+            "evaluate",
+            "--evidence",
+            str(path),
+            "--format",
+            "json",
+        ],
         capture_output=True,
         text=True,
     )
@@ -55,6 +78,23 @@ def evaluated(path) -> dict | None:
 def test_there_are_fixtures_to_evaluate():
     """A suite that silently found nothing passes forever."""
     assert len(FIXTURES) > 20
+
+
+def test_most_fixtures_actually_evaluate():
+    """A suite that silently skipped everything passes forever too.
+
+    The guard above catches an empty list. It does not catch a full list where
+    every case skipped, which is what happened when the engine being invoked
+    was an installed release that refused the current evidence contract: the
+    count stayed high, the skips were quiet, and the suite was green while
+    nothing was being checked.
+    """
+    evaluating = [path for path in FIXTURES if evaluated(path) is not None]
+
+    assert len(evaluating) > len(FIXTURES) // 2, (
+        f"only {len(evaluating)} of {len(FIXTURES)} fixtures evaluated. "
+        f"These tests are checking almost nothing."
+    )
 
 
 @pytest.mark.parametrize("path", FIXTURES, ids=lambda p: p.stem)

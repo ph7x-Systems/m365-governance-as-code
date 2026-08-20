@@ -29,7 +29,7 @@
       "path": "schemas/archive/assessment-3.0.0.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/assessment/4.0.0": {
-      "digest": "bbeeb65ac9cfa1df07bde6cd3f9e5c65fcac43fb633a5809da55ac279a97a706",
+      "digest": "32d0cb684fc065eace8fa41b563386c93cadf5dc45d0696c2db09e246bbb2196",
       "path": "schemas/assessment.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0": {
@@ -37,7 +37,7 @@
       "path": "schemas/capability-manifest.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
-      "digest": "b75e25e8b6559d42a97a39defd23378f783ab8359709c25bf32f2be8c7a695ba",
+      "digest": "807313eb43dd5ab950399e0f5f65e5a9c07373e6e5e2c40824706c6589edb099",
       "path": "schemas/collection.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/2.0.0": {
@@ -45,7 +45,7 @@
       "path": "schemas/archive/comparison-2.0.0.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/comparison/3.0.0": {
-      "digest": "9c2d76d1ae89d8766e572b76e3eddee2eb79a067fdf64a6674906a6bbb504bd2",
+      "digest": "063686e8760e20c4024386f7542f31ad1034c13da042de07a04a8958114e7602",
       "path": "schemas/comparison.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/connection/1.0.0": {
@@ -66,14 +66,18 @@
     },
     "https://ph7x.com/schemas/m365-governance/evidence/3.0.0": {
       "digest": "04865a0d33dbe11a8948cfcd7ae2f2fcc85c0e74a1a635ef86e472b0dc930efa",
+      "path": "schemas/archive/evidence-3.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/evidence/3.1.0": {
+      "digest": "a94dad492a7cccfb705f39e1facf23e5b333bb1647553138bd9113ee57062068",
       "path": "schemas/evidence.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/migration-read/1.0.0": {
-      "digest": "21494b38bcee9fb996e49a98e466ea5668c23c58e49e8f7b71571e757d98d3fb",
+      "digest": "a1ae6f7eccab3574ae3562b52ee87ab319f84824f73bce3637e684f400ea6463",
       "path": "schemas/migration-read.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/migration-verification/1.0.0": {
-      "digest": "b04efd5c1b8fb6a5c421e502bfc2290ea85d830fe8f8981221c5146459bbbae0",
+      "digest": "39777098f7740f8f5ab6888c6441f59294810641e04a41e625de4dfdfb700b4b",
       "path": "schemas/migration-verification.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/rule/1.0.0": {
@@ -101,9 +105,9 @@
       "path": "schemas/archive/run-3.0.0.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/run/4.0.0": {
-      "digest": "0b2a08c3c277a72da51deb1be253c017d0d2baaa5d25a2ad8b6485f82f2ffe59",
+      "digest": "40a7faaf4429204e331af35ab6ba022f1e0b4f50fcf8bfa001c0be9b24c1ac0b",
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "ed471a29f8d9fe3fbfa158a83f4719d4d4e82bcd82a23b49140dd078dd3dd693"
+  "set_digest": "847410a8b75abf4757766a29a6bfa2fadc54df31948c960f9b4d0b7e58d1c7db"
 }

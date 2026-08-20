@@ -33,7 +33,8 @@
             "source_api": "PnP.PowerShell / CSOM",
             "tenant": {
               "id": null,
-              "host": "contoso.sharepoint.com"
+              "host": "contoso.sharepoint.com",
+              "how": "requested"
             },
             "identity_kind": "delegated",
             "acquisition": "collected",
@@ -261,7 +262,7 @@
     },
     "evidence": [
       {
-        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0",
+        "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
         "provenance": {
           "collected_at": "2026-08-10T19:20:25Z",
           "collector": "spo-collector",
@@ -270,7 +271,8 @@
           "source_api": "PnP.PowerShell / CSOM",
           "tenant": {
             "id": null,
-            "host": "contoso.sharepoint.com"
+            "host": "contoso.sharepoint.com",
+            "how": "requested"
           },
           "identity_kind": "delegated",
           "acquisition": "collected",

@@ -146,7 +146,7 @@ and a certificate still proceeds because `-Tenant` names the directory.
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
 
-### FIRST-RUN-006 — provenance must not name a tenant the session never established
+### FIRST-RUN-006 — provenance must not name a tenant the session never established — `CONTRACT-PROVEN`
 
 **Opened 2026-08-20, from the generalisation of the sign-in defect.** Charter `D49`: an
 absence never authorises the step that depends on it.
@@ -168,10 +168,31 @@ assessment is about.
 The guard removes the path that made it dangerous. It does not make the provenance say
 what was observed rather than what was asked for.
 
-**Done when:** evidence records what the session established about where it was, distinct
-from what the caller requested, without copying a public lookup into an observed field —
-and `docs/COLLECTION-PATH-AUDIT.md` is settled on whether the directory identity can be
-read from a session at all. It is an evidence contract change and is sized as one.
+**Done, 2026-08-20, and deliberately not by inventing the observation.**
+`evidence/3.1.0` adds `tenant.how`: `requested` · `public-discovery` · `observed`, the
+vocabulary `connection` already uses for the same distinction. Every document this engine
+writes says `requested`, which is the truth: the host is the address the caller gave, and
+no step in a collection reads the directory the session is operating in.
+
+**Nothing claims `observed` and nothing may until a path is proven on a tenant.**
+`Get-PnPTenantId -TenantUrl` is validated but it is public discovery — a lookup anybody
+can perform without reaching the tenant — and copying it here is precisely what
+`connection` forbids for `observed_tenant_id`. The `-Connection` parameter set would be
+an observation and stays `needs-tenant-validation` in `docs/COLLECTION-PATH-AUDIT.md`.
+That question is unchanged; what changed is that a reader is no longer left to infer the
+answer from a field that looks like a fact.
+
+**The report says it**, because a contract nobody reads is a distinction that does not
+exist for the person holding the report.
+
+**Two defects fell out of it.** The tenant block was built inline in the envelope as well
+as in `New-TenantIdentity` — the duplication the note above that function warns about,
+and the two disagreed the moment one learned to say how the identity was established.
+And the run-schema tests shelled out to whatever `m365-governance` was on `PATH`, which
+on a developer machine is an installed release: they had been validating a published
+build rather than the code under test, and when the contract moved, seventy-one of them
+turned into skips without the suite going red once. They run the engine under test now,
+and a wholesale skip fails.
 
 ### FIRST-RUN-004 — the golden path exists as commands
 

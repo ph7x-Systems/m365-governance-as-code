@@ -42,6 +42,13 @@ Rules carry their own versions, independently of this file. See
   under exit `1` — the code reserved for a negative governance result — so a
   typed path reached a pipeline as a failing rule. It is exit `2` and one
   sentence now.
+- **Provenance says how it knows which tenant a document is about.**
+  `evidence/3.1.0` adds `tenant.how` — `requested`, `public-discovery` or
+  `observed`. `tenant.id` is null throughout this engine, so the host carries
+  the identity, and that host is the address the caller asked for, verified by
+  nothing. Every document written today says `requested`, and nothing claims
+  `observed` until a collection path for the directory identity is proven on a
+  tenant. The report says it too.
 - **`setup` and `run`.** The journey is three commands: `setup` prepares the
   machine and writes the target down, `connect` proves the identity can work,
   `run` collects, evaluates and reports. Choosing among ten slices was a

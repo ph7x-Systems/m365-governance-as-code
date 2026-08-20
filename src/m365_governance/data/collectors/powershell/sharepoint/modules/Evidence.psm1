@@ -110,11 +110,30 @@ function Resolve-FailureState {
     one of them to differ.
 #>
 function New-TenantIdentity {
+    <#
+        .SYNOPSIS
+        Which tenant this document is about, and how that was established.
+
+        .DESCRIPTION
+        THE HOST IS WHAT WAS ASKED FOR. It is derived from the address the
+        caller gave, normalised, and verified by nothing: no step in a
+        collection reads the directory the session is actually operating in.
+        With `id` null, that makes the requested address the identity of the
+        tenant an assessment is about, which is a stronger claim than anything
+        here can support.
+
+        SO IT SAYS WHICH IT IS. `how` carries the same distinction `connection`
+        already draws between a lookup anybody can perform and something a
+        session observed. Nothing here may say `observed` until a collection
+        path for the directory identity is proven on a tenant; the candidate is
+        recorded in docs/COLLECTION-PATH-AUDIT.md as needs-tenant-validation.
+    #>
     [ordered]@{
         # Null until a collection path for the directory identity is proven on
         # a tenant. The host is an endpoint, and saying so is the point.
         id   = $null
         host = $script:TenantHost
+        how  = 'requested'
     }
 }
 
@@ -136,19 +155,19 @@ function New-Evidence {
         # ordinary property, and this is where the two conventions are kept
         # apart. It replaces `schema_version = '1.0'`, a second version that
         # could not express the one in the schema's own $id.
-        '$schema'      = 'https://ph7x.com/schemas/m365-governance/evidence/3.0.0'
+        '$schema'      = 'https://ph7x.com/schemas/m365-governance/evidence/3.1.0'
         provenance     = [ordered]@{
             collected_at      = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
             collector         = $script:CollectorName
             collector_version = $script:CollectorVersion
             source_system     = 'SharePoint Online'
             source_api        = $SourceApi
-            # A tenant has one identity and any number of addresses. The
-            # directory id is the identity and nothing here has read one yet,
-            # so it is null and says so: an omitted field would claim nothing
-            # was ever meant to be there. The host is an endpoint, already
-            # normalised so the admin centre and a site agree.
-            tenant            = [ordered]@{ id = $null; host = $script:TenantHost }
+            # A tenant has one identity and any number of addresses, and the
+            # block that says which is built in ONE place. It was built here as
+            # well, inline, which is the duplication the note above
+            # New-TenantIdentity warns about: the two disagreed the moment one
+            # of them learned to say how the identity was established.
+            tenant            = New-TenantIdentity
             # Interactive and device sign-in are both delegated; a
             # certificate authenticates the application. Recording it is the
             # difference between a partial audit and a misleading one.

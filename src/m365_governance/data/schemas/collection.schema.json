@@ -93,7 +93,7 @@
       "$ref": "#/$defs/collectionVersions"
     },
     "coverage": {
-      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/coverage",
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/coverage",
       "description": "WHAT THE COLLECTION AS A WHOLE SET OUT TO READ, AND WHAT IT READ. The evidence's own definition, referenced rather than restated, so one definition moves at a time and a consumer reads one structure at both levels. It is a UNION OF THE ARTEFACTS' COVERAGE BY AREA NAME and never a count: a total computed here would be a second authority on how much of a tenant was seen, agreeing with the documents until the day it did not. An area is in `completed` only where every artefact that asked for it read it — an area one document read and another could not is not the collection having got all of it, and reporting it as complete would be the rounding-up the states exist to stop. The reason an area is missing travels from the artefact that stated it."
     },
     "artefacts": {
@@ -172,7 +172,7 @@
     "observed": {
       "oneOf": [
         {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/tenant"
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/tenant"
         },
         {
           "type": "null"
