@@ -284,6 +284,23 @@ wrong answer:
 and it is now printed by a gate rather than assembled from memory at the end of a long
 session.
 
+### ENGINE-SPFX-CLASSIFICATION-001 — a capability declared above its own note
+
+**Closed 2026-08-21.** **authority:** repository · **next action:** none.
+
+`spfx` was `live_validation_state: full` while the `live_note` beside it said *"no
+solution in either was behind its catalog version, so the finding branch has not been
+produced by a real catalog"*. **The capability declared more than the sentence under it**,
+and the site read the classification and published *proved against a real tenant*.
+
+**No new contract value was needed, and one was nearly added.** `negative-only` already
+means what happened; its description had narrowed it to *"absent or empty"*, which is a
+fact about the surface rather than about which path was exercised. A catalog of ten
+solutions with none of them behind its version leaves the finding exactly as unproved as
+an empty one does. The description is widened and `spfx` is reclassified — **a correction,
+not a version**. Adding a fifth value would have been architecture covering for data, in a
+published contract, where it is expensive to undo.
+
 ### ENGINE-CLEAN-MACHINE-002 — the journey had met one operating system
 
 **Run 2026-08-21. State:** `LIVE-OBSERVED` on Linux. **authority:** owner, for Windows ·

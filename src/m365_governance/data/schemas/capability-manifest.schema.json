@@ -163,7 +163,7 @@
             "provider-only",
             "full"
           ],
-          "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the surface was absent or empty, so it is proved to report nothing correctly and not to report something correctly. `provider-only` means the transport underneath read a real tenant and this slice's own path did not. `full` means the path that produces this slice's evidence was observed against a real tenant. This field exists because the sentence beside it could not be derived from: five slices carried five phrasings and any consumer asking whether a question is answerable had to interpret prose."
+          "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the path that REPORTS A FINDING was never taken — because the surface was absent or empty, or because nothing in that tenant was in the state the rule looks for. The distinction is what was exercised, not what the surface looked like: a catalog of ten solutions with none of them behind its version proves the read and leaves the finding unproved exactly as an empty one does. `provider-only` means the transport underneath has read a real tenant and this slice's own path has not. `full` means the path that produces this evidence, INCLUDING the branch that reports a finding, was observed against a real tenant."
         }
       }
     },

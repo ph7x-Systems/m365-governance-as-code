@@ -301,11 +301,12 @@ def _because(state: str, available: bool) -> str:
         )
     return {
         "full": (
-            "the path that produces this evidence was observed against a real tenant"
+            "the path that produces this evidence was observed against a real "
+            "tenant, including the branch that reports a finding"
         ),
         "negative-only": (
-            "the collector has only been observed against a surface that was "
-            "absent or empty, so reporting a finding is unproved"
+            "it ran against a real tenant and the branch that reports a finding "
+            "was never taken, so reporting one is unproved"
         ),
         "provider-only": (
             "the transport underneath has read a real tenant, this slice's own "
