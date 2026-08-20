@@ -480,6 +480,60 @@ Configuration, access control and telemetry remain separate evidence dimensions.
 - [ ] branch, SHA, checks, evidence and next action are recorded in the PR;
 - [ ] PR is mergeable, clean and has no unresolved review; the Executor does not merge.
 
+## RULE-MESSAGES-001 — editorial debt in the `unknown` messages
+
+**State:** measured, not started. Owner decision 2026-08-20: a pass of its own,
+rule by rule.
+
+Two phrasings survive across the SharePoint rule set. Both were found by measuring
+the real single-site report whole, and both were left alone in `6283b44` because
+the slice that found them was about the renderer.
+
+### What was measured
+
+Nineteen rules, and three of them carry both.
+
+| | rules |
+|---|---|
+| `the evidence beside this finding says which` (6) | `SPO-CLASS-004`, `SPO-LIST-002`, `SPO-LIST-003`, `SPO-SHARE-002`, `SPO-SHARE-005`, `SPO-SITE-003` |
+| `This is not a pass` (16) | `SPO-ACTIVITY-001`, `SPO-CLASS-001`, `SPO-CLASS-002`, `SPO-CLASS-003`, `SPO-LIST-001`, `SPO-LIST-002`, `SPO-MODERN-001`, `SPO-MODERN-003`, `SPO-MODERN-004`, `SPO-SHARE-001`, `SPO-SHARE-002`, `SPO-SHARE-003`, `SPO-SHARE-004`, `SPO-SITE-002`, `SPO-SITE-003`, `SPO-SPFX-001` |
+| both (3) | `SPO-LIST-002`, `SPO-SHARE-002`, `SPO-SITE-003` |
+
+The first points at something the run-set report does not print. `to_markdown`
+renders an `Evidence:` line beside each result and `many_to_markdown` does not,
+and `many_to_markdown` is the path `assess` writes for. The second sits under a
+heading that already reads **Unknown**.
+
+`SPO-SITE-001` was corrected in `6283b44` under an explicit owner instruction and
+is the worked example.
+
+### How it is done, and how it is not
+
+**Rule by rule, reading each message.** A global substitution is refused here: some
+of these sentences carry the only statement of what was not established, and
+deleting the clause around the phrase would remove information a reader needs while
+appearing to be a formatting change. The measurement above is a list of places to
+look, not a list of edits.
+
+Each message must stand on its own: name the real paths into `unknown` without
+pointing outside itself, and without restating the outcome the label already
+carries. The rule schema forbids interpolating a value into an `unknown`,
+`not_applicable` or `invalid_evidence` message, and that constraint holds — a field
+cannot be both the reason the rule could not decide and a value the rule prints.
+
+Wording, so no rule version moves. `docs/CHANGE-POLICY.md` settles that.
+
+### Done when
+
+- [ ] every message listed above has been read and either rewritten or kept with the
+      reason recorded in the PR;
+- [ ] no message points at evidence the run-set report does not render;
+- [ ] no message restates its own outcome label;
+- [ ] `tests/frozen/single-site-report.md` is updated deliberately if the document
+      changes, and its diff is the review;
+- [ ] the density gate in `tests/test_report_density.py` is re-measured;
+- [ ] the Engine release contract passes.
+
 ## Continuous execution constitution
 
 ### Selection and continuation
