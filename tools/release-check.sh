@@ -312,6 +312,69 @@ PY
     "$G" collect sites --dry-run --tenant-url https://x-admin.sharepoint.com \
       --client-id 00000000-0000-0000-0000-000000000000 --output out.json > /dev/null
 
+    # ── 10b. THE ARTEFACT A CONSUMER OPENS, WRITTEN BY THE INSTALLED ENGINE ──
+    # The run documents used to exist only in memory: computed, wrapped in a run
+    # set, rendered and dropped, which is why nothing in the world had ever
+    # produced a folder the desktop product could open. This writes one HERE,
+    # from the installed package, in a directory outside any checkout, and then
+    # checks its shape and the contract it declares.
+    #
+    # `run --bundle` is the command; it needs a tenant, so what is exercised is
+    # the same code path the command calls, through the installed package. Said
+    # plainly rather than implied: this proves the artefact, not the collection.
+    note "the bundle an independent consumer would open"
+    "$TMP/env/bin/python" - "$TMP/empty/bundle" <<'BUNDLE'
+import sys, types
+from pathlib import Path
+from m365_governance import bundling
+from m365_governance.cli import _evaluate_all
+from m365_governance.resources import packaged
+
+fixtures = packaged("fixtures") / "sharepoint"
+evidence = Path(sys.argv[1]).parent / "evidence-in"
+evidence.mkdir(parents=True, exist_ok=True)
+for name in ("list-over-limit.json", "site-activity-archived.json", "list-class-unknown.json"):
+    (evidence / name).write_bytes((fixtures / name).read_bytes())
+
+args = types.SimpleNamespace(evidence=evidence, rules=None, profile=None, format="markdown")
+runs, documents = _evaluate_all(args)
+bundling.write(Path(sys.argv[1]), runs, documents, "markdown")
+print(f"    wrote {len(runs)} runs")
+BUNDLE
+
+    # THE SHAPE, AND THE CONTRACT IT DECLARES. The version is read from the
+    # installed package rather than written here: a literal would keep passing
+    # on the day the contract moved, which is the exact defect this whole
+    # cascade exists to correct.
+    "$TMP/env/bin/python" - "$TMP/empty/bundle" <<'SHAPE'
+import glob, json, sys
+from pathlib import Path
+from m365_governance.resources import packaged
+
+root = Path(sys.argv[1])
+current = json.loads((packaged("schemas") / "run.schema.json").read_text(encoding="utf-8"))["$id"]
+
+manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
+folders = sorted(p for p in (root / "runs").iterdir() if p.is_dir())
+if not folders:
+    sys.exit("  x the bundle holds no runs")
+if len(manifest["runs"]) != len(folders):
+    sys.exit(f"  x the manifest points at {len(manifest['runs'])} runs and {len(folders)} exist")
+
+for folder in folders:
+    document = json.loads((folder / "run.json").read_text(encoding="utf-8"))
+    if document["$schema"] != current:
+        sys.exit(f"  x {folder.name}/run.json declares {document['$schema']}, "
+                 f"and this engine publishes {current}")
+    if not (folder / "evidence").is_dir():
+        sys.exit(f"  x {folder.name} carries no evidence")
+    if not list(folder.glob("report.*")):
+        sys.exit(f"  x {folder.name} carries no report")
+
+print(f"    {len(folders)} runs, each with its document, its evidence and its report")
+print(f"    every run declares {current}")
+SHAPE
+
     # ── 11. nothing reaches back into the checkout ──────────────────────────
     if grep -q "$ROOT" doctor.txt; then
       red "  ✗ the installed product resolves a path inside the checkout"

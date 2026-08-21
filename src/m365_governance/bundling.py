@@ -73,7 +73,9 @@ def _identity(run: Run) -> str | None:
     return resource.get("native_id") if isinstance(resource, dict) else None
 
 
-def write(root: Path, runs: list[Run], documents: list[dict], fmt: str = "markdown") -> Path:
+def write(
+    root: Path, runs: list[Run], documents: list[dict], fmt: str = "markdown"
+) -> Path:
     """Write one folder per run under `root`, and return `root`.
 
     `documents` are the evidence documents as they were collected. Each run
@@ -117,7 +119,9 @@ def write(root: Path, runs: list[Run], documents: list[dict], fmt: str = "markdo
                     encoding="utf-8",
                 )
 
-        (folder / f"report.{_SUFFIX[fmt]}").write_text(_RENDER[fmt](run), encoding="utf-8")
+        (folder / f"report.{_SUFFIX[fmt]}").write_text(
+            _RENDER[fmt](run), encoding="utf-8"
+        )
         written.append(f"runs/{folder.name}")
 
     # EVIDENCE THAT MATCHED NO RUN IS STILL EVIDENCE. A collection that produced
@@ -146,4 +150,5 @@ def _collector(document: dict) -> str:
     """The collector's name, for a filename that says where a document came from."""
     provenance = document.get("provenance") or {}
     name = provenance.get("collector") if isinstance(provenance, dict) else None
-    return re.sub(r"[^a-z0-9-]+", "-", str(name or "evidence").lower()).strip("-") or "evidence"
+    slug = re.sub(r"[^a-z0-9-]+", "-", str(name or "evidence").lower()).strip("-")
+    return slug or "evidence"
