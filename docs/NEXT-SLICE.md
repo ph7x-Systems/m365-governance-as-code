@@ -25,6 +25,12 @@ are not restarted; the position block in the next section says what each of the 
 closures needs, and three of them are not engineering. The first slice with engineering
 left in it is the residual-defect list recorded under `FIRST-RUN-006`.
 
+**Opened 2026-08-21.** `BRAND-CENTER-001` is a new evidence family with an owner decision
+behind it, read-only in its first slice. `CUSTOM-SCRIPT-SEMANTICS-001`, near the end of
+this file, is a
+security research slice with a wording half that is already decided and a runtime half
+that needs a tenant. It does not displace the FIRST-RUN freeze.
+
 The cards are executable contracts combined with the common contract below; they are not
 ideas, options or a backlog requiring refinement by the Executor.
 
@@ -1369,6 +1375,173 @@ site and label resources. Do not invent a readiness score or inspect prompts/con
 Supported plugin/agent governance and oversharing indicators derived from already
 owned permission/sharing evidence. Keep configured availability separate from observed
 use. Never enable, disable or invoke a plugin or agent.
+
+## SECURITY-RESEARCH — a control can stay true while its conclusion stops following
+
+#### 33. `CUSTOM-SCRIPT-SEMANTICS-001`
+
+**State:** `OPEN`. **authority:** Engine for the wording, owner for the tenant.
+
+**What was checked in this repository on 2026-08-21, before anything was written.**
+`DenyAddAndCustomizePages` appears once in the whole tree, in the available-field list
+of `docs/COLLECTION-PATH-AUDIT.md`. **No collector reads it and no rule interprets it.**
+`SPO-MODERN-003` is the only rule that mentions custom script at all, it does so in its
+basis rationale, and its own limitations already say it reads one file name.
+
+**So the first layer has no target, and that is the finding.** There is no rule to
+narrow, because there is no claim. The risk is not that this engine over-claims today;
+it is that the claim gets written on the day the field is first collected, by whoever
+writes that collector, from the name of the setting. The wording is therefore decided
+here, before the code exists, which is what the charter asks of a decision.
+
+**When the field is collected, the established fact is this and no wider:**
+
+> Direct custom script insertion through the governed SharePoint custom-script
+> capability is blocked for this site.
+
+**And the limitation travels with it:**
+
+> This does not establish that no approved component can render dynamic or externally
+> produced HTML or content in the page.
+
+**The hypothesis, which is not a published rule and must not become one before it is
+observed:** can approved SPFx components render user- or model-produced HTML in a way
+that executes with page and user context?
+
+**Why now.** Copilot in SharePoint generates interactive HTML reports, and since August
+2026 dashboards bound to a list that refresh when opened. They arrive as files in a
+library. Reaching a modern page from there needs an SPFx component, because the custom
+script route is exactly the one being closed - which is the point, and the reason a
+public example of somebody bridging the two exists at all.
+
+**The finding this is really about, in one line:** *approved code is not the same as
+approved content.* The App Catalog proves a component was approved once. It does not
+prove that every payload that component will later interpret passed an equivalent
+review, and with a model producing those payloads the gap is no longer theoretical.
+
+**Evidence required before any rule is published:**
+
+- the SPFx packages installed, and whether each is tenant-wide or site-scoped;
+- which components render HTML or content from outside their own package;
+- the rendering mechanism: iframe with what sandbox, DOM injection, sanitisation;
+- the origin of the content and what permission places or changes it;
+- the API permissions the package holds.
+
+**The stop rule, and it is the point of the card.** If the content can execute in page
+and user context, this is a new security finding. If it is isolated, the limit is
+documented and the hypothesis closes. **Neither sentence may be published before the
+runtime has been observed.** Microsoft documents that script inserted in a page runs as
+the visiting user; nothing found so far establishes the isolation mechanism of any
+particular component, and a security conclusion drawn from a plausible mechanism is the
+failure this product exists to refuse.
+
+**Next action, and it is not engineering:** reproduce the chain in a test tenant -
+Copilot-generated HTML, into a library, rendered by an SPFx component - and inspect the
+DOM and runtime. That needs an application registration and read consent in that tenant,
+which is identity state and is the owner's to grant. Everything above is done without it.
+
+## BRAND-CENTER — a new evidence family, not another rule
+
+#### 34. `BRAND-CENTER-001` — collect brand center governance evidence
+
+**State:** `OPEN`. **authority:** owner decision 2026-08-21 · **next action:** read-only
+collection against a configured brand center. **No rules in this slice.**
+
+**The question this family answers.** *What brand assets are published, who can administer
+them, and through which Microsoft 365 distribution boundary are they exposed?*
+
+**Why a family and not a collector.** Three boundaries are involved and they are routinely
+read as one:
+
+```
+administration boundary  !=  consumption boundary  !=  distribution boundary
+```
+
+Site permissions govern who administers. A CDN governs who can retrieve. The consuming
+applications govern where an asset appears. One collector producing one blob would let a
+rule be written about a missing field and called a governance conclusion, which is the
+failure this engine exists to refuse. **Each subcapability declares what it can read and
+what it cannot.**
+
+**What the documentation already establishes, so no collector infers it.** One brand
+center per organization, created by a Global Administrator, storing through Organization
+Asset Libraries on a single designated site. The brand center app requires Public CDN, and
+a tenant already using organization assets with Private CDN is instructed to activate the
+public one to enable it. Published font files and the font catalog generated with them are
+stored publicly, do not respect site classification where the library sits in a Restricted
+SharePoint Site, and are reachable by anyone who obtains the URLs. A library created
+without a `CdnType` gets the private CDN by default. Written up with its sources at
+`/knowledge/sharepoint/what-the-brand-center-publishes/`.
+
+### The six collectors
+
+1. **`brand-center-site`** — authority over the container. Site URL and id, owners,
+   members, visitors, external sharing capability, classification where observable, and
+   whether `BrandCenter.aspx` is present. Establishes authority over the content container
+   and **nothing about distribution**.
+2. **`organization-assets`** — which libraries were promoted from a SharePoint library to
+   an organization resource. Library URL and id, `OrgAssetType`, audience and permissions,
+   association with the brand center, and whether the read was complete or partial.
+3. **`brand-assets`** — the published inventory by class: fonts, images, themes, font
+   packages, templates. Technical name, location, version or modification, type, published
+   state where observable, and the library it came from. **A file existing is not a file
+   being consumed, and this collector never says otherwise.**
+4. **`cdn-distribution`** — the distribution boundary, read separately from any ACL. Public
+   and private CDN enabled state, origins, the origins tied to the brand center's
+   libraries, and permitted types where observable.
+5. **`brand-managers`** — who can administer. Owners and associated groups, and whether
+   administrative capability derives from site permissions or from separate configuration.
+   **Where no supported interface exposes it: `not-supported` or `not established`, never
+   an inference.**
+6. **`brand-consumption`** — where assets are available to be consumed: SharePoint, Office,
+   Viva, SPFx tokens. **This one starts as a documented capability rather than a live
+   observation**, and becomes an evidence collector only if a supported surface says *these
+   assets are currently consumable here*. Declaring that up front is what keeps it honest.
+
+### The evidence shape
+
+```
+brand_center
+  configured
+  site: url, owners, audience
+  organization_asset_libraries: [...]
+  assets: fonts, images, themes, templates
+  distribution:
+    public_cdn: enabled, origins
+    private_cdn: enabled, origins
+  administration: [...]
+  coverage: completed, unavailable, partial
+```
+
+### Read-only, and the word is not decorative
+
+**Do not publish a font, a theme or any asset to test. Do not change CDN state. Do not
+change permissions. Do not add brand managers.** Observe the tenant as it stands. If the
+first observation leaves a gap only a write can close - proving a font's reachability on
+the public CDN is the obvious candidate - that becomes its own bounded, removable
+experiment with its own authorisation, using a fixture font and never a licensed face.
+
+### The questions this is built for, which are not rules yet
+
+- Is a brand center configured?
+- Who can administer organization-wide brand assets?
+- Which Organization Asset Libraries are published?
+- Which brand fonts are distributed through the public boundary?
+- Does the brand center site restriction establish the distribution audience of its assets?
+- Are there published assets whose distribution model differs from the site's audience?
+- Is the brand center administered by a single person or group?
+- Are there asset classes whose effective distribution boundary cannot be established from
+  the collected evidence?
+
+The last one is the one worth building for. A family that can say *this cannot be
+established from what is collectable* is worth more than one that guesses.
+
+### What the user runs
+
+One command, not six. `run` detects a configured brand center and collects authority,
+organization assets, distribution and assets in sequence. **No per-collector command enters
+the user's path**, and `capabilities --questions` gains the family without anybody needing
+to know there are five collectors behind it.
 
 ## Programme completion
 
