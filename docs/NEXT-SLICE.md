@@ -26,10 +26,23 @@ recorded rather than promoted into it.
 
 **`LICENSE-OPTIMIZATION-001`** — *what is assigned, what service plans it contains, and
 what usage evidence is observable for each.*
-**owner:** owner · **evidence needed:** the Graph reads against a real directory ·
-**done when:** a canonical bundle from a live tenant opens in a consumer and shows
-assignment, usage and dependency as three separate states · **blocker:** a tenant. The
-fixture-fed half is built and gated; nothing further is provable without one.
+**owner:** owner · **evidence needed:** one positive acquisition establishing subscribed
+SKUs, per-user assignments and the report identifiability setting, and where authorised
+one usage report · **done when:** that positive path reaches a consumer the way the
+negative one already does · **blocker:** the Microsoft Graph PowerShell modules are not
+installed on the collecting host, and beyond that a directory to read.
+
+**State, 2026-08-21: the failure path is live-proven and the capability is not.** A real
+run went `acquisition attempted → nothing completed → not-supported with the reason →
+evidence → canonical bundle → Release consumer → visible as not supported`. What that
+establishes is worth having on its own: an impossible acquisition is not converted into
+absence, zero, a pass, or *no usage*. It survives the whole chain without being rounded
+off. **It establishes nothing about licensing.**
+
+Every absence now carries whose limitation it is: `implementation`, `tenant-or-identity`,
+`microsoft` or `caller`. Only the first is work. The two recorded today are both
+`implementation` -- this version collects through modules the host does not have -- which
+means the remaining work here is ours and not the tenant's.
 
 ### NEXT
 
