@@ -287,6 +287,41 @@ handed a false absence by the acquisition method itself. It is a property of how
 evidence was acquired and belongs beside it. A test for false absence comes with the
 first such collector.
 
+### LICENSE-OPTIMIZATION-001 — what are we paying for, and what would we lose by changing it — `RECORDED, NOT OPEN`
+
+**authority:** owner · **next action:** owner decides where it sits against
+`BRAND-CENTER`; this card is the scope, not a start
+
+**The first question, and there are no rules in it.** *What Microsoft 365 licenses are
+assigned, what capabilities do they contain, and which of those capabilities can we
+observe being used?* Recommendations come after the real data, not before it.
+
+**The chain, which is the point.** `user → assigned SKU → enabled service plans →
+observed usage → security and compliance dependencies → role and workload requirements →
+eligible alternatives → recommendation with its limitation`. Every arrow is a read, and
+the last one is the only place a conclusion appears.
+
+**THE RULE THIS CAPABILITY LIVES OR DIES BY:** *no downgrade recommendation without
+evidence of both usage AND dependency.* The question is not *can this user be cheaper*.
+It is *what capability would disappear if this license changed*. Where either half cannot
+be observed, the answer is `not established` and no saving is claimed. A tool that says
+`downgrade 300` from a count is the aggregate this programme exists to replace, wearing a
+currency sign.
+
+**Why it is commercially different from the three surfaces already open.** Page execution
+asks what can run, agents ask what can act and know, Brand Center asks what can be
+published. This one asks what is being paid for, and a CFO reads the answer in five
+seconds: observed commitment, potential difference, the evidence behind it, and the risk
+of the change. That is also why it is the easiest to get irresponsibly wrong.
+
+**One engineering fact that shapes it before anybody starts.** None of this is a
+SharePoint site read. Assigned SKUs, service plans and usage live in Microsoft Graph and
+the admin centre, under different permissions and a different collector family from every
+module in `collectors/powershell/sharepoint`. It is a new acquisition surface, not an
+extension of an existing one, and the `population` and `acquisition_method` discipline
+established for agents applies to it from the first line: a usage report covers a window
+and a population, and *no activity in the report* is not *no activity*.
+
 ### AGENT-GOVERNANCE-001 — a different population, a different authority — `RECORDED, NOT OPEN`
 
 **authority:** owner · **next action:** none. Recorded so the scope exists; opening it is
