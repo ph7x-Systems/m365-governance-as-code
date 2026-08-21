@@ -35,6 +35,20 @@ nothing in the repository could say so.
   a silent edit by construction. This file is written by hand, disagrees, and
   found all three of the above.
 
+- **An agent count now travels with the population it is a count of.** `count: 3`
+  reads as *this tenant has three agents* to anybody who did not write the
+  collector, and it is not that: it is three `.agent` files in one site's Site
+  Assets library, enumerated by one identity at one moment. The boundary used to
+  live in `coverage` as a sentence, and a sentence beside a number is read after
+  the number if at all. The evidence now carries `population`,
+  `acquisition_method` and `populations_not_observed`, the last naming what this
+  method cannot reach: an agent built in Agent Builder is not a file in a
+  library. **An inventory surface defines a population; it does not define
+  existence outside that population**, and that is now a field rather than a
+  convention. `acquisition_method` is `enumerated` here, so that the day a
+  collector queries instead, *this query returned zero* and *this enumerated
+  population is empty* are already different facts.
+
 - **A new evidence family: the customization and page-execution surfaces of a
   site.** `Customization.psm1` collects the custom script setting where a
   tenant-scoped read was made, whether the identity holds

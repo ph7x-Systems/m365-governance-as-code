@@ -217,6 +217,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-agents-none-in-this-population.json",
+      "origin": "synthetic",
+      "purpose": "zero agents in the enumerated population; constructed so a count of zero is not read as no agents existing in the tenant",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-agents-with-sources.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
