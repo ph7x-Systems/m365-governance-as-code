@@ -117,19 +117,32 @@ function Get-LicensingFacts {
         -RawField 'not reachable from a directory read'
 
     # -- what is assigned ----------------------------------------------------------
+    # PER SKU, AND NO TOTAL ACROSS THEM.
+    #
+    # `units_purchased` USED TO BE HERE AND WAS 1,130,062 ON A TENANT WITH
+    # THIRTY-SEVEN ASSIGNED SEATS. The number was arithmetically correct and
+    # meaningless: `prepaidUnits.enabled` counts something different on a paid
+    # seat SKU and on a free or effectively unlimited one, and adding them
+    # produces a figure nobody can act on and everybody can quote.
+    #
+    # IT IS NOT REPLACED BY A BETTER TOTAL. Choosing which SKUs are additive is
+    # a classification this engine does not have and would be inventing, and an
+    # aggregate somebody hand-filtered is the same failure with more steps. The
+    # SKUs are published as Microsoft returned them, one row each, and a
+    # consumer that needs a total has to say which rows it added.
     try {
         $skus = @($SubscribedSkus)
         $l['subscribed_skus'] = New-ScalarFact -Value $skus.Count -RawField 'subscribedSkus'
-        $purchased = 0; $consumed = 0
-        foreach ($s in $skus) {
-            $purchased += [int] $s.prepaid_units
-            $consumed += [int] $s.consumed_units
-        }
-        $l['units_purchased'] = New-ScalarFact -Value $purchased -RawField 'prepaidUnits.enabled'
+        $l['skus'] = New-ScalarFact -Value $skus `
+            -RawField 'subscribedSkus: skuPartNumber, prepaidUnits.enabled, consumedUnits'
+        $consumed = 0
+        foreach ($s in $skus) { $consumed += [int] $s.consumed_units }
+        # `consumedUnits` IS ADDITIVE AND THE OTHER IS NOT. It counts assignments,
+        # which mean the same thing on every SKU: somebody holds it.
         $l['units_assigned'] = New-ScalarFact -Value $consumed -RawField 'consumedUnits'
     }
     catch {
-        foreach ($name in @('subscribed_skus', 'units_purchased', 'units_assigned')) {
+        foreach ($name in @('subscribed_skus', 'skus', 'units_assigned')) {
             $l[$name] = New-AbsentFact -State (Resolve-FailureState $_) -Detail $_.Exception.Message
         }
     }

@@ -22,11 +22,13 @@
   "coverage": {
     "requested": [
       "assignment",
+      "usage_identity",
       "usage",
       "dependency"
     ],
     "completed": [
-      "assignment"
+      "assignment",
+      "usage_identity"
     ],
     "unavailable": {
       "dependency": {
@@ -88,12 +90,54 @@
           "value": 4
         }
       },
-      "units_purchased": {
+      "skus": {
         "state": "observed",
-        "value": 860,
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "prepaid_units": 500,
+            "consumed_units": 487
+          },
+          {
+            "sku": "SPE_E5",
+            "prepaid_units": 60,
+            "consumed_units": 55
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "prepaid_units": 1000000,
+            "consumed_units": 210
+          },
+          {
+            "sku": "FLOW_FREE",
+            "prepaid_units": 10000,
+            "consumed_units": 48
+          }
+        ],
         "raw": {
-          "field": "prepaidUnits.enabled",
-          "value": 860
+          "field": "subscribedSkus: skuPartNumber, prepaidUnits.enabled, consumedUnits",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "prepaid_units": 500,
+              "consumed_units": 487
+            },
+            {
+              "sku": "SPE_E5",
+              "prepaid_units": 60,
+              "consumed_units": 55
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "prepaid_units": 1000000,
+              "consumed_units": 210
+            },
+            {
+              "sku": "FLOW_FREE",
+              "prepaid_units": 10000,
+              "consumed_units": 48
+            }
+          ]
         }
       },
       "units_assigned": {

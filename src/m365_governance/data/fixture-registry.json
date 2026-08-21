@@ -67,6 +67,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-assignment-observed.json",
+      "origin": "sanitized-observation",
+      "purpose": "the shape of a real assignment acquisition: SKUs and assigned units read, the report identifiability setting observed as concealed, usage and dependency not observed. The directory it came from is not identified and the counts are not that tenant's",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/licensing/tenant-assignment-only.json",
       "origin": "synthetic",
       "purpose": "assignment read with no usage report; constructed so unread is not read as unused",

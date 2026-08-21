@@ -32,7 +32,42 @@ one usage report · **done when:** that positive path reaches a consumer the way
 negative one already does · **blocker:** the Microsoft Graph PowerShell modules are not
 installed on the collecting host, and beyond that a directory to read.
 
-**State, 2026-08-21: the failure path is live-proven and the capability is not.** A real
+**State, 2026-08-21, and it is narrow on purpose.** One acquisition ran against a real
+directory. What it established, and nothing beyond it:
+
+| | |
+|---|---|
+| assignment acquisition | **live-proven** -- 14 subscribed SKUs, 37 assigned units, 1 licensed user |
+| report identifiability | **live-proven** -- observed `concealed` |
+| usage | **not observed** -- no reporting period was requested |
+| dependency | **not observed** -- this product collects none |
+
+**That is not `Licensing live-proven`.** Two of four surfaces were read, and the capability
+is partial.
+
+**`units_purchased` is gone and is not coming back as a better total.** It summed
+`prepaidUnits.enabled` across SKUs and read 1,130,062 on a tenant with thirty-seven
+assigned seats: arithmetically correct, meaningless, and quotable. The count means
+something different on a paid seat SKU and on a free or effectively unlimited one.
+Choosing which rows are additive is a classification this engine does not have, so the
+SKUs are published one row each as Microsoft returned them and a consumer that wants a
+total has to say which rows it added. `consumedUnits` is still summed, because an
+assignment means the same thing on every SKU.
+
+**Concealed is an answer, not an absence.** `usage_identity` is its own coverage area:
+`completed` where the reports may name people, `partial` where the setting was read and
+says they may not, `missing` where nobody read it. A consumer shows three different
+things, which is the point -- concealed, not read, and failed are three facts and not
+three ways of saying there is no data.
+
+**The authentication that produced this was not authorized.** The owner was shown a
+consent prompt and accepted it. The raw observation is kept locally as provenance of the
+run and is not committed or published; the fixture in this repository is a separate
+sanitized representation that identifies no directory. The rule that was missing is now in
+`AGENTS.md`: installing or configuring an authentication dependency is not authorization
+to authenticate.
+
+**The earlier failure path stays proven and stays worth having.** A real
 run went `acquisition attempted → nothing completed → not-supported with the reason →
 evidence → canonical bundle → Release consumer → visible as not supported`. What that
 establishes is worth having on its own: an impossible acquisition is not converted into

@@ -287,9 +287,32 @@ Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
         }) `
         -Facts (Get-LicensingFacts -SubscribedSkus $skus -Assignments $assignments `
             -ReportSettings $settings -UsageWindows $windows -Attempts $attempts) `
-        -Requested @('assignment', 'usage', 'dependency') `
-        -Completed (@('assignment') + $(if ($windows) { @('usage') } else { @() })) `
+        -Requested @('assignment', 'usage_identity', 'usage', 'dependency') `
+        -Completed (@('assignment') +
+            $(if ($null -ne $settings -and -not $settings.display_concealed_names) {
+                    @('usage_identity')
+                } else { @() }) +
+            $(if ($windows) { @('usage') } else { @() })) `
         -Unavailable ([ordered]@{
+            # CONCEALED IS AN ANSWER, NOT AN ABSENCE, AND THE THREE MUST NOT LOOK
+            # ALIKE. The setting was read and it said the reports will not name
+            # anybody: `partial`, because the reading succeeded and what it
+            # returned is that attribution is not available. That is a different
+            # fact from a setting nobody read, and both are different from a
+            # read that failed.
+            usage_identity = $(
+                if ($null -eq $settings) {
+                    New-Unavailable -State 'missing' `
+                        -Detail 'The tenant report privacy setting was not read.'
+                }
+                elseif ($settings.display_concealed_names) {
+                    New-Unavailable -State 'partial' -Detail (
+                        'The setting was read. Microsoft 365 is configured to conceal ' +
+                        'identifiable user information in usage reports, so no usage ' +
+                        'figure in this tenant can be attributed to a person.')
+                }
+                else { $null }
+            )
             usage      = $(if ($windows) { $null } else {
                     New-Unavailable -State 'missing' `
                         -Detail 'No reporting period was requested, so no usage report was read.'

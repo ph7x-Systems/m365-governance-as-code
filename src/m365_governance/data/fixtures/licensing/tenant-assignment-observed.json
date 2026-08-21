@@ -1,7 +1,7 @@
 {
   "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
   "provenance": {
-    "collected_at": "2026-08-21T21:22:54Z",
+    "collected_at": "2026-08-21T21:46:22Z",
     "collector": "m365-licensing-collector",
     "collector_version": "0.1.0",
     "source_system": "SharePoint Online",
@@ -26,23 +26,21 @@
       "usage",
       "dependency"
     ],
-    "completed": [],
+    "completed": [
+      "assignment"
+    ],
     "unavailable": {
-      "assignment": {
-        "state": "not-supported",
-        "detail": "This version collects licensing through the Microsoft Graph PowerShell modules, and this machine does not have Microsoft.Graph.Identity.DirectoryManagement, Microsoft.Graph.Users, Microsoft.Graph.Reports. The limitation is this product's, not the tenant's: nothing about the tenant is established by this result."
-      },
       "dependency": {
         "state": "missing",
-        "detail": "Dependency evidence is not collected by this run."
+        "detail": "Dependency evidence is not collected by this run. What a capability is required for is not observable from an assignment or from usage."
       },
       "usage": {
-        "state": "not-supported",
-        "detail": "This version collects licensing through the Microsoft Graph PowerShell modules, and this machine does not have Microsoft.Graph.Identity.DirectoryManagement, Microsoft.Graph.Users, Microsoft.Graph.Reports. The limitation is this product's, not the tenant's: nothing about the tenant is established by this result."
+        "state": "missing",
+        "detail": "No reporting period was requested, so no usage report was read."
       },
       "usage_identity": {
-        "state": "missing",
-        "detail": "The tenant report privacy setting was not read."
+        "state": "partial",
+        "detail": "The setting was read. Microsoft 365 is configured to conceal identifiable user information in usage reports, so no usage figure in this tenant can be attributed to a person."
       }
     }
   },
@@ -71,9 +69,9 @@
             "population": "entra-licensed-user-assignments",
             "identity": "delegated",
             "method": "interactive",
-            "result": "not-supported",
-            "reason": "required PowerShell modules absent on the collecting host",
-            "owner": "implementation"
+            "result": "observed",
+            "reason": "",
+            "owner": ""
           },
           {
             "area": "usage",
@@ -81,8 +79,18 @@
             "population": "entra-licensed-user-assignments",
             "identity": "delegated",
             "method": "interactive",
+            "result": "not-collected",
+            "reason": "no reporting period was requested",
+            "owner": "caller"
+          },
+          {
+            "area": "dependency",
+            "operation": "none",
+            "population": "policies, roles and obligations that require a capability",
+            "identity": "delegated",
+            "method": "interactive",
             "result": "not-supported",
-            "reason": "required PowerShell modules absent on the collecting host",
+            "reason": "this product collects no dependency evidence",
             "owner": "implementation"
           }
         ],
@@ -95,9 +103,9 @@
               "population": "entra-licensed-user-assignments",
               "identity": "delegated",
               "method": "interactive",
-              "result": "not-supported",
-              "reason": "required PowerShell modules absent on the collecting host",
-              "owner": "implementation"
+              "result": "observed",
+              "reason": "",
+              "owner": ""
             },
             {
               "area": "usage",
@@ -105,8 +113,18 @@
               "population": "entra-licensed-user-assignments",
               "identity": "delegated",
               "method": "interactive",
+              "result": "not-collected",
+              "reason": "no reporting period was requested",
+              "owner": "caller"
+            },
+            {
+              "area": "dependency",
+              "operation": "none",
+              "population": "policies, roles and obligations that require a capability",
+              "identity": "delegated",
+              "method": "interactive",
               "result": "not-supported",
-              "reason": "required PowerShell modules absent on the collecting host",
+              "reason": "this product collects no dependency evidence",
               "owner": "implementation"
             }
           ]
@@ -143,28 +161,92 @@
         }
       },
       "subscribed_skus": {
-        "state": "missing",
-        "detail": "The property 'prepaid_units' cannot be found on this object. Verify that the property exists."
+        "state": "observed",
+        "value": 14,
+        "raw": {
+          "field": "subscribedSkus",
+          "value": 14
+        }
+      },
+      "skus": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "prepaid_units": 25,
+            "consumed_units": 21
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "prepaid_units": 1000000,
+            "consumed_units": 8
+          },
+          {
+            "sku": "FLOW_FREE",
+            "prepaid_units": 10000,
+            "consumed_units": 8
+          }
+        ],
+        "raw": {
+          "field": "subscribedSkus: skuPartNumber, prepaidUnits.enabled, consumedUnits",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "prepaid_units": 25,
+              "consumed_units": 21
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "prepaid_units": 1000000,
+              "consumed_units": 8
+            },
+            {
+              "sku": "FLOW_FREE",
+              "prepaid_units": 10000,
+              "consumed_units": 8
+            }
+          ]
+        }
       },
       "units_assigned": {
-        "state": "missing",
-        "detail": "The property 'prepaid_units' cannot be found on this object. Verify that the property exists."
+        "state": "observed",
+        "value": 37,
+        "raw": {
+          "field": "consumedUnits",
+          "value": 37
+        }
       },
       "users_observed": {
-        "state": "missing",
-        "detail": "The property 'service_plans' cannot be found on this object. Verify that the property exists."
+        "state": "observed",
+        "value": 1,
+        "raw": {
+          "field": "directory enumeration",
+          "value": 1
+        }
       },
       "assignments": {
-        "state": "missing",
-        "detail": "The property 'service_plans' cannot be found on this object. Verify that the property exists."
+        "state": "observed",
+        "value": 10,
+        "raw": {
+          "field": "assignedLicenses",
+          "value": 10
+        }
       },
       "service_plans_represented": {
-        "state": "missing",
-        "detail": "The property 'service_plans' cannot be found on this object. Verify that the property exists."
+        "state": "observed",
+        "value": 11,
+        "raw": {
+          "field": "assignedLicenses.servicePlans",
+          "value": 11
+        }
       },
       "report_identifiability": {
-        "state": "missing",
-        "detail": "The tenant report privacy setting was not read. Until it is, no usage figure below can be attributed to any user, because concealed is the default."
+        "state": "observed",
+        "value": "concealed",
+        "raw": {
+          "field": "adminReportSettings.displayConcealedNames",
+          "value": "concealed"
+        }
       },
       "usage_reports_read": {
         "state": "missing",
