@@ -43,6 +43,13 @@ nothing in the repository could say so.
   bundle three samples wide. A skipped fixture now fails the publish, and the
   bundle carries seventy-one.
 
+- **A shipped assessment its own engine refused.** The cascade rewrote the
+  contract each part of `fixtures/assessment/classification.json` declares, and
+  an assessment's identity is derived from the bytes of those parts, so the
+  document arrived at a consumer with digests describing what it used to say.
+  Only one of the two assessment fixtures was read by any test; the other was
+  read by nothing. Both are now verified, with the verifier a consumer uses.
+
 **`connect` now answers the question a person actually has**, which is not
 "did a sign-in succeed" but "can this identity work here".
 

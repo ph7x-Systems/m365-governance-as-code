@@ -402,17 +402,17 @@
         ]
       },
       "label": "classification",
-      "assessment_id": "bdd9082a15fee3c842b24293f92738672851b344690b259c487f2e3f7b7c340f"
+      "assessment_id": "5565dd6ed7982529bd9e9b93615068b4430e7e2eb3aad7973768027ac7963ba3"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "c553bd7c93aa6d6f77dcd7f155a5bd9d59eb9f119ebc24f796647ac57a8e6882",
-        "evidence": "b259b9662c35363790eb2544d9289bd047d1e68bb5b0d0fcb448f5e5d2b29426",
+        "run_set": "8c13eb43ff302fe6d6b267ac25baad7264a4529393c09aacf8228f176c63b6f0",
+        "evidence": "58d54ed742e33beb2879ec49702e90f91ada1d78b7ec4f15ae19c68b7ba415cf",
         "versions": "dccaff1b6d3821df75d2cad0b0512df81947350c439a2103568579a859f626df",
         "manifest": "eef14b125b03f255739a1238e107724f8b912ad270f064677ce9815a3718dd51"
       },
-      "canonical_hash": "bdd9082a15fee3c842b24293f92738672851b344690b259c487f2e3f7b7c340f"
+      "canonical_hash": "5565dd6ed7982529bd9e9b93615068b4430e7e2eb3aad7973768027ac7963ba3"
     }
   }
 }

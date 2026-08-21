@@ -342,3 +342,26 @@ def test_an_import_that_names_its_collector_keeps_that_identity():
 
     assert manifest["identity"] == {"summary": "single", "kinds": ["delegated"]}
     assert manifest["acquisition"] == {"summary": "single", "kinds": ["imported"]}
+
+
+def test_every_assessment_this_engine_ships_verifies() -> None:
+    """A shipped assessment is a document a consumer will verify.
+
+    ONE OF THEM DID NOT. The cascade that moved `run`, `run-set` and
+    `assessment` to `4.1.0` rewrote the contract each part of this fixture
+    declares, and an assessment's identity is derived from the bytes of those
+    parts: changing them without re-deriving left a document whose own engine
+    refused it. It reached a consumer, and the consumer is where it was found.
+
+    The reason it got that far is that only one of the two fixtures was read by
+    a test, and the other was read by nothing. This reads every one there is,
+    with the verifier a consumer would use, so a fixture that is shipped is a
+    fixture that is checked.
+    """
+    fixtures = sorted((DATA / "fixtures" / "assessment").glob("*.json"))
+    assert fixtures, "no assessment fixtures to verify"
+
+    for path in fixtures:
+        document = json.loads(path.read_text(encoding="utf-8"))
+        problems = assessment.verify(document)
+        assert problems == [], f"{path.name}: {'; '.join(problems)}"
