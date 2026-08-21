@@ -215,10 +215,12 @@ and a certificate still proceeds because `-Tenant` names the directory.
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
 
-### ENGINE-PAGE-CONTROLS-001 — the customization surface is collected, and reads nothing into it — `COLLECTED`
+### ENGINE-PAGE-CONTROLS-001 — the customization surface is collected, and reads nothing into it — `CLOSED`
 
 **authority:** repository for the collection; owner for any rule built on it ·
-**next action:** none for the collection; a rule needs a defensible sentence first
+**next action:** none. Closed 2026-08-21 as an observation capability, and not to be
+expanded: a rule needs a sentence somebody can defend, and until there is one, zero rules
+is the correct state rather than a gap
 
 **Built 2026-08-21.** `Customization.psm1` and the `Customization` slice collect, per
 site: the custom script setting where a tenant-scoped read was made, whether the
@@ -278,8 +280,30 @@ second one forces is worth stating on its own: **an inventory surface defines a
 population; it does not define existence outside that population.**
 
 No collector in this engine currently queries -- `Agents.psm1` and every other module
-enumerate. **The day one does, it needs a test for false absence**, because a query is
-the one collection method whose empty result looks identical to a true zero.
+**The day one does, the distinction has to survive into the evidence**, not
+live in a comment: *this query returned zero* and *this enumerated population is empty*
+are different facts, and a consumer reading the second where the first happened has been
+handed a false absence by the acquisition method itself. It is a property of how the
+evidence was acquired and belongs beside it. A test for false absence comes with the
+first such collector.
+
+### AGENT-GOVERNANCE-001 — a different population, a different authority — `RECORDED, NOT OPEN`
+
+**authority:** owner · **next action:** none. Recorded so the scope exists; opening it is
+a decision, not a continuation
+
+Shares the methodology of the slice above and none of its domain. Who may create an
+agent, what knowledge sources it may use, which modes are included and which are metered,
+what population each API or cmdlet actually covers, and the difference between *an agent
+exists* and *an agent appears in this inventory surface*.
+
+The strong finding is already recorded on the public side: `Get-PnPCopilotAgent` reads
+`.agent` files in SharePoint, an agent built in Agent Builder is not one of them, and a
+search for one by name returned unrelated files. **An inventory surface defines a
+population. It does not define existence outside that population.**
+
+Not opened now. Different collectors, different limitations, different authority, and
+methodology fitting is not a reason to merge two domains into one expansion.
 
 ### ENGINE-CONTRACT-LEDGER-002 — the ledger depends on somebody remembering — `RECORDED, NOT OPEN`
 
