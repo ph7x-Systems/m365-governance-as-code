@@ -67,6 +67,24 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-assignment-only.json",
+      "origin": "synthetic",
+      "purpose": "assignment read with no usage report; constructed so unread is not read as unused",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-usage-concealed.json",
+      "origin": "synthetic",
+      "purpose": "usage read and unattributable; constructed to exercise the default tenant, where no per-user licensing conclusion is possible",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-usage-identifiable.json",
+      "origin": "synthetic",
+      "purpose": "usage attributable; constructed to exercise the tenant that turned concealment off",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/migration/after-cutover.json",
       "origin": "synthetic",
       "purpose": "the same estate afterwards, with one library unreadable; constructed so a verification can be produced and checked without a tenant",

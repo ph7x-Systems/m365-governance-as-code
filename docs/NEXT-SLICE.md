@@ -287,40 +287,52 @@ handed a false absence by the acquisition method itself. It is a property of how
 evidence was acquired and belongs beside it. A test for false absence comes with the
 first such collector.
 
-### LICENSE-OPTIMIZATION-001 — what are we paying for, and what would we lose by changing it — `RECORDED, NOT OPEN`
+### LICENSE-OPTIMIZATION-001 — what is assigned, and whether its use can be observed at all — `FIRST SLICE BUILT`
 
-**authority:** owner · **next action:** owner decides where it sits against
-`BRAND-CENTER`; this card is the scope, not a start
+**authority:** owner · **next action:** owner's hour to wire the Graph reads against a
+real tenant; nothing else can be proved without one
 
-**The first question, and there are no rules in it.** *What Microsoft 365 licenses are
-assigned, what capabilities do they contain, and which of those capabilities can we
-observe being used?* Recommendations come after the real data, not before it.
+**The first question, and there are no rules in it.** *What licenses are assigned, what
+service plans do they contain, and what usage evidence is actually observable for each
+one?* Built 2026-08-21 as `Licensing.psm1`, three declared fixtures, a canonical bundle,
+and it was opened in a consumer.
 
-**The chain, which is the point.** `user → assigned SKU → enabled service plans →
-observed usage → security and compliance dependencies → role and workload requirements →
-eligible alternatives → recommendation with its limitation`. Every arrow is a read, and
-the last one is the only place a conclusion appears.
+**ONE MICROSOFT FACT DECIDES WHETHER THIS CAPABILITY IS POSSIBLE, AND IT IS COLLECTED
+FIRST.** *By default, all reports hide user information such as usernames, display names,
+groups, and sites*, and *this setting also applies to the Microsoft 365 usage reports in
+Microsoft Graph*. In a default tenant the usage evidence **cannot be joined to a user at
+all** -- not partially, not approximately. `report_identifiability` is therefore the first
+fact, because every figure after it is conditional on it, and turning concealment off is
+itself *a logged event in the Microsoft Purview portal audit log*.
 
-**THE RULE THIS CAPABILITY LIVES OR DIES BY:** *no downgrade recommendation without
-evidence of both usage AND dependency.* The question is not *can this user be cheaper*.
-It is *what capability would disappear if this license changed*. Where either half cannot
-be observed, the answer is `not established` and no saving is claimed. A tool that says
-`downgrade 300` from a count is the aggregate this programme exists to replace, wearing a
-currency sign.
+**Three more ways to be wrong, each now a fact rather than a footnote.** The reports cover
+*the last 7, 30, 90, and 180 days*, so an absence is an absence within a window. They
+*typically become available within 24 to 72 hours*, so the newest days are not there. And
+*when you delete a user account, Microsoft deletes that user's usage data within 30 days*,
+which removes the evidence exactly where a conclusion would otherwise be strongest.
 
-**Why it is commercially different from the three surfaces already open.** Page execution
-asks what can run, agents ask what can act and know, Brand Center asks what can be
-published. This one asks what is being paid for, and a CFO reads the answer in five
-seconds: observed commitment, potential difference, the evidence behind it, and the risk
-of the change. That is also why it is the easiest to get irresponsibly wrong.
+**And a join Microsoft says does not exist:** *you can't generate a report where you enter
+a user's account and then get a list of which services they're using and how much.* The
+per-user cross-service view is assembled from per-service reports or it is not assembled,
+so the evidence records which reports were actually read instead of implying a whole
+picture.
 
-**One engineering fact that shapes it before anybody starts.** None of this is a
-SharePoint site read. Assigned SKUs, service plans and usage live in Microsoft Graph and
-the admin centre, under different permissions and a different collector family from every
-module in `collectors/powershell/sharepoint`. It is a new acquisition surface, not an
-extension of an existing one, and the `population` and `acquisition_method` discipline
-established for agents applies to it from the first line: a usage report covers a window
-and a population, and *no activity in the report* is not *no activity*.
+**THE RULE THIS CAPABILITY LIVES OR DIES BY, unchanged:** nothing may be concluded about
+changing an assignment without evidence of both use and dependency. The question is not
+whether a user can cost less; it is what capability would disappear. `dependency_evidence`
+is recorded as `missing` by construction, because this collector reads none, and that
+absence is a fact so a consumer cannot read a usage figure as an answer.
+
+**What a consumer shows today**, opened against the canonical bundle: *No governance
+conclusion was produced for this resource. Evidence was collected, but no rule was
+evaluated against it. 2 areas were not observed at all*, with `assignment` complete and
+`usage` and `dependency` unavailable in their own words. Honest, and already useful.
+
+**What is not built and needs a tenant:** the Graph reads themselves. `Get-LicensingFacts`
+takes objects a caller supplies, so it is provable against fixtures; wiring
+`Get-MgSubscribedSku`, the per-user assignments, `adminReportSettings` and the usage
+reports into a collector entry point is an hour against a real directory and cannot be
+proved without one.
 
 ### AGENT-GOVERNANCE-001 — a different population, a different authority — `RECORDED, NOT OPEN`
 

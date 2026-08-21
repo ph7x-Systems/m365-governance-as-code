@@ -35,6 +35,17 @@ nothing in the repository could say so.
   a silent edit by construction. This file is written by hand, disagrees, and
   found all three of the above.
 
+- **What is assigned, and whether its use can be observed at all.** A new
+  evidence family for Microsoft 365 licensing, and the first fact it collects is
+  the one that decides whether the rest means anything: Microsoft hides user
+  names in all usage reports by default, and the same setting applies to the
+  usage reports in Microsoft Graph, so in a default tenant **usage cannot be
+  joined to a user**. The reports also cover a window, arrive 24 to 72 hours
+  late, and lose a deleted user's data within 30 days. Every one of those is a
+  fact in the evidence rather than a footnote. `dependency_evidence` is recorded
+  as missing by construction, because this collector reads none, so a usage
+  figure cannot be read as an answer about changing anything.
+
 - **An agent count now travels with the population it is a count of.** `count: 3`
   reads as *this tenant has three agents* to anybody who did not write the
   collector, and it is not that: it is three `.agent` files in one site's Site

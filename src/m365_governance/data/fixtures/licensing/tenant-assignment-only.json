@@ -1,0 +1,153 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-21T11:10:00Z",
+    "collector": "m365-licensing-collector",
+    "collector_version": "0.1.0",
+    "source_system": "Microsoft 365",
+    "source_api": "Microsoft Graph v1.0",
+    "tenant": {
+      "id": null,
+      "host": "fabrikam.onmicrosoft.com",
+      "how": "requested"
+    },
+    "identity_kind": "application",
+    "acquisition": "collected",
+    "scopes": [
+      "Organization.Read.All",
+      "User.Read.All",
+      "Reports.Read.All"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "assignment",
+      "usage",
+      "dependency"
+    ],
+    "completed": [
+      "assignment"
+    ],
+    "unavailable": {
+      "usage": {
+        "state": "missing",
+        "detail": "No usage report was read by this run."
+      },
+      "dependency": {
+        "state": "missing",
+        "detail": "Dependency evidence is not collected by this run."
+      }
+    }
+  },
+  "resource": {
+    "workload": "microsoft-365",
+    "type": "tenant",
+    "native_id": "fabrikam.onmicrosoft.com",
+    "tenant": {
+      "id": null,
+      "host": "fabrikam.onmicrosoft.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "Fabrikam",
+    "url": "https://admin.microsoft.com"
+  },
+  "facts": {
+    "licensing": {
+      "population": {
+        "state": "observed",
+        "value": "entra-licensed-user-assignments",
+        "raw": {
+          "field": "directory enumeration of user license assignments",
+          "value": "entra-licensed-user-assignments"
+        }
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated",
+        "raw": {
+          "field": "directory",
+          "value": "enumerated"
+        }
+      },
+      "populations_not_observed": {
+        "state": "observed",
+        "value": [
+          "non-subscription-license-models",
+          "assigned-outside-this-tenant"
+        ],
+        "raw": {
+          "field": "not reachable from a directory read",
+          "value": [
+            "non-subscription-license-models",
+            "assigned-outside-this-tenant"
+          ]
+        }
+      },
+      "subscribed_skus": {
+        "state": "observed",
+        "value": 4,
+        "raw": {
+          "field": "subscribedSkus",
+          "value": 4
+        }
+      },
+      "units_purchased": {
+        "state": "observed",
+        "value": 860,
+        "raw": {
+          "field": "prepaidUnits.enabled",
+          "value": 860
+        }
+      },
+      "units_assigned": {
+        "state": "observed",
+        "value": 800,
+        "raw": {
+          "field": "consumedUnits",
+          "value": 800
+        }
+      },
+      "users_observed": {
+        "state": "observed",
+        "value": 800,
+        "raw": {
+          "field": "directory enumeration",
+          "value": 800
+        }
+      },
+      "assignments": {
+        "state": "observed",
+        "value": 1126,
+        "raw": {
+          "field": "assignedLicenses",
+          "value": 1126
+        }
+      },
+      "service_plans_represented": {
+        "state": "observed",
+        "value": 23,
+        "raw": {
+          "field": "assignedLicenses.servicePlans",
+          "value": 23
+        }
+      },
+      "dependency_evidence": {
+        "state": "missing",
+        "detail": "No dependency evidence is collected by this run. What a capability is required for -- a policy, a role, a compliance obligation, a workload that would stop -- is not observable from an assignment or usage, and nothing may be concluded without it."
+      },
+      "report_identifiability": {
+        "state": "missing",
+        "detail": "The tenant report privacy setting was not read. Until it is, no usage figure can be attributed to any user, because concealed is the default."
+      },
+      "usage_reports_read": {
+        "state": "missing",
+        "detail": "No usage report was read by this run."
+      },
+      "usage_window_days": {
+        "state": "missing",
+        "detail": "No usage report was read, so no window applies."
+      }
+    }
+  }
+}
