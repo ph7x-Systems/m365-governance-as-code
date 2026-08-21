@@ -70,11 +70,37 @@ function Get-LicensingFacts {
         $SubscribedSkus,
         $Assignments,
         $ReportSettings,
-        $UsageWindows
+        $UsageWindows,
+        $Attempts
     )
 
     $facts = [ordered]@{ licensing = [ordered]@{} }
     $l = $facts.licensing
+
+    # -- WHY SOMETHING IS NOT THERE, AND WHOSE LIMITATION IT IS ---------------
+    #
+    # `unavailable` ON ITS OWN IS TOO POOR A WORD WHEN THE REASON IS KNOWN.
+    # A reader shown *usage unavailable* cannot tell these apart, and they are
+    # not the same situation:
+    #
+    #   this version does not collect usage reports yet   -> our work, unbuilt
+    #   this identity is not permitted to read them       -> the tenant's answer
+    #   Microsoft does not expose it in this cloud        -> the vendor's answer
+    #
+    # The first is an incomplete product. The other two are facts about the
+    # environment, and they are evidence. One visual bucket for both teaches a
+    # reader that this product's gaps and the tenant's constraints look alike.
+    #
+    # `owner` is recorded per attempt and takes `implementation`,
+    # `tenant-or-identity`, `microsoft` or `caller`. Only the first is work.
+    if ($null -ne $Attempts) {
+        $l['acquisition_attempts'] = New-ScalarFact -Value @($Attempts) `
+            -RawField 'one record per acquisition surface this run tried'
+    }
+    else {
+        $l['acquisition_attempts'] = New-AbsentFact -State 'missing' `
+            -Detail 'This run recorded no acquisition attempts.'
+    }
 
     # -- the population, before any number ------------------------------------
     $l['population'] = New-ScalarFact -Value 'entra-licensed-user-assignments' `

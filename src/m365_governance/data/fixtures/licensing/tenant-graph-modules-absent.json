@@ -1,0 +1,182 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-21T21:22:54Z",
+    "collector": "m365-licensing-collector",
+    "collector_version": "0.1.0",
+    "source_system": "SharePoint Online",
+    "source_api": "Microsoft Graph v1.0",
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com",
+      "how": "requested"
+    },
+    "identity_kind": "delegated",
+    "identity_method": "interactive",
+    "client_id": "",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "assignment",
+      "usage",
+      "dependency"
+    ],
+    "completed": [],
+    "unavailable": {
+      "assignment": {
+        "state": "not-supported",
+        "detail": "This version collects licensing through the Microsoft Graph PowerShell modules, and this machine does not have Microsoft.Graph.Identity.DirectoryManagement, Microsoft.Graph.Users, Microsoft.Graph.Reports. The limitation is this product's, not the tenant's: nothing about the tenant is established by this result."
+      },
+      "usage": {
+        "state": "not-supported",
+        "detail": "This version collects licensing through the Microsoft Graph PowerShell modules, and this machine does not have Microsoft.Graph.Identity.DirectoryManagement, Microsoft.Graph.Users, Microsoft.Graph.Reports. The limitation is this product's, not the tenant's: nothing about the tenant is established by this result."
+      },
+      "dependency": {
+        "state": "missing",
+        "detail": "Dependency evidence is not collected by this run."
+      }
+    }
+  },
+  "resource": {
+    "workload": "microsoft-365",
+    "type": "tenant",
+    "native_id": "contoso.onmicrosoft.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com",
+      "how": "requested"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "contoso.onmicrosoft.com",
+    "url": "https://admin.microsoft.com"
+  },
+  "facts": {
+    "licensing": {
+      "acquisition_attempts": {
+        "state": "observed",
+        "value": [
+          {
+            "area": "assignment",
+            "operation": "Get-MgSubscribedSku; Get-MgUser -Property assignedLicenses",
+            "population": "entra-licensed-user-assignments",
+            "identity": "delegated",
+            "method": "interactive",
+            "result": "not-supported",
+            "reason": "required PowerShell modules absent on the collecting host",
+            "owner": "implementation"
+          },
+          {
+            "area": "usage",
+            "operation": "adminReportSettings; reports/getOffice365ActiveUserDetail",
+            "population": "entra-licensed-user-assignments",
+            "identity": "delegated",
+            "method": "interactive",
+            "result": "not-supported",
+            "reason": "required PowerShell modules absent on the collecting host",
+            "owner": "implementation"
+          }
+        ],
+        "raw": {
+          "field": "one record per acquisition surface this run tried",
+          "value": [
+            {
+              "area": "assignment",
+              "operation": "Get-MgSubscribedSku; Get-MgUser -Property assignedLicenses",
+              "population": "entra-licensed-user-assignments",
+              "identity": "delegated",
+              "method": "interactive",
+              "result": "not-supported",
+              "reason": "required PowerShell modules absent on the collecting host",
+              "owner": "implementation"
+            },
+            {
+              "area": "usage",
+              "operation": "adminReportSettings; reports/getOffice365ActiveUserDetail",
+              "population": "entra-licensed-user-assignments",
+              "identity": "delegated",
+              "method": "interactive",
+              "result": "not-supported",
+              "reason": "required PowerShell modules absent on the collecting host",
+              "owner": "implementation"
+            }
+          ]
+        }
+      },
+      "population": {
+        "state": "observed",
+        "value": "entra-licensed-user-assignments",
+        "raw": {
+          "field": "directory enumeration of user license assignments",
+          "value": "entra-licensed-user-assignments"
+        }
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated",
+        "raw": {
+          "field": "directory",
+          "value": "enumerated"
+        }
+      },
+      "populations_not_observed": {
+        "state": "observed",
+        "value": [
+          "non-subscription-license-models",
+          "assigned-outside-this-tenant"
+        ],
+        "raw": {
+          "field": "not reachable from a directory read",
+          "value": [
+            "non-subscription-license-models",
+            "assigned-outside-this-tenant"
+          ]
+        }
+      },
+      "subscribed_skus": {
+        "state": "missing",
+        "detail": "The property 'prepaid_units' cannot be found on this object. Verify that the property exists."
+      },
+      "units_purchased": {
+        "state": "missing",
+        "detail": "The property 'prepaid_units' cannot be found on this object. Verify that the property exists."
+      },
+      "units_assigned": {
+        "state": "missing",
+        "detail": "The property 'prepaid_units' cannot be found on this object. Verify that the property exists."
+      },
+      "users_observed": {
+        "state": "missing",
+        "detail": "The property 'service_plans' cannot be found on this object. Verify that the property exists."
+      },
+      "assignments": {
+        "state": "missing",
+        "detail": "The property 'service_plans' cannot be found on this object. Verify that the property exists."
+      },
+      "service_plans_represented": {
+        "state": "missing",
+        "detail": "The property 'service_plans' cannot be found on this object. Verify that the property exists."
+      },
+      "report_identifiability": {
+        "state": "missing",
+        "detail": "The tenant report privacy setting was not read. Until it is, no usage figure below can be attributed to any user, because concealed is the default."
+      },
+      "usage_reports_read": {
+        "state": "missing",
+        "detail": "No usage report was read by this run."
+      },
+      "usage_window_days": {
+        "state": "missing",
+        "detail": "No usage report was read, so no window applies."
+      },
+      "dependency_evidence": {
+        "state": "missing",
+        "detail": "No dependency evidence is collected by this run. What a capability is required for -- a policy, a role, a compliance obligation, a workload that would stop -- is not observable from an assignment or from usage, and nothing may be concluded without it."
+      }
+    }
+  }
+}

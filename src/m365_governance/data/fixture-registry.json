@@ -73,6 +73,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-graph-modules-absent.json",
+      "origin": "sanitized-observation",
+      "purpose": "a real collector run on a machine without the Microsoft Graph modules; the host is replaced because the document establishes nothing about any tenant and the name would be a customer identifier for no evidential gain",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/licensing/tenant-usage-concealed.json",
       "origin": "synthetic",
       "purpose": "usage read and unattributable; constructed to exercise the default tenant, where no per-user licensing conclusion is possible",

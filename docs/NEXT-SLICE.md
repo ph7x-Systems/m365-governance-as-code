@@ -39,13 +39,19 @@ organisation asset libraries, the CDN publication path · **done when:** the dis
 between an administration boundary and a distribution boundary is evidence rather than
 prose · **blocker:** none recorded.
 
-**`AGENT-GOVERNANCE-001`** — *who may create an agent, what it may be grounded on, and
-what population each inventory surface actually covers.* **owner:** owner ·
-**evidence needed:** the creator authority and publication surfaces beyond `.agent` files
-· **done when:** an inventory states its population and what it cannot see · **blocker:**
-recorded and not opened; opening it is a decision.
+**`BRAND-CENTER-001` is the next genuinely open capability.** `AGENT-GOVERNANCE-001` is
+not: its first vertical is established. The collector carries `population`,
+`acquisition_method` and `populations_not_observed`, two fixtures exercise a populated and
+an empty population, the canonical bundle opens in a consumer, and the boundary is stated
+in the evidence rather than in prose. What remains there is a second slice, listed under
+LATER: creator authority and the publication surfaces beyond `.agent` files.
 
 ### LATER
+
+`AGENT-GOVERNANCE-002` — creator authority and the publication surfaces a `.agent` file
+read cannot reach. **evidence needed:** the administrative surface that lists agents built
+outside SharePoint · **done when:** the second population is stated the way the first one
+is.
 
 `ENGINE-FACT-STATE-NOBODY-LOOKED-001`, `ENGINE-CONTRACT-LEDGER-002`,
 `MIGRATION-VERIFY-001`, and the residual-defect list under `FIRST-RUN-006`. Real work,
@@ -371,10 +377,10 @@ takes objects a caller supplies, so it is provable against fixtures; wiring
 reports into a collector entry point is an hour against a real directory and cannot be
 proved without one.
 
-### AGENT-GOVERNANCE-001 — a different population, a different authority — `RECORDED, NOT OPEN`
+### AGENT-GOVERNANCE-001 — a different population, a different authority — `FIRST VERTICAL ESTABLISHED`
 
-**authority:** owner · **next action:** none. Recorded so the scope exists; opening it is
-a decision, not a continuation
+**authority:** owner · **next action:** none for the first vertical. The second is
+`AGENT-GOVERNANCE-002` under LATER
 
 Shares the methodology of the slice above and none of its domain. Who may create an
 agent, what knowledge sources it may use, which modes are included and which are metered,

@@ -94,11 +94,23 @@ def main() -> int:
     # Real output, not hand-written examples. Every fixture that evaluates
     # becomes a sample, so the consumer exercises the contract against what the
     # engine actually produces.
-    fixtures = sorted(
-        (ROOT / "src" / "m365_governance" / "data" / "fixtures" / "sharepoint").glob(
-            "*.json"
-        )
-    )
+    #
+    # EVERY FAMILY, NOT ONE OF THEM. This globbed `fixtures/sharepoint` alone,
+    # written when that was the only family there was. A licensing family
+    # arrived with three fixtures and a consumer received none of them: the
+    # bundle looked healthy because seventy-one SharePoint samples were in it,
+    # and the new family was invisible to everything downstream. The archive
+    # directory is skipped because its documents are of superseded contracts
+    # and are exercised elsewhere.
+    #
+    # NAMED, SO THAT ADDING ONE IS DELIBERATE. Globbing every family picked up
+    # the migration fixtures, which are lists of documents rather than evidence
+    # and which `evaluate` refuses, correctly. A skip would have hidden that;
+    # the list below is the honest version, and a family missing from it is a
+    # family the consumer never receives.
+    root = ROOT / "src" / "m365_governance" / "data" / "fixtures"
+    families = ("sharepoint", "licensing")
+    fixtures = sorted(f for family in families for f in (root / family).glob("*.json"))
     written = 0
     for fixture in fixtures:
         # THROUGH THIS INTERPRETER, NEVER THROUGH THE PATH. `m365-governance`
