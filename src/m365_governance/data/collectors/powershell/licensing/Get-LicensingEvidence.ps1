@@ -237,14 +237,21 @@ $windows = $null
 if ($Period) {
     $windows = @()
     foreach ($report in @('getOffice365ActiveUserDetail')) {
+        $csv = Join-Path ([IO.Path]::GetTempPath()) ([Guid]::NewGuid().ToString() + '.csv')
         try {
-            $null = Invoke-MgGraphRequest -Method GET -OutputFilePath ([IO.Path]::GetTempFileName()) `
+            Invoke-MgGraphRequest -Method GET -OutputFilePath $csv `
                 -Uri "https://graph.microsoft.com/v1.0/reports/$report(period='$Period')"
-            $windows += [ordered]@{ report = $report; window_days = [int] $Period.Substring(1) }
+            $windows += (Read-UsageReport -Path $csv -Report $report `
+                    -WindowDays ([int] $Period.Substring(1)))
         }
         catch {
-            # A report that refused is not a report that returned nothing.
+            # A report that refused is not a report that returned nothing, and
+            # the difference is the whole point of this family. Whose refusal it
+            # was is recorded in the attempt beside it.
             Write-Verbose "$report refused: $($_.Exception.Message)"
+        }
+        finally {
+            if (Test-Path $csv) { Remove-Item $csv -Force -ErrorAction SilentlyContinue }
         }
     }
 }
@@ -306,10 +313,20 @@ Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                         -Detail 'The tenant report privacy setting was not read.'
                 }
                 elseif ($settings.display_concealed_names) {
+                    # NAMED SCOPE, NOT A CLAIM ABOUT THE WHOLE TENANT. The
+                    # earlier wording said no usage figure in this tenant could be
+                    # attributed to anybody, which is wider than what
+                    # `adminReportSettings` governs. Microsoft states the reach:
+                    # the admin centre reports, the Microsoft 365 usage reports in
+                    # Graph and Power BI, and the Teams admin centre reports. A
+                    # usage source outside that list is not covered by this
+                    # observation, and this sentence no longer implies it is.
                     New-Unavailable -State 'partial' -Detail (
                         'The setting was read. Microsoft 365 is configured to conceal ' +
-                        'identifiable user information in usage reports, so no usage ' +
-                        'figure in this tenant can be attributed to a person.')
+                        'identifiable user information in the usage reports this ' +
+                        'setting covers: the admin centre reports, the Microsoft 365 ' +
+                        'usage reports in Microsoft Graph and Power BI, and the Teams ' +
+                        'admin centre reports.')
                 }
                 else { $null }
             )

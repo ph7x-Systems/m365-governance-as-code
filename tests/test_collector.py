@@ -153,13 +153,16 @@ def test_a_slice_with_no_site_connects_to_the_admin_centre():
     assert declared, "Connection.psm1 no longer declares $script:AdminModes"
     admin = set(re.findall(r"'([^']+)'", declared.group(1)))
 
-    # PowerShell slices only. A Graph slice has no `-SiteUrl` to pass and no
-    # PnP session to open, so requiring its mode to appear in the collector's
-    # admin list would be asking one collector to declare another's work.
+    # THIS COLLECTOR'S slices only. A Graph slice has no `-SiteUrl` to pass
+    # and no PnP session to open, and neither has a PowerShell collector of its
+    # own: `Connection.psm1` is `Get-SpoEvidence.ps1`'s, and requiring the
+    # licensing modes to appear in its admin list would be asking one collector
+    # to declare another's work.
+    mine = collecting.SLICES["sites"].script
     siteless = {
         s.mode
         for s in collecting.SLICES.values()
-        if not s.needs_site and s.source == "powershell"
+        if not s.needs_site and s.source == "powershell" and s.script == mine
     }
     assert siteless <= admin, (
         f"slice modes with no -SiteUrl that would connect to one: "

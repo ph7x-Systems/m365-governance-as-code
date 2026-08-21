@@ -48,6 +48,51 @@
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Read-UsageReport {
+    <#
+        .SYNOPSIS
+        What one usage report says about itself and its rows.
+
+        .DESCRIPTION
+        THE COLUMNS ARE MICROSOFT'S AND ARE NOT INVENTED HERE.
+        `getOffice365ActiveUserDetail` returns one row per user with, among
+        others, `Report Refresh Date`, `User Principal Name`, `Is Deleted`, a
+        `Has ... License` column per service and a `... Last Activity Date` per
+        service. This reads three things from it and concludes none of them:
+        when the data was last rebuilt, how many rows came back, and how many of
+        those rows name a principal rather than a concealed identifier.
+
+        THE LAST ONE DECIDES WHAT THE REST IS WORTH. Where the tenant conceals
+        identifiable information the principal column holds an opaque
+        identifier, and a report of ten thousand such rows supports no statement
+        about any person in it. A concealed identifier is recognised by shape --
+        it carries no `@` -- rather than by asking the setting again, so the
+        report is read on its own terms.
+    #>
+    param(
+        [Parameter(Mandatory = $true)] [string] $Path,
+        [Parameter(Mandatory = $true)] [string] $Report,
+        [Parameter(Mandatory = $true)] [int] $WindowDays
+    )
+
+    $rows = @(Import-Csv -Path $Path)
+    $named = @($rows | Where-Object {
+            $upn = "$($_.'User Principal Name')"
+            $upn -and $upn.Contains('@')
+        }).Count
+
+    $refresh = ''
+    if ($rows.Count -gt 0) { $refresh = "$($rows[0].'Report Refresh Date')" }
+
+    return [ordered]@{
+        report                  = $Report
+        window_days             = $WindowDays
+        report_refresh_date     = $refresh
+        rows                    = $rows.Count
+        rows_naming_a_principal = $named
+    }
+}
+
 function Get-LicensingFacts {
     <#
         .SYNOPSIS
@@ -185,12 +230,51 @@ function Get-LicensingFacts {
             -Value (@($UsageWindows) | ForEach-Object { [int] $_.window_days } |
                 Sort-Object -Unique) `
             -RawField 'report period'
+
+        # -- WHAT THE REPORT ITSELF SAYS ABOUT ITS OWN FRESHNESS --------------
+        #
+        # `Report Refresh Date` is a column, not something computed here. It is
+        # the day the data behind the rows was last rebuilt, and Microsoft
+        # publishes reports 24 to 72 hours behind, occasionally more. A run that
+        # recorded only the period would let a reader treat a report built on
+        # Monday as an answer about Wednesday.
+        $refresh = @($UsageWindows | ForEach-Object { $_.report_refresh_date } |
+            Where-Object { $_ } | Sort-Object -Unique)
+        if ($refresh.Count -gt 0) {
+            $l['usage_report_refresh_date'] = New-ScalarFact -Value $refresh `
+                -RawField 'Report Refresh Date'
+        }
+        else {
+            $l['usage_report_refresh_date'] = New-AbsentFact -State 'missing' `
+                -Detail 'No report carried a refresh date.'
+        }
+
+        # -- HOW MANY ROWS, AND HOW MANY OF THEM NAME ANYBODY -----------------
+        #
+        # THE SECOND NUMBER IS THE ONE THAT DECIDES WHAT CAN BE CONCLUDED. A
+        # report with ten thousand rows whose principal names are concealed
+        # supports no statement about any person in it. Counting them separately
+        # is the difference between `we have usage data` and `we have usage data
+        # we may attribute`.
+        $rows = 0; $named = 0
+        foreach ($w in @($UsageWindows)) {
+            $rows += [int] $w.rows
+            $named += [int] $w.rows_naming_a_principal
+        }
+        $l['usage_rows'] = New-ScalarFact -Value $rows -RawField 'rows returned'
+        $l['usage_rows_naming_a_principal'] = New-ScalarFact -Value $named `
+            -RawField 'User Principal Name that is not a concealed identifier'
     }
     else {
         $l['usage_reports_read'] = New-AbsentFact -State 'missing' `
             -Detail 'No usage report was read by this run.'
         $l['usage_window_days'] = New-AbsentFact -State 'missing' `
             -Detail 'No usage report was read, so no window applies.'
+        foreach ($name in @('usage_report_refresh_date', 'usage_rows',
+                'usage_rows_naming_a_principal')) {
+            $l[$name] = New-AbsentFact -State 'missing' `
+                -Detail 'No usage report was read by this run.'
+        }
     }
 
     # DEPENDENCY IS THE HALF NOTHING HERE READS, AND SAYING SO IS THE POINT.
@@ -206,4 +290,4 @@ function Get-LicensingFacts {
     return $facts
 }
 
-Export-ModuleMember -Function Get-LicensingFacts
+Export-ModuleMember -Function Get-LicensingFacts, Read-UsageReport

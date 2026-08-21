@@ -40,7 +40,7 @@
       },
       "usage_identity": {
         "state": "partial",
-        "detail": "The setting was read. Microsoft 365 is configured to conceal identifiable user information in usage reports, so no usage figure in this tenant can be attributed to a person."
+        "detail": "The setting was read. Microsoft 365 is configured to conceal identifiable user information in the usage reports this setting covers: the admin centre reports, the Microsoft 365 usage reports in Microsoft Graph and Power BI, and the Teams admin centre reports."
       }
     }
   },

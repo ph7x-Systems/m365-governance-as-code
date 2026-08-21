@@ -200,10 +200,8 @@ def test_the_command_reaches_no_tenant_and_reads_no_evidence():
 
 
 def _fixture(name: str, load_json):
-    for folder in ("sharepoint", "entra"):
-        path = packaged("fixtures") / folder / f"{name}.json"
-        if path.is_file():
-            return load_json(path)
+    for path in sorted(packaged("fixtures").glob(f"*/{name}.json")):
+        return load_json(path)
     raise AssertionError(f"no fixture {name}")
 
 

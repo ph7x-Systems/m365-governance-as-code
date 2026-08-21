@@ -97,6 +97,18 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-usage-read-and-concealed.json",
+      "origin": "synthetic",
+      "purpose": "the same report in a tenant that conceals identifiable information; constructed so that rows returned and rows attributable are read as two different numbers",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-usage-read-and-named.json",
+      "origin": "synthetic",
+      "purpose": "a usage report read in a tenant that allows attribution; constructed to exercise rows that name a principal",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/migration/after-cutover.json",
       "origin": "synthetic",
       "purpose": "the same estate afterwards, with one library unreadable; constructed so a verification can be produced and checked without a tenant",

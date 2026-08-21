@@ -1,14 +1,14 @@
 {
   "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
   "provenance": {
-    "collected_at": "2026-08-21T11:00:00Z",
+    "collected_at": "2026-08-21T22:30:00Z",
     "collector": "m365-licensing-collector",
     "collector_version": "0.1.0",
     "source_system": "Microsoft 365",
     "source_api": "Microsoft Graph v1.0",
     "tenant": {
       "id": null,
-      "host": "contoso.onmicrosoft.com",
+      "host": "northwind.onmicrosoft.com",
       "how": "requested"
     },
     "identity_kind": "application",
@@ -27,34 +27,28 @@
       "dependency"
     ],
     "completed": [
-      "assignment"
+      "assignment",
+      "usage",
+      "usage_identity"
     ],
     "unavailable": {
       "dependency": {
         "state": "missing",
         "detail": "Dependency evidence is not collected by this run."
-      },
-      "usage": {
-        "state": "partial",
-        "detail": "Usage was read and cannot be attributed. Microsoft conceals user, group and site names in all reports by default, and the same setting applies to the usage reports in Microsoft Graph, so no figure here belongs to any user."
-      },
-      "usage_identity": {
-        "state": "partial",
-        "detail": "The setting was read. Microsoft 365 is configured to conceal identifiable user information in the usage reports this setting covers: the admin centre reports, the Microsoft 365 usage reports in Microsoft Graph and Power BI, and the Teams admin centre reports."
       }
     }
   },
   "resource": {
     "workload": "microsoft-365",
     "type": "tenant",
-    "native_id": "contoso.onmicrosoft.com",
+    "native_id": "northwind.onmicrosoft.com",
     "tenant": {
       "id": null,
-      "host": "contoso.onmicrosoft.com"
+      "host": "northwind.onmicrosoft.com"
     },
     "scope": "tenant",
     "parent": null,
-    "display_name": "Contoso",
+    "display_name": "Northwind",
     "url": "https://admin.microsoft.com"
   },
   "facts": {
@@ -185,32 +179,58 @@
       },
       "report_identifiability": {
         "state": "observed",
-        "value": "concealed",
+        "value": "identifiable",
         "raw": {
           "field": "adminReportSettings.displayConcealedNames",
-          "value": "concealed"
+          "value": "identifiable"
         }
       },
       "usage_reports_read": {
         "state": "observed",
-        "value": 14,
+        "value": 1,
         "raw": {
-          "field": "getM365App/Email/OneDrive/SharePoint/Teams usage reports",
-          "value": 14
+          "field": "getOffice365ActiveUserDetail",
+          "value": 1
         }
       },
       "usage_window_days": {
         "state": "observed",
         "value": [
-          30,
-          90
+          30
         ],
         "raw": {
           "field": "report period",
           "value": [
-            30,
-            90
+            30
           ]
+        }
+      },
+      "usage_report_refresh_date": {
+        "state": "observed",
+        "value": [
+          "2026-08-19"
+        ],
+        "raw": {
+          "field": "Report Refresh Date",
+          "value": [
+            "2026-08-19"
+          ]
+        }
+      },
+      "usage_rows": {
+        "state": "observed",
+        "value": 812,
+        "raw": {
+          "field": "rows returned",
+          "value": 812
+        }
+      },
+      "usage_rows_naming_a_principal": {
+        "state": "observed",
+        "value": 812,
+        "raw": {
+          "field": "User Principal Name that is not a concealed identifier",
+          "value": 812
         }
       }
     }
