@@ -215,6 +215,47 @@ and a certificate still proceeds because `-Tenant` names the directory.
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
 
+### ENGINE-PAGE-CONTROLS-001 — collect the controls whose names outrun their mechanisms
+
+**authority:** repository for the collection; owner for any rule built on it ·
+**next action:** extend `Modernity.psm1` to read the three controls below as facts, with
+no rule attached
+
+**What is established, and it is why this is worth collecting.** Three settings that an
+audit line routinely reports as prevention are documented by Microsoft as reaching less
+than their names suggest, and in two of the three Microsoft prints the limit itself:
+
+- **`DenyAddAndCustomizePages`** blocks nine file extensions from a library — `.asmx`,
+  `.ascx`, `.aspx`, `.htc`, `.jar`, `.master`, `.swf`, `.xap`, `.xsf`. `.html` and `.htm`
+  are not among them. The classic path around it is closing on a published schedule: the
+  tenant reprieve for classic publishing ends 2026-03-15 and Baseline security mode offers
+  a permanent block.
+- **`Allow users to create new modern pages`**, at tenant and site level, *hides* the
+  `New > Page` and `Add a page` entry points, and Microsoft states two lines later that
+  *users can still add pages from other modern pages, either from the New menu or from
+  modern webparts*. The site-level mechanism is the Site Pages web feature
+  `B6917CB1-93A0-4B97-A84D-7CF49975D4EC`, added and removed through CSOM.
+- **Library permissions on Site Pages** are what Microsoft actually recommends when the
+  intent is to prevent creation, which makes them the only one of the three that enforces.
+
+**What to collect.** Per site: the custom-script state, the presence of the Site Pages
+feature, and whether the Site Pages library carries unique role assignments. All three are
+reads. `Modernity.psm1` already reads `SitePages.ItemCount`, so the resource and the
+collector exist and this is an extension rather than a new family.
+
+**What must NOT be built on it, and this is the whole discipline of the slice.** No rule
+that reads any of these as a pass or a fail. A rule saying *custom script is blocked,
+therefore this site is safe* would be the exact conclusion the published article
+`/knowledge/sharepoint/what-custom-script-disabled-establishes/` exists to refuse, and
+shipping it with a rule identifier would give an opinion the authority of a finding. The
+facts are worth recording long before anybody decides what they should mean — which is
+what the agent inventory page already says about a different count, and it is the same
+rule.
+
+**Why it is queued and not done.** A new fact in the evidence contract is a contract
+change, and the version cascade closed hours ago. This goes into the next contract
+movement rather than adding a tenth `evidence` version on its own.
+
 ### ENGINE-CONTRACT-LEDGER-002 — the ledger depends on somebody remembering — `RECORDED, NOT OPEN`
 
 **authority:** owner · **next action:** none: recorded so the ceremony is written down, not queued. Opening it needs the owner to decide what establishes that a version is new rather than changed
