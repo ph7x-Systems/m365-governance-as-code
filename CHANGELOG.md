@@ -35,6 +35,14 @@ nothing in the repository could say so.
   a silent edit by construction. This file is written by hand, disagrees, and
   found all three of the above.
 
+- **The bundle is produced by the engine being published**, not by whatever
+  `m365-governance` the PATH resolves to. It resolved to nothing here and every
+  sample was skipped in silence, because a fixture that failed to evaluate was
+  a `continue`: the only witness was a count at the end of the run, and it
+  spoke only once the number reached zero. A consumer had already vendored a
+  bundle three samples wide. A skipped fixture now fails the publish, and the
+  bundle carries seventy-one.
+
 **`connect` now answers the question a person actually has**, which is not
 "did a sign-in succeed" but "can this identity work here".
 
