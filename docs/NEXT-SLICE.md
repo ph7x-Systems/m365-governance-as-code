@@ -17,19 +17,56 @@ and continues in order without conversation, scratchpads, roadmap ratification o
 new owner approval. Completed work is removed from the active queue rather than kept
 as queue history; its PR, commits and release evidence remain the historical record.
 
-**Where to start, 2026-08-20.** `ENGINE-SHIPPABLE-001` and `ENGINE-OBSERVE-PREP-001`,
-below, opened after the queue was wrongly declared exhausted: work was escalated as
-blocked because part of it was, which the charter's `D51` names as the second half of the
-same mistake as inventing an answer. `FIRST-RUN-001` to `006` are `CONTRACT-PROVEN` and
-are not restarted; the position block in the next section says what each of the remaining
-closures needs, and three of them are not engineering. The first slice with engineering
-left in it is the residual-defect list recorded under `FIRST-RUN-006`.
+**WHERE THE PRODUCT IS, 2026-08-21.** The order below is decided in advance by charter
+`D59` and is not rewritten by whatever the last inspection found. A slice that does not
+belong to a named capability does not start, and a finding outside the roadmap is
+recorded rather than promoted into it.
 
-**Opened 2026-08-21.** `BRAND-CENTER-001` is a new evidence family with an owner decision
-behind it, read-only in its first slice. `CUSTOM-SCRIPT-SEMANTICS-001`, near the end of
-this file, is a
-security research slice with a wording half that is already decided and a runtime half
-that needs a tenant. It does not displace the FIRST-RUN freeze.
+### NOW
+
+**`LICENSE-OPTIMIZATION-001`** — *what is assigned, what service plans it contains, and
+what usage evidence is observable for each.*
+**owner:** owner · **evidence needed:** the Graph reads against a real directory ·
+**done when:** a canonical bundle from a live tenant opens in a consumer and shows
+assignment, usage and dependency as three separate states · **blocker:** a tenant. The
+fixture-fed half is built and gated; nothing further is provable without one.
+
+### NEXT
+
+**`BRAND-CENTER-001`** — *what organisational assets are published, by whom, and through
+which distribution boundary.* **owner:** owner · **evidence needed:** site authority,
+organisation asset libraries, the CDN publication path · **done when:** the distinction
+between an administration boundary and a distribution boundary is evidence rather than
+prose · **blocker:** none recorded.
+
+**`AGENT-GOVERNANCE-001`** — *who may create an agent, what it may be grounded on, and
+what population each inventory surface actually covers.* **owner:** owner ·
+**evidence needed:** the creator authority and publication surfaces beyond `.agent` files
+· **done when:** an inventory states its population and what it cannot see · **blocker:**
+recorded and not opened; opening it is a decision.
+
+### LATER
+
+`ENGINE-FACT-STATE-NOBODY-LOOKED-001`, `ENGINE-CONTRACT-LEDGER-002`,
+`MIGRATION-VERIFY-001`, and the residual-defect list under `FIRST-RUN-006`. Real work,
+none of it blocking a capability in NOW or NEXT.
+
+### FROZEN
+
+`FIRST-RUN` functional expansion, by the owner decision below. `PAGE EXECUTION`
+(`ENGINE-PAGE-CONTROLS-001`) is closed as an observation capability and is deliberately
+not extended: rules stay at zero until there is a sentence somebody can defend.
+
+### NOT ESTABLISHED — needs a tenant, a licence or an identity
+
+`ENGINE-CLEAN-MACHINE-001` and `002`, `FIRST-RUN-002`'s live path,
+`CUSTOM-SCRIPT-SEMANTICS-001`'s runtime half, and the live half of everything in NOW.
+These are not blocked work; they are work whose evidence cannot be obtained from this
+machine.
+
+### STANDING RULES, not slices
+
+`ENGINE-SEARCH-IS-NOT-ENUMERATION-001`. It never completes and never leaves.
 
 The cards are executable contracts combined with the common contract below; they are not
 ideas, options or a backlog requiring refinement by the Executor.

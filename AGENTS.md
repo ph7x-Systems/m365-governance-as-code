@@ -166,6 +166,25 @@ Widening a search until something matches is how an executor ends up reading
 what nobody authorised, to answer a question whose honest answer was `not
 established`.
 
+## The consumer boundary
+
+**The canonical bundle is where this engine ends.** `run --bundle` and
+`evaluate --bundle` write the same folder through the same writer, and that
+folder is what a consumer opens. This repository does not name its consumers, does
+not describe their screens, and does not shape evidence around what one of them
+happens to render.
+
+**A count travels with the population it is a count of.** `population`,
+`acquisition_method` and `populations_not_observed` are part of every family that
+enumerates anything, because a number without them is an existence claim waiting
+to happen. `enumerated` and `queried` fail differently: an enumeration that
+returns nothing found nothing in the population it walked, and a query that
+returns nothing matched nothing. Only the first is evidence about the population.
+
+**A collector may not decide.** No rule is written for a family until there is a
+sentence somebody can defend, and zero rules over collected evidence is a correct
+state rather than a gap.
+
 ## Execution model
 
 Repository work is synchronous by default. A task is not complete until the
