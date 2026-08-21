@@ -36,6 +36,7 @@ from pathlib import Path
 from . import (
     __version__,
     assessment,
+    bundling,
     canonical,
     capabilities,
     collecting,
@@ -320,6 +321,13 @@ def _build_parser() -> argparse.ArgumentParser:
         "--format", choices=("markdown", "json", "html"), default="markdown"
     )
     run_cmd.add_argument("--out", type=Path, help="write the report here")
+    run_cmd.add_argument(
+        "--bundle",
+        type=Path,
+        metavar="DIR",
+        help="write one folder per run here: the run document, the evidence it "
+        "was decided from, and its report. Nothing new is computed",
+    )
     run_cmd.add_argument(
         "--fail-on",
         choices=("nothing", "fail", "unresolved"),
@@ -1057,7 +1065,7 @@ def _cmd_run(args) -> int:
     # evaluate would eventually disagree, and the one nobody tested would win.
     args.evidence = args.output
     try:
-        runs, _documents = _evaluate_all(args)
+        runs, documents = _evaluate_all(args)
     except _Refused:
         return 2
     if not runs:
@@ -1068,8 +1076,21 @@ def _cmd_run(args) -> int:
     if args.out:
         args.out.write_text(report, encoding="utf-8")
         print(f"\n{args.out}", file=sys.stderr)
-    else:
+    elif not args.bundle:
         sys.stdout.write(report)
+
+    # ONE FOLDER, AND NOTHING IN IT THIS RUN DID NOT ALREADY PRODUCE. The run
+    # documents existed only in memory: they were computed, wrapped in a run set,
+    # rendered, and dropped. That is why nothing in the world had ever written a
+    # workspace the desktop product could open - not a missing arrangement, an
+    # unwrapping that had never had a reason to exist.
+    if args.bundle:
+        try:
+            written = bundling.write(args.bundle, runs, documents, args.format)
+        except bundling.BundleError as refusal:
+            print(f"refusing to write the bundle: {refusal}", file=sys.stderr)
+            return 2
+        print(f"\n{written}: {len(runs)} run(s)", file=sys.stderr)
 
     return _exit_for(runs, args.fail_on)
 
