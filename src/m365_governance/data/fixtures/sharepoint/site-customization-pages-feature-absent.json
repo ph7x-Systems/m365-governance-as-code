@@ -1,0 +1,82 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-21T09:10:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "customization"
+    ],
+    "completed": [
+      "customization"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "contoso,site,customization-pages-off",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Archive 2019",
+    "url": "https://contoso.sharepoint.com/sites/customization-pages-off"
+  },
+  "facts": {
+    "customization": {
+      "custom_script": {
+        "state": "observed",
+        "value": "True",
+        "raw": {
+          "field": "DenyAddAndCustomizePages",
+          "value": "True"
+        }
+      },
+      "add_and_customize_pages_held": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "Web.EffectiveBasePermissions.AddAndCustomizePages",
+          "value": false
+        }
+      },
+      "site_pages_feature": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "Get-PnPFeature -Scope Web (b6917cb1-93a0-4b97-a84d-7cf49975d4ec)",
+          "value": false
+        }
+      },
+      "site_pages_library": {
+        "state": "permission-denied",
+        "detail": "The identity lacks the scope required to read the Site Pages library."
+      },
+      "site_pages_unique_permissions": {
+        "state": "missing",
+        "detail": "The library was not read, so its permissions were not read either."
+      }
+    }
+  }
+}

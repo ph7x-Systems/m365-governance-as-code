@@ -283,6 +283,24 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-customization-pages-feature-absent.json",
+      "origin": "synthetic",
+      "purpose": "the Site Pages feature absent and the library refused; constructed so absence and refusal are not conflated",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-surfaces-observed.json",
+      "origin": "synthetic",
+      "purpose": "every customization surface read; constructed to exercise the complete path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-tenant-read-not-made.json",
+      "origin": "synthetic",
+      "purpose": "the tenant-scoped read nobody made; constructed so unread is not read as unset",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-delegated-identity.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",

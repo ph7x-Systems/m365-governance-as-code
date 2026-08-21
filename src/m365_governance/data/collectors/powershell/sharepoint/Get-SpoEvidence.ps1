@@ -162,7 +162,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents')]
+    [ValidateSet('Connect', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -229,7 +229,7 @@ $CollectorName = 'spo-collector'
 
 $Modules = Join-Path $PSScriptRoot 'modules'
 foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions',
-        'Modernity', 'Activity', 'Classification', 'Spfx', 'Agents')) {
+        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents')) {
     Import-Module (Join-Path $Modules "$module.psm1") -Force
 }
 
@@ -428,6 +428,30 @@ switch ($Mode) {
                 }) `
                 -Facts (Get-ModernityFacts -Web $web) `
                 -Requested @('web', 'pages') -Completed @('web', 'pages') `
+                -Unavailable ([ordered]@{}))
+    }
+
+    'Customization' {
+        # WHAT SURFACES ARE OBSERVABLE, NOT WHETHER THE SITE IS SAFE. The
+        # tenant-scoped site is passed when this run has one, because
+        # `DenyAddAndCustomizePages` is returned by that read and by no other;
+        # where it is absent the fact records that nobody looked rather than
+        # that nothing was set.
+        $web = Get-PnPWeb
+        $tenantSite = $null
+        try { $tenantSite = Get-PnPTenantSite -Identity $SiteUrl -ErrorAction Stop }
+        catch { $tenantSite = $null }
+
+        Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
+                -Resource ([ordered]@{
+                    workload = 'sharepoint'; type = 'site'
+                    native_id = $SiteUrl
+                    tenant = (New-TenantIdentity)
+                    scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                    display_name = [string] $web.Title; url = $SiteUrl
+                }) `
+                -Facts (Get-CustomizationFacts -Web $web -TenantSite $tenantSite) `
+                -Requested @('customization') -Completed @('customization') `
                 -Unavailable ([ordered]@{}))
     }
 

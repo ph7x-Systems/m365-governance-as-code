@@ -215,46 +215,71 @@ and a certificate still proceeds because `-Tenant` names the directory.
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
 
-### ENGINE-PAGE-CONTROLS-001 — collect the controls whose names outrun their mechanisms
+### ENGINE-PAGE-CONTROLS-001 — the customization surface is collected, and reads nothing into it — `COLLECTED`
 
 **authority:** repository for the collection; owner for any rule built on it ·
-**next action:** extend `Modernity.psm1` to read the three controls below as facts, with
-no rule attached
+**next action:** none for the collection; a rule needs a defensible sentence first
 
-**What is established, and it is why this is worth collecting.** Three settings that an
-audit line routinely reports as prevention are documented by Microsoft as reaching less
-than their names suggest, and in two of the three Microsoft prints the limit itself:
+**Built 2026-08-21.** `Customization.psm1` and the `Customization` slice collect, per
+site: the custom script setting where a tenant-scoped read was made, whether the
+identity holds `AddAndCustomizePages`, whether the Site Pages web feature
+`B6917CB1-93A0-4B97-A84D-7CF49975D4EC` is present, whether the Site Pages library is
+readable, and whether it carries unique permissions. Three fixtures exercise the three
+situations that must not be conflated: every surface read, the tenant read nobody made,
+and the feature absent with the library refused.
 
-- **`DenyAddAndCustomizePages`** blocks nine file extensions from a library — `.asmx`,
-  `.ascx`, `.aspx`, `.htc`, `.jar`, `.master`, `.swf`, `.xap`, `.xsf`. `.html` and `.htm`
-  are not among them. The classic path around it is closing on a published schedule: the
-  tenant reprieve for classic publishing ends 2026-03-15 and Baseline security mode offers
-  a permanent block.
-- **`Allow users to create new modern pages`**, at tenant and site level, *hides* the
-  `New > Page` and `Add a page` entry points, and Microsoft states two lines later that
-  *users can still add pages from other modern pages, either from the New menu or from
-  modern webparts*. The site-level mechanism is the Site Pages web feature
-  `B6917CB1-93A0-4B97-A84D-7CF49975D4EC`, added and removed through CSOM.
-- **Library permissions on Site Pages** are what Microsoft actually recommends when the
-  intent is to prevent creation, which makes them the only one of the three that enforces.
+**The evidence answers one question**: *what customization and page-execution control
+surfaces are observable on this site?* It does not answer *is this site safe* and it does
+not answer *can no interactive content run here*.
 
-**What to collect.** Per site: the custom-script state, the presence of the Site Pages
-feature, and whether the Site Pages library carries unique role assignments. All three are
-reads. `Modernity.psm1` already reads `SitePages.ItemCount`, so the resource and the
-collector exist and this is an extension rather than a new family.
+**Four surfaces, and this collects one.** Configuration is here. Content is the Site
+Pages library, whose count `Modernity.psm1` already owns and which is not repeated.
+The administrative execution path is SPFx and the app catalog, which `Spfx.psm1` owns.
+Browser runtime policy -- CSP and strict file handling -- is read by nothing. They are
+different questions and mixing them is how a reader concludes one from another.
 
-**What must NOT be built on it, and this is the whole discipline of the slice.** No rule
-that reads any of these as a pass or a fail. A rule saying *custom script is blocked,
-therefore this site is safe* would be the exact conclusion the published article
-`/knowledge/sharepoint/what-custom-script-disabled-establishes/` exists to refuse, and
-shipping it with a rule identifier would give an opinion the authority of a finding. The
-facts are worth recording long before anybody decides what they should mean — which is
-what the agent inventory page already says about a different count, and it is the same
-rule.
+**RULES REMAIN ZERO, DELIBERATELY.** A rule reading any of these as a pass or a fail
+would be the conclusion the published article
+`/knowledge/sharepoint/what-custom-script-disabled-establishes/` exists to refuse.
+Microsoft documents each control as reaching less than its name suggests and in two
+cases prints the limit: nine blocked extensions with `.html` absent, and page-creation
+prevention that *hides* entry points while *users can still add pages from other modern
+pages*. First widen what can be observed; only then decide what may be concluded.
 
-**Why it is queued and not done.** A new fact in the evidence contract is a contract
-change, and the version cascade closed hours ago. This goes into the next contract
-movement rather than adding a tenth `evidence` version on its own.
+### ENGINE-FACT-STATE-NOBODY-LOOKED-001 — the vocabulary cannot say that nobody asked
+
+**authority:** owner · **next action:** decide whether the collection state vocabulary
+gains a term, or whether the detail line is the answer
+
+Building the slice above found a gap. A fact's `state` is one of `observed`, `missing`,
+`not-supported`, `permission-denied`, `partial`, `invalid`. **None of them means *this
+run did not make that read*.** `DenyAddAndCustomizePages` is returned by a tenant-scoped
+read; a site-scoped run cannot make it, and the honest report is neither *missing* nor
+*permission-denied*.
+
+It is carried today as `missing` with a detail saying *not read is not the same as not
+set*, which works and depends on a sentence rather than on a field. For a product whose
+whole claim is that an unknown must never be reported as a pass, **a vocabulary that
+cannot distinguish unread from unset is worth the owner's attention**, and the decision
+is a contract change rather than an implementation.
+
+### ENGINE-SEARCH-IS-NOT-ENUMERATION-001 — a query result is a population, never an existence claim
+
+**State:** `STANDING RULE`, owner, 2026-08-21. **authority:** owner ·
+**next action:** applies to any collector that queries rather than enumerates
+
+> **A search that returned nothing has not established that the resource does not
+> exist. It has established what that query matched.**
+
+Established twice by observation on 2026-08-21: a tenant search for assets returned
+nothing while the assets existed, and a Graph-backed search for an agent by its exact
+name returned only unrelated files while the agent existed. The generalisation the
+second one forces is worth stating on its own: **an inventory surface defines a
+population; it does not define existence outside that population.**
+
+No collector in this engine currently queries -- `Agents.psm1` and every other module
+enumerate. **The day one does, it needs a test for false absence**, because a query is
+the one collection method whose empty result looks identical to a true zero.
 
 ### ENGINE-CONTRACT-LEDGER-002 — the ledger depends on somebody remembering — `RECORDED, NOT OPEN`
 

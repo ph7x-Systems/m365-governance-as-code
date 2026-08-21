@@ -35,6 +35,22 @@ nothing in the repository could say so.
   a silent edit by construction. This file is written by hand, disagrees, and
   found all three of the above.
 
+- **A new evidence family: the customization and page-execution surfaces of a
+  site.** `Customization.psm1` collects the custom script setting where a
+  tenant-scoped read was made, whether the identity holds
+  `AddAndCustomizePages`, whether the Site Pages web feature is present, whether
+  the Site Pages library is readable, and whether it carries unique permissions.
+  It answers *what surfaces are observable here* and refuses *is this site safe*:
+  **no rule reads any of it**, because Microsoft documents each of these controls
+  as reaching less than its name suggests and in two cases prints the limit
+  itself. Widen what can be observed first; decide what may be concluded after.
+- **A gap the new family found in the fact vocabulary.** A fact's state is one of
+  `observed`, `missing`, `not-supported`, `permission-denied`, `partial` and
+  `invalid`, and none of them means *this run did not make that read*. It is
+  carried as `missing` with a sentence saying so, and the decision is queued: for
+  a product whose claim is that an unknown is never a pass, a vocabulary that
+  cannot separate unread from unset is worth deciding rather than working around.
+
 - **`evaluate --bundle` writes the folder a consumer opens**, from evidence that
   already exists. The portable folder was reachable only through `run`, which
   collects first, so somebody holding good evidence — a previous collection, a
