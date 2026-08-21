@@ -10,6 +10,31 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
+**Three published contracts had changed shape without changing name**, and
+nothing in the repository could say so.
+
+- **`collection/1.0.0`, `comparison/3.0.0` and `evidence/3.0.0` were edited
+  after `1.0.0b6` published them.** `collection` gained a required
+  `identity.method` and repointed two references to `evidence/3.1.0`,
+  `comparison` repointed two, and `evidence/3.0.0` gained `identity_method`
+  and `client_id`. A consumer that had declared support for any of those three
+  would have carried on declaring it while reading a different shape. The
+  cascade that moved `run`, `run-set` and `assessment` to `4.1.0` moved them
+  by hand, and by hand is how these were missed.
+- **`collection` is now `2.0.0` and `comparison` is `3.1.0`**, with the
+  published text of each archived beside them. `collection` is a major because
+  a document written before it lacks a property the shape now requires;
+  `comparison` is a minor because only its references moved, to an evidence
+  version whose addition is optional. `evidence/3.0.0` keeps its identity and
+  gets its published bytes back: the two properties it had grown already exist
+  in `3.1.0`.
+- **A version's digest is now recorded when the version is.**
+  `data/published-contracts.json` holds the digest of every contract version
+  this engine has published, and a test reads it. The generated manifest could
+  not do this job: it is rewritten from whatever is on disk, so it agrees with
+  a silent edit by construction. This file is written by hand, disagrees, and
+  found all three of the above.
+
 **`connect` now answers the question a person actually has**, which is not
 "did a sign-in succeed" but "can this identity work here".
 

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/collection/2.0.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/collection/1.0.0",
   "title": "Collection",
   "description": "What one collection did, written beside the evidence it produced. THE MANIFEST DESCRIBES THE COLLECTION; THE DOCUMENTS DESCRIBE EVIDENCE. That line is the whole design: an evidence document is about one resource, and a collection is a batch, so the state of the batch does not belong inside any of them. Writing it there would repeat one truth once per document and leave the harder case unanswerable — a collection that stopped halfway has to say what it did not read, and the documents that would have carried that sentence are precisely the ones that were never written. Before this contract existed the only account of a collection was a process exit code, and a consumer reading it could not tell a run that reached two hundred of three hundred sites from one that never authenticated. This document is what the engine says about its own work, so that nobody downstream has to infer governance meaning from a side effect.",
   "type": "object",
@@ -27,7 +27,7 @@
   "properties": {
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/collection/2.0.0",
+      "const": "https://ph7x.com/schemas/m365-governance/collection/1.0.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword."
     },
     "collection_id": {
@@ -93,7 +93,7 @@
       "$ref": "#/$defs/collectionVersions"
     },
     "coverage": {
-      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/coverage",
+      "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/coverage",
       "description": "WHAT THE COLLECTION AS A WHOLE SET OUT TO READ, AND WHAT IT READ. The evidence's own definition, referenced rather than restated, so one definition moves at a time and a consumer reads one structure at both levels. It is a UNION OF THE ARTEFACTS' COVERAGE BY AREA NAME and never a count: a total computed here would be a second authority on how much of a tenant was seen, agreeing with the documents until the day it did not. An area is in `completed` only where every artefact that asked for it read it — an area one document read and another could not is not the collection having got all of it, and reporting it as complete would be the rounding-up the states exist to stop. The reason an area is missing travels from the artefact that stated it."
     },
     "artefacts": {
@@ -172,7 +172,7 @@
     "observed": {
       "oneOf": [
         {
-          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0#/$defs/tenant"
+          "$ref": "https://ph7x.com/schemas/m365-governance/evidence/3.0.0#/$defs/tenant"
         },
         {
           "type": "null"
@@ -184,10 +184,9 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "client_id",
-        "device_login",
         "kind",
-        "method"
+        "client_id",
+        "device_login"
       ],
       "description": "Who looked. WHAT AN IDENTITY COULD NOT SEE IS ABSENT FROM THE EVIDENCE RATHER THAN MARKED IN IT, so a collection that does not name the identity that produced it describes part of an estate in language that suits the whole of one.",
       "properties": {
@@ -207,14 +206,6 @@
         "device_login": {
           "type": "boolean",
           "description": "Whether the code flow was used, for a host with no browser. A fact about how somebody signed in, not about what they could see."
-        },
-        "method": {
-          "enum": [
-            "interactive",
-            "device-code",
-            "certificate"
-          ],
-          "description": "HOW the identity authenticated. `device_login` beside it is a boolean that could only ever say one thing, and it could not say `certificate` at all: an application-only run was recorded as an interactive one. The certificate, the key and the password are never here; a client id names a registration an administrator can look up."
         }
       }
     },

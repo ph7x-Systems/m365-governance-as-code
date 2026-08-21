@@ -16,6 +16,7 @@ the failure this whole step exists to prevent.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 
@@ -317,3 +318,44 @@ def test_the_collector_declares_the_contract_the_engine_ships():
         DATA / "collectors" / "powershell" / "sharepoint" / "modules" / "Evidence.psm1"
     ).read_text(encoding="utf-8")
     assert registry_module.contract("evidence") in collector
+
+
+def test_a_published_version_still_has_the_shape_it_published() -> None:
+    """A version is a promise, and the tree cannot tell a kept one from a broken
+    one.
+
+    Editing a schema without moving its ``$id`` leaves the promise's name and
+    changes what it promises. Both a correct edit and that one look identical
+    from here — a changed file — so the only witness is a digest recorded when
+    the version was published. That is what this reads.
+
+    It is not a duplicate of the generated manifest. The manifest is rewritten
+    from whatever is on disk, so it agrees with a silent edit by construction;
+    this file is written by hand, once per version, and disagrees.
+    """
+    ledger = json.loads(
+        (DATA / "published-contracts.json").read_text(encoding="utf-8")
+    )["contracts"]
+
+    held = {}
+    for path in sorted(SCHEMAS.rglob("*.schema.json")):
+        raw = path.read_bytes()
+        held[json.loads(raw)["$id"]] = (hashlib.sha256(raw).hexdigest(), path)
+
+    for uri, (digest, path) in sorted(held.items()):
+        assert uri in ledger, (
+            f"{path.name} declares {uri}, which is not in the ledger. A new "
+            "version is recorded there in the same change that introduces it."
+        )
+        assert ledger[uri] == digest, (
+            f"{uri} is not the shape that was published under that name — "
+            f"{path.name} has changed. A changed shape is a new version: move "
+            "the `$id`, archive the old text, and record the new digest."
+        )
+
+    for uri in sorted(set(ledger) - set(held)):
+        raise AssertionError(
+            f"{uri} was published and this engine no longer holds it. A "
+            "consumer holding a document of that version can no longer have it "
+            "validated: archive the schema rather than dropping it."
+        )

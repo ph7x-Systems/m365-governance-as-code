@@ -75,6 +75,11 @@ where = ["src"]
   "collectors/**/*.psm1",
   "fixtures/**/*.json",
   "fixtures/**/*.md",
+  # The digest of every contract version as it was published. It ships because
+  # the check it enables is worth running against an installed engine and not
+  # only against a checkout: an installation that has been edited in place says
+  # so here, where the generated manifest would agree with the edit.
+  "published-contracts.json",
 ]
 
 [tool.pytest.ini_options]
