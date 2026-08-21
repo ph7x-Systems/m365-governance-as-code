@@ -1376,6 +1376,52 @@ Supported plugin/agent governance and oversharing indicators derived from alread
 owned permission/sharing evidence. Keep configured availability separate from observed
 use. Never enable, disable or invoke a plugin or agent.
 
+#### 35. `ENGINE-RUN-CONTRACT-VERSION-001` — `run/4.0.0` means two different things
+
+**State:** `OPEN`. **authority:** repository — this is the executor's to resolve, and
+`D51` names this exact case as one that must not be escalated. **next action:** the
+version cascade, in one commit.
+
+**What happened, and it was this repository's own rule being missed.** Commit `a9da4fd`
+repointed `run.schema.json` from `evidence/3.0.0#/$defs/provenance` to
+`evidence/3.1.0#/$defs/provenance`, to carry `tenant.how`. The `evidence` half was done
+correctly: `3.0.0` was archived and `3.1.0` published. **The `run` version did not
+change.** So a document that validates against `run/4.0.0` today is refused by
+`run/4.0.0` as it was yesterday. One identifier, two meanings.
+
+**Why nothing caught it.** Nothing validates a run document on its way out. The engine
+computes runs, wraps them in a run set, renders them and drops them, so no run document
+ever met a reader holding a different copy of the contract. It surfaced the moment one
+did: a bundle written by `run --bundle` was read by an independent consumer holding a
+vendored copy of the earlier contract, and its refusal named the clause exactly:
+
+```
+the run does not match https://ph7x.com/schemas/m365-governance/run/4.0.0:
+  #/properties/provenance/$ref/allOf/0/not/required/0
+```
+
+The engine is internally consistent. It is consistent with itself and with nobody else.
+
+**The correction, and its size.** `run` becomes `4.1.0` with `4.0.0` archived exactly as
+it was. That cascades, because the version lives in the `$id` and a reference to a
+changed contract is a change: `run-set` references `run`, and `assessment` references
+`run-set`. Three published contracts, their archives, the generated manifest and two
+assessment fixtures. **Eight references to `run/4.0.0` and five files naming
+`run-set/4.0.0`**, measured rather than estimated.
+
+**It is done in one commit or not at all.** A partly bumped contract set is worse than
+either state, which is why a first attempt at it was reverted rather than left standing.
+
+**And it is already published.** Any consumer that vendored these contracts holds the
+earlier text and will refuse what this engine now writes until it refreshes. That is the
+correct behaviour on their side and the reason the cascade is not optional: a published
+version is a promise about what a document means, and this one was changed without being
+renamed.
+
+**The rule this leaves.** A `$ref` to a version that moved is a version change in the
+document that holds the reference. `evidence` was treated that way and `run` was not, in
+the same commit, by the same hand.
+
 ## SECURITY-RESEARCH — a control can stay true while its conclusion stops following
 
 #### 33. `CUSTOM-SCRIPT-SEMANTICS-001`
