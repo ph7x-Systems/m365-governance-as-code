@@ -45,6 +45,36 @@
   },
   "facts": {
     "customization": {
+      "population": {
+        "state": "observed",
+        "value": "sharepoint-site-customization-surfaces",
+        "raw": {
+          "field": "one site: its custom script state, Site Pages feature and library",
+          "value": "sharepoint-site-customization-surfaces"
+        }
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated",
+        "raw": {
+          "field": "direct property and feature reads on this web",
+          "value": "enumerated"
+        }
+      },
+      "populations_not_observed": {
+        "state": "observed",
+        "value": [
+          "tenant-page-creation-setting",
+          "browser-runtime-policy"
+        ],
+        "raw": {
+          "field": "not reachable from a site-scoped read",
+          "value": [
+            "tenant-page-creation-setting",
+            "browser-runtime-policy"
+          ]
+        }
+      },
       "custom_script": {
         "state": "observed",
         "value": "True",

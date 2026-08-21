@@ -49,6 +49,26 @@ function Get-CustomizationFacts {
     $facts = [ordered]@{ customization = [ordered]@{} }
     $c = $facts.customization
 
+    # -- what was read, and over what -----------------------------------------
+    #
+    # THE SAME DISCIPLINE THE OTHER FAMILIES CARRY, APPLIED HERE AFTER THE FACT.
+    # This module was written before `population`, `acquisition_method` and
+    # `populations_not_observed` existed, and an audit found it was the only
+    # family without them. A reader of one family should not have to know which
+    # week it was written in.
+    $c['population'] = New-ScalarFact -Value 'sharepoint-site-customization-surfaces' `
+        -RawField 'one site: its custom script state, Site Pages feature and library'
+    $c['acquisition_method'] = New-ScalarFact -Value 'enumerated' `
+        -RawField 'direct property and feature reads on this web'
+
+    # WHAT THIS METHOD DOES NOT REACH, NAMED RATHER THAN LEFT TO BE INFERRED.
+    # The tenant-level page creation setting is an admin centre read. Browser
+    # runtime policy -- content security policy and strict file handling -- is
+    # read by nothing in this engine, so its absence here says nothing about it.
+    $c['populations_not_observed'] = New-ScalarFact `
+        -Value @('tenant-page-creation-setting', 'browser-runtime-policy') `
+        -RawField 'not reachable from a site-scoped read'
+
     # ── configuration ────────────────────────────────────────────────────────
     #
     # THE SETTING AND THE PERMISSION ARE TWO READS, NOT ONE. The setting is a
