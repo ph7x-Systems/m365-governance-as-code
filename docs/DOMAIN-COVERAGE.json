@@ -342,6 +342,10 @@
       "coverage": "defined",
       "name": "Classification"
     },
+    "LICENSING": {
+      "coverage": "not defined",
+      "name": "Licensing and assignment"
+    },
     "LIST": {
       "coverage": "defined",
       "name": "Permissions"

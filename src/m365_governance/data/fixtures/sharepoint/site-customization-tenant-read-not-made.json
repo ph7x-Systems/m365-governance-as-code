@@ -1,0 +1,116 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-21T09:05:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "customization"
+    ],
+    "completed": [
+      "customization"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "contoso,site,customization-site-scoped",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Field Team",
+    "url": "https://contoso.sharepoint.com/sites/customization-site-scoped"
+  },
+  "facts": {
+    "customization": {
+      "population": {
+        "state": "observed",
+        "value": "sharepoint-site-customization-surfaces",
+        "raw": {
+          "field": "one site: its custom script state, Site Pages feature and library",
+          "value": "sharepoint-site-customization-surfaces"
+        }
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated",
+        "raw": {
+          "field": "direct property and feature reads on this web",
+          "value": "enumerated"
+        }
+      },
+      "populations_not_observed": {
+        "state": "observed",
+        "value": [
+          "tenant-page-creation-setting",
+          "browser-runtime-policy"
+        ],
+        "raw": {
+          "field": "not reachable from a site-scoped read",
+          "value": [
+            "tenant-page-creation-setting",
+            "browser-runtime-policy"
+          ]
+        }
+      },
+      "custom_script": {
+        "state": "missing",
+        "detail": "DenyAddAndCustomizePages is returned by a tenant-scoped read, and this run did not make one for this site. Not read is not the same as not set."
+      },
+      "add_and_customize_pages_held": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "Web.EffectiveBasePermissions.AddAndCustomizePages",
+          "value": true
+        }
+      },
+      "site_pages_feature": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "Get-PnPFeature -Scope Web (b6917cb1-93a0-4b97-a84d-7cf49975d4ec)",
+          "value": true
+        }
+      },
+      "site_pages_library": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "Get-PnPList -Identity SitePages",
+          "value": true
+        }
+      },
+      "site_pages_unique_permissions": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "SitePages.HasUniqueRoleAssignments",
+          "value": true
+        }
+      }
+    }
+  }
+}

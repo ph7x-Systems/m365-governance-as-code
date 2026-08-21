@@ -1,0 +1,265 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-21T21:46:22Z",
+    "collector": "m365-licensing-collector",
+    "collector_version": "0.1.0",
+    "source_system": "SharePoint Online",
+    "source_api": "Microsoft Graph v1.0",
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com",
+      "how": "requested"
+    },
+    "identity_kind": "delegated",
+    "identity_method": "interactive",
+    "client_id": "",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "assignment",
+      "usage_identity",
+      "usage",
+      "dependency"
+    ],
+    "completed": [
+      "assignment"
+    ],
+    "unavailable": {
+      "dependency": {
+        "state": "missing",
+        "detail": "Dependency evidence is not collected by this run. What a capability is required for is not observable from an assignment or from usage."
+      },
+      "usage": {
+        "state": "missing",
+        "detail": "No reporting period was requested, so no usage report was read."
+      },
+      "usage_identity": {
+        "state": "partial",
+        "detail": "The setting was read. Microsoft 365 is configured to conceal identifiable user information in the usage reports this setting covers: the admin centre reports, the Microsoft 365 usage reports in Microsoft Graph and Power BI, and the Teams admin centre reports."
+      }
+    }
+  },
+  "resource": {
+    "workload": "microsoft-365",
+    "type": "tenant",
+    "native_id": "contoso.onmicrosoft.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com",
+      "how": "requested"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "contoso.onmicrosoft.com",
+    "url": "https://admin.microsoft.com"
+  },
+  "facts": {
+    "licensing": {
+      "acquisition_attempts": {
+        "state": "observed",
+        "value": [
+          {
+            "area": "assignment",
+            "operation": "Get-MgSubscribedSku; Get-MgUser -Property assignedLicenses",
+            "population": "entra-licensed-user-assignments",
+            "identity": "delegated",
+            "method": "interactive",
+            "result": "observed",
+            "reason": "",
+            "owner": ""
+          },
+          {
+            "area": "usage",
+            "operation": "adminReportSettings; reports/getOffice365ActiveUserDetail",
+            "population": "entra-licensed-user-assignments",
+            "identity": "delegated",
+            "method": "interactive",
+            "result": "not-collected",
+            "reason": "no reporting period was requested",
+            "owner": "caller"
+          },
+          {
+            "area": "dependency",
+            "operation": "none",
+            "population": "policies, roles and obligations that require a capability",
+            "identity": "delegated",
+            "method": "interactive",
+            "result": "not-supported",
+            "reason": "this product collects no dependency evidence",
+            "owner": "implementation"
+          }
+        ],
+        "raw": {
+          "field": "one record per acquisition surface this run tried",
+          "value": [
+            {
+              "area": "assignment",
+              "operation": "Get-MgSubscribedSku; Get-MgUser -Property assignedLicenses",
+              "population": "entra-licensed-user-assignments",
+              "identity": "delegated",
+              "method": "interactive",
+              "result": "observed",
+              "reason": "",
+              "owner": ""
+            },
+            {
+              "area": "usage",
+              "operation": "adminReportSettings; reports/getOffice365ActiveUserDetail",
+              "population": "entra-licensed-user-assignments",
+              "identity": "delegated",
+              "method": "interactive",
+              "result": "not-collected",
+              "reason": "no reporting period was requested",
+              "owner": "caller"
+            },
+            {
+              "area": "dependency",
+              "operation": "none",
+              "population": "policies, roles and obligations that require a capability",
+              "identity": "delegated",
+              "method": "interactive",
+              "result": "not-supported",
+              "reason": "this product collects no dependency evidence",
+              "owner": "implementation"
+            }
+          ]
+        }
+      },
+      "population": {
+        "state": "observed",
+        "value": "entra-licensed-user-assignments",
+        "raw": {
+          "field": "directory enumeration of user license assignments",
+          "value": "entra-licensed-user-assignments"
+        }
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated",
+        "raw": {
+          "field": "directory",
+          "value": "enumerated"
+        }
+      },
+      "populations_not_observed": {
+        "state": "observed",
+        "value": [
+          "non-subscription-license-models",
+          "assigned-outside-this-tenant"
+        ],
+        "raw": {
+          "field": "not reachable from a directory read",
+          "value": [
+            "non-subscription-license-models",
+            "assigned-outside-this-tenant"
+          ]
+        }
+      },
+      "subscribed_skus": {
+        "state": "observed",
+        "value": 14,
+        "raw": {
+          "field": "subscribedSkus",
+          "value": 14
+        }
+      },
+      "skus": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "prepaid_units": 25,
+            "consumed_units": 21
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "prepaid_units": 1000000,
+            "consumed_units": 8
+          },
+          {
+            "sku": "FLOW_FREE",
+            "prepaid_units": 10000,
+            "consumed_units": 8
+          }
+        ],
+        "raw": {
+          "field": "subscribedSkus: skuPartNumber, prepaidUnits.enabled, consumedUnits",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "prepaid_units": 25,
+              "consumed_units": 21
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "prepaid_units": 1000000,
+              "consumed_units": 8
+            },
+            {
+              "sku": "FLOW_FREE",
+              "prepaid_units": 10000,
+              "consumed_units": 8
+            }
+          ]
+        }
+      },
+      "units_assigned": {
+        "state": "observed",
+        "value": 37,
+        "raw": {
+          "field": "consumedUnits",
+          "value": 37
+        }
+      },
+      "users_observed": {
+        "state": "observed",
+        "value": 1,
+        "raw": {
+          "field": "directory enumeration",
+          "value": 1
+        }
+      },
+      "assignments": {
+        "state": "observed",
+        "value": 10,
+        "raw": {
+          "field": "assignedLicenses",
+          "value": 10
+        }
+      },
+      "service_plans_represented": {
+        "state": "observed",
+        "value": 11,
+        "raw": {
+          "field": "assignedLicenses.servicePlans",
+          "value": 11
+        }
+      },
+      "report_identifiability": {
+        "state": "observed",
+        "value": "concealed",
+        "raw": {
+          "field": "adminReportSettings.displayConcealedNames",
+          "value": "concealed"
+        }
+      },
+      "usage_reports_read": {
+        "state": "missing",
+        "detail": "No usage report was read by this run."
+      },
+      "usage_window_days": {
+        "state": "missing",
+        "detail": "No usage report was read, so no window applies."
+      },
+      "dependency_evidence": {
+        "state": "missing",
+        "detail": "No dependency evidence is collected by this run. What a capability is required for -- a policy, a role, a compliance obligation, a workload that would stop -- is not observable from an assignment or from usage, and nothing may be concluded without it."
+      }
+    }
+  }
+}

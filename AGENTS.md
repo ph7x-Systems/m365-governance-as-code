@@ -166,6 +166,45 @@ Widening a search until something matches is how an executor ends up reading
 what nobody authorised, to answer a question whose honest answer was `not
 established`.
 
+## Authentication is its own authorization
+
+**Installing or configuring an authentication dependency is not authorization to
+authenticate.** Adding a module, declaring a prerequisite, wiring a collector or
+being told to *install and declare* a dependency authorises none of them to open
+a session. Any operation that establishes a session against a real directory or
+tenant needs explicit authorization **for that operation**, asked immediately
+before it and not inferred from a nearby instruction.
+
+**Recorded because it happened.** On 2026-08-21 an executor was told to install
+and declare the Microsoft Graph modules, installed them, and then ran the
+collector, which raised a real consent prompt the owner had to accept. The
+reading that followed was accurate and unauthorised, and a second authentication
+was issued after it. The evidence obtained is kept as provenance of the run
+rather than deleted, because pretending it did not happen is its own dishonesty,
+and it is not published.
+
+**One consent does not extend to the next operation**, to a second run, or to a
+different scope. A session that already exists is not permission to use it.
+
+## The consumer boundary
+
+**The canonical bundle is where this engine ends.** `run --bundle` and
+`evaluate --bundle` write the same folder through the same writer, and that
+folder is what a consumer opens. This repository does not name its consumers, does
+not describe their screens, and does not shape evidence around what one of them
+happens to render.
+
+**A count travels with the population it is a count of.** `population`,
+`acquisition_method` and `populations_not_observed` are part of every family that
+enumerates anything, because a number without them is an existence claim waiting
+to happen. `enumerated` and `queried` fail differently: an enumeration that
+returns nothing found nothing in the population it walked, and a query that
+returns nothing matched nothing. Only the first is evidence about the population.
+
+**A collector may not decide.** No rule is written for a family until there is a
+sentence somebody can defend, and zero rules over collected evidence is a correct
+state rather than a gap.
+
 ## Execution model
 
 Repository work is synchronous by default. A task is not complete until the

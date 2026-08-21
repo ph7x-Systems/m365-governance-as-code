@@ -141,16 +141,30 @@ def _fixture(chosen: collecting.Slice) -> dict[str, Any]:
     One place has to be right for the profile pairing test to pass, and this is
     it. A second declaration on the slice would be a second thing to keep true.
     """
-    return _named(chosen.shaped_like)
+    document = _named(chosen.shaped_like)
+    if not document:
+        # A SLICE WHOSE SHAPE DOES NOT RESOLVE USED TO PUBLISH AN EMPTY ONE.
+        # The folders were listed by hand here, a third one was added under
+        # `fixtures/`, and the catalogue answered `workload: ""` for licensing
+        # rather than saying it could not find the document. An unresolvable
+        # pairing is a registry defect and it says so here.
+        raise ValueError(
+            f"slice {chosen.name} is shaped like {chosen.shaped_like}, and no "
+            f"fixture of that name exists under fixtures/"
+        )
+    return document
 
 
 def _named(name: str) -> dict[str, Any]:
+    """The fixture of that name, from whichever family holds it.
+
+    Searched rather than listed: the folder list was written out twice, and a
+    new family reached neither copy.
+    """
     from .loader import load_json
 
-    for folder in ("sharepoint", "entra"):
-        path = packaged("fixtures") / folder / f"{name}.json"
-        if path.is_file():
-            return load_json(path)
+    for path in sorted(packaged("fixtures").glob(f"*/{name}.json")):
+        return load_json(path)
     return {}
 
 

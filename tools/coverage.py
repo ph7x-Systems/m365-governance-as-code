@@ -85,6 +85,12 @@ SUBJECT_VOCABULARY = {
     # Subjects, deliberately not coverage domains.
     "AGENTS": "Agents and Copilot",
     "PLATFORM": "Platform and evidence",
+    # What is assigned, and whether its use can be observed. A subject rather
+    # than a coverage domain, because the engine commits to no rule here: the
+    # first question it answers has none in it, and a conclusion about changing
+    # an assignment needs evidence of use AND of dependency, only one of which
+    # this engine can read.
+    "LICENSING": "Licensing and assignment",
 }
 
 #: What the engine commits to covering end to end. REQUIRED below applies to

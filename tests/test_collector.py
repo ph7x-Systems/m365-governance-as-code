@@ -153,13 +153,16 @@ def test_a_slice_with_no_site_connects_to_the_admin_centre():
     assert declared, "Connection.psm1 no longer declares $script:AdminModes"
     admin = set(re.findall(r"'([^']+)'", declared.group(1)))
 
-    # PowerShell slices only. A Graph slice has no `-SiteUrl` to pass and no
-    # PnP session to open, so requiring its mode to appear in the collector's
-    # admin list would be asking one collector to declare another's work.
+    # THIS COLLECTOR'S slices only. A Graph slice has no `-SiteUrl` to pass
+    # and no PnP session to open, and neither has a PowerShell collector of its
+    # own: `Connection.psm1` is `Get-SpoEvidence.ps1`'s, and requiring the
+    # licensing modes to appear in its admin list would be asking one collector
+    # to declare another's work.
+    mine = collecting.SLICES["sites"].script
     siteless = {
         s.mode
         for s in collecting.SLICES.values()
-        if not s.needs_site and s.source == "powershell"
+        if not s.needs_site and s.source == "powershell" and s.script == mine
     }
     assert siteless <= admin, (
         f"slice modes with no -SiteUrl that would connect to one: "
@@ -582,4 +585,59 @@ def test_a_tenant_catalog_with_nothing_comparable_never_passes():
     result = engine._evaluate(rule, evidence)
     assert result.outcome.value == "unknown", (
         f"a tenant catalog with nothing comparable produced {result.outcome.value}"
+    )
+
+
+def test_no_evidence_family_disappears_from_the_bundle():
+    """A family that exists here and not in the bundle is invisible downstream.
+
+    `publish-contracts.py` globbed `fixtures/sharepoint` alone, written when
+    that was the only family there was. Two arrived afterwards. `licensing`
+    was caught by hand; `entra` had been absent for longer, with four fixtures
+    a consumer never received, and the bundle looked healthy the whole time
+    because seventy-one SharePoint samples were in it.
+
+    THE LIST IS NOT THE PROBLEM. A named list is the right shape: it makes
+    adding a family deliberate. What was missing is anything holding the list
+    to the tree, so this compares the two and requires an exclusion to be
+    written down rather than left to be noticed.
+    """
+    import json
+    import re
+
+    publisher = DATA.parents[2] / "tools" / "publish-contracts.py"
+    published = re.search(
+        r"families = \(([^)]*)\)", publisher.read_text(encoding="utf-8")
+    )
+    assert published, "the publisher no longer names its families"
+    named = set(re.findall(r'"([a-z0-9-]+)"', published.group(1)))
+
+    #: Families of documents that are not evidence and produce no run. They are
+    #: carried into the bundle by their own steps, and each one is here because
+    #: somebody decided it, not because a glob skipped it.
+    not_evidence = {
+        "archive": "documents of superseded contract versions",
+        "assessment": "assessments, copied by their own publish step",
+        "comparison": "comparisons, copied by their own publish step",
+        "migration": "lists of documents rather than evidence; `evaluate` refuses them",
+    }
+
+    root = DATA / "fixtures"
+    families = {}
+    for child in sorted(p for p in root.iterdir() if p.is_dir()):
+        for f in sorted(child.glob("*.json")):
+            try:
+                doc = json.loads(f.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                continue
+            if isinstance(doc, dict) and "facts" in doc and "resource" in doc:
+                families[child.name] = f.name
+                break
+
+    missing = sorted(set(families) - named - set(not_evidence))
+    assert not missing, (
+        "evidence families in this repository that no consumer receives: "
+        + ", ".join(f"{m} (e.g. {families[m]})" for m in missing)
+        + ".\n  Add them to `families` in tools/publish-contracts.py, or record "
+        "why they are excluded in `not_evidence` above."
     )

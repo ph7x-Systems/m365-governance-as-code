@@ -94,16 +94,40 @@ def main() -> int:
     # Real output, not hand-written examples. Every fixture that evaluates
     # becomes a sample, so the consumer exercises the contract against what the
     # engine actually produces.
-    fixtures = sorted(
-        (ROOT / "src" / "m365_governance" / "data" / "fixtures" / "sharepoint").glob(
-            "*.json"
-        )
-    )
+    #
+    # EVERY FAMILY, NOT ONE OF THEM. This globbed `fixtures/sharepoint` alone,
+    # written when that was the only family there was. A licensing family
+    # arrived with three fixtures and a consumer received none of them: the
+    # bundle looked healthy because seventy-one SharePoint samples were in it,
+    # and the new family was invisible to everything downstream. The archive
+    # directory is skipped because its documents are of superseded contracts
+    # and are exercised elsewhere.
+    #
+    # NAMED, SO THAT ADDING ONE IS DELIBERATE. Globbing every family picked up
+    # the migration fixtures, which are lists of documents rather than evidence
+    # and which `evaluate` refuses, correctly. A skip would have hidden that;
+    # the list below is the honest version, and a family missing from it is a
+    # family the consumer never receives.
+    root = ROOT / "src" / "m365_governance" / "data" / "fixtures"
+    # EVERY EVIDENCE FAMILY, AND A TEST HOLDS THIS LIST TO THE TREE. `entra` was
+    # here in the repository with four fixtures and absent from this list, so a
+    # consumer received none of them and nothing said so. Excluding one is now a
+    # decision somebody writes down rather than an omission nobody notices.
+    families = ("sharepoint", "entra", "licensing")
+    fixtures = sorted(f for family in families for f in (root / family).glob("*.json"))
     written = 0
     for fixture in fixtures:
+        # THROUGH THIS INTERPRETER, NEVER THROUGH THE PATH. `m365-governance`
+        # resolves to whatever engine happens to be installed on the machine,
+        # which is how a bundle came to carry samples produced by one engine and
+        # schemas published by another -- the exact disagreement the rest of
+        # this file exists to prevent. It also resolved to nothing at all here,
+        # and the loop below said so by writing no samples.
         done = subprocess.run(
             [
-                "m365-governance",
+                sys.executable,
+                "-m",
+                "m365_governance.cli",
                 "evaluate",
                 "--evidence",
                 str(fixture),
@@ -113,8 +137,13 @@ def main() -> int:
             capture_output=True,
             text=True,
         )
+        # A SKIPPED FIXTURE IS A FAILED PUBLISH. Continuing quietly meant the
+        # count at the bottom was the only witness, and it only spoke when the
+        # number reached zero; a bundle short of three samples shipped.
         if done.returncode != 0:
-            continue
+            print(f"  ✗ {fixture.name} could not be evaluated")
+            print("   ", (done.stderr or done.stdout).strip().splitlines()[-1])
+            return 1
         (out / "samples" / f"run-{fixture.stem}.json").write_text(
             done.stdout, encoding="utf-8"
         )

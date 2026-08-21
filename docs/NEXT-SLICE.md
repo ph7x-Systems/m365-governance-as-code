@@ -17,19 +17,110 @@ and continues in order without conversation, scratchpads, roadmap ratification o
 new owner approval. Completed work is removed from the active queue rather than kept
 as queue history; its PR, commits and release evidence remain the historical record.
 
-**Where to start, 2026-08-20.** `ENGINE-SHIPPABLE-001` and `ENGINE-OBSERVE-PREP-001`,
-below, opened after the queue was wrongly declared exhausted: work was escalated as
-blocked because part of it was, which the charter's `D51` names as the second half of the
-same mistake as inventing an answer. `FIRST-RUN-001` to `006` are `CONTRACT-PROVEN` and
-are not restarted; the position block in the next section says what each of the remaining
-closures needs, and three of them are not engineering. The first slice with engineering
-left in it is the residual-defect list recorded under `FIRST-RUN-006`.
+**WHERE THE PRODUCT IS, 2026-08-21.** The order below is decided in advance by charter
+`D59` and is not rewritten by whatever the last inspection found. A slice that does not
+belong to a named capability does not start, and a finding outside the roadmap is
+recorded rather than promoted into it.
 
-**Opened 2026-08-21.** `BRAND-CENTER-001` is a new evidence family with an owner decision
-behind it, read-only in its first slice. `CUSTOM-SCRIPT-SEMANTICS-001`, near the end of
-this file, is a
-security research slice with a wording half that is already decided and a runtime half
-that needs a tenant. It does not displace the FIRST-RUN freeze.
+### NOW
+
+**`LICENSE-OPTIMIZATION-001`** — *what is assigned, what service plans it contains, and
+what usage evidence is observable for each.*
+**owner:** owner · **evidence needed:** one positive acquisition establishing subscribed
+SKUs, per-user assignments and the report identifiability setting, and where authorised
+one usage report · **done when:** that positive path reaches a consumer the way the
+negative one already does · **blocker:** the Microsoft Graph PowerShell modules are not
+installed on the collecting host, and beyond that a directory to read.
+
+**State, 2026-08-21, and it is narrow on purpose.** One acquisition ran against a real
+directory. What it established, and nothing beyond it:
+
+| | |
+|---|---|
+| assignment acquisition | **live-proven** -- 14 subscribed SKUs, 37 assigned units, 1 licensed user |
+| report identifiability | **live-proven** -- observed `concealed` |
+| usage | **not observed** -- no reporting period was requested |
+| dependency | **not observed** -- this product collects none |
+
+**That is not `Licensing live-proven`.** Two of four surfaces were read, and the capability
+is partial.
+
+**`units_purchased` is gone and is not coming back as a better total.** It summed
+`prepaidUnits.enabled` across SKUs and read 1,130,062 on a tenant with thirty-seven
+assigned seats: arithmetically correct, meaningless, and quotable. The count means
+something different on a paid seat SKU and on a free or effectively unlimited one.
+Choosing which rows are additive is a classification this engine does not have, so the
+SKUs are published one row each as Microsoft returned them and a consumer that wants a
+total has to say which rows it added. `consumedUnits` is still summed, because an
+assignment means the same thing on every SKU.
+
+**Concealed is an answer, not an absence.** `usage_identity` is its own coverage area:
+`completed` where the reports may name people, `partial` where the setting was read and
+says they may not, `missing` where nobody read it. A consumer shows three different
+things, which is the point -- concealed, not read, and failed are three facts and not
+three ways of saying there is no data.
+
+**The authentication that produced this was not authorized.** The owner was shown a
+consent prompt and accepted it. The raw observation is kept locally as provenance of the
+run and is not committed or published; the fixture in this repository is a separate
+sanitized representation that identifies no directory. The rule that was missing is now in
+`AGENTS.md`: installing or configuring an authentication dependency is not authorization
+to authenticate.
+
+**The earlier failure path stays proven and stays worth having.** A real
+run went `acquisition attempted → nothing completed → not-supported with the reason →
+evidence → canonical bundle → Release consumer → visible as not supported`. What that
+establishes is worth having on its own: an impossible acquisition is not converted into
+absence, zero, a pass, or *no usage*. It survives the whole chain without being rounded
+off. **It establishes nothing about licensing.**
+
+Every absence now carries whose limitation it is: `implementation`, `tenant-or-identity`,
+`microsoft` or `caller`. Only the first is work. The two recorded today are both
+`implementation` -- this version collects through modules the host does not have -- which
+means the remaining work here is ours and not the tenant's.
+
+### NEXT
+
+**`BRAND-CENTER-001`** — *what organisational assets are published, by whom, and through
+which distribution boundary.* **owner:** owner · **evidence needed:** site authority,
+organisation asset libraries, the CDN publication path · **done when:** the distinction
+between an administration boundary and a distribution boundary is evidence rather than
+prose · **blocker:** none recorded.
+
+**`BRAND-CENTER-001` is the next genuinely open capability.** `AGENT-GOVERNANCE-001` is
+not: its first vertical is established. The collector carries `population`,
+`acquisition_method` and `populations_not_observed`, two fixtures exercise a populated and
+an empty population, the canonical bundle opens in a consumer, and the boundary is stated
+in the evidence rather than in prose. What remains there is a second slice, listed under
+LATER: creator authority and the publication surfaces beyond `.agent` files.
+
+### LATER
+
+`AGENT-GOVERNANCE-002` — creator authority and the publication surfaces a `.agent` file
+read cannot reach. **evidence needed:** the administrative surface that lists agents built
+outside SharePoint · **done when:** the second population is stated the way the first one
+is.
+
+`ENGINE-FACT-STATE-NOBODY-LOOKED-001`, `ENGINE-CONTRACT-LEDGER-002`,
+`MIGRATION-VERIFY-001`, and the residual-defect list under `FIRST-RUN-006`. Real work,
+none of it blocking a capability in NOW or NEXT.
+
+### FROZEN
+
+`FIRST-RUN` functional expansion, by the owner decision below. `PAGE EXECUTION`
+(`ENGINE-PAGE-CONTROLS-001`) is closed as an observation capability and is deliberately
+not extended: rules stay at zero until there is a sentence somebody can defend.
+
+### NOT ESTABLISHED — needs a tenant, a licence or an identity
+
+`ENGINE-CLEAN-MACHINE-001` and `002`, `FIRST-RUN-002`'s live path,
+`CUSTOM-SCRIPT-SEMANTICS-001`'s runtime half, and the live half of everything in NOW.
+These are not blocked work; they are work whose evidence cannot be obtained from this
+machine.
+
+### STANDING RULES, not slices
+
+`ENGINE-SEARCH-IS-NOT-ENUMERATION-001`. It never completes and never leaves.
 
 The cards are executable contracts combined with the common contract below; they are not
 ideas, options or a backlog requiring refinement by the Executor.
@@ -214,6 +305,166 @@ and a certificate still proceeds because `-Tenant` names the directory.
 `connect` also gained `--dry-run`. `collect` has had one since it existed; the command
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
+
+### ENGINE-PAGE-CONTROLS-001 — the customization surface is collected, and reads nothing into it — `CLOSED`
+
+**authority:** repository for the collection; owner for any rule built on it ·
+**next action:** none. Closed 2026-08-21 as an observation capability, and not to be
+expanded: a rule needs a sentence somebody can defend, and until there is one, zero rules
+is the correct state rather than a gap
+
+**Built 2026-08-21.** `Customization.psm1` and the `Customization` slice collect, per
+site: the custom script setting where a tenant-scoped read was made, whether the
+identity holds `AddAndCustomizePages`, whether the Site Pages web feature
+`B6917CB1-93A0-4B97-A84D-7CF49975D4EC` is present, whether the Site Pages library is
+readable, and whether it carries unique permissions. Three fixtures exercise the three
+situations that must not be conflated: every surface read, the tenant read nobody made,
+and the feature absent with the library refused.
+
+**The evidence answers one question**: *what customization and page-execution control
+surfaces are observable on this site?* It does not answer *is this site safe* and it does
+not answer *can no interactive content run here*.
+
+**Four surfaces, and this collects one.** Configuration is here. Content is the Site
+Pages library, whose count `Modernity.psm1` already owns and which is not repeated.
+The administrative execution path is SPFx and the app catalog, which `Spfx.psm1` owns.
+Browser runtime policy -- CSP and strict file handling -- is read by nothing. They are
+different questions and mixing them is how a reader concludes one from another.
+
+**RULES REMAIN ZERO, DELIBERATELY.** A rule reading any of these as a pass or a fail
+would be the conclusion the published article
+`/knowledge/sharepoint/what-custom-script-disabled-establishes/` exists to refuse.
+Microsoft documents each control as reaching less than its name suggests and in two
+cases prints the limit: nine blocked extensions with `.html` absent, and page-creation
+prevention that *hides* entry points while *users can still add pages from other modern
+pages*. First widen what can be observed; only then decide what may be concluded.
+
+### ENGINE-FACT-STATE-NOBODY-LOOKED-001 — the vocabulary cannot say that nobody asked
+
+**authority:** owner · **next action:** decide whether the collection state vocabulary
+gains a term, or whether the detail line is the answer
+
+Building the slice above found a gap. A fact's `state` is one of `observed`, `missing`,
+`not-supported`, `permission-denied`, `partial`, `invalid`. **None of them means *this
+run did not make that read*.** `DenyAddAndCustomizePages` is returned by a tenant-scoped
+read; a site-scoped run cannot make it, and the honest report is neither *missing* nor
+*permission-denied*.
+
+It is carried today as `missing` with a detail saying *not read is not the same as not
+set*, which works and depends on a sentence rather than on a field. For a product whose
+whole claim is that an unknown must never be reported as a pass, **a vocabulary that
+cannot distinguish unread from unset is worth the owner's attention**, and the decision
+is a contract change rather than an implementation.
+
+### ENGINE-SEARCH-IS-NOT-ENUMERATION-001 — a query result is a population, never an existence claim
+
+**State:** `STANDING RULE`, owner, 2026-08-21. **authority:** owner ·
+**next action:** applies to any collector that queries rather than enumerates
+
+> **A search that returned nothing has not established that the resource does not
+> exist. It has established what that query matched.**
+
+Established twice by observation on 2026-08-21: a tenant search for assets returned
+nothing while the assets existed, and a Graph-backed search for an agent by its exact
+name returned only unrelated files while the agent existed. The generalisation the
+second one forces is worth stating on its own: **an inventory surface defines a
+population; it does not define existence outside that population.**
+
+No collector in this engine currently queries -- `Agents.psm1` and every other module
+**The day one does, the distinction has to survive into the evidence**, not
+live in a comment: *this query returned zero* and *this enumerated population is empty*
+are different facts, and a consumer reading the second where the first happened has been
+handed a false absence by the acquisition method itself. It is a property of how the
+evidence was acquired and belongs beside it. A test for false absence comes with the
+first such collector.
+
+### LICENSE-OPTIMIZATION-001 — what is assigned, and whether its use can be observed at all — `FIRST SLICE BUILT`
+
+**authority:** owner · **next action:** owner's hour to wire the Graph reads against a
+real tenant; nothing else can be proved without one
+
+**The first question, and there are no rules in it.** *What licenses are assigned, what
+service plans do they contain, and what usage evidence is actually observable for each
+one?* Built 2026-08-21 as `Licensing.psm1`, three declared fixtures, a canonical bundle,
+and it was opened in a consumer.
+
+**ONE MICROSOFT FACT DECIDES WHETHER THIS CAPABILITY IS POSSIBLE, AND IT IS COLLECTED
+FIRST.** *By default, all reports hide user information such as usernames, display names,
+groups, and sites*, and *this setting also applies to the Microsoft 365 usage reports in
+Microsoft Graph*. In a default tenant the usage evidence **cannot be joined to a user at
+all** -- not partially, not approximately. `report_identifiability` is therefore the first
+fact, because every figure after it is conditional on it, and turning concealment off is
+itself *a logged event in the Microsoft Purview portal audit log*.
+
+**Three more ways to be wrong, each now a fact rather than a footnote.** The reports cover
+*the last 7, 30, 90, and 180 days*, so an absence is an absence within a window. They
+*typically become available within 24 to 72 hours*, so the newest days are not there. And
+*when you delete a user account, Microsoft deletes that user's usage data within 30 days*,
+which removes the evidence exactly where a conclusion would otherwise be strongest.
+
+**And a join Microsoft says does not exist:** *you can't generate a report where you enter
+a user's account and then get a list of which services they're using and how much.* The
+per-user cross-service view is assembled from per-service reports or it is not assembled,
+so the evidence records which reports were actually read instead of implying a whole
+picture.
+
+**THE RULE THIS CAPABILITY LIVES OR DIES BY, unchanged:** nothing may be concluded about
+changing an assignment without evidence of both use and dependency. The question is not
+whether a user can cost less; it is what capability would disappear. `dependency_evidence`
+is recorded as `missing` by construction, because this collector reads none, and that
+absence is a fact so a consumer cannot read a usage figure as an answer.
+
+**What a consumer shows today**, opened against the canonical bundle: *No governance
+conclusion was produced for this resource. Evidence was collected, but no rule was
+evaluated against it. 2 areas were not observed at all*, with `assignment` complete and
+`usage` and `dependency` unavailable in their own words. Honest, and already useful.
+
+**What is not built and needs a tenant:** the Graph reads themselves. `Get-LicensingFacts`
+takes objects a caller supplies, so it is provable against fixtures; wiring
+`Get-MgSubscribedSku`, the per-user assignments, `adminReportSettings` and the usage
+reports into a collector entry point is an hour against a real directory and cannot be
+proved without one.
+
+### AGENT-GOVERNANCE-001 — a different population, a different authority — `FIRST VERTICAL ESTABLISHED`
+
+**authority:** owner · **next action:** none for the first vertical. The second is
+`AGENT-GOVERNANCE-002` under LATER
+
+Shares the methodology of the slice above and none of its domain. Who may create an
+agent, what knowledge sources it may use, which modes are included and which are metered,
+what population each API or cmdlet actually covers, and the difference between *an agent
+exists* and *an agent appears in this inventory surface*.
+
+The strong finding is already recorded on the public side: `Get-PnPCopilotAgent` reads
+`.agent` files in SharePoint, an agent built in Agent Builder is not one of them, and a
+search for one by name returned unrelated files. **An inventory surface defines a
+population. It does not define existence outside that population.**
+
+Not opened now. Different collectors, different limitations, different authority, and
+methodology fitting is not a reason to merge two domains into one expansion.
+
+### ENGINE-CONTRACT-LEDGER-002 — the ledger depends on somebody remembering — `RECORDED, NOT OPEN`
+
+**authority:** owner · **next action:** none: recorded so the ceremony is written down, not queued. Opening it needs the owner to decide what establishes that a version is new rather than changed
+
+`data/published-contracts.json` records the digest of every contract version when
+that version is published, and `tests/test_registry.py` refuses a version whose
+bytes have moved. It found three contracts that had been edited under an identity
+already published, which is the failure it exists to catch, and it will keep
+catching them.
+
+**What it does not do is add the line.** A new version arrives with a new digest,
+and the person introducing it writes that line by hand in the same change. If they
+forget, the test says the version is not in the ledger and the fix is to add it —
+which is the correct instruction and also exactly what somebody would do to silence
+a real mutation. The gate is sound in the direction that matters and depends on a
+human ceremony in the other.
+
+**Not open, and deliberately.** Silent mutation is prevented today, which was the
+risk. Automating the ceremony means deciding what evidence establishes that a
+version is genuinely new rather than genuinely changed, and the honest answer is
+the release history, not the tree. That is a slice with an owner decision in it,
+and it does not block anything currently queued.
 
 ### ENGINE-CLEAN-MACHINE-001 — run the journey where nothing is installed
 
@@ -1375,6 +1626,87 @@ site and label resources. Do not invent a readiness score or inspect prompts/con
 Supported plugin/agent governance and oversharing indicators derived from already
 owned permission/sharing evidence. Keep configured availability separate from observed
 use. Never enable, disable or invoke a plugin or agent.
+
+#### 35. `ENGINE-RUN-CONTRACT-VERSION-001` — `run/4.0.0` means two different things
+
+**State:** `OPEN`. **authority:** repository — this is the executor's to resolve, and
+`D51` names this exact case as one that must not be escalated. **next action:** the
+version cascade, in one commit.
+
+**What happened, and it was this repository's own rule being missed.** Commit `a9da4fd`
+repointed `run.schema.json` from `evidence/3.0.0#/$defs/provenance` to
+`evidence/3.1.0#/$defs/provenance`, to carry `tenant.how`. The `evidence` half was done
+correctly: `3.0.0` was archived and `3.1.0` published. **The `run` version did not
+change.** So a document that validates against `run/4.0.0` today is refused by
+`run/4.0.0` as it was yesterday. One identifier, two meanings.
+
+**Why nothing caught it.** Nothing validates a run document on its way out. The engine
+computes runs, wraps them in a run set, renders them and drops them, so no run document
+ever met a reader holding a different copy of the contract. It surfaced the moment one
+did: a bundle written by `run --bundle` was read by an independent consumer holding a
+vendored copy of the earlier contract, and its refusal named the clause exactly:
+
+```
+the run does not match https://ph7x.com/schemas/m365-governance/run/4.0.0:
+  #/properties/provenance/$ref/allOf/0/not/required/0
+```
+
+The engine is internally consistent. It is consistent with itself and with nobody else.
+
+**The correction, and its size.** `run` becomes `4.1.0` with `4.0.0` archived exactly as
+it was. That cascades, because the version lives in the `$id` and a reference to a
+changed contract is a change: `run-set` references `run`, and `assessment` references
+`run-set`. Three published contracts, their archives, the generated manifest and two
+assessment fixtures. **Eight references to `run/4.0.0` and five files naming
+`run-set/4.0.0`**, measured rather than estimated.
+
+**The engine half is done and proven.** Archived, bumped, regenerated, and the release
+gate now builds the wheel, installs it into an empty environment outside any checkout,
+writes the folder a consumer opens, and reads the version from the installed package
+rather than from a literal:
+
+```
+the bundle an independent consumer would open
+  wrote 3 runs
+  3 runs, each with its document, its evidence and its report
+  every run declares https://ph7x.com/schemas/m365-governance/run/4.1.0
+```
+
+**The consumer half is open, and an attempt at it was reverted rather than left standing.**
+What it established, all of it measured:
+
+- Refreshing the vendored bundle and migrating the consumer's expected versions to 4.1.0
+  produces a schema-compiler collision: `Type40 already contains a definition for
+  JsonPropertyNames`, before a single document is read.
+- **The consumer is right to refuse until migrated.** Before the version bump it said
+  `declares assessment/4.1.0 and this build reads assessment/4.0.0. Valid and unsupported
+  is not something to reinterpret: migrate it explicitly.` That refusal is the mechanism
+  working and is exactly what this cascade needed to prove exists.
+- Same-major pairs are not inherently fatal: `evidence/3.0.0` with `3.1.0`, and
+  `connection/1.0.0` with `1.1.0`, coexist in the vendored bundle today.
+- Trimming superseded revisions out of the resolver did **not** clear it, so the cause is
+  not the resolver's contents.
+- **The cause is not established**, and guessing at it further would be the failure this
+  file exists to record. The baseline is green at 146 tests with the unrefreshed bundle.
+
+**One defect found on the way and worth its own line.** `publish-contracts` copies with
+`copy2`, which preserves the source's modification time, and MSBuild's `PreserveNewest`
+then keeps the older copy already in the build output. **A refreshed contract can silently
+fail to reach the binary**, and the symptom is a manifest and a schema file disagreeing
+about a version inside `bin/`.
+
+**It is done in one commit or not at all.** A partly bumped contract set is worse than
+either state, which is why a first attempt at it was reverted rather than left standing.
+
+**And it is already published.** Any consumer that vendored these contracts holds the
+earlier text and will refuse what this engine now writes until it refreshes. That is the
+correct behaviour on their side and the reason the cascade is not optional: a published
+version is a promise about what a document means, and this one was changed without being
+renamed.
+
+**The rule this leaves.** A `$ref` to a version that moved is a version change in the
+document that holds the reference. `evidence` was treated that way and `run` was not, in
+the same commit, by the same hand.
 
 ## SECURITY-RESEARCH — a control can stay true while its conclusion stops following
 

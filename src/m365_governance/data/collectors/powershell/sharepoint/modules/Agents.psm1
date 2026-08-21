@@ -136,6 +136,42 @@ function Get-AgentFacts {
     }
 
     $facts = [ordered]@{ agents = [ordered]@{} }
+
+    # -- THE COUNT TRAVELS WITH THE POPULATION IT IS A COUNT OF ---------------
+    #
+    # A NUMBER WITHOUT ITS POPULATION IS AN EXISTENCE CLAIM WAITING TO HAPPEN.
+    # `count: 3` reads as *this tenant has three agents* to anybody who did not
+    # write the collector, and it is not that. It is three `.agent` files in one
+    # site's Site Assets library, seen by one identity, at one moment. The
+    # boundary used to live in `coverage` as a sentence; a sentence beside a
+    # number is read after the number, if at all, so it lives here now, in the
+    # facts, where a consumer cannot take the count without it.
+    #
+    # AND THE ACQUISITION METHOD IS PART OF THE FACT. `enumerated` and `queried`
+    # fail differently: an enumeration that returns nothing found nothing in the
+    # population it walked, and a query that returns nothing matched nothing.
+    # Only the first is evidence about the population. This collector walks a
+    # library, and says so, so that the day one queries the difference is
+    # already a field rather than a convention.
+    $facts.agents['population'] = New-ScalarFact `
+        -Value 'sharepoint-site-assets-agent-files' `
+        -RawField 'Get-PnPCopilotAgent (.agent files in this site''s Site Assets)'
+    $facts.agents['acquisition_method'] = New-ScalarFact -Value 'enumerated' `
+        -RawField 'Get-PnPCopilotAgent'
+
+    # WHAT THIS METHOD CANNOT SEE, NAMED RATHER THAN LEFT TO BE INFERRED.
+    # An agent built in Agent Builder from the Copilot chat surface is not a
+    # file in a SharePoint library: it is created at
+    # `m365.cloud.microsoft/agents/new` and administered in *Manage agents for
+    # Microsoft 365 Copilot in Integrated Apps*. Observed on 2026-08-21: a
+    # Graph-backed SharePoint and OneDrive search for such an agent by its exact
+    # name returned only unrelated files. An inventory surface defines a
+    # population; it does not define existence outside that population, and this
+    # is that sentence made into evidence.
+    $facts.agents['populations_not_observed'] = New-ScalarFact `
+        -Value @('copilot-agent-builder', 'copilot-studio') `
+        -RawField 'not reachable from a SharePoint site read'
+
     $facts.agents['inventory'] = New-ScalarFact -Value $inventory `
         -RawField 'Get-PnPCopilotAgent'
     $facts.agents['count'] = New-ScalarFact -Value (@($inventory).Count) `

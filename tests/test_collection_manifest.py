@@ -32,7 +32,7 @@ from m365_governance.collecting import (
 )
 from m365_governance.resources import packaged
 
-CONTRACT = "https://ph7x.com/schemas/m365-governance/collection/1.0.0"
+CONTRACT = "https://ph7x.com/schemas/m365-governance/collection/2.0.0"
 
 #: Built once. The registry is what makes a cross-document `$ref` resolve
 #: without going near a network: the collection references the evidence's own

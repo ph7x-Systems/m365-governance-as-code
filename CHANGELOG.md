@@ -10,6 +10,96 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
+**Three published contracts had changed shape without changing name**, and
+nothing in the repository could say so.
+
+- **`collection/1.0.0`, `comparison/3.0.0` and `evidence/3.0.0` were edited
+  after `1.0.0b6` published them.** `collection` gained a required
+  `identity.method` and repointed two references to `evidence/3.1.0`,
+  `comparison` repointed two, and `evidence/3.0.0` gained `identity_method`
+  and `client_id`. A consumer that had declared support for any of those three
+  would have carried on declaring it while reading a different shape. The
+  cascade that moved `run`, `run-set` and `assessment` to `4.1.0` moved them
+  by hand, and by hand is how these were missed.
+- **`collection` is now `2.0.0` and `comparison` is `3.1.0`**, with the
+  published text of each archived beside them. `collection` is a major because
+  a document written before it lacks a property the shape now requires;
+  `comparison` is a minor because only its references moved, to an evidence
+  version whose addition is optional. `evidence/3.0.0` keeps its identity and
+  gets its published bytes back: the two properties it had grown already exist
+  in `3.1.0`.
+- **A version's digest is now recorded when the version is.**
+  `data/published-contracts.json` holds the digest of every contract version
+  this engine has published, and a test reads it. The generated manifest could
+  not do this job: it is rewritten from whatever is on disk, so it agrees with
+  a silent edit by construction. This file is written by hand, disagrees, and
+  found all three of the above.
+
+- **What is assigned, and whether its use can be observed at all.** A new
+  evidence family for Microsoft 365 licensing, and the first fact it collects is
+  the one that decides whether the rest means anything: Microsoft hides user
+  names in all usage reports by default, and the same setting applies to the
+  usage reports in Microsoft Graph, so in a default tenant **usage cannot be
+  joined to a user**. The reports also cover a window, arrive 24 to 72 hours
+  late, and lose a deleted user's data within 30 days. Every one of those is a
+  fact in the evidence rather than a footnote. `dependency_evidence` is recorded
+  as missing by construction, because this collector reads none, so a usage
+  figure cannot be read as an answer about changing anything.
+
+- **An agent count now travels with the population it is a count of.** `count: 3`
+  reads as *this tenant has three agents* to anybody who did not write the
+  collector, and it is not that: it is three `.agent` files in one site's Site
+  Assets library, enumerated by one identity at one moment. The boundary used to
+  live in `coverage` as a sentence, and a sentence beside a number is read after
+  the number if at all. The evidence now carries `population`,
+  `acquisition_method` and `populations_not_observed`, the last naming what this
+  method cannot reach: an agent built in Agent Builder is not a file in a
+  library. **An inventory surface defines a population; it does not define
+  existence outside that population**, and that is now a field rather than a
+  convention. `acquisition_method` is `enumerated` here, so that the day a
+  collector queries instead, *this query returned zero* and *this enumerated
+  population is empty* are already different facts.
+
+- **A new evidence family: the customization and page-execution surfaces of a
+  site.** `Customization.psm1` collects the custom script setting where a
+  tenant-scoped read was made, whether the identity holds
+  `AddAndCustomizePages`, whether the Site Pages web feature is present, whether
+  the Site Pages library is readable, and whether it carries unique permissions.
+  It answers *what surfaces are observable here* and refuses *is this site safe*:
+  **no rule reads any of it**, because Microsoft documents each of these controls
+  as reaching less than its name suggests and in two cases prints the limit
+  itself. Widen what can be observed first; decide what may be concluded after.
+- **A gap the new family found in the fact vocabulary.** A fact's state is one of
+  `observed`, `missing`, `not-supported`, `permission-denied`, `partial` and
+  `invalid`, and none of them means *this run did not make that read*. It is
+  carried as `missing` with a sentence saying so, and the decision is queued: for
+  a product whose claim is that an unknown is never a pass, a vocabulary that
+  cannot separate unread from unset is worth deciding rather than working around.
+
+- **`evaluate --bundle` writes the folder a consumer opens**, from evidence that
+  already exists. The portable folder was reachable only through `run`, which
+  collects first, so somebody holding good evidence — a previous collection, a
+  pipeline, a colleague's export — had to reach the tenant again to obtain the
+  packaging. What was read and how it is carried are different questions. It is
+  the same writer `run` calls, asserted against that writer's own bytes rather
+  than against a shape described in a test, and it reaches no tenant: the whole
+  desktop experience is now provable offline against frozen evidence.
+
+- **The bundle is produced by the engine being published**, not by whatever
+  `m365-governance` the PATH resolves to. It resolved to nothing here and every
+  sample was skipped in silence, because a fixture that failed to evaluate was
+  a `continue`: the only witness was a count at the end of the run, and it
+  spoke only once the number reached zero. A consumer had already vendored a
+  bundle three samples wide. A skipped fixture now fails the publish, and the
+  bundle carries seventy-one.
+
+- **A shipped assessment its own engine refused.** The cascade rewrote the
+  contract each part of `fixtures/assessment/classification.json` declares, and
+  an assessment's identity is derived from the bytes of those parts, so the
+  document arrived at a consumer with digests describing what it used to say.
+  Only one of the two assessment fixtures was read by any test; the other was
+  read by nothing. Both are now verified, with the verifier a consumer uses.
+
 **`connect` now answers the question a person actually has**, which is not
 "did a sign-in succeed" but "can this identity work here".
 

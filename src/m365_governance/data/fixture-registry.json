@@ -67,6 +67,48 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-assignment-observed.json",
+      "origin": "sanitized-observation",
+      "purpose": "the shape of a real assignment acquisition: SKUs and assigned units read, the report identifiability setting observed as concealed, usage and dependency not observed. The directory it came from is not identified and the counts are not that tenant's",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-assignment-only.json",
+      "origin": "synthetic",
+      "purpose": "assignment read with no usage report; constructed so unread is not read as unused",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-graph-modules-absent.json",
+      "origin": "sanitized-observation",
+      "purpose": "a real collector run on a machine without the Microsoft Graph modules; the host is replaced because the document establishes nothing about any tenant and the name would be a customer identifier for no evidential gain",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-usage-concealed.json",
+      "origin": "synthetic",
+      "purpose": "usage read and unattributable; constructed to exercise the default tenant, where no per-user licensing conclusion is possible",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-usage-identifiable.json",
+      "origin": "synthetic",
+      "purpose": "usage attributable; constructed to exercise the tenant that turned concealment off",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-usage-read-and-concealed.json",
+      "origin": "synthetic",
+      "purpose": "the same report in a tenant that conceals identifiable information; constructed so that rows returned and rows attributable are read as two different numbers",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-usage-read-and-named.json",
+      "origin": "synthetic",
+      "purpose": "a usage report read in a tenant that allows attribution; constructed to exercise rows that name a principal",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/migration/after-cutover.json",
       "origin": "synthetic",
       "purpose": "the same estate afterwards, with one library unreadable; constructed so a verification can be produced and checked without a tenant",
@@ -217,6 +259,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-agents-none-in-this-population.json",
+      "origin": "synthetic",
+      "purpose": "zero agents in the enumerated population; constructed so a count of zero is not read as no agents existing in the tenant",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-agents-with-sources.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -280,6 +328,24 @@
       "path": "fixtures/sharepoint/site-class-unlabelled.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-pages-feature-absent.json",
+      "origin": "synthetic",
+      "purpose": "the Site Pages feature absent and the library refused; constructed so absence and refusal are not conflated",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-surfaces-observed.json",
+      "origin": "synthetic",
+      "purpose": "every customization surface read; constructed to exercise the complete path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-tenant-read-not-made.json",
+      "origin": "synthetic",
+      "purpose": "the tenant-scoped read nobody made; constructed so unread is not read as unset",
       "may_be_presented_as_tenant_observation": false
     },
     {

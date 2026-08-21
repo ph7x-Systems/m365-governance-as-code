@@ -195,6 +195,38 @@ class Slice:
     #: is the same, so the difference is a field rather than a fork.
     source: str = "powershell"
 
+    #: Which PowerShell collector answers this slice, relative to
+    #: `collectors/powershell`. `source` says WHICH KIND of collector runs a
+    #: slice; this says WHICH ONE. They were the same field for as long as
+    #: there was one PowerShell entry point, and licensing is the second: it
+    #: reads Graph, under different permissions, with a different sign-in.
+    script: str = "sharepoint/Get-SpoEvidence.ps1"
+
+    #: The parameter that carries the tenant address. `Get-SpoEvidence.ps1`
+    #: takes a `-TenantUrl` because it opens a PnP session against the admin
+    #: centre; the licensing collector takes a `-TenantHost` because it opens
+    #: none and uses the address only to say which directory the evidence came
+    #: from. Passing the wrong one is a parameter-binding error four seconds
+    #: into a tenant run, which is why it is declared here.
+    tenant_parameter: str = "-TenantUrl"
+
+    #: Whether the collector accepts the certificate parameters app-only
+    #: collection passes. The licensing collector takes a thumbprint from the
+    #: machine store rather than a certificate file, and has never been run
+    #: that way; sending it `-CertificatePath` would bind nothing.
+    takes_certificate: bool = True
+
+    #: Whether the collector accepts a reporting `-Period`. Only licensing
+    #: does, and only for the usage surface: a period is not a default this
+    #: engine invents, so a caller that names none gets a document saying the
+    #: usage report was not read.
+    takes_period: bool = False
+
+    @property
+    def collector(self) -> Path:
+        """The collector that runs this slice."""
+        return packaged("collectors") / "powershell" / self.script
+
     def live_sentence(self) -> str:
         """The live state as a person reads it: the state, then any note."""
         return f"{self.live}, {self.live_note}" if self.live_note else str(self.live)
@@ -408,6 +440,73 @@ SLICES = {
             permissions=("Policy.Read.All",),
             live=Live.PROVIDER_ONLY,
         ),
+        Slice(
+            "customization",
+            "Customization",
+            needs_site=True,
+            needs_tenant=False,
+            profile="default",
+            produces_findings=False,
+            # The third recorded exception to the twin rule. Microsoft documents
+            # each of these controls as reaching less than its name suggests,
+            # and in two cases prints the limit itself: blocking custom script
+            # stops nine file extensions, and preventing modern page creation
+            # hides the entry points while users can still add pages from other
+            # modern pages. A rule reading one of them as a verdict would
+            # publish exactly the mistake the control invites.
+            consumed_by="the customization surfaces in a report, and any viewer",
+            describes=(
+                "the surfaces by which executable content or customization can "
+                "reach a page on one site"
+            ),
+            shaped_like="site-customization-surfaces-observed",
+            reads=(
+                "Get-PnPWeb -Includes EffectiveBasePermissions",
+                "Get-PnPFeature -Scope Web",
+                "Get-PnPList -Identity SitePages",
+            ),
+            permissions=("Sites.Read.All",),
+            live=Live.NONE,
+        ),
+        Slice(
+            "licensing",
+            "Licensing",
+            script="licensing/Get-LicensingEvidence.ps1",
+            tenant_parameter="-TenantHost",
+            takes_certificate=False,
+            takes_period=True,
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=False,
+            # The fourth. Concluding that a licence can be removed needs
+            # evidence of use AND of dependency, and this reads the first at
+            # best. The absence of the second is recorded as a fact so that a
+            # usage figure cannot be read as an answer.
+            consumed_by="the licensing evidence in a report, and any viewer",
+            describes=(
+                "what is assigned in one tenant, and whether the usage reports "
+                "are permitted to name the people who hold it"
+            ),
+            shaped_like="tenant-assignment-observed",
+            reads=(
+                "Get-MgSubscribedSku",
+                "Get-MgUser -Property assignedLicenses",
+                "GET /beta/admin/reportSettings",
+                "GET /v1.0/reports/getOffice365ActiveUserDetail",
+            ),
+            permissions=(
+                "Organization.Read.All",
+                "User.Read.All",
+                "Reports.Read.All",
+                "ReportSettings.Read.All",
+            ),
+            # ASSIGNMENT AND REPORT IDENTIFIABILITY WERE OBSERVED AGAINST A REAL
+            # DIRECTORY; USAGE AND DEPENDENCY WERE NOT. `full` would claim the
+            # slice's whole path was observed and two of its four surfaces have
+            # never run against a tenant.
+            live=Live.PROVIDER_ONLY,
+        ),
     ]
 }
 
@@ -528,8 +627,11 @@ def preflight() -> list[str]:
             "PowerShell 7 is not installed. Only collection needs it; the "
             "engine, the rules and the tests do not."
         )
-    if not COLLECTOR.is_file():
-        problems.append(f"collector not found at {COLLECTOR}")
+    for missing in sorted(
+        {s.script for s in SLICES.values() if s.source == "powershell"}
+        - {s.script for s in SLICES.values() if s.collector.is_file()}
+    ):
+        problems.append(f"collector not found at {missing}")
     return problems
 
 
@@ -545,6 +647,7 @@ def run_slice(
     certificate_path: Path | None = None,
     certificate_password_env: str | None = None,
     count_unique_scopes: bool = False,
+    period: str | None = None,
     dry_run: bool = False,
     on_progress: Callable[[str], None] | None = None,
 ) -> Outcome:
@@ -576,7 +679,7 @@ def run_slice(
         "pwsh",
         "-NoProfile",
         "-File",
-        str(COLLECTOR),
+        str(chosen.collector),
         "-Mode",
         chosen.mode,
         "-ClientId",
@@ -587,13 +690,15 @@ def run_slice(
     if chosen.needs_site:
         argv += ["-SiteUrl", site_url or ""]
     if chosen.needs_tenant:
-        argv += ["-TenantUrl", tenant_url or ""]
+        argv += [chosen.tenant_parameter, tenant_url or ""]
     elif chosen.optional_tenant and tenant_url:
         # Given, so it decides the scope; absent, so the slice reads the site.
-        argv += ["-TenantUrl", tenant_url]
+        argv += [chosen.tenant_parameter, tenant_url]
+    if chosen.takes_period and period:
+        argv += ["-Period", period]
     if device_login:
         argv.append("-DeviceLogin")
-    if certificate_path:
+    if certificate_path and chosen.takes_certificate:
         # App-only. The password never travels as a value: what crosses is the
         # NAME of an environment variable, and the collector reads it in its
         # own process.

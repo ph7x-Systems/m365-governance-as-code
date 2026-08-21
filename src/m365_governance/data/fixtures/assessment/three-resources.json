@@ -1,8 +1,8 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.0.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.1.0",
   "canonical": {
     "run_set": {
-      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.0.0",
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.1.0",
       "resources": 3,
       "by_class": {
         "content": 1,
@@ -25,7 +25,7 @@
       },
       "runs": [
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
           "provenance": {
             "collected_at": "2026-08-05T14:02:11Z",
             "collector": "spo-collector",
@@ -260,7 +260,7 @@
           }
         },
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
           "provenance": {
             "collected_at": "2026-08-08T18:00:00Z",
             "collector": "spo-collector",
@@ -342,7 +342,7 @@
           }
         },
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
           "provenance": {
             "collected_at": "2026-08-06T16:00:00Z",
             "collector": "spo-collector",
@@ -621,6 +621,36 @@
         },
         "facts": {
           "agents": {
+            "population": {
+              "state": "observed",
+              "value": "sharepoint-site-assets-agent-files",
+              "raw": {
+                "field": "Get-PnPCopilotAgent (.agent files in this site's Site Assets)",
+                "value": "sharepoint-site-assets-agent-files"
+              }
+            },
+            "acquisition_method": {
+              "state": "observed",
+              "value": "enumerated",
+              "raw": {
+                "field": "Get-PnPCopilotAgent",
+                "value": "enumerated"
+              }
+            },
+            "populations_not_observed": {
+              "state": "observed",
+              "value": [
+                "copilot-agent-builder",
+                "copilot-studio"
+              ],
+              "raw": {
+                "field": "not reachable from a SharePoint site read",
+                "value": [
+                  "copilot-agent-builder",
+                  "copilot-studio"
+                ]
+              }
+            },
             "inventory": {
               "state": "observed",
               "value": [
@@ -824,17 +854,17 @@
           "collected"
         ]
       },
-      "assessment_id": "5269da15d5e8bbb9a9e0bfd4b59fc581352330da57b4fb01b8a3363283147193"
+      "assessment_id": "0fbfcae4b66a8fd69e0454dcd94447c87474e150542f663dd0936d22198d85e0"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "d5e2e33766c87c2406abde52eae564084fdfb8f7155b02db9be2455c4cef6a5e",
-        "evidence": "7185c638a5439902147f86deb47f1cfa16f386f0e86ede40041af2c2b3c8ef83",
+        "run_set": "d8fc0d05f92e2fa4b694c42094f695ed21e36b2a7381b85f051142913cd4deec",
+        "evidence": "5cd93ec44b0fcb9f560d15d744f513c21a741bf5be46a337dc10d548995933d6",
         "versions": "2c570ddafb24e2aeede070a87dcafd69d71db1b580f06fb28a36fdaf50c26ae0",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "5269da15d5e8bbb9a9e0bfd4b59fc581352330da57b4fb01b8a3363283147193"
+      "canonical_hash": "0fbfcae4b66a8fd69e0454dcd94447c87474e150542f663dd0936d22198d85e0"
     }
   }
 }

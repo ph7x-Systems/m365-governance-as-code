@@ -177,50 +177,93 @@ def _powershell_remedy() -> str:
     return f"install it for your distribution: {POWERSHELL_DOCS}"
 
 
+#: Which module each acquisition surface needs, and what a person types to get
+#: it. A COLLECTOR'S PREREQUISITE BELONGS TO THE PRODUCT, NOT TO THE MACHINE IT
+#: HAPPENS TO RUN ON. A licensing run on a host without the Graph modules
+#: reported `not-supported` with the limitation owned by this implementation,
+#: which was accurate and left the reader to work out what to install. The
+#: alternative to naming them here is that a clean machine reproduces that
+#: result every time and calls it a product limit.
+COLLECTOR_MODULES = (
+    (
+        "PnP.PowerShell",
+        "SharePoint collection",
+        "Install-Module PnP.PowerShell -Scope CurrentUser",
+    ),
+    (
+        "Microsoft.Graph.Identity.DirectoryManagement",
+        "licensing: subscribed SKUs",
+        "Install-Module Microsoft.Graph.Identity.DirectoryManagement"
+        " -Scope CurrentUser",
+    ),
+    (
+        "Microsoft.Graph.Users",
+        "licensing: per-user assignments",
+        "Install-Module Microsoft.Graph.Users -Scope CurrentUser",
+    ),
+    (
+        "Microsoft.Graph.Reports",
+        "licensing: usage reports",
+        "Install-Module Microsoft.Graph.Reports -Scope CurrentUser",
+    ),
+)
+
+
+def _module_version(pwsh: str, name: str) -> str:
+    result = subprocess.run(
+        [
+            pwsh,
+            "-NoProfile",
+            "-Command",
+            f"(Get-Module -ListAvailable {name} | Select-Object -First 1)"
+            ".Version.ToString()",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=90,
+    )
+    return result.stdout.strip()
+
+
 def _powershell() -> list[Check]:
-    """The collector only. Absent is not a failure: the engine never needs it."""
+    """The collectors only. Absent is not a failure: the engine never needs it."""
     pwsh = shutil.which("pwsh")
     if not pwsh:
         return [
             Check(
                 "PowerShell 7",
                 False,
-                f"not found. Only the collector needs it. {_powershell_remedy()}",
+                f"not found. Only the collectors need it. {_powershell_remedy()}",
                 required=False,
             ),
-            Check("PnP.PowerShell", False, "not checked", required=False),
+            *[
+                Check(name, False, f"not checked ({what})", required=False)
+                for name, what, _ in COLLECTOR_MODULES
+            ],
         ]
 
     checks = [Check("PowerShell 7", True, pwsh)]
-    try:
-        result = subprocess.run(
-            [
-                pwsh,
-                "-NoProfile",
-                "-Command",
-                "(Get-Module -ListAvailable PnP.PowerShell | "
-                "Select-Object -First 1).Version.ToString()",
-            ],
-            capture_output=True,
-            text=True,
-            timeout=90,
-        )
-        version = result.stdout.strip()
+    for name, what, remedy in COLLECTOR_MODULES:
+        try:
+            version = _module_version(pwsh, name)
+        except Exception as exc:  # noqa: BLE001
+            checks.append(Check(name, False, f"could not check: {exc}", required=False))
+            continue
+
         if version:
-            checks.append(Check("PnP.PowerShell", True, version))
+            checks.append(Check(name, True, f"{version} ({what})"))
         else:
+            # NOT REQUIRED, AND NOT SILENT. The engine runs without any of
+            # these; the acquisition surface each one serves does not, and it
+            # says which surface rather than leaving a bare module name.
             checks.append(
                 Check(
-                    "PnP.PowerShell",
+                    name,
                     False,
-                    "not installed. Install-Module PnP.PowerShell -Scope CurrentUser",
+                    f"not installed. {what} needs it. {remedy}",
                     required=False,
                 )
             )
-    except Exception as exc:  # noqa: BLE001
-        checks.append(
-            Check("PnP.PowerShell", False, f"could not check: {exc}", required=False)
-        )
     return checks
 
 

@@ -36,6 +36,7 @@ from pathlib import Path
 from . import (
     __version__,
     assessment,
+    bundling,
     canonical,
     capabilities,
     collecting,
@@ -321,6 +322,13 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     run_cmd.add_argument("--out", type=Path, help="write the report here")
     run_cmd.add_argument(
+        "--bundle",
+        type=Path,
+        metavar="DIR",
+        help="write one folder per run here: the run document, the evidence it "
+        "was decided from, and its report. Nothing new is computed",
+    )
+    run_cmd.add_argument(
         "--fail-on",
         choices=("nothing", "fail", "unresolved"),
         default="nothing",
@@ -372,6 +380,14 @@ def _build_parser() -> argparse.ArgumentParser:
     evaluate_cmd.add_argument("--profile", type=Path, default=None, help=PROFILE_HELP)
     evaluate_cmd.add_argument(
         "--format", choices=("markdown", "json", "html"), default="markdown"
+    )
+    evaluate_cmd.add_argument(
+        "--bundle",
+        type=Path,
+        metavar="DIR",
+        help="write one folder per run here: the run document, the evidence it "
+        "was decided from, and its report. Nothing new is computed, and no "
+        "tenant is reached",
     )
     evaluate_cmd.add_argument(
         "--fail-on",
@@ -1057,7 +1073,7 @@ def _cmd_run(args) -> int:
     # evaluate would eventually disagree, and the one nobody tested would win.
     args.evidence = args.output
     try:
-        runs, _documents = _evaluate_all(args)
+        runs, documents = _evaluate_all(args)
     except _Refused:
         return 2
     if not runs:
@@ -1068,8 +1084,21 @@ def _cmd_run(args) -> int:
     if args.out:
         args.out.write_text(report, encoding="utf-8")
         print(f"\n{args.out}", file=sys.stderr)
-    else:
+    elif not args.bundle:
         sys.stdout.write(report)
+
+    # ONE FOLDER, AND NOTHING IN IT THIS RUN DID NOT ALREADY PRODUCE. The run
+    # documents existed only in memory: they were computed, wrapped in a run set,
+    # rendered, and dropped. That is why nothing in the world had ever written a
+    # workspace the desktop product could open - not a missing arrangement, an
+    # unwrapping that had never had a reason to exist.
+    if args.bundle:
+        try:
+            written = bundling.write(args.bundle, runs, documents, args.format)
+        except bundling.BundleError as refusal:
+            print(f"refusing to write the bundle: {refusal}", file=sys.stderr)
+            return 2
+        print(f"\n{written}: {len(runs)} run(s)", file=sys.stderr)
 
     return _exit_for(runs, args.fail_on)
 
@@ -1495,9 +1524,31 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
 
 def _cmd_evaluate(args) -> int:
     try:
-        runs, _ = _evaluate_all(args)
+        runs, documents = _evaluate_all(args)
     except _Refused:
         return 2
+
+    # THE PORTABLE FOLDER WAS ONLY REACHABLE THROUGH A TENANT. `--bundle` was
+    # born on `run`, which collects first, so the one shape the desktop product
+    # opens could not be produced from evidence that already existed -- a
+    # previous collection, a pipeline, a colleague's export, a frozen fixture.
+    # Somebody holding perfectly good evidence had to go back and touch the
+    # tenant again to obtain the packaging, which is a coupling between what
+    # was read and how it is carried, and those are different questions.
+    #
+    # ONE WRITER, CALLED FROM BOTH PLACES. `run` reaches this by setting
+    # `args.evidence` to what it just collected and evaluating that; the folder
+    # it writes and the folder written here are the same bytes from the same
+    # function, because a second implementation of a format is a second
+    # definition of it, and the one nobody tested wins.
+    if getattr(args, "bundle", None):
+        try:
+            written = bundling.write(args.bundle, runs, documents, args.format)
+        except bundling.BundleError as refusal:
+            print(f"refusing to write the bundle: {refusal}", file=sys.stderr)
+            return 2
+        print(f"{written}: {len(runs)} run(s)", file=sys.stderr)
+        return _exit_for(runs, args.fail_on)
 
     # The shape follows what was asked for, not how many files happened to be
     # there. A directory with one document in it today and three tomorrow must
