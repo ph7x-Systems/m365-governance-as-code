@@ -1,8 +1,8 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.0.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.1.0",
   "canonical": {
     "run_set": {
-      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.0.0",
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.1.0",
       "resources": 3,
       "by_class": {
         "content": 1,
@@ -25,7 +25,7 @@
       },
       "runs": [
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
           "provenance": {
             "collected_at": "2026-08-05T14:02:11Z",
             "collector": "spo-collector",
@@ -260,7 +260,7 @@
           }
         },
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
           "provenance": {
             "collected_at": "2026-08-08T18:00:00Z",
             "collector": "spo-collector",
@@ -342,7 +342,7 @@
           }
         },
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.0.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
           "provenance": {
             "collected_at": "2026-08-06T16:00:00Z",
             "collector": "spo-collector",
