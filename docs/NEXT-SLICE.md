@@ -1409,6 +1409,41 @@ changed contract is a change: `run-set` references `run`, and `assessment` refer
 assessment fixtures. **Eight references to `run/4.0.0` and five files naming
 `run-set/4.0.0`**, measured rather than estimated.
 
+**The engine half is done and proven.** Archived, bumped, regenerated, and the release
+gate now builds the wheel, installs it into an empty environment outside any checkout,
+writes the folder a consumer opens, and reads the version from the installed package
+rather than from a literal:
+
+```
+the bundle an independent consumer would open
+  wrote 3 runs
+  3 runs, each with its document, its evidence and its report
+  every run declares https://ph7x.com/schemas/m365-governance/run/4.1.0
+```
+
+**The consumer half is open, and an attempt at it was reverted rather than left standing.**
+What it established, all of it measured:
+
+- Refreshing the vendored bundle and migrating the consumer's expected versions to 4.1.0
+  produces a schema-compiler collision: `Type40 already contains a definition for
+  JsonPropertyNames`, before a single document is read.
+- **The consumer is right to refuse until migrated.** Before the version bump it said
+  `declares assessment/4.1.0 and this build reads assessment/4.0.0. Valid and unsupported
+  is not something to reinterpret: migrate it explicitly.` That refusal is the mechanism
+  working and is exactly what this cascade needed to prove exists.
+- Same-major pairs are not inherently fatal: `evidence/3.0.0` with `3.1.0`, and
+  `connection/1.0.0` with `1.1.0`, coexist in the vendored bundle today.
+- Trimming superseded revisions out of the resolver did **not** clear it, so the cause is
+  not the resolver's contents.
+- **The cause is not established**, and guessing at it further would be the failure this
+  file exists to record. The baseline is green at 146 tests with the unrefreshed bundle.
+
+**One defect found on the way and worth its own line.** `publish-contracts` copies with
+`copy2`, which preserves the source's modification time, and MSBuild's `PreserveNewest`
+then keeps the older copy already in the build output. **A refreshed contract can silently
+fail to reach the binary**, and the symptom is a manifest and a schema file disagreeing
+about a version inside `bin/`.
+
 **It is done in one commit or not at all.** A partly bumped contract set is worse than
 either state, which is why a first attempt at it was reverted rather than left standing.
 
