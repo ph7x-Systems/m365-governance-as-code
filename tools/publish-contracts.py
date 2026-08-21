@@ -109,7 +109,11 @@ def main() -> int:
     # the list below is the honest version, and a family missing from it is a
     # family the consumer never receives.
     root = ROOT / "src" / "m365_governance" / "data" / "fixtures"
-    families = ("sharepoint", "licensing")
+    # EVERY EVIDENCE FAMILY, AND A TEST HOLDS THIS LIST TO THE TREE. `entra` was
+    # here in the repository with four fixtures and absent from this list, so a
+    # consumer received none of them and nothing said so. Excluding one is now a
+    # decision somebody writes down rather than an omission nobody notices.
+    families = ("sharepoint", "entra", "licensing")
     fixtures = sorted(f for family in families for f in (root / family).glob("*.json"))
     written = 0
     for fixture in fixtures:
