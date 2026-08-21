@@ -35,6 +35,15 @@ nothing in the repository could say so.
   a silent edit by construction. This file is written by hand, disagrees, and
   found all three of the above.
 
+- **`evaluate --bundle` writes the folder a consumer opens**, from evidence that
+  already exists. The portable folder was reachable only through `run`, which
+  collects first, so somebody holding good evidence — a previous collection, a
+  pipeline, a colleague's export — had to reach the tenant again to obtain the
+  packaging. What was read and how it is carried are different questions. It is
+  the same writer `run` calls, asserted against that writer's own bytes rather
+  than against a shape described in a test, and it reaches no tenant: the whole
+  desktop experience is now provable offline against frozen evidence.
+
 - **The bundle is produced by the engine being published**, not by whatever
   `m365-governance` the PATH resolves to. It resolved to nothing here and every
   sample was skipped in silence, because a fixture that failed to evaluate was

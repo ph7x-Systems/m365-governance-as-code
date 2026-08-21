@@ -28,7 +28,7 @@ def _runs(tmp_path: Path, names: tuple[str, ...]):
     from m365_governance.cli import _evaluate_all
 
     evidence = tmp_path / "evidence-in"
-    evidence.mkdir()
+    evidence.mkdir(exist_ok=True)
     for name in names:
         (evidence / name).write_bytes((FIXTURES / name).read_bytes())
 
@@ -167,3 +167,103 @@ def test_a_run_with_no_collection_time_is_refused_by_name(tmp_path: Path) -> Non
 
     with pytest.raises(bundling.BundleError, match="provenance.collected_at"):
         bundling.write(tmp_path / "bundle", runs, documents)
+
+
+def test_evidence_that_already_exists_produces_the_same_folder(
+    tmp_path: Path, capsys
+) -> None:
+    """The portable folder without going back to the tenant.
+
+    `--bundle` was born on `run`, which collects first, so the one shape the
+    desktop product opens could only be produced by reaching a tenant. Somebody
+    holding evidence from a previous collection, a pipeline or a colleague had
+    to collect again to obtain the packaging -- a coupling between what was
+    read and how it is carried, which are different questions.
+
+    THE POINT IS THAT IT IS THE SAME FOLDER, not that a second one exists.
+    `bundling.write` is the only thing that writes it, and this asserts the
+    command reaches that writer rather than reimplementing the arrangement: the
+    bytes here are compared against the writer's own output for the same
+    evidence, not against a shape described in a test.
+    """
+    import types
+
+    from m365_governance.cli import _cmd_evaluate
+
+    evidence = tmp_path / "evidence-in"
+    evidence.mkdir(exist_ok=True)
+    for name in ("list-over-limit.json", "site-class-not-read.json"):
+        (evidence / name).write_bytes((FIXTURES / name).read_bytes())
+
+    through_the_command = tmp_path / "by-command"
+    code = _cmd_evaluate(
+        types.SimpleNamespace(
+            evidence=evidence,
+            rules=None,
+            profile=None,
+            format="markdown",
+            bundle=through_the_command,
+            fail_on="never",
+        )
+    )
+    assert code == 0
+
+    runs, documents = _runs(
+        tmp_path, ("list-over-limit.json", "site-class-not-read.json")
+    )
+    through_the_writer = bundling.write(tmp_path / "by-writer", runs, documents)
+
+    def tree(root: Path) -> dict[str, bytes]:
+        return {
+            str(p.relative_to(root)): p.read_bytes()
+            for p in sorted(root.rglob("*"))
+            if p.is_file()
+        }
+
+    assert tree(through_the_command) == tree(through_the_writer)
+
+
+def test_bundling_existing_evidence_reaches_no_tenant(tmp_path: Path) -> None:
+    """Nothing here may open a connection.
+
+    The value of bundling evidence that already exists is that it can be done
+    with no credentials, no network and no tenant -- which is also what makes
+    the whole desktop experience provable offline against frozen evidence. A
+    call to the collector would take that away without changing any output, so
+    it is the call that is asserted rather than the result.
+    """
+    import types
+
+    from m365_governance import cli
+
+    reached = []
+
+    def refuse(*_args, **_kwargs):
+        reached.append(True)
+        raise AssertionError("bundling existing evidence reached a tenant")
+
+    original = getattr(cli, "collect", None)
+    if original is not None:
+        cli.collect = refuse
+    try:
+        evidence = tmp_path / "evidence-in"
+        evidence.mkdir(exist_ok=True)
+        (evidence / "list-over-limit.json").write_bytes(
+            (FIXTURES / "list-over-limit.json").read_bytes()
+        )
+        code = cli._cmd_evaluate(
+            types.SimpleNamespace(
+                evidence=evidence,
+                rules=None,
+                profile=None,
+                format="markdown",
+                bundle=tmp_path / "bundle",
+                fail_on="never",
+            )
+        )
+    finally:
+        if original is not None:
+            cli.collect = original
+
+    assert code == 0
+    assert not reached

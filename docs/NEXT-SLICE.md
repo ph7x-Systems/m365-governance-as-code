@@ -215,6 +215,29 @@ and a certificate still proceeds because `-Tenant` names the directory.
 somebody runs while working out how any of this fits together had no way to be tried, so
 the only way to see what it would do was to let it do it.
 
+### ENGINE-CONTRACT-LEDGER-002 — the ledger depends on somebody remembering — `RECORDED, NOT OPEN`
+
+**authority:** owner · **next action:** none: recorded so the ceremony is written down, not queued. Opening it needs the owner to decide what establishes that a version is new rather than changed
+
+`data/published-contracts.json` records the digest of every contract version when
+that version is published, and `tests/test_registry.py` refuses a version whose
+bytes have moved. It found three contracts that had been edited under an identity
+already published, which is the failure it exists to catch, and it will keep
+catching them.
+
+**What it does not do is add the line.** A new version arrives with a new digest,
+and the person introducing it writes that line by hand in the same change. If they
+forget, the test says the version is not in the ledger and the fix is to add it —
+which is the correct instruction and also exactly what somebody would do to silence
+a real mutation. The gate is sound in the direction that matters and depends on a
+human ceremony in the other.
+
+**Not open, and deliberately.** Silent mutation is prevented today, which was the
+risk. Automating the ceremony means deciding what evidence establishes that a
+version is genuinely new rather than genuinely changed, and the honest answer is
+the release history, not the tree. That is a slice with an owner decision in it,
+and it does not block anything currently queued.
+
 ### ENGINE-CLEAN-MACHINE-001 — run the journey where nothing is installed
 
 **authority:** repository · **next action:** re-run at the next release candidate
