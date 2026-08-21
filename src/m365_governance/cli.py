@@ -183,6 +183,21 @@ def _build_parser() -> argparse.ArgumentParser:
         help="permissions only: walk every item of every list",
     )
     collect.add_argument(
+        "--period",
+        choices=("D7", "D30", "D90", "D180"),
+        default=None,
+        # NO DEFAULT, AND THAT IS THE POINT. The four values are Microsoft's,
+        # and a period this engine picked would put a window into the evidence
+        # that nobody asked for: a report over thirty days answers a different
+        # question from one over seven, and the difference does not show in the
+        # number. A slice that takes a period and is given none records that
+        # the usage report was not read.
+        help=(
+            "licensing only: the reporting window a usage read asks Microsoft "
+            "for. Without it, no usage report is read"
+        ),
+    )
+    collect.add_argument(
         "--dry-run", action="store_true", help="print the command and reach no tenant"
     )
 
@@ -802,6 +817,7 @@ def _cmd_collect(args) -> int:
         certificate_path=args.certificate_path,
         certificate_password_env=args.certificate_password_env,
         count_unique_scopes=args.count_unique_scopes,
+        period=args.period,
         dry_run=args.dry_run,
         on_progress=None if args.dry_run else report,
     )

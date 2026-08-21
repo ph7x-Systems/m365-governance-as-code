@@ -137,6 +137,51 @@ def test_group_expansion_is_declared_incomplete_rather_than_guessed():
     assert "minimum_count" in joined
 
 
+def test_a_slice_runs_the_collector_it_names_with_the_parameters_it_takes():
+    """Routing, proven without a tenant.
+
+    `Slice.source` said which KIND of collector answers a slice and `run_slice`
+    read it as which ONE, because for as long as there was a single PowerShell
+    entry point the two questions had the same answer. Licensing is the second:
+    a different script, `-TenantHost` rather than `-TenantUrl`, a `-Period` no
+    other slice takes, and no `-CertificatePath` at all. Routed by `source`
+    alone it would have sent a mode `Get-SpoEvidence.ps1` has never heard of,
+    and the first thing anybody would have seen is a parameter-binding error
+    four seconds into a run against a real directory.
+    """
+    from m365_governance import collecting
+
+    argv = collecting.run_slice(
+        "licensing",
+        client_id="00000000-0000-0000-0000-000000000000",
+        output=Path("/nowhere"),
+        tenant_url="contoso.onmicrosoft.com",
+        period="D30",
+        certificate_path=Path("/nowhere/cert.pfx"),
+        dry_run=True,
+    ).stdout.split()
+
+    assert argv[argv.index("-File") + 1].endswith("licensing/Get-LicensingEvidence.ps1")
+    assert argv[argv.index("-Mode") + 1] == "Licensing"
+    assert argv[argv.index("-TenantHost") + 1] == "contoso.onmicrosoft.com"
+    assert argv[argv.index("-Period") + 1] == "D30"
+    assert "-TenantUrl" not in argv
+    assert "-SiteUrl" not in argv
+    # The collector takes a thumbprint from the machine store and has never
+    # been run app-only. A path it cannot bind is worse than no path.
+    assert "-CertificatePath" not in argv
+
+    spo = collecting.run_slice(
+        "sites",
+        client_id="00000000-0000-0000-0000-000000000000",
+        output=Path("/nowhere"),
+        tenant_url="https://contoso-admin.sharepoint.com",
+        dry_run=True,
+    ).stdout.split()
+    assert spo[spo.index("-File") + 1].endswith("sharepoint/Get-SpoEvidence.ps1")
+    assert "-TenantUrl" in spo and "-Period" not in spo
+
+
 def test_a_slice_with_no_site_connects_to_the_admin_centre():
     """The Python side knows which slices pass a `-SiteUrl`; the PowerShell
     side decides where to connect. Nothing joined the two, and they diverged:
