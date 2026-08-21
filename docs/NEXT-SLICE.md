@@ -25,6 +25,10 @@ are not restarted; the position block in the next section says what each of the 
 closures needs, and three of them are not engineering. The first slice with engineering
 left in it is the residual-defect list recorded under `FIRST-RUN-006`.
 
+**Opened 2026-08-21.** `CUSTOM-SCRIPT-SEMANTICS-001`, near the end of this file, is a
+security research slice with a wording half that is already decided and a runtime half
+that needs a tenant. It does not displace the FIRST-RUN freeze.
+
 The cards are executable contracts combined with the common contract below; they are not
 ideas, options or a backlog requiring refinement by the Executor.
 
@@ -1369,6 +1373,70 @@ site and label resources. Do not invent a readiness score or inspect prompts/con
 Supported plugin/agent governance and oversharing indicators derived from already
 owned permission/sharing evidence. Keep configured availability separate from observed
 use. Never enable, disable or invoke a plugin or agent.
+
+## SECURITY-RESEARCH — a control can stay true while its conclusion stops following
+
+#### 33. `CUSTOM-SCRIPT-SEMANTICS-001`
+
+**State:** `OPEN`. **authority:** Engine for the wording, owner for the tenant.
+
+**What was checked in this repository on 2026-08-21, before anything was written.**
+`DenyAddAndCustomizePages` appears once in the whole tree, in the available-field list
+of `docs/COLLECTION-PATH-AUDIT.md`. **No collector reads it and no rule interprets it.**
+`SPO-MODERN-003` is the only rule that mentions custom script at all, it does so in its
+basis rationale, and its own limitations already say it reads one file name.
+
+**So the first layer has no target, and that is the finding.** There is no rule to
+narrow, because there is no claim. The risk is not that this engine over-claims today;
+it is that the claim gets written on the day the field is first collected, by whoever
+writes that collector, from the name of the setting. The wording is therefore decided
+here, before the code exists, which is what the charter asks of a decision.
+
+**When the field is collected, the established fact is this and no wider:**
+
+> Direct custom script insertion through the governed SharePoint custom-script
+> capability is blocked for this site.
+
+**And the limitation travels with it:**
+
+> This does not establish that no approved component can render dynamic or externally
+> produced HTML or content in the page.
+
+**The hypothesis, which is not a published rule and must not become one before it is
+observed:** can approved SPFx components render user- or model-produced HTML in a way
+that executes with page and user context?
+
+**Why now.** Copilot in SharePoint generates interactive HTML reports, and since August
+2026 dashboards bound to a list that refresh when opened. They arrive as files in a
+library. Reaching a modern page from there needs an SPFx component, because the custom
+script route is exactly the one being closed - which is the point, and the reason a
+public example of somebody bridging the two exists at all.
+
+**The finding this is really about, in one line:** *approved code is not the same as
+approved content.* The App Catalog proves a component was approved once. It does not
+prove that every payload that component will later interpret passed an equivalent
+review, and with a model producing those payloads the gap is no longer theoretical.
+
+**Evidence required before any rule is published:**
+
+- the SPFx packages installed, and whether each is tenant-wide or site-scoped;
+- which components render HTML or content from outside their own package;
+- the rendering mechanism: iframe with what sandbox, DOM injection, sanitisation;
+- the origin of the content and what permission places or changes it;
+- the API permissions the package holds.
+
+**The stop rule, and it is the point of the card.** If the content can execute in page
+and user context, this is a new security finding. If it is isolated, the limit is
+documented and the hypothesis closes. **Neither sentence may be published before the
+runtime has been observed.** Microsoft documents that script inserted in a page runs as
+the visiting user; nothing found so far establishes the isolation mechanism of any
+particular component, and a security conclusion drawn from a plausible mechanism is the
+failure this product exists to refuse.
+
+**Next action, and it is not engineering:** reproduce the chain in a test tenant -
+Copilot-generated HTML, into a library, rendered by an SPFx component - and inspect the
+DOM and runtime. That needs an application registration and read consent in that tenant,
+which is identity state and is the owner's to grant. Everything above is done without it.
 
 ## Programme completion
 
