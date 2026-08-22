@@ -162,10 +162,10 @@
       },
       "subscribed_skus": {
         "state": "observed",
-        "value": 14,
+        "value": 3,
         "raw": {
           "field": "subscribedSkus",
-          "value": 14
+          "value": 3
         }
       },
       "skus": {
@@ -173,7 +173,12 @@
         "value": [
           {
             "sku": "ENTERPRISEPACK",
-            "prepaid_units": 25,
+            "prepaid_units": {
+              "enabled": 25,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
             "consumed_units": 21,
             "sku_id": "5c00-0000-4000-8000-000000000000",
             "applies_to": "User",
@@ -203,11 +208,17 @@
                 "applies_to": "Company",
                 "provisioning_status": "Success"
               }
-            ]
+            ],
+            "subscription_ids": []
           },
           {
             "sku": "POWER_BI_STANDARD",
-            "prepaid_units": 1000000,
+            "prepaid_units": {
+              "enabled": 1000000,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
             "consumed_units": 8,
             "sku_id": "5c00-0000-4000-8000-000000000001",
             "applies_to": "User",
@@ -219,11 +230,17 @@
                 "applies_to": "User",
                 "provisioning_status": "Success"
               }
-            ]
+            ],
+            "subscription_ids": []
           },
           {
             "sku": "FLOW_FREE",
-            "prepaid_units": 10000,
+            "prepaid_units": {
+              "enabled": 10000,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
             "consumed_units": 8,
             "sku_id": "5c00-0000-4000-8000-000000000002",
             "applies_to": "User",
@@ -235,15 +252,21 @@
                 "applies_to": "User",
                 "provisioning_status": "Success"
               }
-            ]
+            ],
+            "subscription_ids": []
           }
         ],
         "raw": {
-          "field": "subscribedSkus: skuPartNumber, skuId, appliesTo, capabilityStatus, prepaidUnits.enabled, consumedUnits, servicePlans",
+          "field": "subscribedSkus: skuPartNumber, skuId, appliesTo, capabilityStatus, prepaidUnits (four counters), consumedUnits, servicePlans, subscriptionIds",
           "value": [
             {
               "sku": "ENTERPRISEPACK",
-              "prepaid_units": 25,
+              "prepaid_units": {
+                "enabled": 25,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
               "consumed_units": 21,
               "sku_id": "5c00-0000-4000-8000-000000000000",
               "applies_to": "User",
@@ -273,11 +296,17 @@
                   "applies_to": "Company",
                   "provisioning_status": "Success"
                 }
-              ]
+              ],
+              "subscription_ids": []
             },
             {
               "sku": "POWER_BI_STANDARD",
-              "prepaid_units": 1000000,
+              "prepaid_units": {
+                "enabled": 1000000,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
               "consumed_units": 8,
               "sku_id": "5c00-0000-4000-8000-000000000001",
               "applies_to": "User",
@@ -289,11 +318,17 @@
                   "applies_to": "User",
                   "provisioning_status": "Success"
                 }
-              ]
+              ],
+              "subscription_ids": []
             },
             {
               "sku": "FLOW_FREE",
-              "prepaid_units": 10000,
+              "prepaid_units": {
+                "enabled": 10000,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
               "consumed_units": 8,
               "sku_id": "5c00-0000-4000-8000-000000000002",
               "applies_to": "User",
@@ -305,7 +340,8 @@
                   "applies_to": "User",
                   "provisioning_status": "Success"
                 }
-              ]
+              ],
+              "subscription_ids": []
             }
           ]
         }
@@ -377,6 +413,102 @@
           "field": "servicePlans minus assignedLicenses.disabledPlans, per user",
           "value": 1
         }
+      },
+      "sku_capacity": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "sku_id": "5c00-0000-4000-8000-000000000000",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
+            ]
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "sku_id": "5c00-0000-4000-8000-000000000001",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
+            ]
+          },
+          {
+            "sku": "FLOW_FREE",
+            "sku_id": "5c00-0000-4000-8000-000000000002",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
+            ]
+          }
+        ],
+        "raw": {
+          "field": "appliesTo and capabilityStatus, per subscribedSku",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "sku_id": "5c00-0000-4000-8000-000000000000",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
+              ]
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "sku_id": "5c00-0000-4000-8000-000000000001",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
+              ]
+            },
+            {
+              "sku": "FLOW_FREE",
+              "sku_id": "5c00-0000-4000-8000-000000000002",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
+              ]
+            }
+          ]
+        }
+      },
+      "capacity_summary": {
+        "state": "observed",
+        "value": {
+          "comparable": 0,
+          "not-comparable": 0,
+          "not-established": 3,
+          "kind_user_assignable": 3,
+          "kind_organisational": 0,
+          "kind_not_established": 0
+        },
+        "raw": {
+          "field": "count of subscribedSku rows per classification",
+          "value": {
+            "comparable": 0,
+            "not-comparable": 0,
+            "not-established": 3,
+            "kind_user_assignable": 3,
+            "kind_organisational": 0,
+            "kind_not_established": 0
+          }
+        }
+      },
+      "comparable_capacity": {
+        "state": "missing",
+        "detail": "No SKU on this surface establishes that its units are purchased seats, so no comparable capacity is published. The seats a subscription carries are companySubscription.totalLicenses and whether it was bought at all is companySubscription.isTrial, at /directory/subscriptions in the beta endpoint; subscribedSku.subscriptionIds is the join. This run did not read it."
       }
     }
   }

@@ -215,8 +215,29 @@ $skus = @(Get-MgSubscribedSku -All | ForEach-Object {
             sku_id            = [string] $_.SkuId
             applies_to        = [string] $_.AppliesTo
             capability_status = [string] $_.CapabilityStatus
-            prepaid_units     = [int] $_.PrepaidUnits.Enabled
+            # FOUR COUNTERS, NOT ONE. `prepaidUnits` is a `licenseUnitsDetail`
+            # and Microsoft documents four: `enabled` is the units enabled for
+            # the ACTIVE subscription, `warning` the grace period after it
+            # expired, `suspended` the units after cancellation that can still
+            # be reactivated, and `lockedOut` the units after the customer
+            # cancelled. This collector read `enabled` alone and called it
+            # `prepaid_units`, which flattens a subscription lifecycle into a
+            # single number and loses the difference between capacity a tenant
+            # has and capacity it is about to lose.
+            #
+            # NONE OF THE FOUR IS `SEATS PURCHASED`. That figure is
+            # `companySubscription.totalLicenses` on a different surface.
+            prepaid_units     = [ordered]@{
+                enabled    = [int] $_.PrepaidUnits.Enabled
+                warning    = [int] $_.PrepaidUnits.Warning
+                suspended  = [int] $_.PrepaidUnits.Suspended
+                locked_out = [int] $_.PrepaidUnits.LockedOut
+            }
             consumed_units    = [int] $_.ConsumedUnits
+            # THE JOIN TO THE COMMERCIAL SURFACE, carried so that reading it
+            # later needs no second enumeration. One SKU row can stand for
+            # several subscriptions.
+            subscription_ids  = @($_.SubscriptionIds | ForEach-Object { [string] $_ })
             service_plans     = @($_.ServicePlans | ForEach-Object {
                     [ordered]@{
                         plan_id             = [string] $_.ServicePlanId
