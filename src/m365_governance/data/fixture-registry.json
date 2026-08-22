@@ -79,6 +79,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-capacity-mixed.json",
+      "origin": "synthetic",
+      "purpose": "one SKU of every class the read can settle and one it cannot: a Company target, a subscription in warning, a cancelled one, an undocumented target class, and a row carrying a million units so no threshold can be introduced without failing a test",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/licensing/tenant-graph-modules-absent.json",
       "origin": "sanitized-observation",
       "purpose": "a real collector run on a machine without the Microsoft Graph modules; the host is replaced because the document establishes nothing about any tenant and the name would be a customer identifier for no evidential gain",

@@ -93,6 +93,100 @@ function Read-UsageReport {
     }
 }
 
+function Get-SkuCapacity {
+    <#
+        .SYNOPSIS
+        What kind of capacity each observed SKU represents, and whether its
+        units may be added to another SKU's.
+
+        .DESCRIPTION
+        WHY THIS EXISTS. `units_purchased` was removed from this collector after
+        it returned a seven-figure total on a tenant with a few dozen assigned
+        seats. The number was arithmetically correct: it was the sum of
+        `prepaidUnits.enabled` across every SKU the tenant holds. It was also
+        meaningless, because those units do not all count the same thing.
+
+        THE FIX IS NOT A BETTER FILTER. Dropping the SKUs whose numbers look
+        absurd is the same error with a threshold in front of it: it decides
+        what a tenant holds by how the figures look. What is needed is to know
+        what each SKU IS, and to say `not established` where that is not known.
+
+        WHAT MICROSOFT DOCUMENTS, and it is the whole basis for what follows:
+
+          `appliesTo`         `User` or `Company`. ONLY SKUs whose target class
+                              is `User` are assignable. A `Company` SKU's units
+                              are not user seats and never were.
+
+          `capabilityStatus`  `Enabled`, `Warning`, `Suspended`, `Deleted`,
+                              `LockedOut`. Anything but `Enabled` is a
+                              subscription that is expiring, cancelled or gone.
+
+          `prepaidUnits`      four counters, one per lifecycle state. `enabled`
+                              is the units enabled for the ACTIVE subscription.
+
+        WHAT MICROSOFT DOES NOT PUT ON THIS SURFACE, and it is the reason
+        nothing here is ever `comparable`:
+
+          Whether the organisation BOUGHT the subscription, or a user signed
+          themselves up for it under self-service, which Microsoft documents as
+          provisioning services `without asking you to take action on their
+          behalf`. A tenant holding a SKU does not mean the tenant purchased it.
+
+          How many seats were bought. `prepaidUnits.enabled` is not that number.
+          `companySubscription.totalLicenses` is, and `companySubscription.isTrial`
+          says whether it was a purchase at all. That resource is reachable at
+          `/directory/subscriptions`, in BETA only, and `subscribedSku.subscriptionIds`
+          is the join to it.
+
+        So this classifies what the read can settle, and names the measurement
+        that would settle the rest. It never guesses, and it never excludes.
+    #>
+    param([array] $Skus)
+
+    $out = @()
+    foreach ($sku in @($Skus)) {
+        $kind = 'not-established'
+        $eligibility = 'not-established'
+        $because = @()
+
+        $applies = [string] $sku.applies_to
+        $status = [string] $sku.capability_status
+
+        if ($applies -eq 'Company') {
+            $kind = 'organisational'
+            $eligibility = 'not-comparable'
+            $because += 'appliesTo is Company, and Microsoft documents that only a SKU whose target class is User is assignable, so these units are not user seats'
+        }
+        elseif ($applies -eq 'User') {
+            $kind = 'user-assignable'
+            $because += 'appliesTo is User, which Microsoft documents as the only assignable target class'
+        }
+        else {
+            $because += "appliesTo is '$applies', which is not a documented target class, so what these units count is not established"
+        }
+
+        if ($status -and $status -ne 'Enabled') {
+            $eligibility = 'not-comparable'
+            $because += "capabilityStatus is $status rather than Enabled, so this subscription is not current capacity"
+        }
+
+        if ($eligibility -eq 'not-established') {
+            $because += 'whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read'
+        }
+
+        $out += [ordered]@{
+            sku                     = [string] $sku.sku
+            sku_id                  = [string] $sku.sku_id
+            capacity_kind           = $kind
+            aggregation_eligibility = $eligibility
+            because                 = $because
+        }
+    }
+
+    return $out
+}
+
+
 function Get-LicensingFacts {
     <#
         .SYNOPSIS
@@ -179,7 +273,37 @@ function Get-LicensingFacts {
         $skus = @($SubscribedSkus)
         $l['subscribed_skus'] = New-ScalarFact -Value $skus.Count -RawField 'subscribedSkus'
         $l['skus'] = New-ScalarFact -Value $skus `
-            -RawField 'subscribedSkus: skuPartNumber, prepaidUnits.enabled, consumedUnits'
+            -RawField 'subscribedSkus: skuPartNumber, skuId, appliesTo, capabilityStatus, prepaidUnits (four counters), consumedUnits, servicePlans, subscriptionIds'
+
+        # WHAT EACH SKU IS, BEFORE ANYTHING IS ADDED TO ANYTHING. Never a
+        # filter, and never a total: one row per SKU observed, each carrying the
+        # documented rule that classified it.
+        $capacity = @(Get-SkuCapacity -Skus $skus)
+        $l['sku_capacity'] = New-ScalarFact -Value $capacity `
+            -RawField 'appliesTo and capabilityStatus, per subscribedSku'
+
+        # THE COUNTS ARE OF SKUs, NOT OF UNITS. A count of rows means the same
+        # thing on every row; a sum of units does not, which is the whole
+        # finding. `comparable` is currently zero by construction and that is
+        # the result rather than a gap in the code: nothing on this surface
+        # establishes that a SKU's units are purchased seats.
+        $summary = [ordered]@{}
+        foreach ($state in @('comparable', 'not-comparable', 'not-established')) {
+            $summary[$state] = @($capacity | Where-Object { $_.aggregation_eligibility -eq $state }).Count
+        }
+        foreach ($kind in @('user-assignable', 'organisational', 'not-established')) {
+            $summary["kind_$($kind -replace '-','_')"] = @($capacity | Where-Object { $_.capacity_kind -eq $kind }).Count
+        }
+        $l['capacity_summary'] = New-ScalarFact -Value $summary `
+            -RawField 'count of subscribedSku rows per classification'
+
+        # AND THE FIGURE EVERYBODY WANTS, RECORDED AS NOT READ RATHER THAN
+        # ESTIMATED. `prepaidUnits.enabled` is not seats purchased; nothing on
+        # this surface is.
+        $l['comparable_capacity'] = New-AbsentFact -State 'missing' `
+            -Detail ('No SKU on this surface establishes that its units are purchased seats, so no comparable capacity is published. ' +
+                     'The seats a subscription carries are companySubscription.totalLicenses and whether it was bought at all is companySubscription.isTrial, ' +
+                     'at /directory/subscriptions in the beta endpoint; subscribedSku.subscriptionIds is the join. This run did not read it.')
         $consumed = 0
         foreach ($s in $skus) { $consumed += [int] $s.consumed_units }
         # `consumedUnits` IS ADDITIVE AND THE OTHER IS NOT. It counts assignments,
@@ -361,4 +485,4 @@ function Get-LicensingFacts {
     return $facts
 }
 
-Export-ModuleMember -Function Get-LicensingFacts, Read-UsageReport
+Export-ModuleMember -Function Get-LicensingFacts, Get-SkuCapacity, Read-UsageReport
