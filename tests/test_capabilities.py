@@ -196,7 +196,7 @@ def test_the_command_reaches_no_tenant_and_reads_no_evidence():
 
     # `questions` is a second PROJECTION of the same document, not a second
     # source of it: it selects which view is printed and names no tenant.
-    assert actions <= {"help", "rules", "format", "questions"}
+    assert actions <= {"help", "rules", "format", "questions", "domains"}
 
 
 def _fixture(name: str, load_json):

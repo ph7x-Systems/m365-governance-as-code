@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.2.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.1.0",
   "title": "Capability manifest",
   "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand — and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
   "type": "object",
@@ -11,13 +11,12 @@
     "contract_version",
     "capabilities",
     "contracts",
-    "rules",
-    "domains"
+    "rules"
   ],
   "properties": {
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.2.0",
+      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.1.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it."
     },
     "engine_version": {
@@ -36,13 +35,6 @@
         "$ref": "#/$defs/capability"
       },
       "description": "One entry per collection slice: one question this engine can answer about a tenant."
-    },
-    "domains": {
-      "type": "array",
-      "items": {
-        "$ref": "#/$defs/domain"
-      },
-      "description": "The evidence coverage matrix: every Microsoft 365 domain this engine claims, the surfaces it has in each, and how far each has been proved against a real tenant."
     },
     "contracts": {
       "type": "array",
@@ -292,109 +284,6 @@
               }
             }
           }
-        }
-      }
-    },
-    "surface": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "name",
-        "describes",
-        "live_validation_state",
-        "produces_findings"
-      ],
-      "description": "One acquisition surface inside a domain. It is a capability seen from the domain's side, and carries the same live-validation state that capability publishes: the two cannot disagree because there is one value.",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "describes": {
-          "type": "string"
-        },
-        "live_validation_state": {
-          "type": "string",
-          "enum": [
-            "none",
-            "negative-only",
-            "provider-only",
-            "partial",
-            "full"
-          ],
-          "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the path that REPORTS A FINDING was never taken — because the surface was absent or empty, or because nothing in that tenant was in the state the rule looks for. The distinction is what was exercised, not what the surface looked like: a catalog of ten solutions with none of them behind its version proves the read and leaves the finding unproved exactly as an empty one does. `provider-only` means the transport underneath has read a real tenant and this slice's own path has not. `full` means the path that produces this evidence, INCLUDING the branch that reports a finding, was observed against a real tenant."
-        },
-        "produces_findings": {
-          "type": "boolean"
-        }
-      }
-    },
-    "domain": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "name",
-        "title",
-        "question",
-        "acquisition",
-        "surfaces",
-        "decides",
-        "withholds"
-      ],
-      "description": "One Microsoft 365 surface this engine claims to govern, WHETHER OR NOT it can observe it. A catalogue of what exists reads, to somebody who does not already know, as a map of Microsoft 365: the domains carrying no surface are what make this document true rather than flattering.",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "title": {
-          "type": "string"
-        },
-        "question": {
-          "type": "string",
-          "description": "What an organisation wants to know about this surface, written for unstarted domains too: an absence is only legible beside the question it fails to answer."
-        },
-        "acquisition": {
-          "type": "string",
-          "description": "What obtaining evidence here requires, in Microsoft's terms."
-        },
-        "state": {
-          "const": "not-started",
-          "description": "Present ONLY for a domain with no surface at all, and it is not a weaker `none`: `none` means a collector exists and has only run offline, `not-started` means there is no acquisition surface here."
-        },
-        "weakest_surface_state": {
-          "type": "string",
-          "enum": [
-            "none",
-            "negative-only",
-            "provider-only",
-            "partial",
-            "full"
-          ],
-          "description": "The state of the LEAST proved surface in this domain. It is not a score and not an average: a domain holding one proven surface and one unproven one is not half-proven, and this names a particular surface's state rather than computing over several."
-        },
-        "surfaces_by_state": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "integer",
-            "minimum": 1
-          },
-          "description": "How many surfaces are in each state. Coverage reported as the facts it is made of, which is what `D5` requires instead of a grade."
-        },
-        "surfaces": {
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/surface"
-          }
-        },
-        "decides": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          },
-          "description": "The rules that can be decided from this domain's evidence. Empty is a real answer: four domains are collected and decide nothing, by decision."
-        },
-        "withholds": {
-          "type": "string",
-          "description": "What this engine refuses to conclude here even when it can observe it, and why. Empty where nothing has been decided yet."
         }
       }
     }

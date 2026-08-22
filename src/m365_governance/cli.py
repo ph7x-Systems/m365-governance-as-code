@@ -213,6 +213,14 @@ def _build_parser() -> argparse.ArgumentParser:
         help="json is the published capability-manifest contract",
     )
     caps.add_argument(
+        "--domains",
+        action="store_true",
+        help=(
+            "the coverage matrix: every Microsoft 365 surface this engine "
+            "claims, including the ones it cannot observe at all"
+        ),
+    )
+    caps.add_argument(
         "--questions",
         action="store_true",
         help=(
@@ -602,6 +610,8 @@ def _cmd_capabilities(args) -> int:
         print(json.dumps(document, indent=2, ensure_ascii=False))
     elif args.questions:
         print(capabilities.describe_questions(document), end="")
+    elif args.domains:
+        print(capabilities.describe_domains(document), end="")
     else:
         print(capabilities.describe(document), end="")
     return 0

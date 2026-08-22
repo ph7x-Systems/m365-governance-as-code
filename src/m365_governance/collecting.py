@@ -207,6 +207,14 @@ class Slice:
     #: is the same, so the difference is a field rather than a fork.
     source: str = "powershell"
 
+    #: The Microsoft 365 surface this slice governs, from `domains.DOMAINS`.
+    #: It is the surface GOVERNED and not the API read: `licensing` reads the
+    #: directory through Graph and `agents` reads a SharePoint library, and
+    #: neither belongs to the domain whose transport it happens to use. Without
+    #: it the catalogue is a list of collectors, which answers "what did we
+    #: write" and never "what of Microsoft 365 can this see".
+    domain: str = "sharepoint"
+
     #: Which PowerShell collector answers this slice, relative to
     #: `collectors/powershell`. `source` says WHICH KIND of collector runs a
     #: slice; this says WHICH ONE. They were the same field for as long as
@@ -250,6 +258,7 @@ SLICES = {
         Slice(
             "agents",
             "Agents",
+            domain="agents",
             needs_site=True,
             needs_tenant=False,
             profile="default",
@@ -421,6 +430,7 @@ SLICES = {
         Slice(
             "conditional-access",
             "ConditionalAccess",
+            domain="entra",
             source="graph",
             needs_site=False,
             # The admin centre address, and not because Graph needs it. The
@@ -483,6 +493,7 @@ SLICES = {
         Slice(
             "licensing",
             "Licensing",
+            domain="licensing",
             script="licensing/Get-LicensingEvidence.ps1",
             tenant_parameter="-TenantHost",
             takes_certificate=False,
