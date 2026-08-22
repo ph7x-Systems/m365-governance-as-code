@@ -528,9 +528,9 @@ SLICES = {
             # DIRECTORY; USAGE AND DEPENDENCY WERE NOT.
             live=Live.PARTIAL,
             live_note=(
-                "assignment and report identifiability were observed against a "
-                "real directory; the usage report has never been requested from "
-                "one, and dependency evidence is collected by nothing"
+                "assignment, report identifiability and one usage report were "
+                "observed against a real directory; the report returned rows and "
+                "named nobody, and dependency evidence is collected by nothing"
             ),
         ),
     ]
