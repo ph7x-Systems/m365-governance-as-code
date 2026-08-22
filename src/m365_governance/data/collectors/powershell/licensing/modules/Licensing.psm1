@@ -285,15 +285,78 @@ function Get-LicensingFacts {
         }
     }
 
+    # -- what would stop, if an assignment changed ---------------------------
+    #
+    # THE FIRST DEPENDENCY QUESTION THAT CAN BE ANSWERED WITHOUT GUESSING, and
+    # it is answered at the level capability actually lives at. A SKU is a
+    # bundle; a service plan is the thing somebody has. So for each person:
+    #
+    #   effective plans of an assignment
+    #     = the SKU's plans, minus that assignment's disabled plans,
+    #       keeping only `appliesTo = User` and `provisioningStatus = Success`
+    #
+    # A plan delivered by exactly ONE of a person's assignments is a capability
+    # that disappears if that assignment is removed. A plan delivered by more
+    # than one is not: another assignment already carries it.
+    #
+    # THIS IS A FACT AND NOT A RECOMMENDATION. Two SKUs delivering one plan may
+    # differ in quota, in support, or in what the contract permits, none of
+    # which is visible here. Whether an overlap means a licence can be removed
+    # is a conclusion, it needs a declared basis, and it is not this collector's
+    # to make.
+    if ($null -ne $SubscribedSkus -and $null -ne $Assignments) {
+        $plansBySku = @{}
+        foreach ($sku in @($SubscribedSkus)) {
+            if (-not $sku.Contains('service_plans')) { continue }
+            $plansBySku[[string] $sku.sku_id] = @(
+                @($sku.service_plans) | Where-Object {
+                    $_.applies_to -eq 'User' -and $_.provisioning_status -eq 'Success'
+                } | ForEach-Object { [string] $_.plan_id })
+        }
+
+        $soleSource = 0
+        $alsoElsewhere = 0
+        foreach ($person in @($Assignments)) {
+            if (-not $person.Contains('licenses')) { continue }
+            $delivered = @{}
+            foreach ($held in @($person.licenses)) {
+                $disabled = @($held.disabled_plans)
+                foreach ($plan in @($plansBySku[[string] $held.sku_id])) {
+                    if ($disabled -contains $plan) { continue }
+                    $delivered[$plan] = 1 + [int] $delivered[$plan]
+                }
+            }
+            foreach ($count in $delivered.Values) {
+                if ($count -eq 1) { $soleSource++ } else { $alsoElsewhere++ }
+            }
+        }
+
+        $l['plans_with_one_source'] = New-ScalarFact -Value $soleSource `
+            -RawField 'servicePlans minus assignedLicenses.disabledPlans, per user'
+        $l['plans_with_more_than_one_source'] = New-ScalarFact -Value $alsoElsewhere `
+            -RawField 'servicePlans minus assignedLicenses.disabledPlans, per user'
+    }
+    else {
+        foreach ($name in @('plans_with_one_source', 'plans_with_more_than_one_source')) {
+            $l[$name] = New-AbsentFact -State 'missing' `
+                -Detail ('Service plans and assignments were not both read, so ' +
+                    'what a person would lose is not calculable.')
+        }
+    }
+
     # DEPENDENCY IS THE HALF NOTHING HERE READS, AND SAYING SO IS THE POINT.
     # A change needs usage and dependency. This collector reads what is assigned
     # and, at best, what was used. Recording the gap as a fact is what stops a
     # consumer reading a usage figure as an answer.
-    $l['dependency_evidence'] = New-AbsentFact -State 'missing' `
-        -Detail ('No dependency evidence is collected by this run. What a ' +
-            'capability is required for -- a policy, a role, a compliance ' +
-            'obligation, a workload that would stop -- is not observable from ' +
-            'an assignment or from usage, and nothing may be concluded without it.')
+    $l['dependency_evidence'] = New-AbsentFact -State 'partial' `
+        -Detail ('What one assignment uniquely delivers is calculable and is ' +
+            'recorded: a ' +
+            'service plan delivered by exactly one of a person assignments ' +
+            'stops being delivered if that assignment is removed. What a ' +
+            'capability is REQUIRED FOR -- a policy, a role, a compliance ' +
+            'obligation, a workload that would stop -- is a different question ' +
+            'and is not observable from an assignment or from usage. Nothing ' +
+            'may be concluded about removing a licence without it.')
 
     return $facts
 }

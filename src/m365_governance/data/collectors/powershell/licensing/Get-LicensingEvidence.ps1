@@ -199,11 +199,32 @@ if ($Mode -eq 'Connect') {
 
 # --- what is assigned --------------------------------------------------------
 
+# THE SKU IS NOT THE UNIT OF CAPABILITY. A service plan is: a SKU is a bundle
+# of them, two SKUs can deliver the same plan, and an assignment can disable
+# plans it would otherwise carry. Without the plans, nothing here can answer
+# what stops working when an assignment changes, which is the question the
+# whole capability turns on.
+#
+# `appliesTo` and `provisioning_status` travel because Microsoft states what
+# they mean: only a SKU whose target class is `User` is assignable at all, and
+# a plan can be present in the bundle while disabled, in error, or awaiting an
+# administrator. A plan that is not `Success` is not a capability somebody has.
 $skus = @(Get-MgSubscribedSku -All | ForEach-Object {
         [ordered]@{
-            sku            = [string] $_.SkuPartNumber
-            prepaid_units  = [int] $_.PrepaidUnits.Enabled
-            consumed_units = [int] $_.ConsumedUnits
+            sku               = [string] $_.SkuPartNumber
+            sku_id            = [string] $_.SkuId
+            applies_to        = [string] $_.AppliesTo
+            capability_status = [string] $_.CapabilityStatus
+            prepaid_units     = [int] $_.PrepaidUnits.Enabled
+            consumed_units    = [int] $_.ConsumedUnits
+            service_plans     = @($_.ServicePlans | ForEach-Object {
+                    [ordered]@{
+                        plan_id             = [string] $_.ServicePlanId
+                        plan                = [string] $_.ServicePlanName
+                        applies_to          = [string] $_.AppliesTo
+                        provisioning_status = [string] $_.ProvisioningStatus
+                    }
+                })
         }
     })
 
@@ -211,9 +232,23 @@ $assignments = @(Get-MgUser -All -Property 'id,userPrincipalName,assignedLicense
     Where-Object { $_.AssignedLicenses.Count -gt 0 } |
     ForEach-Object {
         [ordered]@{
-            user          = [string] $_.Id
-            enabled       = [bool] $_.AccountEnabled
-            service_plans = @($_.AssignedLicenses.SkuId | ForEach-Object { [string] $_ })
+            user     = [string] $_.Id
+            enabled  = [bool] $_.AccountEnabled
+            # THE FIELD USED TO BE CALLED `service_plans` AND HELD SKU IDS,
+            # which is the naming defect that makes a dependency question
+            # unanswerable: a consumer reading it believed it had the
+            # capabilities and had the bundles.
+            #
+            # `disabled_plans` travels with each assignment because it is what
+            # makes the effective set effective. A SKU carrying twelve plans of
+            # which nine are disabled for this person delivers three.
+            licenses = @($_.AssignedLicenses | ForEach-Object {
+                    [ordered]@{
+                        sku_id         = [string] $_.SkuId
+                        disabled_plans = @($_.DisabledPlans |
+                            ForEach-Object { [string] $_ })
+                    }
+                })
         }
     })
 

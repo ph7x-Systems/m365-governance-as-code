@@ -257,8 +257,22 @@
         "detail": "No usage report was read, so no window applies."
       },
       "dependency_evidence": {
-        "state": "missing",
-        "detail": "No dependency evidence is collected by this run. What a capability is required for -- a policy, a role, a compliance obligation, a workload that would stop -- is not observable from an assignment or from usage, and nothing may be concluded without it."
+        "state": "partial",
+        "detail": "What one assignment uniquely delivers is calculable and is recorded: a service plan delivered by exactly one of a person's assignments stops being delivered if that assignment is removed. What a capability is REQUIRED FOR is a different question and is not observable from an assignment or from usage."
+      },
+      "plans_with_one_source": {
+        "state": "observed",
+        "value": 2,
+        "raw": {
+          "field": "servicePlans minus assignedLicenses.disabledPlans, per user"
+        }
+      },
+      "plans_with_more_than_one_source": {
+        "state": "observed",
+        "value": 1,
+        "raw": {
+          "field": "servicePlans minus assignedLicenses.disabledPlans, per user"
+        }
       }
     }
   }
