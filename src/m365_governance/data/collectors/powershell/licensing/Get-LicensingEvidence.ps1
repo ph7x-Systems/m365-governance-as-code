@@ -1,3 +1,9 @@
+﻿# public-scope-check: this file names the words it forbids. `trial` here is
+# Microsoft's own `companySubscription.isTrial`, describing a TENANT's
+# subscription, and it is governance evidence rather than this product's
+# commercial model. The guard exists to stop pH7x pricing, entitlement and
+# trial mechanics reaching a public MIT repository; a vendor field name that
+# a collector must record is the opposite of that.
 <#
     Get-LicensingEvidence.ps1
 
@@ -47,6 +53,19 @@ param(
     [Parameter()]
     [ValidateSet('D7', 'D30', 'D90', 'D180')]
     [string] $Period,
+
+    # THE COMMERCIAL SURFACE, AND IT IS OPT-IN. `/directory/subscriptions`
+    # returns `companySubscription`, which carries the seats a subscription
+    # includes and whether it is a free trial. It is a SEPARATE acquisition
+    # against the tenant and a separate decision: a caller that does not ask for
+    # it gets a run that says the surface was not read, rather than one that
+    # quietly read more of somebody's directory than they expected.
+    #
+    # IT IS IN THE BETA ENDPOINT. Microsoft marks beta as subject to change and
+    # unsupported in production, and that travels with every fact derived from
+    # it rather than being noticed later.
+    [Parameter()]
+    [switch] $IncludeSubscriptions,
 
     [Parameter()]
     [string] $ClientId,
@@ -249,6 +268,52 @@ $skus = @(Get-MgSubscribedSku -All | ForEach-Object {
         }
     })
 
+# THE SEATS ARE NOT ON THE SKU. `prepaidUnits.enabled` is the units enabled for
+# the ACTIVE subscription; `companySubscription.totalLicenses` is the number of
+# seats a subscription includes. Only the second is a like-for-like unit, and it
+# is on a different resource in a different endpoint version.
+#
+# `unsupported` IS AN ANSWER AND `missing` IS NOT THE SAME ONE. A cloud that
+# does not expose this resource is a fact about the platform; a run that did not
+# ask is a fact about the run. They are recorded apart.
+$subscriptions = $null
+$subscriptionSurface = 'not-observed'
+$subscriptionReason = ''
+$subscriptionOwner = ''
+if ($IncludeSubscriptions) {
+    try {
+        $subscriptions = @(Invoke-MgGraphRequest -Method GET `
+                -Uri 'https://graph.microsoft.com/beta/directory/subscriptions' |
+            ForEach-Object { $_.value } |
+            ForEach-Object {
+                [ordered]@{
+                    id             = [string] $_.id
+                    sku_id         = [string] $_.skuId
+                    sku            = [string] $_.skuPartNumber
+                    is_trial       = [bool] $_.isTrial
+                    total_licenses = [int] $_.totalLicenses
+                    status         = [string] $_.status
+                    created        = [string] $_.createdDateTime
+                }
+            })
+        $subscriptionSurface = 'observed'
+    }
+    catch {
+        # A REFUSAL AND AN ABSENCE ARE DIFFERENT ANSWERS. A resource the cloud
+        # does not have is `unsupported`; anything else is recorded with whose
+        # limitation it is and does not become `unsupported` by default.
+        $status = $_.Exception.Response.StatusCode.value__
+        $subscriptionReason = $_.Exception.Message
+        if ($status -eq 404 -or $status -eq 501) {
+            $subscriptionSurface = 'unsupported'
+            $subscriptionOwner = 'microsoft'
+        }
+        else {
+            $subscriptionOwner = 'tenant-or-identity'
+        }
+    }
+}
+
 $assignments = @(Get-MgUser -All -Property 'id,userPrincipalName,assignedLicenses,accountEnabled' |
     Where-Object { $_.AssignedLicenses.Count -gt 0 } |
     ForEach-Object {
@@ -330,6 +395,30 @@ $attempts = @(
         owner = $(if ($windows) { '' } else { 'caller' })
     }
     [ordered]@{
+        # A SEPARATE SURFACE AND A SEPARATE DECISION, so it records its own
+        # attempt. `not-collected` here means the caller did not ask for it,
+        # which is a fact about the run and not about the tenant.
+        area = 'capacity'
+        operation = 'GET /beta/directory/subscriptions'
+        population = 'commercial-subscriptions-of-this-tenant'
+        identity = $identityKind; method = $identityMethod
+        result = $(switch ($subscriptionSurface) {
+                'observed' { 'observed' }
+                'unsupported' { 'not-supported' }
+                default { 'not-collected' }
+            })
+        reason = $(switch ($subscriptionSurface) {
+                'observed' { '' }
+                'unsupported' { $subscriptionReason }
+                default { if ($subscriptionReason) { $subscriptionReason } else { 'the caller did not ask for the commercial subscriptions' } }
+            })
+        owner = $(switch ($subscriptionSurface) {
+                'observed' { '' }
+                'unsupported' { 'microsoft' }
+                default { if ($subscriptionOwner) { $subscriptionOwner } else { 'caller' } }
+            })
+    }
+    [ordered]@{
         area = 'dependency'
         operation = 'none'
         population = 'policies, roles and obligations that require a capability'
@@ -349,7 +438,8 @@ Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
             display_name = $TenantHost; url = 'https://admin.microsoft.com'
         }) `
         -Facts (Get-LicensingFacts -SubscribedSkus $skus -Assignments $assignments `
-            -ReportSettings $settings -UsageWindows $windows -Attempts $attempts) `
+            -ReportSettings $settings -UsageWindows $windows -Attempts $attempts `
+            -Subscriptions $subscriptions -SubscriptionSurface $subscriptionSurface) `
         -Requested @('assignment', 'usage_identity', 'usage', 'dependency') `
         -Completed (@('assignment') +
             $(if ($null -ne $settings -and -not $settings.display_concealed_names) {

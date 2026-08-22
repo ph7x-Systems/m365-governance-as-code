@@ -1,3 +1,9 @@
+﻿# public-scope-check: this file names the words it forbids. `trial` here is
+# Microsoft's own `companySubscription.isTrial`, describing a TENANT's
+# subscription, and it is governance evidence rather than this product's
+# commercial model. The guard exists to stop pH7x pricing, entitlement and
+# trial mechanics reaching a public MIT repository; a vendor field name that
+# a collector must record is the opposite of that.
 <#
     Licensing.psm1
 
@@ -141,7 +147,10 @@ function Get-SkuCapacity {
         So this classifies what the read can settle, and names the measurement
         that would settle the rest. It never guesses, and it never excludes.
     #>
-    param([array] $Skus)
+    param([array] $Skus, [array] $Join)
+
+    $joined = @{}
+    foreach ($row in @($Join)) { $joined[[string] $row.sku] = $row }
 
     $out = @()
     foreach ($sku in @($Skus)) {
@@ -170,17 +179,162 @@ function Get-SkuCapacity {
             $because += "capabilityStatus is $status rather than Enabled, so this subscription is not current capacity"
         }
 
+        # THE UNIT IS WHAT MAKES A NUMBER COMPARABLE, and seats are the unit.
+        # `companySubscription.totalLicenses` is documented as the number of
+        # seats included in a subscription, and a seat means the same thing on
+        # every subscription that reports one. `prepaidUnits.enabled` does not,
+        # which is why it was never a candidate.
+        #
+        # COMPARABLE IS NOT PURCHASED. What was bought is a separate question
+        # this does not answer, and merging the two would put the removed total
+        # back with a citation attached.
+        $link = $joined[[string] $sku.sku]
         if ($eligibility -eq 'not-established') {
-            $because += 'whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read'
+            if ($null -ne $link -and $link.state -eq 'joined' -and $kind -eq 'user-assignable') {
+                $eligibility = 'comparable'
+                $because += "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one"
+                $because += 'this says the units may be added to another subscription seats, and says nothing about whether they were bought'
+            }
+            elseif ($null -ne $link -and $link.state -eq 'unmatched') {
+                $because += 'the commercial subscriptions were read and none matched this SKU, so its seats are not established'
+            }
+            elseif ($null -ne $link -and $link.state -eq 'unsupported') {
+                $because += 'the commercial subscription surface is not available here, so seats cannot be established'
+            }
+            else {
+                $because += 'whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read'
+            }
         }
 
-        $out += [ordered]@{
+        $row = [ordered]@{
             sku                     = [string] $sku.sku
             sku_id                  = [string] $sku.sku_id
             capacity_kind           = $kind
             aggregation_eligibility = $eligibility
             because                 = $because
         }
+        if ($null -ne $link) {
+            $row['subscription_state'] = [string] $link.state
+            $row['commercial_basis'] = [string] $link.commercial_basis
+            if ($link.Contains('seats')) { $row['seats'] = [int] $link.seats }
+        }
+        $out += $row
+    }
+
+    return $out
+}
+
+
+function Get-SubscriptionJoin {
+    <#
+        .SYNOPSIS
+        The commercial subscriptions behind one SKU, and what the join settled.
+
+        .DESCRIPTION
+        THE SEAT COUNT IS NOT ON `subscribedSkus`. `prepaidUnits.enabled` is
+        documented as the units enabled for the ACTIVE subscription, which is a
+        different quantity from the seats a subscription carries. The seats are
+        `companySubscription.totalLicenses`, documented as `the number of seats
+        included in this subscription`, and `subscribedSku.subscriptionIds` is
+        the join to them.
+
+        THE RESOURCE IS BETA. `/directory/subscriptions` returns
+        `companySubscription` and exists in the beta endpoint only, which
+        Microsoft marks as subject to change and unsupported in production. That
+        is a result about Microsoft Graph rather than about this engine, and it
+        travels with every fact derived from it: the commercially authoritative
+        surface for a tenant's own subscriptions is not in `v1.0`.
+
+        `isTrial` DOES NOT ESTABLISH A PURCHASE, AND THIS IS THE TRAP.
+        Microsoft documents it as `whether the subscription is a free trial or
+        purchased`, which reads like a binary and is not one in a tenant. A
+        self-service free programme is neither a trial nor a purchase: nobody
+        bought it and it never expires. `isTrial` false therefore establishes
+        `not a trial` and nothing more, and this collector says exactly that.
+        Reading it as `purchased` would put the removed total back on the screen
+        with a citation attached.
+
+        WHAT THE JOIN DOES SETTLE is the unit. Seats mean the same thing on
+        every subscription that reports them, so seats may be added to seats.
+        What they may not be added into is a single figure called purchased
+        capacity, and the commercial basis is carried separately so a consumer
+        cannot merge them by accident.
+
+        FIVE STATES, AND THEY ARE NOT ONE. `not-observed` is a run that did not
+        ask. `unsupported` is a surface that answered that it does not exist
+        here. `unmatched` is a SKU whose subscriptions were asked for and not
+        found, which is evidence about this tenant. `joined` is the answer.
+    #>
+    param(
+        [array] $Skus,
+        [array] $Subscriptions,
+        [string] $SurfaceState = 'not-observed'
+    )
+
+    $bySubscription = @{}
+    foreach ($s in @($Subscriptions)) {
+        if ($s.id) { $bySubscription[[string] $s.id] = $s }
+    }
+
+    $out = @()
+    foreach ($sku in @($Skus)) {
+        $ids = @($sku.subscription_ids | Where-Object { $_ })
+        $matched = @()
+        foreach ($id in $ids) {
+            if ($bySubscription.ContainsKey([string] $id)) { $matched += $bySubscription[[string] $id] }
+        }
+
+        $state = $SurfaceState
+        $seats = $null
+        $basis = 'not-established'
+        $because = @()
+
+        if ($SurfaceState -eq 'observed') {
+            if ($matched.Count -gt 0) {
+                $state = 'joined'
+                $seats = 0
+                foreach ($m in $matched) { $seats += [int] $m.total_licenses }
+                $because += "$($matched.Count) commercial subscription(s) matched on subscriptionIds, carrying $seats seat(s) in companySubscription.totalLicenses"
+
+                $trials = @($matched | Where-Object { $_.is_trial -eq $true }).Count
+                if ($trials -eq $matched.Count) {
+                    $basis = 'trial'
+                    $because += 'every matched subscription reports isTrial true'
+                }
+                elseif ($trials -eq 0) {
+                    # NOT `purchased`. See the block comment above.
+                    $basis = 'not-a-trial'
+                    $because += 'no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought'
+                }
+                else {
+                    $basis = 'mixed'
+                    $because += "$trials of $($matched.Count) matched subscriptions report isTrial true, so one basis does not describe this SKU"
+                }
+            }
+            elseif ($ids.Count -gt 0) {
+                $state = 'unmatched'
+                $because += "$($ids.Count) subscriptionIds on this SKU matched no commercial subscription that was read, which is a fact about this tenant rather than a gap in the read"
+            }
+            else {
+                $state = 'unmatched'
+                $because += 'this SKU carries no subscriptionIds, so nothing links it to a commercial subscription'
+            }
+        }
+        elseif ($SurfaceState -eq 'unsupported') {
+            $because += 'the commercial subscription surface answered that it is not available here, so seats cannot be established'
+        }
+        else {
+            $because += 'the commercial subscription surface at /directory/subscriptions was not read by this run'
+        }
+
+        $row = [ordered]@{
+            sku              = [string] $sku.sku
+            state            = $state
+            commercial_basis = $basis
+            because          = $because
+        }
+        if ($null -ne $seats) { $row['seats'] = $seats }
+        $out += $row
     }
 
     return $out
@@ -204,13 +358,26 @@ function Get-LicensingFacts {
 
         .PARAMETER UsageWindows
         Which service reports were read and over how many days.
+
+        .PARAMETER Subscriptions
+        The tenant's commercial subscriptions from `/directory/subscriptions`,
+        when this run was authorized to read them. A separate surface, in the
+        BETA endpoint, and the only one carrying seats and trial status.
+
+        .PARAMETER SubscriptionSurface
+        What happened to that surface: `not-observed`, `unsupported` or
+        `observed`. Never inferred from the list being empty, because a tenant
+        with no subscriptions and a run that did not ask return the same
+        nothing.
     #>
     param(
         $SubscribedSkus,
         $Assignments,
         $ReportSettings,
         $UsageWindows,
-        $Attempts
+        $Attempts,
+        $Subscriptions,
+        [string] $SubscriptionSurface = 'not-observed'
     )
 
     $facts = [ordered]@{ licensing = [ordered]@{} }
@@ -275,12 +442,39 @@ function Get-LicensingFacts {
         $l['skus'] = New-ScalarFact -Value $skus `
             -RawField 'subscribedSkus: skuPartNumber, skuId, appliesTo, capabilityStatus, prepaidUnits (four counters), consumedUnits, servicePlans, subscriptionIds'
 
+        # THE COMMERCIAL SURFACE, RECORDED WHETHER OR NOT IT WAS READ. An
+        # absent list and a list that came back empty are different facts.
+        $l['subscription_surface'] = New-ScalarFact -Value $SubscriptionSurface `
+            -RawField 'GET /beta/directory/subscriptions (companySubscription)'
+        $l['subscription_surface_stability'] = New-ScalarFact -Value 'beta' `
+            -RawField 'Microsoft Graph endpoint version for companySubscription'
+
+        if ($SubscriptionSurface -eq 'observed') {
+            $l['subscriptions'] = New-ScalarFact -Value @($Subscriptions) `
+                -RawField 'directory/subscriptions: id, skuId, skuPartNumber, isTrial, totalLicenses, status'
+        }
+        else {
+            if ($SubscriptionSurface -eq 'unsupported') {
+                $absentState = 'not-supported'
+                $absentDetail = 'The commercial subscription surface answered that it is not available here, so no seat count or trial status can be established.'
+            }
+            else {
+                $absentState = 'missing'
+                $absentDetail = 'This run did not read /directory/subscriptions, so no seat count or trial status was established.'
+            }
+            $l['subscriptions'] = New-AbsentFact -State $absentState -Detail $absentDetail
+        }
+
+        $join = @(Get-SubscriptionJoin -Skus $skus -Subscriptions $Subscriptions -SurfaceState $SubscriptionSurface)
+        $l['subscription_join'] = New-ScalarFact -Value $join `
+            -RawField 'subscribedSku.subscriptionIds against companySubscription.id'
+
         # WHAT EACH SKU IS, BEFORE ANYTHING IS ADDED TO ANYTHING. Never a
         # filter, and never a total: one row per SKU observed, each carrying the
         # documented rule that classified it.
-        $capacity = @(Get-SkuCapacity -Skus $skus)
+        $capacity = @(Get-SkuCapacity -Skus $skus -Join $join)
         $l['sku_capacity'] = New-ScalarFact -Value $capacity `
-            -RawField 'appliesTo and capabilityStatus, per subscribedSku'
+            -RawField 'appliesTo, capabilityStatus and the commercial subscription join, per subscribedSku'
 
         # THE COUNTS ARE OF SKUs, NOT OF UNITS. A count of rows means the same
         # thing on every row; a sum of units does not, which is the whole
@@ -297,13 +491,59 @@ function Get-LicensingFacts {
         $l['capacity_summary'] = New-ScalarFact -Value $summary `
             -RawField 'count of subscribedSku rows per classification'
 
-        # AND THE FIGURE EVERYBODY WANTS, RECORDED AS NOT READ RATHER THAN
-        # ESTIMATED. `prepaidUnits.enabled` is not seats purchased; nothing on
-        # this surface is.
-        $l['comparable_capacity'] = New-AbsentFact -State 'missing' `
-            -Detail ('No SKU on this surface establishes that its units are purchased seats, so no comparable capacity is published. ' +
-                     'The seats a subscription carries are companySubscription.totalLicenses and whether it was bought at all is companySubscription.isTrial, ' +
-                     'at /directory/subscriptions in the beta endpoint; subscribedSku.subscriptionIds is the join. This run did not read it.')
+        # THE FIGURE EVERYBODY WANTS, AND IT IS SPLIT BY BASIS OR IT IS NOT
+        # PUBLISHED. Seats may be added to seats. They may not be added into a
+        # single number called purchased capacity, because `isTrial` false
+        # establishes that a subscription is not a trial and does NOT establish
+        # that anybody bought it: a self-service free programme is neither.
+        # A SUM IS PUBLISHED ONLY WHERE THE GROUP MEANS ONE THING.
+        #
+        # THE JOIN MOVED THIS QUESTION AND DID NOT CLOSE IT. Seats are a
+        # like-for-like unit, so `comparable` is right about the unit. But
+        # `isTrial` false groups together a subscription somebody bought and a
+        # self-service free programme nobody bought, and Microsoft documents the
+        # field as distinguishing `a free trial or purchased` — a binary that a
+        # tenant does not honour. A tenant holding a free Power BI allocation
+        # reports a million seats under `isTrial: false`.
+        #
+        # Summing that group produces `1,010,500 seats` beside eight hundred
+        # users, which is the removed total returned with a citation attached.
+        # A mathematically correct number that induces a false reading is not
+        # published as a figure, so the group carries its subscriptions and its
+        # reason instead, and the seats stay on the rows where they are true.
+        $comparable = @($capacity | Where-Object { $_.aggregation_eligibility -eq 'comparable' })
+        if ($comparable.Count -gt 0) {
+            $seats = [ordered]@{}
+            foreach ($basis in @('trial', 'not-a-trial', 'mixed', 'not-established')) {
+                $rows = @($comparable | Where-Object { $_.commercial_basis -eq $basis })
+                $entry = [ordered]@{ subscriptions = $rows.Count }
+                if ($basis -eq 'trial') {
+                    $total = 0
+                    foreach ($r in $rows) { $total += [int] $r.seats }
+                    $entry['seats'] = $total
+                }
+                else {
+                    $entry['seats_not_summed'] =
+                        'isTrial false establishes that these are not trials and does not establish that any was bought: a self-service free programme is neither. Their seats are true on each row and their sum would be read as purchased capacity.'
+                }
+                $seats[$basis] = $entry
+            }
+            $l['comparable_capacity'] = New-ScalarFact -Value $seats `
+                -RawField 'companySubscription.totalLicenses over comparable SKUs, summed only where the group means one thing'
+        }
+        else {
+            $l['comparable_capacity'] = New-AbsentFact -State 'missing' `
+                -Detail ('No SKU has an established seat count, so no comparable capacity is published. ' +
+                         'The seats a subscription carries are companySubscription.totalLicenses and whether it is a trial is companySubscription.isTrial, ' +
+                         'at /directory/subscriptions in the beta endpoint; subscribedSku.subscriptionIds is the join.')
+        }
+
+        # AND THE FIGURE NOBODY MAY PUBLISH. `prepaidUnits.enabled` is not seats
+        # purchased, and neither is any total over it.
+        $l['purchased_capacity'] = New-AbsentFact -State 'not-supported' `
+            -Detail ('Not observable from these surfaces. companySubscription.isTrial distinguishes a free trial from a subscription that is not a trial; ' +
+                     'it does not establish that an organisation bought one, because a self-service free programme is neither a trial nor a purchase. ' +
+                     'Nothing read here says what was paid for.')
         $consumed = 0
         foreach ($s in $skus) { $consumed += [int] $s.consumed_units }
         # `consumedUnits` IS ADDITIVE AND THE OTHER IS NOT. It counts assignments,
@@ -485,4 +725,4 @@ function Get-LicensingFacts {
     return $facts
 }
 
-Export-ModuleMember -Function Get-LicensingFacts, Get-SkuCapacity, Read-UsageReport
+Export-ModuleMember -Function Get-LicensingFacts, Get-SkuCapacity, Get-SubscriptionJoin, Read-UsageReport
