@@ -4,7 +4,8 @@
       "analysis": [],
       "collector_modes": [
         "Activity",
-        "Classification"
+        "Classification",
+        "Customization"
       ],
       "compass": [],
       "complete": false,
@@ -37,7 +38,8 @@
     "CLASS": {
       "analysis": [],
       "collector_modes": [
-        "Classification"
+        "Classification",
+        "Customization"
       ],
       "compass": [
         "sharepoint/detect-group-connected-sites"
@@ -86,6 +88,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "Customization",
         "TenantSites",
         "UniquePermissions"
       ],
@@ -141,6 +144,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "Customization",
         "Modernity"
       ],
       "compass": [],
@@ -178,10 +182,42 @@
         "004"
       ]
     },
+    "SCRIPT": {
+      "analysis": [],
+      "collector_modes": [
+        "Classification",
+        "Customization"
+      ],
+      "compass": [],
+      "complete": false,
+      "fixtures": [
+        "site-customization-pages-feature-absent",
+        "site-customization-script-permitted",
+        "site-customization-surfaces-observed"
+      ],
+      "guide": [],
+      "knowledge": [],
+      "missing": [
+        "knowledge",
+        "guide",
+        "compass"
+      ],
+      "name": "Custom script",
+      "profiles": [
+        "default"
+      ],
+      "rules": [
+        "SPO-SCRIPT-001"
+      ],
+      "tests": [
+        "001"
+      ]
+    },
     "SHARE": {
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "Customization",
         "SiteSharing",
         "TenantSharing"
       ],
@@ -242,6 +278,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "Customization",
         "SiteOwners",
         "TenantSites",
         "UniquePermissions"
@@ -297,6 +334,7 @@
       ],
       "collector_modes": [
         "Classification",
+        "Customization",
         "SpfxCatalog"
       ],
       "compass": [],
@@ -357,6 +395,10 @@
     "PLATFORM": {
       "coverage": "not defined",
       "name": "Platform and evidence"
+    },
+    "SCRIPT": {
+      "coverage": "defined",
+      "name": "Custom script"
     },
     "SHARE": {
       "coverage": "defined",

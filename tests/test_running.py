@@ -13,7 +13,7 @@ import pytest
 from m365_governance import project, running
 from m365_governance.cli import main
 
-GUID = "11111111-2222-3333-4444-555555555555"
+GUID = "c0ffee00-0000-4000-8000-000000000001"
 TENANT = "https://contoso-admin.sharepoint.com"
 SITE = "https://contoso.sharepoint.com/sites/finance"
 

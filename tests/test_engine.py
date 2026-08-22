@@ -860,3 +860,50 @@ def test_no_produced_document_carries_a_score_a_percentage_or_a_grade():
         "a produced document carries an aggregate this product refuses:\n  "
         + "\n  ".join(offenders)
     )
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("site-customization-script-permitted", Outcome.FAIL),
+        ("site-customization-surfaces-observed", Outcome.PASS),
+        ("site-customization-pages-feature-absent", Outcome.PASS),
+        ("site-customization-tenant-read-not-made", Outcome.UNKNOWN),
+    ],
+)
+def test_custom_script_is_read_in_the_direction_the_flag_runs(fixture, outcome):
+    """`SPO-SCRIPT-001`, and the inversion it was one name away from.
+
+    The evidence fact held `DenyAddAndCustomizePages` under the name
+    `custom_script`, so true meant custom script is BLOCKED. A rule written
+    against that name reports every protected site as permissive. The fact is
+    now `custom_script_denied` and this asserts all four outcomes, including
+    the one no fixture reached until the rule was written.
+
+    `tenant-read-not-made` is `unknown` and never a pass: the setting comes
+    from a tenant-scoped read, and a run that did not make one has established
+    nothing about it.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SCRIPT-001"), evidence(fixture)).outcome is outcome
+
+
+def test_the_platform_declining_to_answer_is_not_a_finding():
+    """`DenyAddAndCustomizePagesStatus` has three values and the third is
+    `Unknown`.
+
+    Found by provoking the state in a tenant, which is the only way it could
+    have been found: the property is an enum, `[bool]` on any of its values is
+    true, and a site that PERMITTED custom script was collected as denying it.
+    Every hand-written fixture used real booleans and agreed with the code.
+
+    `Unknown` is the platform not committing, and this refuses to commit for it.
+    """
+    from conftest import rule
+
+    result = evaluate_rule(
+        rule("SPO-SCRIPT-001"), evidence("site-customization-script-status-unknown")
+    )
+
+    assert result.outcome is Outcome.UNKNOWN

@@ -1,14 +1,14 @@
 {
   "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
   "provenance": {
-    "collected_at": "2026-08-21T22:30:00Z",
+    "collected_at": "2026-08-21T11:10:00Z",
     "collector": "m365-licensing-collector",
     "collector_version": "0.1.0",
     "source_system": "Microsoft 365",
     "source_api": "Microsoft Graph v1.0",
     "tenant": {
       "id": null,
-      "host": "northwind.onmicrosoft.com",
+      "host": "fabrikam.onmicrosoft.com",
       "how": "requested"
     },
     "identity_kind": "application",
@@ -27,28 +27,34 @@
       "dependency"
     ],
     "completed": [
-      "assignment",
-      "usage",
-      "usage_identity"
+      "assignment"
     ],
     "unavailable": {
       "dependency": {
         "state": "missing",
         "detail": "Dependency evidence is not collected by this run."
+      },
+      "usage": {
+        "state": "missing",
+        "detail": "No usage report was read by this run."
+      },
+      "usage_identity": {
+        "state": "missing",
+        "detail": "The tenant report privacy setting was not read."
       }
     }
   },
   "resource": {
     "workload": "microsoft-365",
     "type": "tenant",
-    "native_id": "northwind.onmicrosoft.com",
+    "native_id": "fabrikam.onmicrosoft.com",
     "tenant": {
       "id": null,
-      "host": "northwind.onmicrosoft.com"
+      "host": "fabrikam.onmicrosoft.com"
     },
     "scope": "tenant",
     "parent": null,
-    "display_name": "Northwind",
+    "display_name": "Fabrikam",
     "url": "https://admin.microsoft.com"
   },
   "facts": {
@@ -85,10 +91,10 @@
       },
       "subscribed_skus": {
         "state": "observed",
-        "value": 4,
+        "value": 8,
         "raw": {
           "field": "subscribedSkus",
-          "value": 4
+          "value": 8
         }
       },
       "skus": {
@@ -194,6 +200,100 @@
               {
                 "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
                 "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": []
+          },
+          {
+            "sku": "MCOMEETADV",
+            "sku_id": "5c00-0000-4000-8000-000000000004",
+            "applies_to": "Company",
+            "capability_status": "Enabled",
+            "prepaid_units": {
+              "enabled": 25,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 0,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b1",
+                "plan": "MCOMEETADV",
+                "applies_to": "Company",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000004"
+            ]
+          },
+          {
+            "sku": "EMS",
+            "sku_id": "5c00-0000-4000-8000-000000000005",
+            "applies_to": "User",
+            "capability_status": "Warning",
+            "prepaid_units": {
+              "enabled": 0,
+              "warning": 40,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 38,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b2",
+                "plan": "AAD_PREMIUM",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000005"
+            ]
+          },
+          {
+            "sku": "VISIOCLIENT",
+            "sku_id": "5c00-0000-4000-8000-000000000006",
+            "applies_to": "User",
+            "capability_status": "Suspended",
+            "prepaid_units": {
+              "enabled": 0,
+              "warning": 0,
+              "suspended": 12,
+              "locked_out": 0
+            },
+            "consumed_units": 0,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b3",
+                "plan": "VISIO_CLIENT_SUBSCRIPTION",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000006"
+            ]
+          },
+          {
+            "sku": "UNRECOGNISED_TARGET",
+            "sku_id": "5c00-0000-4000-8000-000000000007",
+            "applies_to": "Tenant",
+            "capability_status": "Enabled",
+            "prepaid_units": {
+              "enabled": 9999999,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 3,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b4",
+                "plan": "SOMETHING_NEW",
                 "applies_to": "User",
                 "provisioning_status": "Success"
               }
@@ -309,6 +409,100 @@
                 }
               ],
               "subscription_ids": []
+            },
+            {
+              "sku": "MCOMEETADV",
+              "sku_id": "5c00-0000-4000-8000-000000000004",
+              "applies_to": "Company",
+              "capability_status": "Enabled",
+              "prepaid_units": {
+                "enabled": 25,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 0,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b1",
+                  "plan": "MCOMEETADV",
+                  "applies_to": "Company",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000004"
+              ]
+            },
+            {
+              "sku": "EMS",
+              "sku_id": "5c00-0000-4000-8000-000000000005",
+              "applies_to": "User",
+              "capability_status": "Warning",
+              "prepaid_units": {
+                "enabled": 0,
+                "warning": 40,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 38,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b2",
+                  "plan": "AAD_PREMIUM",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000005"
+              ]
+            },
+            {
+              "sku": "VISIOCLIENT",
+              "sku_id": "5c00-0000-4000-8000-000000000006",
+              "applies_to": "User",
+              "capability_status": "Suspended",
+              "prepaid_units": {
+                "enabled": 0,
+                "warning": 0,
+                "suspended": 12,
+                "locked_out": 0
+              },
+              "consumed_units": 0,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b3",
+                  "plan": "VISIO_CLIENT_SUBSCRIPTION",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000006"
+              ]
+            },
+            {
+              "sku": "UNRECOGNISED_TARGET",
+              "sku_id": "5c00-0000-4000-8000-000000000007",
+              "applies_to": "Tenant",
+              "capability_status": "Enabled",
+              "prepaid_units": {
+                "enabled": 9999999,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 3,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b4",
+                  "plan": "SOMETHING_NEW",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": []
             }
           ]
         }
@@ -350,60 +544,16 @@
         "detail": "No dependency evidence is collected by this run. What a capability is required for -- a policy, a role, a compliance obligation, a workload that would stop -- is not observable from an assignment or usage, and nothing may be concluded without it."
       },
       "report_identifiability": {
-        "state": "observed",
-        "value": "identifiable",
-        "raw": {
-          "field": "adminReportSettings.displayConcealedNames",
-          "value": "identifiable"
-        }
+        "state": "missing",
+        "detail": "The tenant report privacy setting was not read. Until it is, no usage figure can be attributed to any user, because concealed is the default."
       },
       "usage_reports_read": {
-        "state": "observed",
-        "value": 1,
-        "raw": {
-          "field": "getOffice365ActiveUserDetail",
-          "value": 1
-        }
+        "state": "missing",
+        "detail": "No usage report was read by this run."
       },
       "usage_window_days": {
-        "state": "observed",
-        "value": [
-          30
-        ],
-        "raw": {
-          "field": "report period",
-          "value": [
-            30
-          ]
-        }
-      },
-      "usage_report_refresh_date": {
-        "state": "observed",
-        "value": [
-          "2026-08-19"
-        ],
-        "raw": {
-          "field": "Report Refresh Date",
-          "value": [
-            "2026-08-19"
-          ]
-        }
-      },
-      "usage_rows": {
-        "state": "observed",
-        "value": 812,
-        "raw": {
-          "field": "rows returned",
-          "value": 812
-        }
-      },
-      "usage_rows_naming_a_principal": {
-        "state": "observed",
-        "value": 812,
-        "raw": {
-          "field": "User Principal Name that is not a concealed identifier",
-          "value": 812
-        }
+        "state": "missing",
+        "detail": "No usage report was read, so no window applies."
       },
       "sku_capacity": {
         "state": "observed",
@@ -415,9 +565,9 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              "the commercial subscription surface is not available here, so seats cannot be established"
             ],
-            "subscription_state": "not-observed",
+            "subscription_state": "unsupported",
             "commercial_basis": "not-established"
           },
           {
@@ -427,9 +577,9 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              "the commercial subscription surface is not available here, so seats cannot be established"
             ],
-            "subscription_state": "not-observed",
+            "subscription_state": "unsupported",
             "commercial_basis": "not-established"
           },
           {
@@ -439,9 +589,9 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              "the commercial subscription surface is not available here, so seats cannot be established"
             ],
-            "subscription_state": "not-observed",
+            "subscription_state": "unsupported",
             "commercial_basis": "not-established"
           },
           {
@@ -451,9 +601,56 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              "the commercial subscription surface is not available here, so seats cannot be established"
             ],
-            "subscription_state": "not-observed",
+            "subscription_state": "unsupported",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "MCOMEETADV",
+            "sku_id": "5c00-0000-4000-8000-000000000004",
+            "capacity_kind": "organisational",
+            "aggregation_eligibility": "not-comparable",
+            "because": [
+              "appliesTo is Company, and Microsoft documents that only a SKU whose target class is User is assignable, so these units are not user seats"
+            ],
+            "subscription_state": "unsupported",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "EMS",
+            "sku_id": "5c00-0000-4000-8000-000000000005",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "capabilityStatus is Warning rather than Enabled, so this subscription is not current capacity"
+            ],
+            "subscription_state": "unsupported",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "VISIOCLIENT",
+            "sku_id": "5c00-0000-4000-8000-000000000006",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "capabilityStatus is Suspended rather than Enabled, so this subscription is not current capacity"
+            ],
+            "subscription_state": "unsupported",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "UNRECOGNISED_TARGET",
+            "sku_id": "5c00-0000-4000-8000-000000000007",
+            "capacity_kind": "not-established",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is 'Tenant', which is not a documented target class, so what these units count is not established",
+              "the commercial subscription surface is not available here, so seats cannot be established"
+            ],
+            "subscription_state": "unsupported",
             "commercial_basis": "not-established"
           }
         ],
@@ -467,9 +664,9 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+                "the commercial subscription surface is not available here, so seats cannot be established"
               ],
-              "subscription_state": "not-observed",
+              "subscription_state": "unsupported",
               "commercial_basis": "not-established"
             },
             {
@@ -479,9 +676,9 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+                "the commercial subscription surface is not available here, so seats cannot be established"
               ],
-              "subscription_state": "not-observed",
+              "subscription_state": "unsupported",
               "commercial_basis": "not-established"
             },
             {
@@ -491,9 +688,9 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+                "the commercial subscription surface is not available here, so seats cannot be established"
               ],
-              "subscription_state": "not-observed",
+              "subscription_state": "unsupported",
               "commercial_basis": "not-established"
             },
             {
@@ -503,9 +700,56 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+                "the commercial subscription surface is not available here, so seats cannot be established"
               ],
-              "subscription_state": "not-observed",
+              "subscription_state": "unsupported",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "MCOMEETADV",
+              "sku_id": "5c00-0000-4000-8000-000000000004",
+              "capacity_kind": "organisational",
+              "aggregation_eligibility": "not-comparable",
+              "because": [
+                "appliesTo is Company, and Microsoft documents that only a SKU whose target class is User is assignable, so these units are not user seats"
+              ],
+              "subscription_state": "unsupported",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "EMS",
+              "sku_id": "5c00-0000-4000-8000-000000000005",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "capabilityStatus is Warning rather than Enabled, so this subscription is not current capacity"
+              ],
+              "subscription_state": "unsupported",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "VISIOCLIENT",
+              "sku_id": "5c00-0000-4000-8000-000000000006",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "capabilityStatus is Suspended rather than Enabled, so this subscription is not current capacity"
+              ],
+              "subscription_state": "unsupported",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "UNRECOGNISED_TARGET",
+              "sku_id": "5c00-0000-4000-8000-000000000007",
+              "capacity_kind": "not-established",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is 'Tenant', which is not a documented target class, so what these units count is not established",
+                "the commercial subscription surface is not available here, so seats cannot be established"
+              ],
+              "subscription_state": "unsupported",
               "commercial_basis": "not-established"
             }
           ]
@@ -515,21 +759,21 @@
         "state": "observed",
         "value": {
           "comparable": 0,
-          "not-comparable": 0,
-          "not-established": 4,
-          "kind_user_assignable": 4,
-          "kind_organisational": 0,
-          "kind_not_established": 0
+          "not-comparable": 3,
+          "not-established": 5,
+          "kind_user_assignable": 6,
+          "kind_organisational": 1,
+          "kind_not_established": 1
         },
         "raw": {
           "field": "count of subscribedSku rows per classification",
           "value": {
             "comparable": 0,
-            "not-comparable": 0,
-            "not-established": 4,
-            "kind_user_assignable": 4,
-            "kind_organisational": 0,
-            "kind_not_established": 0
+            "not-comparable": 3,
+            "not-established": 5,
+            "kind_user_assignable": 6,
+            "kind_organisational": 1,
+            "kind_not_established": 1
           }
         }
       },
@@ -539,10 +783,10 @@
       },
       "subscription_surface": {
         "state": "observed",
-        "value": "not-observed",
+        "value": "unsupported",
         "raw": {
           "field": "GET /beta/directory/subscriptions (companySubscription)",
-          "value": "not-observed"
+          "value": "unsupported"
         }
       },
       "subscription_surface_stability": {
@@ -554,42 +798,74 @@
         }
       },
       "subscriptions": {
-        "state": "missing",
-        "detail": "This run did not read /directory/subscriptions, so no seat count or trial status was established."
+        "state": "not-supported",
+        "detail": "The commercial subscription surface answered that it is not available here, so no seat count or trial status can be established."
       },
       "subscription_join": {
         "state": "observed",
         "value": [
           {
             "sku": "ENTERPRISEPACK",
-            "state": "not-observed",
+            "state": "unsupported",
             "commercial_basis": "not-established",
             "because": [
-              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
             ]
           },
           {
             "sku": "SPE_E5",
-            "state": "not-observed",
+            "state": "unsupported",
             "commercial_basis": "not-established",
             "because": [
-              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
             ]
           },
           {
             "sku": "POWER_BI_STANDARD",
-            "state": "not-observed",
+            "state": "unsupported",
             "commercial_basis": "not-established",
             "because": [
-              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
             ]
           },
           {
             "sku": "FLOW_FREE",
-            "state": "not-observed",
+            "state": "unsupported",
             "commercial_basis": "not-established",
             "because": [
-              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+            ]
+          },
+          {
+            "sku": "MCOMEETADV",
+            "state": "unsupported",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+            ]
+          },
+          {
+            "sku": "EMS",
+            "state": "unsupported",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+            ]
+          },
+          {
+            "sku": "VISIOCLIENT",
+            "state": "unsupported",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+            ]
+          },
+          {
+            "sku": "UNRECOGNISED_TARGET",
+            "state": "unsupported",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface answered that it is not available here, so seats cannot be established"
             ]
           }
         ],
@@ -598,34 +874,66 @@
           "value": [
             {
               "sku": "ENTERPRISEPACK",
-              "state": "not-observed",
+              "state": "unsupported",
               "commercial_basis": "not-established",
               "because": [
-                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
               ]
             },
             {
               "sku": "SPE_E5",
-              "state": "not-observed",
+              "state": "unsupported",
               "commercial_basis": "not-established",
               "because": [
-                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
               ]
             },
             {
               "sku": "POWER_BI_STANDARD",
-              "state": "not-observed",
+              "state": "unsupported",
               "commercial_basis": "not-established",
               "because": [
-                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
               ]
             },
             {
               "sku": "FLOW_FREE",
-              "state": "not-observed",
+              "state": "unsupported",
               "commercial_basis": "not-established",
               "because": [
-                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+              ]
+            },
+            {
+              "sku": "MCOMEETADV",
+              "state": "unsupported",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+              ]
+            },
+            {
+              "sku": "EMS",
+              "state": "unsupported",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+              ]
+            },
+            {
+              "sku": "VISIOCLIENT",
+              "state": "unsupported",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
+              ]
+            },
+            {
+              "sku": "UNRECOGNISED_TARGET",
+              "state": "unsupported",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface answered that it is not available here, so seats cannot be established"
               ]
             }
           ]

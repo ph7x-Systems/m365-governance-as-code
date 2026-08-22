@@ -1,3 +1,9 @@
+﻿# public-scope-check: this file names the words it forbids. `trial` here is
+# Microsoft's own `companySubscription.isTrial`, describing a TENANT's
+# subscription, and it is governance evidence rather than this product's
+# commercial model. The guard exists to stop pH7x pricing, entitlement and
+# trial mechanics reaching a public MIT repository; a vendor field name that
+# a collector must record is the opposite of that.
 <#
     Get-LicensingEvidence.ps1
 
@@ -47,6 +53,19 @@ param(
     [Parameter()]
     [ValidateSet('D7', 'D30', 'D90', 'D180')]
     [string] $Period,
+
+    # THE COMMERCIAL SURFACE, AND IT IS OPT-IN. `/directory/subscriptions`
+    # returns `companySubscription`, which carries the seats a subscription
+    # includes and whether it is a free trial. It is a SEPARATE acquisition
+    # against the tenant and a separate decision: a caller that does not ask for
+    # it gets a run that says the surface was not read, rather than one that
+    # quietly read more of somebody's directory than they expected.
+    #
+    # IT IS IN THE BETA ENDPOINT. Microsoft marks beta as subject to change and
+    # unsupported in production, and that travels with every fact derived from
+    # it rather than being noticed later.
+    [Parameter()]
+    [switch] $IncludeSubscriptions,
 
     [Parameter()]
     [string] $ClientId,
@@ -199,21 +218,123 @@ if ($Mode -eq 'Connect') {
 
 # --- what is assigned --------------------------------------------------------
 
+# THE SKU IS NOT THE UNIT OF CAPABILITY. A service plan is: a SKU is a bundle
+# of them, two SKUs can deliver the same plan, and an assignment can disable
+# plans it would otherwise carry. Without the plans, nothing here can answer
+# what stops working when an assignment changes, which is the question the
+# whole capability turns on.
+#
+# `appliesTo` and `provisioning_status` travel because Microsoft states what
+# they mean: only a SKU whose target class is `User` is assignable at all, and
+# a plan can be present in the bundle while disabled, in error, or awaiting an
+# administrator. A plan that is not `Success` is not a capability somebody has.
 $skus = @(Get-MgSubscribedSku -All | ForEach-Object {
         [ordered]@{
-            sku            = [string] $_.SkuPartNumber
-            prepaid_units  = [int] $_.PrepaidUnits.Enabled
-            consumed_units = [int] $_.ConsumedUnits
+            sku               = [string] $_.SkuPartNumber
+            sku_id            = [string] $_.SkuId
+            applies_to        = [string] $_.AppliesTo
+            capability_status = [string] $_.CapabilityStatus
+            # FOUR COUNTERS, NOT ONE. `prepaidUnits` is a `licenseUnitsDetail`
+            # and Microsoft documents four: `enabled` is the units enabled for
+            # the ACTIVE subscription, `warning` the grace period after it
+            # expired, `suspended` the units after cancellation that can still
+            # be reactivated, and `lockedOut` the units after the customer
+            # cancelled. This collector read `enabled` alone and called it
+            # `prepaid_units`, which flattens a subscription lifecycle into a
+            # single number and loses the difference between capacity a tenant
+            # has and capacity it is about to lose.
+            #
+            # NONE OF THE FOUR IS `SEATS PURCHASED`. That figure is
+            # `companySubscription.totalLicenses` on a different surface.
+            prepaid_units     = [ordered]@{
+                enabled    = [int] $_.PrepaidUnits.Enabled
+                warning    = [int] $_.PrepaidUnits.Warning
+                suspended  = [int] $_.PrepaidUnits.Suspended
+                locked_out = [int] $_.PrepaidUnits.LockedOut
+            }
+            consumed_units    = [int] $_.ConsumedUnits
+            # THE JOIN TO THE COMMERCIAL SURFACE, carried so that reading it
+            # later needs no second enumeration. One SKU row can stand for
+            # several subscriptions.
+            subscription_ids  = @($_.SubscriptionIds | ForEach-Object { [string] $_ })
+            service_plans     = @($_.ServicePlans | ForEach-Object {
+                    [ordered]@{
+                        plan_id             = [string] $_.ServicePlanId
+                        plan                = [string] $_.ServicePlanName
+                        applies_to          = [string] $_.AppliesTo
+                        provisioning_status = [string] $_.ProvisioningStatus
+                    }
+                })
         }
     })
+
+# THE SEATS ARE NOT ON THE SKU. `prepaidUnits.enabled` is the units enabled for
+# the ACTIVE subscription; `companySubscription.totalLicenses` is the number of
+# seats a subscription includes. Only the second is a like-for-like unit, and it
+# is on a different resource in a different endpoint version.
+#
+# `unsupported` IS AN ANSWER AND `missing` IS NOT THE SAME ONE. A cloud that
+# does not expose this resource is a fact about the platform; a run that did not
+# ask is a fact about the run. They are recorded apart.
+$subscriptions = $null
+$subscriptionSurface = 'not-observed'
+$subscriptionReason = ''
+$subscriptionOwner = ''
+if ($IncludeSubscriptions) {
+    try {
+        $subscriptions = @(Invoke-MgGraphRequest -Method GET `
+                -Uri 'https://graph.microsoft.com/beta/directory/subscriptions' |
+            ForEach-Object { $_.value } |
+            ForEach-Object {
+                [ordered]@{
+                    id             = [string] $_.id
+                    sku_id         = [string] $_.skuId
+                    sku            = [string] $_.skuPartNumber
+                    is_trial       = [bool] $_.isTrial
+                    total_licenses = [int] $_.totalLicenses
+                    status         = [string] $_.status
+                    created        = [string] $_.createdDateTime
+                }
+            })
+        $subscriptionSurface = 'observed'
+    }
+    catch {
+        # A REFUSAL AND AN ABSENCE ARE DIFFERENT ANSWERS. A resource the cloud
+        # does not have is `unsupported`; anything else is recorded with whose
+        # limitation it is and does not become `unsupported` by default.
+        $status = $_.Exception.Response.StatusCode.value__
+        $subscriptionReason = $_.Exception.Message
+        if ($status -eq 404 -or $status -eq 501) {
+            $subscriptionSurface = 'unsupported'
+            $subscriptionOwner = 'microsoft'
+        }
+        else {
+            $subscriptionOwner = 'tenant-or-identity'
+        }
+    }
+}
 
 $assignments = @(Get-MgUser -All -Property 'id,userPrincipalName,assignedLicenses,accountEnabled' |
     Where-Object { $_.AssignedLicenses.Count -gt 0 } |
     ForEach-Object {
         [ordered]@{
-            user          = [string] $_.Id
-            enabled       = [bool] $_.AccountEnabled
-            service_plans = @($_.AssignedLicenses.SkuId | ForEach-Object { [string] $_ })
+            user     = [string] $_.Id
+            enabled  = [bool] $_.AccountEnabled
+            # THE FIELD USED TO BE CALLED `service_plans` AND HELD SKU IDS,
+            # which is the naming defect that makes a dependency question
+            # unanswerable: a consumer reading it believed it had the
+            # capabilities and had the bundles.
+            #
+            # `disabled_plans` travels with each assignment because it is what
+            # makes the effective set effective. A SKU carrying twelve plans of
+            # which nine are disabled for this person delivers three.
+            licenses = @($_.AssignedLicenses | ForEach-Object {
+                    [ordered]@{
+                        sku_id         = [string] $_.SkuId
+                        disabled_plans = @($_.DisabledPlans |
+                            ForEach-Object { [string] $_ })
+                    }
+                })
         }
     })
 
@@ -274,6 +395,30 @@ $attempts = @(
         owner = $(if ($windows) { '' } else { 'caller' })
     }
     [ordered]@{
+        # A SEPARATE SURFACE AND A SEPARATE DECISION, so it records its own
+        # attempt. `not-collected` here means the caller did not ask for it,
+        # which is a fact about the run and not about the tenant.
+        area = 'capacity'
+        operation = 'GET /beta/directory/subscriptions'
+        population = 'commercial-subscriptions-of-this-tenant'
+        identity = $identityKind; method = $identityMethod
+        result = $(switch ($subscriptionSurface) {
+                'observed' { 'observed' }
+                'unsupported' { 'not-supported' }
+                default { 'not-collected' }
+            })
+        reason = $(switch ($subscriptionSurface) {
+                'observed' { '' }
+                'unsupported' { $subscriptionReason }
+                default { if ($subscriptionReason) { $subscriptionReason } else { 'the caller did not ask for the commercial subscriptions' } }
+            })
+        owner = $(switch ($subscriptionSurface) {
+                'observed' { '' }
+                'unsupported' { 'microsoft' }
+                default { if ($subscriptionOwner) { $subscriptionOwner } else { 'caller' } }
+            })
+    }
+    [ordered]@{
         area = 'dependency'
         operation = 'none'
         population = 'policies, roles and obligations that require a capability'
@@ -293,7 +438,8 @@ Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
             display_name = $TenantHost; url = 'https://admin.microsoft.com'
         }) `
         -Facts (Get-LicensingFacts -SubscribedSkus $skus -Assignments $assignments `
-            -ReportSettings $settings -UsageWindows $windows -Attempts $attempts) `
+            -ReportSettings $settings -UsageWindows $windows -Attempts $attempts `
+            -Subscriptions $subscriptions -SubscriptionSurface $subscriptionSurface) `
         -Requested @('assignment', 'usage_identity', 'usage', 'dependency') `
         -Completed (@('assignment') +
             $(if ($null -ne $settings -and -not $settings.display_concealed_names) {
@@ -334,9 +480,21 @@ Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                     New-Unavailable -State 'missing' `
                         -Detail 'No reporting period was requested, so no usage report was read.'
                 })
-            dependency = (New-Unavailable -State 'missing' `
-                    -Detail ('Dependency evidence is not collected by this run. What a ' +
-                        'capability is required for is not observable from an assignment ' +
-                        'or from usage.'))
+            # COVERAGE AND THE FACT HAVE TO AGREE, and they did not. The fact
+            # moved to `partial` when the collector learnt to calculate what one
+            # assignment uniquely delivers, and this entry still said the area
+            # was not read at all. A consumer renders coverage: the desktop
+            # client showed `dependency: not read` beside evidence that had
+            # just calculated part of it, which is the product contradicting
+            # itself on one screen. Found by opening the real binary against a
+            # real bundle and looking at it.
+            dependency = (New-Unavailable -State 'partial' `
+                    -Detail ('Part of this was read: what one assignment uniquely ' +
+                        'delivers is calculated from the service plans and the ' +
+                        'plans disabled on each assignment. What a capability is ' +
+                        'REQUIRED FOR -- a policy, a role, an obligation, a ' +
+                        'workload that would stop -- is not observable from an ' +
+                        'assignment or from usage, and nothing may be concluded ' +
+                        'about removing a licence without it.'))
         }) `
         -SourceApi 'Microsoft Graph v1.0' -SourceSystem 'Microsoft 365')

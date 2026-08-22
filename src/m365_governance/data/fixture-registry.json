@@ -79,6 +79,24 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-capacity-mixed.json",
+      "origin": "synthetic",
+      "purpose": "one SKU of every class the read can settle and one it cannot: a Company target, a subscription in warning, a cancelled one, an undocumented target class, and a row carrying a million units so no threshold can be introduced without failing a test",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-capacity-joined.json",
+      "origin": "synthetic",
+      "purpose": "the commercial subscriptions read and joined: a bought subscription, one on a free evaluation, a Company SKU, two free self-service programmes that report isTrial false, and one SKU whose subscription was not returned",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-capacity-unsupported.json",
+      "origin": "synthetic",
+      "purpose": "the commercial subscription surface answering that it does not exist in this cloud, which is not the same answer as a run that did not ask",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/licensing/tenant-graph-modules-absent.json",
       "origin": "sanitized-observation",
       "purpose": "a real collector run on a machine without the Microsoft Graph modules; the host is replaced because the document establishes nothing about any tenant and the name would be a customer identifier for no evidential gain",
@@ -340,6 +358,18 @@
       "path": "fixtures/sharepoint/site-customization-surfaces-observed.json",
       "origin": "synthetic",
       "purpose": "every customization surface read; constructed to exercise the complete path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-script-permitted.json",
+      "origin": "synthetic",
+      "purpose": "a site holding custom script open, which is the only state that reaches SPO-SCRIPT-001's fail path; every other customization fixture is blocked or unread",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-script-status-unknown.json",
+      "origin": "synthetic",
+      "purpose": "DenyAddAndCustomizePagesStatus is an enum of Unknown, Disabled and Enabled, and Unknown is the platform declining to answer rather than a read that failed. Born from the live tenant read that found the enum",
       "may_be_presented_as_tenant_observation": false
     },
     {

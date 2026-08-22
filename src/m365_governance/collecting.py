@@ -528,7 +528,18 @@ SLICES = {
             needs_site=True,
             needs_tenant=False,
             profile="default",
-            produces_findings=False,
+            # IT PRODUCES ONE NOW. `SPO-SCRIPT-001` reads whether the site
+            # permits custom script, on Microsoft's documented advice and with
+            # the consequence they state: script in a page runs as the person
+            # visiting it, and what was inserted, where and by whom can no
+            # longer be identified.
+            #
+            # THE EXCEPTION BELOW STILL HOLDS FOR THE REST OF THE FAMILY, and it
+            # is why there is one rule here and not four. The rule says the site
+            # permits custom script; it does not say the site is safe when it
+            # does not, and the limitation carrying the nine extensions is on
+            # the rule where a reader of a pass meets it.
+            produces_findings=True,
             # The third recorded exception to the twin rule. Microsoft documents
             # each of these controls as reaching less than its name suggests,
             # and in two cases prints the limit itself: blocking custom script
@@ -536,7 +547,7 @@ SLICES = {
             # hides the entry points while users can still add pages from other
             # modern pages. A rule reading one of them as a verdict would
             # publish exactly the mistake the control invites.
-            consumed_by="the customization surfaces in a report, and any viewer",
+            consumed_by="governance rules",
             describes=(
                 "the surfaces by which executable content or customization can "
                 "reach a page on one site"

@@ -78,12 +78,60 @@ function Get-CustomizationFacts {
     # `not observed`, which a single field cannot do.
     if ($null -ne $TenantSite) {
         try {
-            $deny = $TenantSite.DenyAddAndCustomizePages
-            $c['custom_script'] = New-ScalarFact -Value ("$deny") `
-                -RawField 'DenyAddAndCustomizePages'
+            # THE FACT IS NAMED FOR WHAT IT HOLDS, WHICH IS THE DENY FLAG.
+            # It was `custom_script` carrying `DenyAddAndCustomizePages`, so a
+            # reader who took it at its name had the meaning INVERTED: true
+            # meant custom script is blocked. A rule written against the old
+            # name would have reported every protected site as permissive. It
+            # is the same defect as a field called `service_plans` that held
+            # SKU identifiers, and it is caught the same way, by making the
+            # name say which direction the boolean runs.
+            #
+            # IT IS NOT A BOOLEAN AND CASTING IT TO ONE IS ALWAYS TRUE.
+            #
+            # FOUND BY PROVOKING THE STATE IN A TENANT, and it could not have
+            # been found any other way: `DenyAddAndCustomizePages` returns
+            # `DenyAddAndCustomizePagesStatus`, an enum whose three values are
+            # `Unknown`, `Disabled` and `Enabled`. `[bool]` on a non-empty
+            # string is `$true`, so a site that PERMITS custom script was
+            # collected as denying it, the rule passed, and the report said the
+            # site was protected. Every hand-written fixture used real booleans
+            # and agreed with the code.
+            #
+            # AND THE ENUM RUNS THE OTHER WAY AGAIN. `Enabled` means the DENY is
+            # enabled, so custom script is blocked. `Disabled` means the deny is
+            # off, so it is permitted. Two inversions stacked on one property.
+            #
+            # `Unknown` IS THE TENANT'S OWN THIRD ANSWER and is not coerced to
+            # either side: a value the platform will not commit to is not a
+            # finding about the site.
+            $status = [string] $TenantSite.DenyAddAndCustomizePages
+            switch ($status) {
+                'Enabled' {
+                    $c['custom_script_denied'] = New-ScalarFact -Value $true `
+                        -RawField 'DenyAddAndCustomizePages'
+                }
+                'Disabled' {
+                    $c['custom_script_denied'] = New-ScalarFact -Value $false `
+                        -RawField 'DenyAddAndCustomizePages'
+                }
+                'Unknown' {
+                    $c['custom_script_denied'] = New-AbsentFact -State 'missing' `
+                        -Detail ('DenyAddAndCustomizePages returned Unknown, which is a ' +
+                            'value of the status enum and not a failure to read. The ' +
+                            'platform did not commit to an answer, so neither does this.')
+                }
+                default {
+                    $c['custom_script_denied'] = New-AbsentFact -State 'invalid' `
+                        -Detail ("DenyAddAndCustomizePages returned '$status', which is " +
+                            'not one of the documented values Unknown, Disabled or ' +
+                            'Enabled. A value this collector does not recognise is not ' +
+                            'guessed at.')
+                }
+            }
         }
         catch {
-            $c['custom_script'] = New-AbsentFact `
+            $c['custom_script_denied'] = New-AbsentFact `
                 -State (Resolve-FailureState $_) -Detail $_.Exception.Message
         }
     }
@@ -95,7 +143,7 @@ function Get-CustomizationFacts {
         # what `missing` alone would hide. That gap is recorded for the owner in
         # outside this repository; until it is decided, the sentence is the only
         # thing keeping a read nobody made apart from a value nothing returned.
-        $c['custom_script'] = New-AbsentFact -State 'missing' `
+        $c['custom_script_denied'] = New-AbsentFact -State 'missing' `
             -Detail ('DenyAddAndCustomizePages is returned by a tenant-scoped ' +
                 'read, and this run did not make one for this site. Not read is ' +
                 'not the same as not set.')

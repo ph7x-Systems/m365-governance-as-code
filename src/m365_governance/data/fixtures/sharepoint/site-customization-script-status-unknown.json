@@ -76,12 +76,8 @@
         }
       },
       "custom_script_denied": {
-        "state": "observed",
-        "value": true,
-        "raw": {
-          "field": "DenyAddAndCustomizePages",
-          "value": true
-        }
+        "state": "missing",
+        "detail": "DenyAddAndCustomizePages returned Unknown, which is a value of the status enum and not a failure to read. The platform did not commit to an answer, so neither does this."
       },
       "add_and_customize_pages_held": {
         "state": "observed",

@@ -12,15 +12,16 @@ to point at it.
 
 | Domain | Rules | Collector | Profiles | Fixtures | Tests | Knowledge | Guide | Analysis | Compass | Complete |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Activity** (`ACTIVITY`) | 1 | 2 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
-| **Classification** (`CLASS`) | 4 | 1 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
-| **Modernity** (`MODERN`) | 3 | 2 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
-| **Permissions** (`LIST`) | 3 | 3 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
-| **SPFx** (`SPFX`) | 1 | 2 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
-| **Sharing** (`SHARE`) | 5 | 3 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
-| **Sites and storage** (`SITE`) | 3 | 4 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
+| **Activity** (`ACTIVITY`) | 1 | 3 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
+| **Classification** (`CLASS`) | 4 | 2 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
+| **Custom script** (`SCRIPT`) | 1 | 2 | 1 | 3 | 1 | — | — | — | — | **no** |
+| **Modernity** (`MODERN`) | 3 | 3 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
+| **Permissions** (`LIST`) | 3 | 4 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
+| **SPFx** (`SPFX`) | 1 | 3 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
+| **Sharing** (`SHARE`) | 5 | 4 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
+| **Sites and storage** (`SITE`) | 3 | 5 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
 
-**20 rules across 7 domains.** 4 complete, 3 not.
+**21 rules across 8 domains.** 4 complete, 4 not.
 
 ## The Domain Completion Gate
 
@@ -30,6 +31,7 @@ names, and this is the check that makes it arithmetic rather than
 judgement.
 
 - **Activity** — missing compass
+- **Custom script** — missing knowledge, guide, compass
 - **Modernity** — missing compass
 - **SPFx** — missing compass
 
@@ -39,10 +41,10 @@ judgement.
 - **Collectors** 100%
 - **Fixtures** 100%
 - **Tests** 100%
-- **Knowledge** 100%
-- **Guide** 100%
-- **Analysis** 14%
-- **Compass** 57%
+- **Knowledge** 88%
+- **Guide** 88%
+- **Analysis** 12%
+- **Compass** 50%
 
 These are the fraction of **domains** a surface reaches, not a claim
 about how good the coverage is inside one. A domain with a single

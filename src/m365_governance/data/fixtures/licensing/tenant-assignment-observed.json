@@ -31,8 +31,8 @@
     ],
     "unavailable": {
       "dependency": {
-        "state": "missing",
-        "detail": "Dependency evidence is not collected by this run. What a capability is required for is not observable from an assignment or from usage."
+        "state": "partial",
+        "detail": "Part of this was read: what one assignment uniquely delivers is calculated from the service plans and the plans disabled on each assignment. What a capability is REQUIRED FOR is not observable from an assignment or from usage, and nothing may be concluded about removing a licence without it."
       },
       "usage": {
         "state": "missing",
@@ -162,10 +162,10 @@
       },
       "subscribed_skus": {
         "state": "observed",
-        "value": 14,
+        "value": 3,
         "raw": {
           "field": "subscribedSkus",
-          "value": 14
+          "value": 3
         }
       },
       "skus": {
@@ -173,37 +173,175 @@
         "value": [
           {
             "sku": "ENTERPRISEPACK",
-            "prepaid_units": 25,
-            "consumed_units": 21
+            "prepaid_units": {
+              "enabled": 25,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 21,
+            "sku_id": "5c00-0000-4000-8000-000000000000",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a2",
+                "plan": "SHAREPOINTENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a3",
+                "plan": "TEAMS1",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a9",
+                "plan": "MICROSOFTBOOKINGS",
+                "applies_to": "Company",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": []
           },
           {
             "sku": "POWER_BI_STANDARD",
-            "prepaid_units": 1000000,
-            "consumed_units": 8
+            "prepaid_units": {
+              "enabled": 1000000,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 8,
+            "sku_id": "5c00-0000-4000-8000-000000000001",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": []
           },
           {
             "sku": "FLOW_FREE",
-            "prepaid_units": 10000,
-            "consumed_units": 8
+            "prepaid_units": {
+              "enabled": 10000,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 8,
+            "sku_id": "5c00-0000-4000-8000-000000000002",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": []
           }
         ],
         "raw": {
-          "field": "subscribedSkus: skuPartNumber, prepaidUnits.enabled, consumedUnits",
+          "field": "subscribedSkus: skuPartNumber, skuId, appliesTo, capabilityStatus, prepaidUnits (four counters), consumedUnits, servicePlans, subscriptionIds",
           "value": [
             {
               "sku": "ENTERPRISEPACK",
-              "prepaid_units": 25,
-              "consumed_units": 21
+              "prepaid_units": {
+                "enabled": 25,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 21,
+              "sku_id": "5c00-0000-4000-8000-000000000000",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a2",
+                  "plan": "SHAREPOINTENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a3",
+                  "plan": "TEAMS1",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a9",
+                  "plan": "MICROSOFTBOOKINGS",
+                  "applies_to": "Company",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": []
             },
             {
               "sku": "POWER_BI_STANDARD",
-              "prepaid_units": 1000000,
-              "consumed_units": 8
+              "prepaid_units": {
+                "enabled": 1000000,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 8,
+              "sku_id": "5c00-0000-4000-8000-000000000001",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": []
             },
             {
               "sku": "FLOW_FREE",
-              "prepaid_units": 10000,
-              "consumed_units": 8
+              "prepaid_units": {
+                "enabled": 10000,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 8,
+              "sku_id": "5c00-0000-4000-8000-000000000002",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": []
             }
           ]
         }
@@ -257,8 +395,214 @@
         "detail": "No usage report was read, so no window applies."
       },
       "dependency_evidence": {
+        "state": "partial",
+        "detail": "What one assignment uniquely delivers is calculable and is recorded: a service plan delivered by exactly one of a person's assignments stops being delivered if that assignment is removed. What a capability is REQUIRED FOR is a different question and is not observable from an assignment or from usage."
+      },
+      "plans_with_one_source": {
+        "state": "observed",
+        "value": 2,
+        "raw": {
+          "field": "servicePlans minus assignedLicenses.disabledPlans, per user",
+          "value": 2
+        }
+      },
+      "plans_with_more_than_one_source": {
+        "state": "observed",
+        "value": 1,
+        "raw": {
+          "field": "servicePlans minus assignedLicenses.disabledPlans, per user",
+          "value": 1
+        }
+      },
+      "sku_capacity": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "sku_id": "5c00-0000-4000-8000-000000000000",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+            ],
+            "subscription_state": "not-observed",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "sku_id": "5c00-0000-4000-8000-000000000001",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+            ],
+            "subscription_state": "not-observed",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "FLOW_FREE",
+            "sku_id": "5c00-0000-4000-8000-000000000002",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+            ],
+            "subscription_state": "not-observed",
+            "commercial_basis": "not-established"
+          }
+        ],
+        "raw": {
+          "field": "appliesTo, capabilityStatus and the commercial subscription join, per subscribedSku",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "sku_id": "5c00-0000-4000-8000-000000000000",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              ],
+              "subscription_state": "not-observed",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "sku_id": "5c00-0000-4000-8000-000000000001",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              ],
+              "subscription_state": "not-observed",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "FLOW_FREE",
+              "sku_id": "5c00-0000-4000-8000-000000000002",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              ],
+              "subscription_state": "not-observed",
+              "commercial_basis": "not-established"
+            }
+          ]
+        }
+      },
+      "capacity_summary": {
+        "state": "observed",
+        "value": {
+          "comparable": 0,
+          "not-comparable": 0,
+          "not-established": 3,
+          "kind_user_assignable": 3,
+          "kind_organisational": 0,
+          "kind_not_established": 0
+        },
+        "raw": {
+          "field": "count of subscribedSku rows per classification",
+          "value": {
+            "comparable": 0,
+            "not-comparable": 0,
+            "not-established": 3,
+            "kind_user_assignable": 3,
+            "kind_organisational": 0,
+            "kind_not_established": 0
+          }
+        }
+      },
+      "comparable_capacity": {
         "state": "missing",
-        "detail": "No dependency evidence is collected by this run. What a capability is required for -- a policy, a role, a compliance obligation, a workload that would stop -- is not observable from an assignment or from usage, and nothing may be concluded without it."
+        "detail": "No SKU has an established seat count, so no comparable capacity is published. The seats a subscription carries are companySubscription.totalLicenses and whether it is a trial is companySubscription.isTrial, at /directory/subscriptions in the beta endpoint; subscribedSku.subscriptionIds is the join."
+      },
+      "subscription_surface": {
+        "state": "observed",
+        "value": "not-observed",
+        "raw": {
+          "field": "GET /beta/directory/subscriptions (companySubscription)",
+          "value": "not-observed"
+        }
+      },
+      "subscription_surface_stability": {
+        "state": "observed",
+        "value": "beta",
+        "raw": {
+          "field": "Microsoft Graph endpoint version for companySubscription",
+          "value": "beta"
+        }
+      },
+      "subscriptions": {
+        "state": "missing",
+        "detail": "This run did not read /directory/subscriptions, so no seat count or trial status was established."
+      },
+      "subscription_join": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "state": "not-observed",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+            ]
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "state": "not-observed",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+            ]
+          },
+          {
+            "sku": "FLOW_FREE",
+            "state": "not-observed",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+            ]
+          }
+        ],
+        "raw": {
+          "field": "subscribedSku.subscriptionIds against companySubscription.id",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "state": "not-observed",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              ]
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "state": "not-observed",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              ]
+            },
+            {
+              "sku": "FLOW_FREE",
+              "state": "not-observed",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              ]
+            }
+          ]
+        }
+      },
+      "purchased_capacity": {
+        "state": "not-supported",
+        "detail": "Not observable from these surfaces. companySubscription.isTrial distinguishes a free trial from a subscription that is not a trial; it does not establish that an organisation bought one, because a self-service free programme is neither a trial nor a purchase. Nothing read here says what was paid for."
       }
     }
   }

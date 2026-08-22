@@ -557,8 +557,13 @@ switch ($Mode) {
         # letting a report imply completeness.
         $sites = @(Get-PnPTenantSite)
         Write-Host "$($sites.Count) sites enumerated by this identity"
+        # THE SENTENCE SAID `delegated` WHATEVER RAN IT. An application identity
+        # collected eleven sites and the coverage detail called it delegated,
+        # two lines from a provenance block correctly recording `application`
+        # and `certificate`. One document, two answers to the same question,
+        # and the wrong one is the half a person reads.
         $note = New-Unavailable -State 'partial' -Detail (
-            "Enumerated $($sites.Count) sites with a delegated identity. Sites " +
+            "Enumerated $($sites.Count) sites with $(if ($identityKind -eq 'application') { 'an application' } else { 'a delegated' }) identity. Sites " +
             'this identity cannot see are absent from this run, and their ' +
             'number is not knowable from here.')
         foreach ($tenantSite in $sites) {
