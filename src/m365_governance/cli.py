@@ -1113,10 +1113,29 @@ def _cmd_run(args) -> int:
 
     for step in doing:
         print(f"\ncollecting {step.name}", file=sys.stderr, flush=True)
+        # ONE DIRECTORY PER SLICE, AND IT IS NOT TIDINESS.
+        #
+        # Every slice named a document after the resource it read, so nine
+        # slices reading one site all wrote `<site>.json` into one directory
+        # and the last one won. Eight families of evidence were collected from
+        # a real tenant and thrown away between being written and being
+        # assessed, and the report over what survived looked complete.
+        #
+        # AND THE ACCOUNTING SAID THE OPPOSITE OF WHAT HAPPENED. What a slice
+        # wrote is computed as the paths present afterwards minus the paths
+        # present before; a slice overwriting another's file adds no path, so
+        # it was reported as having written nothing and the run called it
+        # `failed`. The collector had printed the file name and `Done.` two
+        # lines above.
+        #
+        # Found by running `run --bundle` against a tenant. Every slice passes
+        # on its own, which is why nothing had ever seen this.
+        into = args.output / step.name
+        into.mkdir(parents=True, exist_ok=True)
         outcome = collecting.run_slice(
             step.name,
             client_id=args.client_id,
-            output=args.output,
+            output=into,
             site_url=args.site_url,
             tenant_url=args.tenant_url,
             device_login=args.device_login,
