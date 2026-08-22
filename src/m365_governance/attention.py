@@ -208,10 +208,32 @@ def for_run(results: list[dict], coverage: dict) -> dict[str, Any]:
     }
 
     unavailable = coverage.get("unavailable", {}) or {}
-    unobserved = sorted(unavailable)
+
+    # READ IN PART IS NOT UNREAD, AND THE SCREEN SAID IT WAS. `unobserved` is
+    # documented as the areas the collector COULD NOT READ, and it was built
+    # from every key of `unavailable` — so an area whose collector read half of
+    # it and said so was published under the same name as one nobody touched.
+    # A run with two partial areas and one missing one announced `3 areas were
+    # not observed at all`, which is a stronger claim than the evidence makes,
+    # in the direction this product exists to prevent.
+    #
+    # The tier does not move: part of the estate was still not observed either
+    # way, and a partial reading that dropped out of the ranking would be the
+    # same omission with the opposite sign. Only the sentence changes, and it
+    # changes to the one that is true.
+    unobserved = sorted(
+        name
+        for name, entry in unavailable.items()
+        if (entry or {}).get("state") != "partial"
+    )
+    partial = sorted(
+        name
+        for name, entry in unavailable.items()
+        if (entry or {}).get("state") == "partial"
+    )
 
     present = [RANK[tier] for tier in tiers]
-    if unobserved:
+    if unavailable:
         present.append(RANK[UNOBSERVED_TIER])
 
     if not present:
@@ -221,22 +243,26 @@ def for_run(results: list[dict], coverage: dict) -> dict[str, Any]:
             "rank": rank,
             "because": ["no rule was evaluated against this resource"],
             "counts": counts,
-            "unobserved": unobserved,
+            "unobserved": sorted(
+                name
+                for name, entry in unavailable.items()
+                if (entry or {}).get("state") != "partial"
+            ),
         }
 
     rank = min(present)
     leading = TIERS[rank]
     state = STATE_OF_TIER[leading]
 
-    because = [_leading_reason(leading, counts, unobserved, len(results))]
+    because = [_leading_reason(leading, counts, unobserved, partial, len(results))]
 
     # Said whatever the leading tier is: a run with failures AND unread areas
     # describes only the part that was observed, and the leading reason alone
     # would hide the second half of that sentence.
-    if unobserved and leading != UNOBSERVED_TIER:
+    if unavailable and leading != UNOBSERVED_TIER:
         because.append(
-            f"{len(unobserved)} requested area(s) were also not read, so this "
-            "describes only what was observed"
+            _shortfall(unobserved, partial) + ", so this describes only what "
+            "was observed"
         )
 
     return {
@@ -248,8 +274,31 @@ def for_run(results: list[dict], coverage: dict) -> dict[str, Any]:
     }
 
 
+def _shortfall(unobserved: list[str], partial: list[str]) -> str:
+    """What the collection fell short of, naming each shortfall as its own kind.
+
+    TWO KINDS, NEVER ONE SENTENCE FOR BOTH. An area nobody read and an area read
+    in part are different facts about the tenant, and the second is the weaker
+    claim; saying `not read` for both overstates the gap, and dropping the
+    partial ones understates it.
+    """
+    said = []
+    if unobserved:
+        said.append(
+            f"{len(unobserved)} requested area(s) were not read: "
+            + ", ".join(unobserved)
+        )
+    if partial:
+        said.append(f"{len(partial)} were read only in part: " + ", ".join(partial))
+    return "; ".join(said)
+
+
 def _leading_reason(
-    tier: str, counts: dict[str, int], unobserved: list[str], total: int
+    tier: str,
+    counts: dict[str, int],
+    unobserved: list[str],
+    partial: list[str],
+    total: int,
 ) -> str:
     """Why the run is where it is, in one sentence naming the facts."""
     if tier == "documented-violation":
@@ -262,10 +311,8 @@ def _leading_reason(
     if tier == "no-judgement":
         return f"{counts['not-evaluated']} rule(s) produced no judgement at all"
     if tier == "evidence-absent":
-        if unobserved:
-            return f"{len(unobserved)} requested area(s) were not read: " + ", ".join(
-                unobserved
-            )
+        if unobserved or partial:
+            return _shortfall(unobserved, partial)
         return f"{counts['observe']} finding(s) reached no answer"
     if tier == "decided-non-normative":
         return f"{counts['review']} finding(s) were decided and are worth weighing"

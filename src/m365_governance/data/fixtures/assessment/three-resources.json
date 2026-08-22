@@ -327,7 +327,7 @@
             "state": "observe",
             "rank": 3,
             "because": [
-              "1 requested area(s) were not read: enumeration"
+              "1 were read only in part: enumeration"
             ],
             "counts": {
               "act": 0,
@@ -336,9 +336,7 @@
               "none": 0,
               "not-evaluated": 0
             },
-            "unobserved": [
-              "enumeration"
-            ]
+            "unobserved": []
           }
         },
         {
@@ -854,17 +852,17 @@
           "collected"
         ]
       },
-      "assessment_id": "5e3d75e6de04bc76d79fb298e1694b50310c71d6b1779df3fefa68368577fdb4"
+      "assessment_id": "b727d371d21ca13097422177b01967ac656a685a1d4ffe5cfe7e620bc77fcb33"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "d8fc0d05f92e2fa4b694c42094f695ed21e36b2a7381b85f051142913cd4deec",
+        "run_set": "0066d30ac7cac8b3cbb4fdae006ccfe9006aeecbc07a65a268207e58f07a394e",
         "evidence": "325b0e5371017a74c19e5d9f82ab748b36be59f72a6f2589841c90754434f70d",
         "versions": "b708e2b0313576fca38be2f63ddc403960636874ef6609c9d5954b4887a70163",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "5e3d75e6de04bc76d79fb298e1694b50310c71d6b1779df3fefa68368577fdb4"
+      "canonical_hash": "b727d371d21ca13097422177b01967ac656a685a1d4ffe5cfe7e620bc77fcb33"
     }
   }
 }

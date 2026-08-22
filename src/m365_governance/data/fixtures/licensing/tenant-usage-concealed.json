@@ -103,46 +103,170 @@
           {
             "sku": "ENTERPRISEPACK",
             "prepaid_units": 500,
-            "consumed_units": 487
+            "consumed_units": 487,
+            "sku_id": "5c00-0000-4000-8000-000000000000",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a2",
+                "plan": "SHAREPOINTENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a3",
+                "plan": "TEAMS1",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a9",
+                "plan": "MICROSOFTBOOKINGS",
+                "applies_to": "Company",
+                "provisioning_status": "Success"
+              }
+            ]
           },
           {
             "sku": "SPE_E5",
             "prepaid_units": 60,
-            "consumed_units": 55
+            "consumed_units": 55,
+            "sku_id": "5c00-0000-4000-8000-000000000001",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ]
           },
           {
             "sku": "POWER_BI_STANDARD",
             "prepaid_units": 1000000,
-            "consumed_units": 210
+            "consumed_units": 210,
+            "sku_id": "5c00-0000-4000-8000-000000000002",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ]
           },
           {
             "sku": "FLOW_FREE",
             "prepaid_units": 10000,
-            "consumed_units": 48
+            "consumed_units": 48,
+            "sku_id": "5c00-0000-4000-8000-000000000003",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ]
           }
         ],
         "raw": {
-          "field": "subscribedSkus: skuPartNumber, prepaidUnits.enabled, consumedUnits",
+          "field": "subscribedSkus: skuPartNumber, skuId, appliesTo, capabilityStatus, prepaidUnits.enabled, consumedUnits, servicePlans",
           "value": [
             {
               "sku": "ENTERPRISEPACK",
               "prepaid_units": 500,
-              "consumed_units": 487
+              "consumed_units": 487,
+              "sku_id": "5c00-0000-4000-8000-000000000000",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a2",
+                  "plan": "SHAREPOINTENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a3",
+                  "plan": "TEAMS1",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a9",
+                  "plan": "MICROSOFTBOOKINGS",
+                  "applies_to": "Company",
+                  "provisioning_status": "Success"
+                }
+              ]
             },
             {
               "sku": "SPE_E5",
               "prepaid_units": 60,
-              "consumed_units": 55
+              "consumed_units": 55,
+              "sku_id": "5c00-0000-4000-8000-000000000001",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ]
             },
             {
               "sku": "POWER_BI_STANDARD",
               "prepaid_units": 1000000,
-              "consumed_units": 210
+              "consumed_units": 210,
+              "sku_id": "5c00-0000-4000-8000-000000000002",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ]
             },
             {
               "sku": "FLOW_FREE",
               "prepaid_units": 10000,
-              "consumed_units": 48
+              "consumed_units": 48,
+              "sku_id": "5c00-0000-4000-8000-000000000003",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ]
             }
           ]
         }
