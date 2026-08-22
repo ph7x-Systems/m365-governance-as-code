@@ -223,7 +223,13 @@ def _text(value: Any) -> str | None:
 
 #: How much a live state proves, so the weakest link in a question can be found
 #: without comparing sentences.
-_PROVES = {"none": 0, "negative-only": 1, "provider-only": 2, "full": 3}
+_PROVES = {
+    "none": 0,
+    "negative-only": 1,
+    "provider-only": 2,
+    "partial": 3,
+    "full": 4,
+}
 
 
 def questions(rules: Path | None = None) -> dict[str, Any]:
@@ -325,6 +331,10 @@ def _because(state: str, available: bool) -> str:
         "provider-only": (
             "the transport underneath has read a real tenant, this slice's own "
             "path has not"
+        ),
+        "partial": (
+            "this slice's own path has read a real tenant for some of the areas "
+            "it covers, and has never run for the others"
         ),
         "none": "offline tests only",
     }[state]
