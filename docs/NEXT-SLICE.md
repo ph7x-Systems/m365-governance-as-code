@@ -22,107 +22,172 @@ as queue history; its PR, commits and release evidence remain the historical rec
 belong to a named capability does not start, and a finding outside the roadmap is
 recorded rather than promoted into it.
 
-### NOW
+### How a slice is chosen
 
-**`LICENSE-OPTIMIZATION-001`** — *what is assigned, what service plans it contains, and
-what usage evidence is observable for each.*
-**owner:** owner · **evidence needed:** one positive acquisition establishing subscribed
-SKUs, per-user assignments and the report identifiability setting, and where authorised
-one usage report · **done when:** that positive path reaches a consumer the way the
-negative one already does · **blocker:** the Microsoft Graph PowerShell modules are not
-installed on the collecting host, and beyond that a directory to read.
+**Not from the last thing we discovered. From the next missing link in a
+capability the roadmap already names.** A finding outside the roadmap is
+recorded and does not become work; speed chosen that way is dispersion with a
+commit history.
 
-**State, 2026-08-21, and it is narrow on purpose.** One acquisition ran against a real
-directory. What it established, and nothing beyond it:
+A capability is a product capability and not a collector, so every one of them
+crosses three lines at once:
 
-| | |
-|---|---|
-| assignment acquisition | **live-proven** -- 14 subscribed SKUs, 37 assigned units, 1 licensed user |
-| report identifiability | **live-proven** -- observed `concealed` |
-| usage | **not observed** -- no reporting period was requested |
-| dependency | **not observed** -- this product collects none |
+| | Engine | Desktop consumer | Public surface |
+|---|---|---|---|
+| **Know what exists** | inventory, populations, acquisition method | the estate, resource by resource | what we can observe |
+| **Know what can be established** | evidence, rules, limits | conclusions beside their unknowns | Knowledge |
+| **Know what changed, and what to do** | comparison and history | the change and action workspace | Analysis and the product page |
 
-**That is not `Licensing live-proven`.** Two of four surfaces were read, and the capability
-is partial.
+A capability is closed when the chain it names is closed, never when one call
+succeeded.
 
-**`units_purchased` is gone and is not coming back as a better total.** It summed
-`prepaidUnits.enabled` across SKUs and read 1,130,062 on a tenant with thirty-seven
-assigned seats: arithmetically correct, meaningless, and quotable. The count means
-something different on a paid seat SKU and on a free or effectively unlimited one.
-Choosing which rows are additive is a classification this engine does not have, so the
-SKUs are published one row each as Microsoft returned them and a consumer that wants a
-total has to say which rows it added. `consumedUnits` is still summed, because an
-assignment means the same thing on every SKU.
+### NOW — Licensing
 
-**Concealed is an answer, not an absence.** `usage_identity` is its own coverage area:
-`completed` where the reports may name people, `partial` where the setting was read and
-says they may not, `missing` where nobody read it. A consumer shows three different
-things, which is the point -- concealed, not read, and failed are three facts and not
-three ways of saying there is no data.
+**What licensing facts can be established without pretending that assignment
+equals need?**
 
-**The authentication that produced this was not authorized.** The owner was shown a
-consent prompt and accepted it. The raw observation is kept locally as provenance of the
-run and is not committed or published; the fixture in this repository is a separate
-sanitized representation that identifies no directory.
+```text
+Assignment   ✓   subscribed SKUs, service plans, per-user assignment
+Usage        →   a real report, with its period, freshness and identifiability
+Dependency   ○   what would stop working if an assignment changed
+Assessment   ○   whether any conclusion here is defensible at all
+Consumer     ○   the four areas readable as four, not as one number
+Knowledge    ○   published, with what it does not establish
+```
 
-**The rule that was missing, written out here because this is where it was needed.**
-Installing or configuring an authentication dependency is not authorization to
-authenticate. Any operation that establishes a session against a real directory or tenant
-needs explicit authorization for that operation, asked immediately before it and never
-inferred from a nearby instruction. One consent does not extend to the next operation, to
-a second run, or to a different scope; a session that already exists is not permission to
-use it.
+**Nobody declares Licensing closed for having reached Graph.** Two of six links
+are done.
 
-**The earlier failure path stays proven and stays worth having.** A real
-run went `acquisition attempted → nothing completed → not-supported with the reason →
-evidence → canonical bundle → Release consumer → visible as not supported`. What that
-establishes is worth having on its own: an impossible acquisition is not converted into
-absence, zero, a pass, or *no usage*. It survives the whole chain without being rounded
-off. **It establishes nothing about licensing.**
+**`LICENSING-ASSIGNMENT-002`** — normalise subscribed SKUs, service plans,
+assigned units and per-user assignment. **done when:** a consumer can read the
+assignment picture per SKU and per user without a total anywhere. **not:** a
+`total purchased`, in any form.
 
-Every absence now carries whose limitation it is: `implementation`, `tenant-or-identity`,
-`microsoft` or `caller`. Only the first is work. The two recorded today are both
-`implementation` -- this version collects through modules the host does not have -- which
-means the remaining work here is ours and not the tenant's.
+**`LICENSING-USAGE-003`** — read a real usage report preserving `period`,
+`report_refresh_date` and `report_identifiability`. **done when:** where
+concealment prevents attributing a row to a person, that is published as an
+observed limit rather than as missing data. **blocker:** explicit owner
+authorization for a tenant session, asked immediately before the run.
 
-### NEXT
+**`LICENSING-DEPENDENCY-004`** — establish what is observable about the
+capabilities that would stop working if an assignment changed. **done when:**
+`dependency_evidence` carries something read rather than its own absence.
+**This is the requirement for the word optimisation to be used at all.**
 
-**`BRAND-CENTER-001`** — *what organisational assets are published, by whom, and through
-which distribution boundary.* **owner:** owner · **evidence needed:** site authority,
-organisation asset libraries, the CDN publication path · **done when:** the distinction
-between an administration boundary and a distribution boundary is evidence rather than
-prose · **blocker:** none recorded.
+**`LICENSING-ASSESSMENT-005`** — decide whether any conclusion is defensible.
+**done when:** the answer is written down, including if it is *no rule yet*.
+A defensible *nothing to conclude* closes this slice; a manufactured
+recommendation does not.
 
-**`BRAND-CENTER-001` is the next genuinely open capability.** `AGENT-GOVERNANCE-001` is
-not: its first vertical is established. The collector carries `population`,
-`acquisition_method` and `populations_not_observed`, two fixtures exercise a populated and
-an empty population, the canonical bundle opens in a consumer, and the boundary is stated
-in the evidence rather than in prose. What remains there is a second slice, listed under
-LATER: creator authority and the publication surfaces beyond `.agent` files.
+**What one authorised acquisition established, and nothing beyond it.** Graph
+acquisition succeeded against a real directory; the subscribed SKUs and
+per-user assignments were read; report identifiability was observed as
+concealed; usage and dependency were not collected; the product carried those
+boundaries to a consumer without rounding any of them off. **The figures that
+run returned are not published here or anywhere.** That is sufficient live
+proof for `partial`, and it is not proof of the capability.
+
+**The authentication that produced it was not authorized**, and the rule that
+was missing is written out below. The raw observation stays local, sanitized
+where it had to persist, and is not published. It is a recorded execution
+mistake and not a workstream.
+
+**`units_purchased` is rejected as a product metric.** It summed
+`prepaidUnits.enabled` across SKUs and returned a seven-figure total on a
+tenant holding a few dozen assigned seats: arithmetically correct, meaningless
+and quotable. The count means something different on a paid seat SKU and on a
+free or effectively unlimited one. **It is not replaced by another aggregate
+until SKU semantics are designed**, which is `LICENSING-ASSIGNMENT-002`. The
+SKUs are published one row each as Microsoft returned them. `consumedUnits` is
+still summed, because an assignment means the same thing on every SKU.
+
+**Concealed is an answer, not an absence.** `usage_identity` is its own
+coverage area: `completed` where the reports may name people, `partial` where
+the setting was read and says they may not, `missing` where nobody read it.
+Three facts, not three ways of saying there is no data.
+
+**The rule that was missing, written out here because this is where it was
+needed.** Installing or configuring an authentication dependency is not
+authorization to authenticate. Any operation that establishes a session against
+a real directory or tenant needs explicit authorization for that operation,
+asked immediately before it and never inferred from a nearby instruction. One
+consent does not extend to the next operation, to a second run, or to a
+different scope; a session that already exists is not permission to use it.
+
+**The earlier failure path stays proven and stays worth having.** A real run
+went `acquisition attempted → nothing completed → not-supported with the reason
+→ evidence → canonical bundle → Release consumer → visible as not supported`.
+An impossible acquisition is not converted into absence, zero, a pass, or *no
+usage*. **It establishes nothing about licensing.**
+
+Every absence carries whose limitation it is: `implementation`,
+`tenant-or-identity`, `microsoft` or `caller`. Only the first is work.
+
+### NEXT — Brand Center
+
+**What is published as an organisation's brand, through which boundary, and
+under whose authority?** The investigation is done; this is the part that turns
+it into product, and it is five links rather than a collector.
+
+**`BRAND-INVENTORY-001`** — the Brand Center site and the assets it holds.
+**`BRAND-AUTHORITY-002`** — who administers it and who may publish through it.
+**`BRAND-DISTRIBUTION-003`** — organisation asset libraries, the CDN, and where
+the distribution boundary actually ends.
+**`BRAND-FONTS-004`** — what is specific about fonts, and the ACL and
+classification limits that apply to them.
+**`BRAND-CONSUMER-005`** — a person can see *what is published, through which
+boundary, under whose authority* without reading the evidence.
+
+**An administration boundary and a distribution boundary are not the same
+thing**, and the capability closes when that distinction is evidence rather
+than prose.
+
+### NEXT — Agents
+
+**Which agent populations exist, who can publish into each, and which of them
+can this acquisition method actually see?**
+
+`AGENT-GOVERNANCE-001` proved one population: `.agent` files in one site's Site
+Assets library, enumerated. Agent Builder is a second population and Copilot
+Studio a third, and **the product does not collapse them into a number called
+Agents.**
+
+**`AGENT-GOVERNANCE-002`** — the surfaces a `.agent` file read cannot reach, and
+creator authority. **done when:** the second population is stated the way the
+first one is, with its own acquisition method — including if the answer is that
+no read exists.
+
+### AFTER — Identity and security
+
+Identities, privileged roles, authentication, Conditional Access, Security
+Defaults, application identities, consent and permissions, administrative
+surfaces. Transversal to everything above, which is why it comes after two
+capabilities are closed end to end rather than before.
+
+It is also where the commercial question stops being licensing arithmetic:
+**what are we paying for, who has it, what is actually used, what depends on
+it, and what can be safely concluded about changing it.** That question needs
+licence, identity, usage and dependency in one place, and it is not asked until
+each of them exists on its own.
 
 ### LATER
 
-`AGENT-GOVERNANCE-002` — creator authority and the publication surfaces a `.agent` file
-read cannot reach. **evidence needed:** the administrative surface that lists agents built
-outside SharePoint · **done when:** the second population is stated the way the first one
-is.
-
 `ENGINE-FACT-STATE-NOBODY-LOOKED-001`, `ENGINE-CONTRACT-LEDGER-002`,
-`MIGRATION-VERIFY-001`, and the residual-defect list under `FIRST-RUN-006`. Real work,
-none of it blocking a capability in NOW or NEXT.
+`MIGRATION-VERIFY-001`, and the residual-defect list under `FIRST-RUN-006`.
+Real work, none of it blocking a capability above.
 
 ### FROZEN
 
-`FIRST-RUN` functional expansion, by the owner decision below. `PAGE EXECUTION`
-(`ENGINE-PAGE-CONTROLS-001`) is closed as an observation capability and is deliberately
-not extended: rules stay at zero until there is a sentence somebody can defend.
+`FIRST-RUN` functional expansion, by the owner decision below. **`PAGE
+EXECUTION` (`ENGINE-PAGE-CONTROLS-001`) is closed as an observation capability
+and stays closed** until a new question justifies reopening it. Rules stay at
+zero: there is no sentence somebody can defend.
 
 ### NOT ESTABLISHED — needs a tenant, a licence or an identity
 
 `ENGINE-CLEAN-MACHINE-001` and `002`, `FIRST-RUN-002`'s live path,
-`CUSTOM-SCRIPT-SEMANTICS-001`'s runtime half, and the live half of everything in NOW.
-These are not blocked work; they are work whose evidence cannot be obtained from this
-machine.
+`CUSTOM-SCRIPT-SEMANTICS-001`'s runtime half, and the live half of everything in
+NOW. Not blocked work: work whose evidence cannot be obtained from this machine.
 
 ### STANDING RULES, not slices
 
