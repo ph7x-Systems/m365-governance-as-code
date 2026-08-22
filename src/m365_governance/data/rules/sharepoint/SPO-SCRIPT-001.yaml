@@ -1,0 +1,128 @@
+# Microsoft's advice, and a date that has already passed.
+#
+# THE FACT THIS READS IS THE DENY FLAG. `DenyAddAndCustomizePages` true means
+# custom script is BLOCKED, and the evidence field was called `custom_script`
+# until this rule was written, which would have inverted every result. The fact
+# is now named for the direction it runs.
+
+schema_version: "1.0"
+id: SPO-SCRIPT-001
+version: "1.0"
+title: The site permits custom script
+description: >
+  Custom script is the classic scripting model: script placed in a SharePoint
+  page runs in the context of the user who visits it, with everything that user
+  can reach, including other Microsoft 365 services through Microsoft Graph.
+  Microsoft states that once scripting is allowed you can no longer identify
+  what code was inserted, where, or by whom.
+
+service: sharepoint
+resource_type: site
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/sharepoint/security-considerations-of-allowing-custom-script
+      title: Security considerations of allowing custom script
+      publisher: Microsoft
+      checked_at: "2026-08-22"
+    - url: https://learn.microsoft.com/sharepoint/allow-or-prevent-custom-script
+      title: Allow or prevent custom script
+      publisher: Microsoft
+      checked_at: "2026-08-22"
+    # ANNOUNCED CHANGE IS FIRST-PARTY EVIDENCE AND IT IS NOT ON LEARN.
+    # Learn describes what the product does; a Message Center post describes
+    # what it is about to stop doing, with dates. This one moves the meaning of
+    # a pass, so it is a source of this rule rather than a note beside it.
+    - url: https://mc.merill.net/message/MC1117115
+      title: >
+        MC1117115 — Updates to custom scripting in sites and Classic Publishing
+        site creation. Custom scripting disabled by default on classic
+        publishing sites from 15 September 2025; the tenant-level opt-out
+        command retired on 15 March 2026. A public mirror of the tenant Message
+        Center, which is the primary and is tenant-scoped.
+      publisher: Microsoft
+      checked_at: "2026-08-22"
+  rationale: >
+    Microsoft's advice, not a requirement: the setting exists, it is supported,
+    and a site with a deliberate classic customisation can hold it open. What
+    makes this worth reporting is the consequence Microsoft documents rather
+    than a preference of ours. It is `guidance` and not `requirement` because
+    nothing in the product forbids it.
+
+severity:
+  default: medium
+  rationale: >
+    It is a real capability with a documented loss of attribution, and it is
+    also a supported setting that some estates need. Medium is the honest
+    place: worth a person looking, not worth an alarm.
+  configurable: true
+
+evidence_requirements:
+  - path: customization.custom_script_denied
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: customization.custom_script_denied
+  value: false
+
+outcomes:
+  pass:
+    message: >
+      Custom script is blocked on this site.
+  fail:
+    message: >
+      This site permits custom script. Script placed in a page runs as the
+      person visiting it, and Microsoft states that what was inserted, where,
+      and by whom can no longer be identified.
+  unknown:
+    message: >
+      The custom script setting was not read, so whether this site permits it
+      is not known. This is not a pass: the setting is returned by a
+      tenant-scoped read, and a run that did not make one has established
+      nothing about it.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The custom script setting was returned in a form this rule cannot
+      evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Find what depends on it before closing it. Blocking custom script stops the
+  classic scripting model, and a site that was built on it will lose behaviour
+  a person is still using. Microsoft's own guidance is to move that behaviour
+  to a supported extensibility model first.
+
+limitations:
+  passes_without_resolving: >
+    BLOCKED IS NOT INERT, AND THIS IS THE MISREADING THE CONTROL INVITES. Under
+    *What features are affected when custom scripts are blocked?* Microsoft
+    lists exactly nine extensions that cannot be uploaded, copied, moved or
+    opened: `.asmx`, `.ascx`, `.aspx`, `.htc`, `.jar`, `.master`, `.swf`,
+    `.xap`, `.xsf`. `.html` and `.htm` are not among them. Writing about
+    Content Security Policy, Microsoft states the same thing from the other
+    side: added script will not execute, added HTML will still work. A site
+    that passes this rule can still hold HTML, and other extensibility models
+    are unaffected by this setting entirely.
+  other:
+    - >
+      A PASS MAY DESCRIBE A DEFAULT RATHER THAN A DECISION, AND THE DIFFERENCE
+      IS NOT IN THIS EVIDENCE. Microsoft announced in MC1117115 that custom
+      scripting became disabled by default on classic publishing sites on 15
+      September 2025, and that the tenant-level opt-out command retired on 15
+      March 2026. A site reported as blocked today may have been closed by an
+      administrator or by that change, and this reads the resulting state
+      rather than what produced it. The tenant's own Message Center is where
+      that history is settled.
+    - >
+      This reads the setting and never what the site contains. It says nothing
+      about pages that already carry script, about who placed it, or about
+      whether anything currently depends on it.
+    - >
+      The permission the setting operates through is collected separately.
+      `AddAndCustomizePages` absent from the effective permissions of the
+      identity that ran is a fact about that identity, not about the site.

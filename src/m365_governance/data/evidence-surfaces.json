@@ -1,0 +1,157 @@
+{
+  "_readme": [
+    "THE SURFACES A CLAIM MAY REST ON, NAMED ONCE.",
+    "",
+    "`I searched` is not a method and `Microsoft says` is not a citation. Each",
+    "surface below answers a different question and none of them answers",
+    "another's, so a rule that consulted one has established what that one",
+    "settles and nothing more.",
+    "",
+    "THE RESPONSE OUTRANKS THE PROSE. Where a reference page and a tenant's own",
+    "answer disagree, the answer is what is true and the page is what somebody",
+    "intended. Both are recorded and the disagreement is the finding, which is",
+    "the capability this product is built on.",
+    "",
+    "CURRENT DOCUMENTATION IS NOT THE WHOLE OF FIRST-PARTY EVIDENCE. Reference",
+    "pages say what the product does. They do not say what it is about to stop",
+    "doing, and a rule that was correct on the day it was written keeps being",
+    "published long after the day it stopped being. When an announced change",
+    "moves what an outcome MEANS, it is a source of the rule.",
+    "",
+    "Asked BEFORE the rule is written, never after. `SPO-SCRIPT-001` was",
+    "written three times, and every rewrite was a surface that had not been",
+    "asked.",
+    "",
+    "`where` is the list of places, and it is not a suggestion: a claim that cites none of them has cited nothing. Adding a place is a deliberate edit, reviewed like a schema, because a source list that grows by habit stops meaning anything."
+  ],
+  "surfaces": [
+    {
+      "id": "tenant-response",
+      "name": "The API response itself",
+      "publisher": "the tenant",
+      "settles": "what is, in this tenant, at the moment it was read",
+      "does_not_settle": "what any of it means",
+      "rank": 1,
+      "where": [
+        "https://graph.microsoft.com/v1.0/",
+        "https://graph.microsoft.com/beta/",
+        "the PowerShell modules that wrap them: Microsoft.Graph, ExchangeOnlineManagement, MicrosoftTeams, PnP.PowerShell"
+      ]
+    },
+    {
+      "id": "reference",
+      "name": "Microsoft Learn reference",
+      "publisher": "Microsoft",
+      "settles": "what a value means, and the documented limits of a control",
+      "does_not_settle": "whether it is about to change, or what a tenant holds",
+      "rank": 2,
+      "where": [
+        "https://learn.microsoft.com/graph/api/overview",
+        "https://learn.microsoft.com/microsoft-365/",
+        "https://learn.microsoft.com/sharepoint/",
+        "https://learn.microsoft.com/exchange/",
+        "https://learn.microsoft.com/microsoftteams/",
+        "https://learn.microsoft.com/entra/",
+        "https://learn.microsoft.com/purview/",
+        "https://learn.microsoft.com/defender-office-365/",
+        "https://learn.microsoft.com/powershell/module/"
+      ]
+    },
+    {
+      "id": "service-description",
+      "name": "Microsoft 365 service descriptions",
+      "publisher": "Microsoft",
+      "settles": "what a plan includes, per licence",
+      "does_not_settle": "what a tenant actually holds or has assigned",
+      "rank": 2,
+      "where": [
+        "https://learn.microsoft.com/office365/servicedescriptions/office-365-service-descriptions-technet-library",
+        "https://learn.microsoft.com/entra/identity/authentication/concept-authentication-methods"
+      ]
+    },
+    {
+      "id": "graph-changelog",
+      "name": "Microsoft Graph changelog",
+      "publisher": "Microsoft",
+      "settles": "what the API gained or lost, with dates",
+      "does_not_settle": "what a portal shows, or when a portal caught up",
+      "rank": 2,
+      "where": [
+        "https://learn.microsoft.com/graph/changelog",
+        "https://developer.microsoft.com/graph/changelog/rss",
+        "https://learn.microsoft.com/graph/known-issues"
+      ]
+    },
+    {
+      "id": "message-center",
+      "name": "Message Center",
+      "publisher": "Microsoft",
+      "settles": "what changes, with an effect date and any opt-out retirement",
+      "does_not_settle": "anything about a tenant that did not receive the post",
+      "note": "Tenant-scoped and publicly mirrored. The tenant's own centre is the primary.",
+      "rank": 2,
+      "where": [
+        "https://admin.microsoft.com/#/MessageCenter  (the tenant's own, and the primary)",
+        "https://mc.merill.net/  (public mirror, message id addressable)"
+      ]
+    },
+    {
+      "id": "roadmap",
+      "name": "Microsoft 365 Roadmap",
+      "publisher": "Microsoft",
+      "settles": "what is announced. A status, never a fact",
+      "does_not_settle": "that it shipped, or when",
+      "rank": 3,
+      "where": [
+        "https://www.microsoft.com/microsoft-365/roadmap",
+        "https://www.microsoft.com/releasecommunications/api/v1/m365  (the roadmap's own API)"
+      ]
+    },
+    {
+      "id": "retirement",
+      "name": "Retirement and deprecation notices",
+      "publisher": "Microsoft",
+      "settles": "what stops working, and when",
+      "does_not_settle": "what replaces it",
+      "rank": 2,
+      "where": [
+        "https://learn.microsoft.com/microsoft-365/enterprise/microsoft-365-feature-retirements",
+        "https://learn.microsoft.com/graph/changelog  (removals carry a date)",
+        "https://techcommunity.microsoft.com/  product-group posts announcing an end of support"
+      ]
+    },
+    {
+      "id": "admin-portal",
+      "name": "An administration portal",
+      "publisher": "Microsoft",
+      "settles": "what an administrator is shown, which is what they believe",
+      "does_not_settle": "what is true. It renders a value through a interface written at a different time, sometimes over a second control that overrides the one on screen",
+      "note": "Never a basis for a rule. Read as the SECOND SURFACE, so that a divergence from the authoritative one can be recorded as evidence.",
+      "rank": 4,
+      "where": [
+        "https://admin.microsoft.com",
+        "https://admin.exchange.microsoft.com",
+        "https://admin.teams.microsoft.com",
+        "https://security.microsoft.com",
+        "https://purview.microsoft.com",
+        "https://entra.microsoft.com",
+        "https://<tenant>-admin.sharepoint.com",
+        "https://intune.microsoft.com",
+        "https://admin.powerplatform.microsoft.com"
+      ]
+    },
+    {
+      "id": "community",
+      "name": "Community documentation, blogs, samples and issues",
+      "publisher": "various",
+      "settles": "nothing on its own",
+      "does_not_settle": "anything a rule may rest on. It is where to look next, not what to cite",
+      "rank": 5,
+      "where": [
+        "https://github.com/pnp/",
+        "https://techcommunity.microsoft.com/",
+        "https://learn.microsoft.com/answers/"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,1132 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-21T11:10:00Z",
+    "collector": "m365-licensing-collector",
+    "collector_version": "0.1.0",
+    "source_system": "Microsoft 365",
+    "source_api": "Microsoft Graph v1.0",
+    "tenant": {
+      "id": null,
+      "host": "fabrikam.onmicrosoft.com",
+      "how": "requested"
+    },
+    "identity_kind": "application",
+    "acquisition": "collected",
+    "scopes": [
+      "Organization.Read.All",
+      "User.Read.All",
+      "Reports.Read.All"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "assignment",
+      "usage_identity",
+      "usage",
+      "dependency"
+    ],
+    "completed": [
+      "assignment"
+    ],
+    "unavailable": {
+      "dependency": {
+        "state": "missing",
+        "detail": "Dependency evidence is not collected by this run."
+      },
+      "usage": {
+        "state": "missing",
+        "detail": "No usage report was read by this run."
+      },
+      "usage_identity": {
+        "state": "missing",
+        "detail": "The tenant report privacy setting was not read."
+      }
+    }
+  },
+  "resource": {
+    "workload": "microsoft-365",
+    "type": "tenant",
+    "native_id": "fabrikam.onmicrosoft.com",
+    "tenant": {
+      "id": null,
+      "host": "fabrikam.onmicrosoft.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "Fabrikam",
+    "url": "https://admin.microsoft.com"
+  },
+  "facts": {
+    "licensing": {
+      "population": {
+        "state": "observed",
+        "value": "entra-licensed-user-assignments",
+        "raw": {
+          "field": "directory enumeration of user license assignments",
+          "value": "entra-licensed-user-assignments"
+        }
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated",
+        "raw": {
+          "field": "directory",
+          "value": "enumerated"
+        }
+      },
+      "populations_not_observed": {
+        "state": "observed",
+        "value": [
+          "non-subscription-license-models",
+          "assigned-outside-this-tenant"
+        ],
+        "raw": {
+          "field": "not reachable from a directory read",
+          "value": [
+            "non-subscription-license-models",
+            "assigned-outside-this-tenant"
+          ]
+        }
+      },
+      "subscribed_skus": {
+        "state": "observed",
+        "value": 8,
+        "raw": {
+          "field": "subscribedSkus",
+          "value": 8
+        }
+      },
+      "skus": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "prepaid_units": {
+              "enabled": 500,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 487,
+            "sku_id": "5c00-0000-4000-8000-000000000000",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a2",
+                "plan": "SHAREPOINTENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a3",
+                "plan": "TEAMS1",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              },
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a9",
+                "plan": "MICROSOFTBOOKINGS",
+                "applies_to": "Company",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000001"
+            ]
+          },
+          {
+            "sku": "SPE_E5",
+            "prepaid_units": {
+              "enabled": 60,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 55,
+            "sku_id": "5c00-0000-4000-8000-000000000001",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000002"
+            ]
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "prepaid_units": {
+              "enabled": 1000000,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 210,
+            "sku_id": "5c00-0000-4000-8000-000000000002",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000003"
+            ]
+          },
+          {
+            "sku": "FLOW_FREE",
+            "prepaid_units": {
+              "enabled": 10000,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 48,
+            "sku_id": "5c00-0000-4000-8000-000000000003",
+            "applies_to": "User",
+            "capability_status": "Enabled",
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                "plan": "EXCHANGE_S_ENTERPRISE",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000009"
+            ]
+          },
+          {
+            "sku": "MCOMEETADV",
+            "sku_id": "5c00-0000-4000-8000-000000000004",
+            "applies_to": "Company",
+            "capability_status": "Enabled",
+            "prepaid_units": {
+              "enabled": 25,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 0,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b1",
+                "plan": "MCOMEETADV",
+                "applies_to": "Company",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-000000000004"
+            ]
+          },
+          {
+            "sku": "EMS",
+            "sku_id": "5c00-0000-4000-8000-000000000005",
+            "applies_to": "User",
+            "capability_status": "Warning",
+            "prepaid_units": {
+              "enabled": 0,
+              "warning": 40,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 38,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b2",
+                "plan": "AAD_PREMIUM",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": [
+              "5ub-0000-4000-8000-00000000000f"
+            ]
+          },
+          {
+            "sku": "VISIOCLIENT",
+            "sku_id": "5c00-0000-4000-8000-000000000006",
+            "applies_to": "User",
+            "capability_status": "Suspended",
+            "prepaid_units": {
+              "enabled": 0,
+              "warning": 0,
+              "suspended": 12,
+              "locked_out": 0
+            },
+            "consumed_units": 0,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b3",
+                "plan": "VISIO_CLIENT_SUBSCRIPTION",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": []
+          },
+          {
+            "sku": "UNRECOGNISED_TARGET",
+            "sku_id": "5c00-0000-4000-8000-000000000007",
+            "applies_to": "Tenant",
+            "capability_status": "Enabled",
+            "prepaid_units": {
+              "enabled": 9999999,
+              "warning": 0,
+              "suspended": 0,
+              "locked_out": 0
+            },
+            "consumed_units": 3,
+            "service_plans": [
+              {
+                "plan_id": "1abe1abe-0000-4000-8000-0000000000b4",
+                "plan": "SOMETHING_NEW",
+                "applies_to": "User",
+                "provisioning_status": "Success"
+              }
+            ],
+            "subscription_ids": []
+          }
+        ],
+        "raw": {
+          "field": "subscribedSkus: skuPartNumber, skuId, appliesTo, capabilityStatus, prepaidUnits (four counters), consumedUnits, servicePlans, subscriptionIds",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "prepaid_units": {
+                "enabled": 500,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 487,
+              "sku_id": "5c00-0000-4000-8000-000000000000",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a2",
+                  "plan": "SHAREPOINTENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a3",
+                  "plan": "TEAMS1",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                },
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a9",
+                  "plan": "MICROSOFTBOOKINGS",
+                  "applies_to": "Company",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000001"
+              ]
+            },
+            {
+              "sku": "SPE_E5",
+              "prepaid_units": {
+                "enabled": 60,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 55,
+              "sku_id": "5c00-0000-4000-8000-000000000001",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000002"
+              ]
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "prepaid_units": {
+                "enabled": 1000000,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 210,
+              "sku_id": "5c00-0000-4000-8000-000000000002",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000003"
+              ]
+            },
+            {
+              "sku": "FLOW_FREE",
+              "prepaid_units": {
+                "enabled": 10000,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 48,
+              "sku_id": "5c00-0000-4000-8000-000000000003",
+              "applies_to": "User",
+              "capability_status": "Enabled",
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000a1",
+                  "plan": "EXCHANGE_S_ENTERPRISE",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000009"
+              ]
+            },
+            {
+              "sku": "MCOMEETADV",
+              "sku_id": "5c00-0000-4000-8000-000000000004",
+              "applies_to": "Company",
+              "capability_status": "Enabled",
+              "prepaid_units": {
+                "enabled": 25,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 0,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b1",
+                  "plan": "MCOMEETADV",
+                  "applies_to": "Company",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-000000000004"
+              ]
+            },
+            {
+              "sku": "EMS",
+              "sku_id": "5c00-0000-4000-8000-000000000005",
+              "applies_to": "User",
+              "capability_status": "Warning",
+              "prepaid_units": {
+                "enabled": 0,
+                "warning": 40,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 38,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b2",
+                  "plan": "AAD_PREMIUM",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": [
+                "5ub-0000-4000-8000-00000000000f"
+              ]
+            },
+            {
+              "sku": "VISIOCLIENT",
+              "sku_id": "5c00-0000-4000-8000-000000000006",
+              "applies_to": "User",
+              "capability_status": "Suspended",
+              "prepaid_units": {
+                "enabled": 0,
+                "warning": 0,
+                "suspended": 12,
+                "locked_out": 0
+              },
+              "consumed_units": 0,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b3",
+                  "plan": "VISIO_CLIENT_SUBSCRIPTION",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": []
+            },
+            {
+              "sku": "UNRECOGNISED_TARGET",
+              "sku_id": "5c00-0000-4000-8000-000000000007",
+              "applies_to": "Tenant",
+              "capability_status": "Enabled",
+              "prepaid_units": {
+                "enabled": 9999999,
+                "warning": 0,
+                "suspended": 0,
+                "locked_out": 0
+              },
+              "consumed_units": 3,
+              "service_plans": [
+                {
+                  "plan_id": "1abe1abe-0000-4000-8000-0000000000b4",
+                  "plan": "SOMETHING_NEW",
+                  "applies_to": "User",
+                  "provisioning_status": "Success"
+                }
+              ],
+              "subscription_ids": []
+            }
+          ]
+        }
+      },
+      "units_assigned": {
+        "state": "observed",
+        "value": 800,
+        "raw": {
+          "field": "consumedUnits",
+          "value": 800
+        }
+      },
+      "users_observed": {
+        "state": "observed",
+        "value": 800,
+        "raw": {
+          "field": "directory enumeration",
+          "value": 800
+        }
+      },
+      "assignments": {
+        "state": "observed",
+        "value": 1126,
+        "raw": {
+          "field": "assignedLicenses",
+          "value": 1126
+        }
+      },
+      "service_plans_represented": {
+        "state": "observed",
+        "value": 23,
+        "raw": {
+          "field": "assignedLicenses.servicePlans",
+          "value": 23
+        }
+      },
+      "dependency_evidence": {
+        "state": "missing",
+        "detail": "No dependency evidence is collected by this run. What a capability is required for -- a policy, a role, a compliance obligation, a workload that would stop -- is not observable from an assignment or usage, and nothing may be concluded without it."
+      },
+      "report_identifiability": {
+        "state": "missing",
+        "detail": "The tenant report privacy setting was not read. Until it is, no usage figure can be attributed to any user, because concealed is the default."
+      },
+      "usage_reports_read": {
+        "state": "missing",
+        "detail": "No usage report was read by this run."
+      },
+      "usage_window_days": {
+        "state": "missing",
+        "detail": "No usage report was read, so no window applies."
+      },
+      "sku_capacity": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "sku_id": "5c00-0000-4000-8000-000000000000",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+              "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+            ],
+            "subscription_state": "joined",
+            "commercial_basis": "not-a-trial",
+            "seats": 500
+          },
+          {
+            "sku": "SPE_E5",
+            "sku_id": "5c00-0000-4000-8000-000000000001",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+              "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+            ],
+            "subscription_state": "joined",
+            "commercial_basis": "trial",
+            "seats": 25
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "sku_id": "5c00-0000-4000-8000-000000000002",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+              "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+            ],
+            "subscription_state": "joined",
+            "commercial_basis": "not-a-trial",
+            "seats": 1000000
+          },
+          {
+            "sku": "FLOW_FREE",
+            "sku_id": "5c00-0000-4000-8000-000000000003",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+              "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+            ],
+            "subscription_state": "joined",
+            "commercial_basis": "not-a-trial",
+            "seats": 10000
+          },
+          {
+            "sku": "MCOMEETADV",
+            "sku_id": "5c00-0000-4000-8000-000000000004",
+            "capacity_kind": "organisational",
+            "aggregation_eligibility": "not-comparable",
+            "because": [
+              "appliesTo is Company, and Microsoft documents that only a SKU whose target class is User is assignable, so these units are not user seats"
+            ],
+            "subscription_state": "joined",
+            "commercial_basis": "not-a-trial",
+            "seats": 25
+          },
+          {
+            "sku": "EMS",
+            "sku_id": "5c00-0000-4000-8000-000000000005",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "capabilityStatus is Warning rather than Enabled, so this subscription is not current capacity"
+            ],
+            "subscription_state": "unmatched",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "VISIOCLIENT",
+            "sku_id": "5c00-0000-4000-8000-000000000006",
+            "capacity_kind": "user-assignable",
+            "aggregation_eligibility": "not-comparable",
+            "because": [
+              "appliesTo is User, which Microsoft documents as the only assignable target class",
+              "capabilityStatus is Suspended rather than Enabled, so this subscription is not current capacity"
+            ],
+            "subscription_state": "unmatched",
+            "commercial_basis": "not-established"
+          },
+          {
+            "sku": "UNRECOGNISED_TARGET",
+            "sku_id": "5c00-0000-4000-8000-000000000007",
+            "capacity_kind": "not-established",
+            "aggregation_eligibility": "not-established",
+            "because": [
+              "appliesTo is 'Tenant', which is not a documented target class, so what these units count is not established",
+              "the commercial subscriptions were read and none matched this SKU, so its seats are not established"
+            ],
+            "subscription_state": "unmatched",
+            "commercial_basis": "not-established"
+          }
+        ],
+        "raw": {
+          "field": "appliesTo, capabilityStatus and the commercial subscription join, per subscribedSku",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "sku_id": "5c00-0000-4000-8000-000000000000",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+                "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+              ],
+              "subscription_state": "joined",
+              "commercial_basis": "not-a-trial",
+              "seats": 500
+            },
+            {
+              "sku": "SPE_E5",
+              "sku_id": "5c00-0000-4000-8000-000000000001",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+                "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+              ],
+              "subscription_state": "joined",
+              "commercial_basis": "trial",
+              "seats": 25
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "sku_id": "5c00-0000-4000-8000-000000000002",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+                "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+              ],
+              "subscription_state": "joined",
+              "commercial_basis": "not-a-trial",
+              "seats": 1000000
+            },
+            {
+              "sku": "FLOW_FREE",
+              "sku_id": "5c00-0000-4000-8000-000000000003",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "seats are established from companySubscription.totalLicenses, and a seat is the same unit on every subscription that reports one",
+                "this says the units may be added to another subscription seats, and says nothing about whether they were bought"
+              ],
+              "subscription_state": "joined",
+              "commercial_basis": "not-a-trial",
+              "seats": 10000
+            },
+            {
+              "sku": "MCOMEETADV",
+              "sku_id": "5c00-0000-4000-8000-000000000004",
+              "capacity_kind": "organisational",
+              "aggregation_eligibility": "not-comparable",
+              "because": [
+                "appliesTo is Company, and Microsoft documents that only a SKU whose target class is User is assignable, so these units are not user seats"
+              ],
+              "subscription_state": "joined",
+              "commercial_basis": "not-a-trial",
+              "seats": 25
+            },
+            {
+              "sku": "EMS",
+              "sku_id": "5c00-0000-4000-8000-000000000005",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "capabilityStatus is Warning rather than Enabled, so this subscription is not current capacity"
+              ],
+              "subscription_state": "unmatched",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "VISIOCLIENT",
+              "sku_id": "5c00-0000-4000-8000-000000000006",
+              "capacity_kind": "user-assignable",
+              "aggregation_eligibility": "not-comparable",
+              "because": [
+                "appliesTo is User, which Microsoft documents as the only assignable target class",
+                "capabilityStatus is Suspended rather than Enabled, so this subscription is not current capacity"
+              ],
+              "subscription_state": "unmatched",
+              "commercial_basis": "not-established"
+            },
+            {
+              "sku": "UNRECOGNISED_TARGET",
+              "sku_id": "5c00-0000-4000-8000-000000000007",
+              "capacity_kind": "not-established",
+              "aggregation_eligibility": "not-established",
+              "because": [
+                "appliesTo is 'Tenant', which is not a documented target class, so what these units count is not established",
+                "the commercial subscriptions were read and none matched this SKU, so its seats are not established"
+              ],
+              "subscription_state": "unmatched",
+              "commercial_basis": "not-established"
+            }
+          ]
+        }
+      },
+      "capacity_summary": {
+        "state": "observed",
+        "value": {
+          "comparable": 4,
+          "not-comparable": 3,
+          "not-established": 1,
+          "kind_user_assignable": 6,
+          "kind_organisational": 1,
+          "kind_not_established": 1
+        },
+        "raw": {
+          "field": "count of subscribedSku rows per classification",
+          "value": {
+            "comparable": 4,
+            "not-comparable": 3,
+            "not-established": 1,
+            "kind_user_assignable": 6,
+            "kind_organisational": 1,
+            "kind_not_established": 1
+          }
+        }
+      },
+      "comparable_capacity": {
+        "state": "observed",
+        "value": {
+          "trial": {
+            "subscriptions": 1,
+            "seats": 25
+          },
+          "not-a-trial": {
+            "subscriptions": 3,
+            "seats_not_summed": "isTrial false establishes that these are not trials and does not establish that any was bought: a self-service free programme is neither. Their seats are true on each row and their sum would be read as purchased capacity."
+          },
+          "mixed": {
+            "subscriptions": 0,
+            "seats_not_summed": "isTrial false establishes that these are not trials and does not establish that any was bought: a self-service free programme is neither. Their seats are true on each row and their sum would be read as purchased capacity."
+          },
+          "not-established": {
+            "subscriptions": 0,
+            "seats_not_summed": "isTrial false establishes that these are not trials and does not establish that any was bought: a self-service free programme is neither. Their seats are true on each row and their sum would be read as purchased capacity."
+          }
+        },
+        "raw": {
+          "field": "companySubscription.totalLicenses over comparable SKUs, summed only where the group means one thing",
+          "value": {
+            "trial": {
+              "subscriptions": 1,
+              "seats": 25
+            },
+            "not-a-trial": {
+              "subscriptions": 3,
+              "seats_not_summed": "isTrial false establishes that these are not trials and does not establish that any was bought: a self-service free programme is neither. Their seats are true on each row and their sum would be read as purchased capacity."
+            },
+            "mixed": {
+              "subscriptions": 0,
+              "seats_not_summed": "isTrial false establishes that these are not trials and does not establish that any was bought: a self-service free programme is neither. Their seats are true on each row and their sum would be read as purchased capacity."
+            },
+            "not-established": {
+              "subscriptions": 0,
+              "seats_not_summed": "isTrial false establishes that these are not trials and does not establish that any was bought: a self-service free programme is neither. Their seats are true on each row and their sum would be read as purchased capacity."
+            }
+          }
+        }
+      },
+      "subscription_surface": {
+        "state": "observed",
+        "value": "observed",
+        "raw": {
+          "field": "GET /beta/directory/subscriptions (companySubscription)",
+          "value": "observed"
+        }
+      },
+      "subscription_surface_stability": {
+        "state": "observed",
+        "value": "beta",
+        "raw": {
+          "field": "Microsoft Graph endpoint version for companySubscription",
+          "value": "beta"
+        }
+      },
+      "subscriptions": {
+        "state": "observed",
+        "value": [
+          {
+            "id": "5ub-0000-4000-8000-000000000001",
+            "sku_id": "5c00-0000-4000-8000-000000000000",
+            "sku": "ENTERPRISEPACK",
+            "is_trial": false,
+            "total_licenses": 500,
+            "status": "Enabled",
+            "created": "2025-01-15T00:00:00Z"
+          },
+          {
+            "id": "5ub-0000-4000-8000-000000000002",
+            "sku_id": "5c00-0000-4000-8000-000000000001",
+            "sku": "SPE_E5",
+            "is_trial": true,
+            "total_licenses": 25,
+            "status": "Enabled",
+            "created": "2025-01-15T00:00:00Z"
+          },
+          {
+            "id": "5ub-0000-4000-8000-000000000003",
+            "sku_id": "5c00-0000-4000-8000-000000000002",
+            "sku": "POWER_BI_STANDARD",
+            "is_trial": false,
+            "total_licenses": 1000000,
+            "status": "Enabled",
+            "created": "2025-01-15T00:00:00Z"
+          },
+          {
+            "id": "5ub-0000-4000-8000-000000000009",
+            "sku_id": "5c00-0000-4000-8000-000000000003",
+            "sku": "FLOW_FREE",
+            "is_trial": false,
+            "total_licenses": 10000,
+            "status": "Enabled",
+            "created": "2024-03-02T00:00:00Z"
+          },
+          {
+            "id": "5ub-0000-4000-8000-000000000004",
+            "sku_id": "5c00-0000-4000-8000-000000000004",
+            "sku": "MCOMEETADV",
+            "is_trial": false,
+            "total_licenses": 25,
+            "status": "Enabled",
+            "created": "2025-01-15T00:00:00Z"
+          }
+        ],
+        "raw": {
+          "field": "directory/subscriptions: id, skuId, skuPartNumber, isTrial, totalLicenses, status",
+          "value": [
+            {
+              "id": "5ub-0000-4000-8000-000000000001",
+              "sku_id": "5c00-0000-4000-8000-000000000000",
+              "sku": "ENTERPRISEPACK",
+              "is_trial": false,
+              "total_licenses": 500,
+              "status": "Enabled",
+              "created": "2025-01-15T00:00:00Z"
+            },
+            {
+              "id": "5ub-0000-4000-8000-000000000002",
+              "sku_id": "5c00-0000-4000-8000-000000000001",
+              "sku": "SPE_E5",
+              "is_trial": true,
+              "total_licenses": 25,
+              "status": "Enabled",
+              "created": "2025-01-15T00:00:00Z"
+            },
+            {
+              "id": "5ub-0000-4000-8000-000000000003",
+              "sku_id": "5c00-0000-4000-8000-000000000002",
+              "sku": "POWER_BI_STANDARD",
+              "is_trial": false,
+              "total_licenses": 1000000,
+              "status": "Enabled",
+              "created": "2025-01-15T00:00:00Z"
+            },
+            {
+              "id": "5ub-0000-4000-8000-000000000009",
+              "sku_id": "5c00-0000-4000-8000-000000000003",
+              "sku": "FLOW_FREE",
+              "is_trial": false,
+              "total_licenses": 10000,
+              "status": "Enabled",
+              "created": "2024-03-02T00:00:00Z"
+            },
+            {
+              "id": "5ub-0000-4000-8000-000000000004",
+              "sku_id": "5c00-0000-4000-8000-000000000004",
+              "sku": "MCOMEETADV",
+              "is_trial": false,
+              "total_licenses": 25,
+              "status": "Enabled",
+              "created": "2025-01-15T00:00:00Z"
+            }
+          ]
+        }
+      },
+      "subscription_join": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "state": "joined",
+            "commercial_basis": "not-a-trial",
+            "because": [
+              "1 commercial subscription(s) matched on subscriptionIds, carrying 500 seat(s) in companySubscription.totalLicenses",
+              "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+            ],
+            "seats": 500
+          },
+          {
+            "sku": "SPE_E5",
+            "state": "joined",
+            "commercial_basis": "trial",
+            "because": [
+              "1 commercial subscription(s) matched on subscriptionIds, carrying 25 seat(s) in companySubscription.totalLicenses",
+              "every matched subscription reports isTrial true"
+            ],
+            "seats": 25
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "state": "joined",
+            "commercial_basis": "not-a-trial",
+            "because": [
+              "1 commercial subscription(s) matched on subscriptionIds, carrying 1000000 seat(s) in companySubscription.totalLicenses",
+              "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+            ],
+            "seats": 1000000
+          },
+          {
+            "sku": "FLOW_FREE",
+            "state": "joined",
+            "commercial_basis": "not-a-trial",
+            "because": [
+              "1 commercial subscription(s) matched on subscriptionIds, carrying 10000 seat(s) in companySubscription.totalLicenses",
+              "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+            ],
+            "seats": 10000
+          },
+          {
+            "sku": "MCOMEETADV",
+            "state": "joined",
+            "commercial_basis": "not-a-trial",
+            "because": [
+              "1 commercial subscription(s) matched on subscriptionIds, carrying 25 seat(s) in companySubscription.totalLicenses",
+              "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+            ],
+            "seats": 25
+          },
+          {
+            "sku": "EMS",
+            "state": "unmatched",
+            "commercial_basis": "not-established",
+            "because": [
+              "1 subscriptionIds on this SKU matched no commercial subscription that was read, which is a fact about this tenant rather than a gap in the read"
+            ]
+          },
+          {
+            "sku": "VISIOCLIENT",
+            "state": "unmatched",
+            "commercial_basis": "not-established",
+            "because": [
+              "this SKU carries no subscriptionIds, so nothing links it to a commercial subscription"
+            ]
+          },
+          {
+            "sku": "UNRECOGNISED_TARGET",
+            "state": "unmatched",
+            "commercial_basis": "not-established",
+            "because": [
+              "this SKU carries no subscriptionIds, so nothing links it to a commercial subscription"
+            ]
+          }
+        ],
+        "raw": {
+          "field": "subscribedSku.subscriptionIds against companySubscription.id",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "state": "joined",
+              "commercial_basis": "not-a-trial",
+              "because": [
+                "1 commercial subscription(s) matched on subscriptionIds, carrying 500 seat(s) in companySubscription.totalLicenses",
+                "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+              ],
+              "seats": 500
+            },
+            {
+              "sku": "SPE_E5",
+              "state": "joined",
+              "commercial_basis": "trial",
+              "because": [
+                "1 commercial subscription(s) matched on subscriptionIds, carrying 25 seat(s) in companySubscription.totalLicenses",
+                "every matched subscription reports isTrial true"
+              ],
+              "seats": 25
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "state": "joined",
+              "commercial_basis": "not-a-trial",
+              "because": [
+                "1 commercial subscription(s) matched on subscriptionIds, carrying 1000000 seat(s) in companySubscription.totalLicenses",
+                "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+              ],
+              "seats": 1000000
+            },
+            {
+              "sku": "FLOW_FREE",
+              "state": "joined",
+              "commercial_basis": "not-a-trial",
+              "because": [
+                "1 commercial subscription(s) matched on subscriptionIds, carrying 10000 seat(s) in companySubscription.totalLicenses",
+                "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+              ],
+              "seats": 10000
+            },
+            {
+              "sku": "MCOMEETADV",
+              "state": "joined",
+              "commercial_basis": "not-a-trial",
+              "because": [
+                "1 commercial subscription(s) matched on subscriptionIds, carrying 25 seat(s) in companySubscription.totalLicenses",
+                "no matched subscription reports isTrial true, which establishes that none of them is a trial and does not establish that any of them was bought"
+              ],
+              "seats": 25
+            },
+            {
+              "sku": "EMS",
+              "state": "unmatched",
+              "commercial_basis": "not-established",
+              "because": [
+                "1 subscriptionIds on this SKU matched no commercial subscription that was read, which is a fact about this tenant rather than a gap in the read"
+              ]
+            },
+            {
+              "sku": "VISIOCLIENT",
+              "state": "unmatched",
+              "commercial_basis": "not-established",
+              "because": [
+                "this SKU carries no subscriptionIds, so nothing links it to a commercial subscription"
+              ]
+            },
+            {
+              "sku": "UNRECOGNISED_TARGET",
+              "state": "unmatched",
+              "commercial_basis": "not-established",
+              "because": [
+                "this SKU carries no subscriptionIds, so nothing links it to a commercial subscription"
+              ]
+            }
+          ]
+        }
+      },
+      "purchased_capacity": {
+        "state": "not-supported",
+        "detail": "Not observable from these surfaces. companySubscription.isTrial distinguishes a free trial from a subscription that is not a trial; it does not establish that an organisation bought one, because a self-service free programme is neither a trial nor a purchase. Nothing read here says what was paid for."
+      }
+    }
+  }
+}
