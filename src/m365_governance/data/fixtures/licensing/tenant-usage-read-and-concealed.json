@@ -418,8 +418,10 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-            ]
+              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+            ],
+            "subscription_state": "not-observed",
+            "commercial_basis": "not-established"
           },
           {
             "sku": "SPE_E5",
@@ -428,8 +430,10 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-            ]
+              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+            ],
+            "subscription_state": "not-observed",
+            "commercial_basis": "not-established"
           },
           {
             "sku": "POWER_BI_STANDARD",
@@ -438,8 +442,10 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-            ]
+              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+            ],
+            "subscription_state": "not-observed",
+            "commercial_basis": "not-established"
           },
           {
             "sku": "FLOW_FREE",
@@ -448,12 +454,14 @@
             "aggregation_eligibility": "not-established",
             "because": [
               "appliesTo is User, which Microsoft documents as the only assignable target class",
-              "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-            ]
+              "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+            ],
+            "subscription_state": "not-observed",
+            "commercial_basis": "not-established"
           }
         ],
         "raw": {
-          "field": "appliesTo and capabilityStatus, per subscribedSku",
+          "field": "appliesTo, capabilityStatus and the commercial subscription join, per subscribedSku",
           "value": [
             {
               "sku": "ENTERPRISEPACK",
@@ -462,8 +470,10 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-              ]
+                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              ],
+              "subscription_state": "not-observed",
+              "commercial_basis": "not-established"
             },
             {
               "sku": "SPE_E5",
@@ -472,8 +482,10 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-              ]
+                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              ],
+              "subscription_state": "not-observed",
+              "commercial_basis": "not-established"
             },
             {
               "sku": "POWER_BI_STANDARD",
@@ -482,8 +494,10 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-              ]
+                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              ],
+              "subscription_state": "not-observed",
+              "commercial_basis": "not-established"
             },
             {
               "sku": "FLOW_FREE",
@@ -492,8 +506,10 @@
               "aggregation_eligibility": "not-established",
               "because": [
                 "appliesTo is User, which Microsoft documents as the only assignable target class",
-                "whether this was purchased and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, which this run did not read"
-              ]
+                "whether this is a trial and how many seats it carries are on companySubscription (isTrial, totalLicenses) at /directory/subscriptions, in the beta endpoint, which this run did not read"
+              ],
+              "subscription_state": "not-observed",
+              "commercial_basis": "not-established"
             }
           ]
         }
@@ -522,7 +538,105 @@
       },
       "comparable_capacity": {
         "state": "missing",
-        "detail": "No SKU on this surface establishes that its units are purchased seats, so no comparable capacity is published. The seats a subscription carries are companySubscription.totalLicenses and whether it was bought at all is companySubscription.isTrial, at /directory/subscriptions in the beta endpoint; subscribedSku.subscriptionIds is the join. This run did not read it."
+        "detail": "No SKU has an established seat count, so no comparable capacity is published. The seats a subscription carries are companySubscription.totalLicenses and whether it is a trial is companySubscription.isTrial, at /directory/subscriptions in the beta endpoint; subscribedSku.subscriptionIds is the join."
+      },
+      "subscription_surface": {
+        "state": "observed",
+        "value": "not-observed",
+        "raw": {
+          "field": "GET /beta/directory/subscriptions (companySubscription)",
+          "value": "not-observed"
+        }
+      },
+      "subscription_surface_stability": {
+        "state": "observed",
+        "value": "beta",
+        "raw": {
+          "field": "Microsoft Graph endpoint version for companySubscription",
+          "value": "beta"
+        }
+      },
+      "subscriptions": {
+        "state": "missing",
+        "detail": "This run did not read /directory/subscriptions, so no seat count or trial status was established."
+      },
+      "subscription_join": {
+        "state": "observed",
+        "value": [
+          {
+            "sku": "ENTERPRISEPACK",
+            "state": "not-observed",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+            ]
+          },
+          {
+            "sku": "SPE_E5",
+            "state": "not-observed",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+            ]
+          },
+          {
+            "sku": "POWER_BI_STANDARD",
+            "state": "not-observed",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+            ]
+          },
+          {
+            "sku": "FLOW_FREE",
+            "state": "not-observed",
+            "commercial_basis": "not-established",
+            "because": [
+              "the commercial subscription surface at /directory/subscriptions was not read by this run"
+            ]
+          }
+        ],
+        "raw": {
+          "field": "subscribedSku.subscriptionIds against companySubscription.id",
+          "value": [
+            {
+              "sku": "ENTERPRISEPACK",
+              "state": "not-observed",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              ]
+            },
+            {
+              "sku": "SPE_E5",
+              "state": "not-observed",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              ]
+            },
+            {
+              "sku": "POWER_BI_STANDARD",
+              "state": "not-observed",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              ]
+            },
+            {
+              "sku": "FLOW_FREE",
+              "state": "not-observed",
+              "commercial_basis": "not-established",
+              "because": [
+                "the commercial subscription surface at /directory/subscriptions was not read by this run"
+              ]
+            }
+          ]
+        }
+      },
+      "purchased_capacity": {
+        "state": "not-supported",
+        "detail": "Not observable from these surfaces. companySubscription.isTrial distinguishes a free trial from a subscription that is not a trial; it does not establish that an organisation bought one, because a self-service free programme is neither a trial nor a purchase. Nothing read here says what was paid for."
       }
     }
   }

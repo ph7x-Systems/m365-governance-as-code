@@ -85,6 +85,18 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/licensing/tenant-capacity-joined.json",
+      "origin": "synthetic",
+      "purpose": "the commercial subscriptions read and joined: a bought subscription, one on a free evaluation, a Company SKU, two free self-service programmes that report isTrial false, and one SKU whose subscription was not returned",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-capacity-unsupported.json",
+      "origin": "synthetic",
+      "purpose": "the commercial subscription surface answering that it does not exist in this cloud, which is not the same answer as a run that did not ask",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/licensing/tenant-graph-modules-absent.json",
       "origin": "sanitized-observation",
       "purpose": "a real collector run on a machine without the Microsoft Graph modules; the host is replaced because the document establishes nothing about any tenant and the name would be a customer identifier for no evidential gain",
