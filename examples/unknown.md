@@ -15,7 +15,7 @@
 
 **Part of this could not be answered, so the report describes less than the resource.**
 
-- 1 requested area(s) were not read: owners
+- 1 requested area was not read: owners
 
 ## Summary
 

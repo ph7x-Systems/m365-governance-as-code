@@ -531,8 +531,10 @@ def test_an_area_read_in_part_is_never_published_as_unread():
     assert judged["rank"] == attention.RANK["evidence-absent"]
 
     said = judged["because"][0]
-    assert "1 requested area(s) were not read: usage" in said
-    assert "2 were read only in part: dependency, usage_identity" in said
+    assert "1 requested area was not read: usage" in said
+    assert (
+        "2 requested areas were read only in part: dependency, usage_identity"
+    ) in said
 
 
 def test_a_run_whose_only_shortfall_is_partial_still_asks_to_be_looked_at():
@@ -555,4 +557,7 @@ def test_a_run_whose_only_shortfall_is_partial_still_asks_to_be_looked_at():
 
     assert judged["unobserved"] == []
     assert judged["rank"] == attention.RANK["evidence-absent"]
-    assert judged["because"][0] == "1 were read only in part: dependency"
+    # INFLECTED, AND NOT `area(s)`. The site publishes a specimen generated
+    # from this engine, and it read `1 were read only in part` on a page whose
+    # whole purpose is a reader deciding whether to trust the wording.
+    assert judged["because"][0] == "1 requested area was read only in part: dependency"
