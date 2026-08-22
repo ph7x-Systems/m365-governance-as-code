@@ -164,8 +164,8 @@ function Get-LicensingFacts {
     # -- what is assigned ----------------------------------------------------------
     # PER SKU, AND NO TOTAL ACROSS THEM.
     #
-    # `units_purchased` USED TO BE HERE AND WAS 1,130,062 ON A TENANT WITH
-    # THIRTY-SEVEN ASSIGNED SEATS. The number was arithmetically correct and
+    # `units_purchased` USED TO BE HERE AND RETURNED A SEVEN-FIGURE TOTAL ON A
+    # TENANT WITH A FEW DOZEN ASSIGNED SEATS. The number was arithmetically correct and
     # meaningless: `prepaidUnits.enabled` counts something different on a paid
     # seat SKU and on a free or effectively unlimited one, and adding them
     # produces a figure nobody can act on and everybody can quote.

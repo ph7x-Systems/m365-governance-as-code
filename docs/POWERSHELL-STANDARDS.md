@@ -135,7 +135,7 @@ the directory:
 can parse cleanly, export correctly, pass every walk here, and throw on its
 first line against a real tenant. These are a floor under review, not a
 substitute for it, and the tenant findings recorded in
-[MILESTONE-A.md](MILESTONE-A.md) are what actual validation looks like.
+the live-validation matrix are what actual validation looks like.
 
 ### PSScriptAnalyzer
 

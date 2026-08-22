@@ -26,7 +26,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from . import collecting, registry
+from . import collecting, domains, registry
 from .loader import load_rules
 from .resources import packaged
 
@@ -46,6 +46,7 @@ def manifest(rules: Path | None = None) -> dict[str, Any]:
             _capability(chosen, loaded)
             for chosen in sorted(collecting.SLICES.values(), key=lambda s: s.name)
         ],
+        "domains": _domains(loaded),
         "contracts": sorted(_contracts()),
         "rules": sorted((_rule(rule) for rule in loaded), key=lambda r: str(r["id"])),
     }
@@ -312,6 +313,74 @@ def questions(rules: Path | None = None) -> dict[str, Any]:
     }
 
 
+def _domains(rules: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Every Microsoft 365 surface this engine claims, observed or not.
+
+    ASSEMBLED FROM TWO REGISTRIES AND TYPED IN NEITHER. The domains are
+    declared, the surfaces are the slices that name each one, and every state
+    on the matrix is the state that slice already publishes. A domain cannot be
+    declared supported, because there is nowhere to write it: what a domain
+    says about itself is its question, and everything else is derived from what
+    was observed.
+
+    `not-started` is the exception and it is not a weaker `none`. `none` means a
+    collector exists and has only ever run offline. `not-started` means this
+    engine has no acquisition surface here at all, and it is the state that
+    makes this document honest: a catalogue of what exists reads, to somebody
+    who does not already know, as a map of Microsoft 365.
+    """
+    out = []
+    for domain in domains.DOMAINS:
+        surfaces = sorted(
+            (s for s in collecting.SLICES.values() if s.domain == domain.key),
+            key=lambda s: s.name,
+        )
+        states = [s.live.name.lower().replace("_", "-") for s in surfaces]
+        decidable: set[str] = set()
+        for chosen in surfaces:
+            if chosen.produces_findings:
+                shapes = _shapes(chosen)
+                if shapes:
+                    decidable |= set().union(*(_decidable(rules, d) for d in shapes))
+
+        entry: dict[str, Any] = {
+            "name": domain.key,
+            "title": domain.title,
+            "question": domain.question,
+            "acquisition": domain.acquisition,
+            # WHAT WE OBSERVE, WHAT WE MAY CONCLUDE, WHAT IS NOT ESTABLISHED --
+            # the three questions a reader has, in that order, and none of them
+            # answered with a number. `surfaces` is what can be observed and how
+            # far each has been proved; `decides` is where authority exists;
+            # `withholds` is where it deliberately does not.
+            "surfaces": [
+                {
+                    "name": chosen.name,
+                    "describes": chosen.describes,
+                    "live_validation_state": state,
+                    "produces_findings": chosen.produces_findings,
+                }
+                for chosen, state in zip(surfaces, states, strict=True)
+            ],
+            "decides": sorted(decidable),
+            "withholds": domain.authority,
+        }
+        if not surfaces:
+            entry["state"] = domains.NOT_STARTED
+        else:
+            # NOT AN AVERAGE, AND THE NAME SAYS SO. `D5` refuses an aggregate
+            # over unlike observations, and a domain holding one proven surface
+            # and one unproven one is not half-proven. This names the surface
+            # that has been proved least, which is a fact about that surface.
+            weakest = min(states, key=lambda state: _PROVES[state])
+            entry["weakest_surface_state"] = weakest
+            entry["surfaces_by_state"] = {
+                state: states.count(state) for state in sorted(set(states))
+            }
+        out.append(entry)
+    return out
+
+
 def _because(state: str, available: bool) -> str:
     """Why a question is not a yes, in the words of what is missing."""
     if not available:
@@ -413,6 +482,47 @@ def describe_questions(document: dict[str, Any]) -> str:
             f"          live       {entry['live_validation_state']}",
             f"          because    {entry['because']}",
         ]
+    return "\n".join(out) + "\n"
+
+
+def describe_domains(document: dict[str, Any]) -> str:
+    """The coverage matrix for somebody reading rather than parsing.
+
+    IT LEADS WITH THE DOMAINS THAT ARE NOT STARTED IN THE SAME LIST, not in a
+    footnote. A reader who has to scroll past everything that works to find
+    what does not has already formed the impression this document exists to
+    correct.
+    """
+    out = [
+        f"m365-governance {document['engine_version']}, "
+        f"contract {document['contract_version']}",
+        "",
+        "What can be observed, and how far it has been proved",
+        "",
+    ]
+    width = max(len(domain["title"]) for domain in document["domains"])
+    for domain in document["domains"]:
+        if domain["surfaces"]:
+            counts = ", ".join(
+                f"{count} {state}"
+                for state, count in sorted(domain["surfaces_by_state"].items())
+            )
+            state = f"weakest: {domain['weakest_surface_state']}"
+        else:
+            counts = "no acquisition surface in this engine"
+            state = domain["state"]
+        out += [f"  {domain['title']:<{width}}  {state}", f"  {'':<{width}}  {counts}"]
+        out += [f"  {'':<{width}}  asks: {domain['question']}"]
+        if domain["surfaces"]:
+            for surface in domain["surfaces"]:
+                decides = "decides" if surface["produces_findings"] else "no rule"
+                out += [
+                    f"  {'':<{width}}    {surface['name']} "
+                    f"({surface['live_validation_state']}, {decides})"
+                ]
+        if domain["withholds"]:
+            out += [f"  {'':<{width}}  withholds: {domain['withholds']}"]
+        out += [""]
     return "\n".join(out) + "\n"
 
 

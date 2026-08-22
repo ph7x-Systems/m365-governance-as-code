@@ -142,7 +142,7 @@ def test_no_sarif_mapping_exists_yet():
     )
     assert "sarif" not in source.lower(), (
         "a SARIF mapping appeared before the kind-to-level constraint was "
-        "verified; see docs/EPIC-B.md, slice B5"
+        "verified against a tenant"
     )
 
 

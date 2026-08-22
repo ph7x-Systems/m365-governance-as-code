@@ -93,7 +93,7 @@ function Get-CustomizationFacts {
         # `not-supported`, `permission-denied`, `partial` and `invalid`. None of
         # them means *nobody asked*, so `missing` carries it and the detail says
         # what `missing` alone would hide. That gap is recorded for the owner in
-        # `docs/NEXT-SLICE.md`; until it is decided, the sentence is the only
+        # outside this repository; until it is decided, the sentence is the only
         # thing keeping a read nobody made apart from a value nothing returned.
         $c['custom_script'] = New-AbsentFact -State 'missing' `
             -Detail ('DenyAddAndCustomizePages is returned by a tenant-scoped ' +

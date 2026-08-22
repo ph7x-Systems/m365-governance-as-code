@@ -55,10 +55,10 @@
       },
       "label_id": {
         "state": "observed",
-        "value": "8faca7b8-8d20-48a3-8ea2-0f96310a848e",
+        "value": "1abe1abe-0000-4000-8000-000000000003",
         "raw": {
           "field": "SensitivityLabelInfo.Id",
-          "value": "8faca7b8-8d20-48a3-8ea2-0f96310a848e"
+          "value": "1abe1abe-0000-4000-8000-000000000003"
         }
       },
       "label_name": {

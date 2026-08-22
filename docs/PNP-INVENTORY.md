@@ -1,7 +1,7 @@
 # PnP as a discovery surface
 
 **Inventoried 2026-08-08.** The second instance of the pipeline that
-`OBSERVABLE-SURFACE.md` was the first of. Not a generalised discovery engine:
+this inventory was the first of. Not a generalised discovery engine:
 generalising the shape of a second thing from the first one is inventing it.
 
 > **PnP is a discovery surface and an implementation ecosystem, not a normative

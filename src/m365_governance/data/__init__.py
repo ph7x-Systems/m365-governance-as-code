@@ -2,7 +2,7 @@
 
 Rules, profiles, schemas, collectors and fixtures live here rather than at the
 root of the repository, and the reason is the second governing principle in
-docs/PRODUCT-STRATEGY.md: **a clean installation is the reference environment,
+The rule this package is built to: **a clean installation is the reference environment,
 and the development repository is a convenience.**
 
 Before this, `pip install` produced a command-line tool with none of its own

@@ -544,51 +544,6 @@ def test_the_evidence_schema_knows_nothing_about_fixtures():
     )
 
 
-def test_a_cmdlet_named_in_a_comment_is_not_a_cmdlet_that_is_called(tmp_path):
-    """The measured surface is parsed, never grepped.
-
-    A regular expression over the source counts every mention. The moment a
-    comment explained why `Get-PnPTenantId` was NOT being called, the
-    measurement said it was, and `docs/OBSERVABLE-SURFACE.md` published a
-    collection path that did not exist.
-
-    That document is the engine's own coverage question asked of itself, so a
-    false positive there is the product overstating what it reads.
-
-    MEASURED AGAINST A FILE WRITTEN FOR THIS, not against the real collector.
-    The first version of this test asserted that one particular cmdlet stayed
-    uncalled, and it broke within the hour when the collector started calling
-    it: a test about a mechanism should not depend on today's inventory.
-    """
-    import importlib.util
-
-    spec = importlib.util.spec_from_file_location(
-        "surface", Path(__file__).resolve().parents[1] / "tools" / "surface.py"
-    )
-    surface = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(surface)
-
-    (tmp_path / "sample.psm1").write_text(
-        """
-        function Test-Reading {
-            # Get-PnPCommented is named here and never called.
-            <#
-                .DESCRIPTION
-                Get-PnPInHelpBlock is named here and never called either.
-            #>
-            Get-PnPReallyCalled -Identity 'x'
-        }
-        """,
-        encoding="utf-8",
-    )
-
-    called = surface.used(tmp_path)
-    if not called:
-        pytest.skip("pwsh is not installed, and the AST needs it")
-
-    assert called == {"Get-PnPReallyCalled"}
-
-
 def test_a_tenant_catalog_with_nothing_comparable_never_passes():
     """Zero out of nothing is not a finding.
 

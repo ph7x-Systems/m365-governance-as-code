@@ -582,7 +582,7 @@ def test_an_unreachable_graph_is_a_refusal_carrying_the_reason(monkeypatch):
 # ── what a real estate holds, as synthetic shapes ────────────────────────────
 #
 # Two classes were observed on a real tenant on 2026-08-18 and are recorded in
-# NEXT-SLICE.md. Neither is copied here: the shapes are rebuilt, the data is
+# the queue. Neither is copied here: the shapes are rebuilt, the data is
 # invented, and no identifier, path or name from that tenant appears.
 
 

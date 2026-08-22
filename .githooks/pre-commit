@@ -11,8 +11,8 @@
 # WHY IT IS VERSIONED. `.git/hooks` does not travel with a clone, so a hook
 # living there protects one machine and one person. This directory travels, and
 # `git config core.hooksPath .githooks` is a single command in the setup
-# instructions. Any human or any model that clones and follows them inherits
-# the same refusal.
+# instructions, so anybody who clones and follows them inherits the same
+# refusal.
 #
 # WHAT IT DELIBERATELY DOES NOT DO. Run the suite. A hook slow enough to be
 # resented is a hook people pass --no-verify to, and then nothing runs at all.

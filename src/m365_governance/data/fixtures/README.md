@@ -22,11 +22,37 @@ Fabricate, always:
 | | |
 |---|---|
 | **URLs and tenant names** | `contoso.sharepoint.com`. Never a real host. |
-| **GUIDs** | Group ids, label ids, anything that resolves to something in somebody's directory. |
+| **GUIDs** | Group ids, label ids, solution ids, anything that resolves to something in somebody's directory. |
 | **Dates, display names, titles** | And anything a person or an organisation could be recognised from. |
 
 The rule is one sentence: **a fixture must be able to reproduce a defect
 without being able to identify anybody.**
+
+### Fabricated identifiers look fabricated
+
+A random-looking GUID is indistinguishable from a real one, and an audit that
+has to ask whether an identifier came from somebody's directory has already
+lost. Five fixture identifiers were replaced in 2026-08 for exactly that
+reason: nothing established where they came from, and *probably invented* is
+not an answer about a public repository.
+
+So a fabricated identifier says so in its own bytes: a readable prefix, then
+`-0000-4000-8000-` and a counter.
+
+| Prefix | What it identifies |
+|---|---|
+| `1abe1abe` | a sensitivity label |
+| `9409c0de` | a group |
+| `50106710` | an SPFx solution |
+| `1f1d1a1c` | a Conditional Access policy |
+| `2c8f1e40` | a named location |
+
+The Microsoft constants are the exception and stay as Microsoft publishes them,
+because changing one would make the fixture describe something that does not
+exist: `43081c66-103f-437e-870e-a953e0930300` is the PnP Management Shell
+application, `62e90394-69f5-4237-9190-012177145e10` is the Global Administrator
+role template, and `b6917cb1-93a0-4b97-a84d-7cf49975d4ec` is the Site Pages web
+feature.
 
 A fixture that needs real data to be meaningful is describing a gap in the
 schema, not a limitation of the fixture. Say so in an issue rather than

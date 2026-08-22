@@ -779,7 +779,7 @@
               "state": "observed",
               "value": [
                 {
-                  "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+                  "id": "50106710-0000-4000-8000-000000000001",
                   "title": "rater-client-side-solution",
                   "catalog_version": "1.0.0.0",
                   "installed_version": "1.0.0.0",
@@ -792,7 +792,7 @@
                 "field": "AppMetadata",
                 "value": [
                   {
-                    "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+                    "id": "50106710-0000-4000-8000-000000000001",
                     "title": "rater-client-side-solution",
                     "catalog_version": "1.0.0.0",
                     "installed_version": "1.0.0.0",
@@ -854,17 +854,17 @@
           "collected"
         ]
       },
-      "assessment_id": "c1ad37f74bc71dba3ecc35f6ffce06cfe65b3e555940352e6b36b16f533ea0fb"
+      "assessment_id": "5e3d75e6de04bc76d79fb298e1694b50310c71d6b1779df3fefa68368577fdb4"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
         "run_set": "d8fc0d05f92e2fa4b694c42094f695ed21e36b2a7381b85f051142913cd4deec",
-        "evidence": "5cd93ec44b0fcb9f560d15d744f513c21a741bf5be46a337dc10d548995933d6",
+        "evidence": "325b0e5371017a74c19e5d9f82ab748b36be59f72a6f2589841c90754434f70d",
         "versions": "b708e2b0313576fca38be2f63ddc403960636874ef6609c9d5954b4887a70163",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "c1ad37f74bc71dba3ecc35f6ffce06cfe65b3e555940352e6b36b16f533ea0fb"
+      "canonical_hash": "5e3d75e6de04bc76d79fb298e1694b50310c71d6b1779df3fefa68368577fdb4"
     }
   }
 }

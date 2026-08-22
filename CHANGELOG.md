@@ -10,9 +10,48 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
-Nothing yet. Work merged after `1.0.0b7` is recorded here and is not published,
-not documented on the site, and not `tested_with` anything until it ships in a
-release of its own.
+Work merged after `1.0.0b7` is recorded here and is not published, not
+documented on the site as runnable, and not `tested_with` anything until it
+ships in a release of its own.
+
+### New capability
+
+- **The evidence coverage matrix.** `capabilities --domains`, and `domains` in
+  the manifest: every Microsoft 365 surface this engine claims to govern,
+  **including the ones it cannot observe at all**. A catalogue built from what
+  exists answers *what did we write*, and every entry in it works, so it reads
+  as competence; ten SharePoint capabilities and no mention of Exchange is a
+  true list and a false picture. Eight of the twelve domains are `not-started`,
+  each with the question it fails to answer, because an absence is only legible
+  beside the question it leaves open.
+
+- **`not-started` is not a weaker `none`.** `none` means a collector exists and
+  has only ever run offline. `not-started` means there is no acquisition
+  surface here at all, and it is the state that makes the document honest.
+
+### Behaviour change
+
+- **A domain carries no state of its own beyond `not-started`.** An aggregate
+  over unlike observations is the artefact `D5` refuses: a domain holding one
+  proven surface and one unproven one is not half-proven. It publishes the
+  state of its **least proved surface**, which is a fact about a particular
+  surface, and a count per state.
+
+- **No domain enters as supported.** There is no field that says so, and a test
+  fails if one appears. The rule is written because the inflation has happened
+  three times on single slices: `spfx`, `licensing` and `conditional-access`.
+
+### Contract version change
+
+| Contract | Was | Is | Why |
+| --- | --- | --- | --- |
+| `capability-manifest` | `1.1.0` | `1.2.0` | `domains`, required; `1.1.0` archived with its digest |
+
+### Not established
+
+- **Nothing new was observed.** Every state on the matrix is the state its
+  slice already published. The matrix reports what was proved; it proves
+  nothing itself.
 
 ---
 
@@ -526,7 +565,7 @@ not correct the page. This version is what publishes the corrected one.
 
 ## Unreleased
 
-P0.1 from [docs/PRODUCT-STRATEGY.md](docs/PRODUCT-STRATEGY.md): self-contained
+Self-contained
 installation. Before this, `pip install` produced a command-line tool with none
 of its own content, and `explain` was the only command of ten that worked
 outside a checkout.
@@ -565,7 +604,7 @@ outside a checkout.
 - `Development Status` classifier read `3 - Alpha` beside `version = 1.0.0b1`.
 
 Epic B opened on the `1.0.0-beta.1` baseline. See
-[docs/EPIC-B.md](docs/EPIC-B.md). Milestone A is closed and does not reopen.
+everything one identity cannot see. The milestone before it is closed and does not reopen.
 
 ### Added
 
@@ -610,7 +649,7 @@ Classification, and the end of Epic A.
 
 The eighth and last vertical slice of the SharePoint milestone, and the first
 release the model is not expected to move under. See
-[docs/MILESTONE-A.md](docs/MILESTONE-A.md) for what closing a service end to
+the release notes above for what closing a service end to
 end actually cost: eight slices, sixteen rules, and nine defects that only a
 real tenant found.
 

@@ -55,9 +55,8 @@ number in prose is a second place for them to be wrong.
 
 Beta because the model has stopped moving: the outcomes, the
 resolution order, the basis types and the evidence schema are frozen, and
-[docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md) records what closing SharePoint
-end to end actually cost. The rule set is still small, and that is the next
-milestone rather than a caveat on this one.
+The rule set is still small, and that is a
+statement about the rules rather than a caveat on the model.
 
 ---
 
@@ -580,30 +579,19 @@ absent and never as compliant.
 
 ---
 
-## Roadmap
+## What this engine can observe, and how far
 
-`1.0.0-beta.1` is the baseline. Milestone A closed SharePoint end to end and
-does not reopen; see [docs/MILESTONE-A.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/MILESTONE-A.md).
+`m365-governance capabilities --domains` prints the coverage matrix, and
+[docs/EVIDENCE-DOMAINS.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/EVIDENCE-DOMAINS.md)
+explains what its states mean. It names every Microsoft 365 surface this engine
+claims to govern, **including the ones it cannot observe at all**, because a
+catalogue of what exists reads as a map of Microsoft 365 to anybody who does not
+already know that it is not one.
 
-**Epic B is open**: everything one identity cannot see. Application
-authentication, group expansion, importers, HTML reporting, and SARIF once the
-representation of `unknown` is decided. The model is frozen for the whole of
-it. See [docs/EPIC-B.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/EPIC-B.md).
-
-The table below is the direction, ordered by what would make the tool useful
-to somebody else soonest rather than by what is most interesting to build.
-
-| | |
-|---|---|
-| **More SharePoint rules** | Retention, site lifecycle, and the classification rules a tenant that uses labels would need. The engine is done; the work is authoring claims honestly. |
-| **Coverage across a run** | Six of 53 sites refused the collector, and a report over the other 47 says 47 without saying "of 53". The envelope records coverage per document; nothing records it per run. |
-| **Group expansion** | A group owner is one principal and may be forty people. The collector declares the expansion `not-attempted` and emits a lower bound; expanding it turns bounds into counts. |
-| **Coverage under an application identity** | Application authentication works; what is unproven is the shape of a tenant-wide run under it. A delegated run and an application run answer differently, and the difference is recorded rather than smoothed. |
-| **Exchange, Teams and Entra collectors** | The evidence schema is service-agnostic. Each collector is new code and no new model. |
-| **HTML reporting** | Markdown and JSON exist. HTML is for the reader who is not in a terminal. |
-| **SARIF output** | So findings appear where code findings already appear, in a pipeline's own UI. Blocked until `unknown` has an agreed representation: SARIF has six `kind` values and this project has six outcomes, and they are not the same six. |
-
-Open issues are the current list. This table is the direction.
+It publishes state and not sequence. Which surfaces are read, and how far each
+has been proved against a real tenant, are facts about this release. What is
+built next, in what order, and why is not a property of the software and is not
+published here.
 
 **Not on the roadmap, ever:** automatic remediation, rules that execute code,
 inferring `basis` from a source, or treating missing evidence as compliance.

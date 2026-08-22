@@ -8,25 +8,26 @@ identifier whether or not it is data.
 
 Compared 5 sites, both ways.
 
-| Site | Quota | Used | Sharing | Agrees |
+The site addresses are not reproduced: a URL is an identifier whether or not it
+is data, and the finding is the disagreement rather than where it happened.
+
+| Site | Quota | Used | Sharing, enumerated / read directly | Agrees |
 |---|---|---|---|---|
-| `/` | 26214400 / 26214400 | 1 / 1 | Disabled / ExternalUserAndGuestSharing | **NO** |
-| `/` | 26214400 / 26214400 | 1 / 1 | ExternalUserAndGuestSharing / ExternalUserAndGuestSharing | yes |
-| `/search` | 26214400 / 26214400 | 1 / 1 | Disabled / Disabled | yes |
-| `/sites/allcompany` | 26214400 / 26214400 | 1 / 1 | ExternalUserSharingOnly / ExternalUserSharingOnly | yes |
-| `/sites/DigitalInitiativePublicRelations` | 26214400 / 26214400 | 1 / 1 | ExternalUserSharingOnly / ExternalUserSharingOnly | yes |
+| 1 | same | same | `Disabled` / `ExternalUserAndGuestSharing` | **NO** |
+| 2 | same | same | `ExternalUserAndGuestSharing` / same | yes |
+| 3 | same | same | `Disabled` / same | yes |
+| 4 | same | same | `ExternalUserSharingOnly` / same | yes |
+| 5 | same | same | `ExternalUserSharingOnly` / same | yes |
 
 **1 of 5 diverged.** The cause is documented rather than deduced: `Get-SPOSite` states that filtered enumeration does not populate `SharingCapability` and may return a default value, and `Disabled` is the enum's default. The enumeration path stops being evidence for the twenty-two properties on that list. See `COLLECTION-PATH-AUDIT.md`.
 
 ## 2. TenantSharing, first run against a tenant
 
-| Property | Value |
-|---|---|
-| `SharingCapability` | ExternalUserAndGuestSharing |
-| `DefaultSharingLinkType` | AnonymousAccess |
-| `FileAnonymousLinkType` | Edit |
-
-These are the three the collector reads and the two rules evaluate. **Read here to prove the call returns them at all**, which a fixture cannot.
+The three properties the collector reads and the two rules evaluate all
+returned a value, each one a member of its documented enum. **Read here to
+prove the call returns them at all**, which a fixture cannot. The values
+themselves are that tenant's configuration and are not reproduced; the enums
+they came from are documented by Microsoft and are in the rules.
 
 ## 3. The two articles
 
