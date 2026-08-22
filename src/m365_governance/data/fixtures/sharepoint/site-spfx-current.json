@@ -57,7 +57,7 @@
         "state": "observed",
         "value": [
           {
-            "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+            "id": "50106710-0000-4000-8000-000000000001",
             "title": "rater-client-side-solution",
             "catalog_version": "1.0.0.0",
             "installed_version": "1.0.0.0",
@@ -70,7 +70,7 @@
           "field": "AppMetadata",
           "value": [
             {
-              "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+              "id": "50106710-0000-4000-8000-000000000001",
               "title": "rater-client-side-solution",
               "catalog_version": "1.0.0.0",
               "installed_version": "1.0.0.0",

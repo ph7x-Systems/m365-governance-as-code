@@ -565,7 +565,7 @@ not correct the page. This version is what publishes the corrected one.
 
 ## Unreleased
 
-P0.1 from [docs/PRODUCT-STRATEGY.md](docs/PRODUCT-STRATEGY.md): self-contained
+Self-contained
 installation. Before this, `pip install` produced a command-line tool with none
 of its own content, and `explain` was the only command of ten that worked
 outside a checkout.
@@ -604,7 +604,7 @@ outside a checkout.
 - `Development Status` classifier read `3 - Alpha` beside `version = 1.0.0b1`.
 
 Epic B opened on the `1.0.0-beta.1` baseline. See
-[docs/EPIC-B.md](docs/EPIC-B.md). Milestone A is closed and does not reopen.
+everything one identity cannot see. The milestone before it is closed and does not reopen.
 
 ### Added
 
@@ -649,7 +649,7 @@ Classification, and the end of Epic A.
 
 The eighth and last vertical slice of the SharePoint milestone, and the first
 release the model is not expected to move under. See
-[docs/MILESTONE-A.md](docs/MILESTONE-A.md) for what closing a service end to
+the release notes above for what closing a service end to
 end actually cost: eight slices, sixteen rules, and nine defects that only a
 real tenant found.
 

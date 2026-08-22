@@ -55,10 +55,10 @@
       },
       "label_id": {
         "state": "observed",
-        "value": "e48058ea-98e8-4940-8db0-ba1310fd955e",
+        "value": "1abe1abe-0000-4000-8000-000000000002",
         "raw": {
           "field": "SensitivityLabelInfo.Id",
-          "value": "e48058ea-98e8-4940-8db0-ba1310fd955e"
+          "value": "1abe1abe-0000-4000-8000-000000000002"
         }
       },
       "label_name": {
@@ -103,10 +103,10 @@
       },
       "group_id": {
         "state": "observed",
-        "value": "2f61b0c4-88ad-4e19-b3d7-51c9e4a02f88",
+        "value": "1abe1abe-0000-4000-8000-000000000001",
         "raw": {
           "field": "GroupId",
-          "value": "2f61b0c4-88ad-4e19-b3d7-51c9e4a02f88"
+          "value": "1abe1abe-0000-4000-8000-000000000001"
         }
       },
       "teams_connected": {

@@ -508,7 +508,7 @@ def test_a_package_id_is_not_a_component_id():
     """
     catalog = evidence("site-spfx-behind")["facts"]["spfx"]["solutions"]["value"]
     package_ids = {s["id"] for s in catalog}
-    assert package_ids == {"9a131334-3761-4a3c-a892-e9213a74cb7e"}
+    assert package_ids == {"50106710-0000-4000-8000-000000000001"}
 
     from m365_governance.loader import load_rules
 

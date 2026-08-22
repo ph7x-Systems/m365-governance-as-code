@@ -57,7 +57,7 @@
         "state": "observed",
         "value": [
           {
-            "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+            "id": "50106710-0000-4000-8000-000000000001",
             "title": "rater-client-side-solution",
             "catalog_version": "2.1.0.0",
             "installed_version": "1.0.0.0",
@@ -66,7 +66,7 @@
             "client_side": true
           },
           {
-            "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+            "id": "50106710-0000-4000-8000-000000000001",
             "title": "nav-client-side-solution",
             "catalog_version": "1.4.0.0",
             "installed_version": "1.2.0.0",
@@ -79,7 +79,7 @@
           "field": "AppMetadata",
           "value": [
             {
-              "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+              "id": "50106710-0000-4000-8000-000000000001",
               "title": "rater-client-side-solution",
               "catalog_version": "2.1.0.0",
               "installed_version": "1.0.0.0",
@@ -88,7 +88,7 @@
               "client_side": true
             },
             {
-              "id": "9a131334-3761-4a3c-a892-e9213a74cb7e",
+              "id": "50106710-0000-4000-8000-000000000001",
               "title": "nav-client-side-solution",
               "catalog_version": "1.4.0.0",
               "installed_version": "1.2.0.0",

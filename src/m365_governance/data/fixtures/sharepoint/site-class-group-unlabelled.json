@@ -87,10 +87,10 @@
       },
       "group_id": {
         "state": "observed",
-        "value": "7c9a1f2e-3b44-4d05-9f21-6ea8c0d13b77",
+        "value": "9409c0de-0000-4000-8000-000000000001",
         "raw": {
           "field": "GroupId",
-          "value": "7c9a1f2e-3b44-4d05-9f21-6ea8c0d13b77"
+          "value": "9409c0de-0000-4000-8000-000000000001"
         }
       },
       "teams_connected": {

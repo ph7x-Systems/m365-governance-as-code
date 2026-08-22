@@ -212,7 +212,7 @@ function Get-AgentFacts {
     # zero agents. Writing the model first would mean choosing between three
     # plausible shapes and finding out afterwards, which is the defect this
     # file already carries a scar from. The five conditions that let the work
-    # resume are in docs/AGENT-GOVERNANCE-SURFACE.md.
+    # resume are recorded outside this repository.
 
     return $facts
 }

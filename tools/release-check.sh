@@ -197,18 +197,8 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   # Staleness only. Whether the output is valid C# is the CONSUMER's gate:
   # it has the compiler, and adding dotnet to this contract would make the
   # engine depend on a toolchain it never uses.
-  # RULE 8 AS A GATE. A `nothing remains` claim is established by enumeration
-  # and never by fatigue, and as prose it lasted one day. Every card names who
-  # unblocks it and what happens next, so that the question "is anything here
-  # ours?" is answered by reading rather than by remembering.
-  step "Every card in the queue names its authority and its next action"
-  "$PY" tools/queue-claim-check.py
-
   step "The generated models match the schemas"
   "$PY" tools/generate-models.py --check
-
-  step "The observable surface is measured"
-  "$PY" tools/surface.py --check
 
   # Every module loads on its own and exports what it declares. A refactor that
   # leaves a function behind passes every check above and fails here.

@@ -414,7 +414,7 @@ never the reason to wait.**
 
 **2026-08-08.** Scored and refused rather than left as an open intention. The
 record is here because this is where the collection path lives; the queue entry
-is in [NEXT-SLICE.md](NEXT-SLICE.md).
+is recorded outside this repository.
 
 ```
 candidate   a tenant rule on whether Anyone links are required to expire
@@ -456,13 +456,17 @@ Microsoft's own documentation rather than inferred from the symptom.
 
 Five sites, read both ways:
 
+The addresses are not reproduced: a URL is an identifier whether or not it is
+data, and what this table establishes is the disagreement rather than where it
+happened.
+
 | Site | `SharingCapability` enumerated | by `-Identity` |
 |---|---|---|
-| root | **`Disabled`** | **`ExternalUserAndGuestSharing`** |
-| root (second) | `ExternalUserAndGuestSharing` | same |
-| `/search` | `Disabled` | same |
-| `/sites/allcompany` | `ExternalUserSharingOnly` | same |
-| `/sites/DigitalInitiative…` | `ExternalUserSharingOnly` | same |
+| 1 | **`Disabled`** | **`ExternalUserAndGuestSharing`** |
+| 2 | `ExternalUserAndGuestSharing` | same |
+| 3 | `Disabled` | same |
+| 4 | `ExternalUserSharingOnly` | same |
+| 5 | `ExternalUserSharingOnly` | same |
 
 One in five disagreed, and in the dangerous direction: a site that permits
 external sharing with guests reported as sharing disabled.
