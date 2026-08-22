@@ -225,9 +225,9 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
     import subprocess  # noqa: PLC0415
 
     # Only what git actually carries. The first version globbed the working
-    # tree and flagged AGENTS.md, which is excluded and never leaves the
-    # machine: a guard that fails on files it does not ship teaches people to
-    # ignore it.
+    # tree, and flagged a maintainer's local working file that this repository
+    # does not ship: a guard that fails on files nobody receives teaches people
+    # to ignore it.
     # EVERYTHING GIT CARRIES, not only the Markdown. The first version scanned
     # `*.md` because that is where a roadmap would obviously go, and a section
     # comment inside a module reached the repository untouched. A schema

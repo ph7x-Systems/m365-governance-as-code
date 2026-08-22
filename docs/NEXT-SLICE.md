@@ -63,9 +63,15 @@ three ways of saying there is no data.
 **The authentication that produced this was not authorized.** The owner was shown a
 consent prompt and accepted it. The raw observation is kept locally as provenance of the
 run and is not committed or published; the fixture in this repository is a separate
-sanitized representation that identifies no directory. The rule that was missing is now in
-`AGENTS.md`: installing or configuring an authentication dependency is not authorization
-to authenticate.
+sanitized representation that identifies no directory.
+
+**The rule that was missing, written out here because this is where it was needed.**
+Installing or configuring an authentication dependency is not authorization to
+authenticate. Any operation that establishes a session against a real directory or tenant
+needs explicit authorization for that operation, asked immediately before it and never
+inferred from a nearby instruction. One consent does not extend to the next operation, to
+a second run, or to a different scope; a session that already exists is not permission to
+use it.
 
 **The earlier failure path stays proven and stays worth having.** A real
 run went `acquisition attempted → nothing completed → not-supported with the reason →
@@ -135,7 +141,7 @@ not that a `run` command is missing. It is that **the first-run journey had no o
 so the Engine, the site and the desktop product each told a different version of the
 truth and no gate could fail.
 
-Ownership is now recorded: `docs/FIRST-RUN-CONTRACT.md`, and in `AGENTS.md`.
+Ownership is now recorded, in the repository and gated: `docs/FIRST-RUN-CONTRACT.md`.
 
 **The freeze.** No new collector, workload, rule, output format or report capability
 starts until the slices in this section are `SHIPPED`. That includes Exchange, Teams,
