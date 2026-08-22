@@ -391,33 +391,45 @@ def test_the_reason_an_area_was_not_read_is_a_sentence_and_not_a_structure(tmp_p
     assert "{" not in reported and "'" not in reported
 
 
-def test_a_slice_that_writes_one_file_refuses_a_directory(tmp_path, capsys):
-    """The defect a live run found, before the process starts.
+def test_output_means_a_directory_for_every_slice(tmp_path, capsys):
+    """ONE PARAMETER, ONE MEANING, AND A TEST THAT REACHED A TENANT.
 
-    `collect owners --output <directory>` reached PowerShell and failed with
-    `Clear-Content is only supported on files.` four seconds later. That is an
-    internal error from another language, and somebody reading it has no way to
-    know they passed the wrong kind of path.
+    `--output` used to be a directory for a slice reading many resources and a
+    file for one reading a single resource, decided by which slice was named.
+    The guard tested `is_dir()`, which is false for a path that is not there
+    yet, so the same command ran the first time, created the directory, and was
+    refused on the second.
+
+    WHEN THE GUARD WENT, THIS TEST STOPPED BEING A TEST. It asserted a refusal;
+    with nothing to refuse, `main` ran the collector for real, PowerShell
+    opened an interactive sign-in, and a browser asked the person running
+    `pytest` to authenticate against whichever directory they were signed into.
+    It named the client id from this file, which is how it was found.
+
+    A file is still refused, because a document per resource needs somewhere to
+    put them, and that refusal happens before any process starts.
     """
     from m365_governance.cli import main
+
+    target = tmp_path / "one.json"
+    target.write_text("{}", encoding="utf-8")
 
     code = main(
         [
             "collect",
             "owners",
             "--client-id",
-            "11111111-2222-3333-4444-555555555555",
+            "c0ffee00-0000-4000-8000-000000000001",
             "--site-url",
             "https://contoso.sharepoint.com/sites/x",
             "--output",
-            str(tmp_path),
+            str(target),
         ]
     )
 
     assert code == 2
     said = capsys.readouterr().err
-    assert "writes one document" in said
-    assert "owners.json" in said
+    assert "--output is a directory" in said
 
 
 def test_a_slice_that_writes_many_refuses_a_file(tmp_path, capsys):
@@ -431,7 +443,7 @@ def test_a_slice_that_writes_many_refuses_a_file(tmp_path, capsys):
             "collect",
             "sites",
             "--client-id",
-            "11111111-2222-3333-4444-555555555555",
+            "c0ffee00-0000-4000-8000-000000000001",
             "--tenant-url",
             "https://contoso-admin.sharepoint.com",
             "--output",
@@ -456,3 +468,26 @@ def test_which_slices_write_many_is_declared_rather_than_guessed():
     many = {name for name, s in SLICES.items() if s.writes_many}
 
     assert many == {"sites", "permissions", "conditional-access"}
+
+
+def test_the_suite_cannot_start_the_shipped_collector(tmp_path):
+    """THE PROPERTY BEHIND `conftest`'s FIRST SENTENCE.
+
+    It said `nothing here reaches a network or a tenant` and nothing enforced
+    it. A test that asserted a refusal kept running after the refusal was
+    removed: `main` started the collector, PowerShell opened
+    `Connect-PnPOnline -Interactive`, and a browser asked the person running
+    `pytest` to sign in to whichever directory they were signed into. It named
+    the client id from the test file, which is how it was traced — after being
+    met three times and blamed on the documentation first.
+
+    This asserts the guard exists by tripping it deliberately.
+    """
+    import m365_governance.collecting as collecting
+
+    with pytest.raises(AssertionError) as refused:
+        collecting.subprocess.Popen(
+            ["pwsh", "-File", "/x/m365_governance/data/collectors/powershell/x.ps1"]
+        )
+
+    assert "tried to start the shipped collector" in str(refused.value)

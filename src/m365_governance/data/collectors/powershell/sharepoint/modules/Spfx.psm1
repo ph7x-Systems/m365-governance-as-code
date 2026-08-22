@@ -18,7 +18,16 @@ function Get-SpfxCatalogFacts {
     param([string] $Scope)
 
     try {
-        $apps = @(Get-PnPApp -Scope $Scope -ErrorAction Stop)
+        # `@()` AROUND A NULL RESULT IS AN ARRAY OF ONE NULL, and this counted
+        # it. A tenant catalog holding nothing returned one solution, and the
+        # first property read off it crashed the collection: `The property 'Id'
+        # cannot be found on this object.`
+        #
+        # So it reported a solution that does not exist and then failed to
+        # describe it. Found on a real catalog; no fixture could have carried
+        # the shape, because a fixture is written from what the writer believes
+        # the cmdlet returns.
+        $apps = @(Get-PnPApp -Scope $Scope -ErrorAction Stop | Where-Object { $null -ne $_ })
     }
     catch {
         return [ordered]@{

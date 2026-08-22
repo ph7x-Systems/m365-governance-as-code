@@ -16,7 +16,7 @@ from m365_governance.cli import AmbiguousIdentity, _authentication, main
 
 class _Args:
     def __init__(self, **fields):
-        self.client_id = "11111111-2222-3333-4444-555555555555"
+        self.client_id = "c0ffee00-0000-4000-8000-000000000001"
         self.device_login = False
         self.tenant_id = None
         self.certificate_path = None
@@ -104,7 +104,7 @@ def test_the_certificate_run_is_recorded_as_an_application(tmp_path):
 
     outcome = run_slice(
         "owners",
-        client_id="11111111-2222-3333-4444-555555555555",
+        client_id="c0ffee00-0000-4000-8000-000000000001",
         output=tmp_path / "out.json",
         site_url="https://contoso.sharepoint.com/sites/one",
         certificate_path=tmp_path / "app.pfx",
@@ -121,14 +121,14 @@ def test_the_certificate_run_is_recorded_as_an_application(tmp_path):
     manifest = build_manifest(
         ran,
         directory=tmp_path,
-        client_id="11111111-2222-3333-4444-555555555555",
+        client_id="c0ffee00-0000-4000-8000-000000000001",
         site_url="https://contoso.sharepoint.com/sites/one",
         tenant_url=None,
         device_login=False,
         certificate_path=tmp_path / "app.pfx",
     )
     assert manifest["identity"]["method"] == "certificate"
-    assert manifest["identity"]["client_id"] == "11111111-2222-3333-4444-555555555555"
+    assert manifest["identity"]["client_id"] == "c0ffee00-0000-4000-8000-000000000001"
     # Nothing about the credential itself.
     assert "app.pfx" not in json.dumps(manifest)
 
@@ -140,7 +140,7 @@ def test_no_secret_reaches_the_collector_as_an_argument(tmp_path, monkeypatch):
     monkeypatch.setenv("M365_TEST_PW", "hunter2")
     outcome = run_slice(
         "owners",
-        client_id="11111111-2222-3333-4444-555555555555",
+        client_id="c0ffee00-0000-4000-8000-000000000001",
         output=tmp_path / "out.json",
         site_url="https://contoso.sharepoint.com/sites/one",
         certificate_path=tmp_path / "app.pfx",
@@ -197,4 +197,40 @@ def test_a_well_formed_identifier_is_not_a_claim_that_it_exists():
     """The shape check removes a class of failure. It proves nothing else."""
     from m365_governance.cli import _application_id
 
-    _application_id("11111111-2222-3333-4444-555555555555")
+    _application_id("c0ffee00-0000-4000-8000-000000000001")
+
+
+def test_a_documentation_placeholder_never_reaches_a_directory():
+    """FOUND BY THE OWNER MEETING IT TWICE IN ONE EVENING.
+
+    The manual prints a specimen of what `connect` reports, and a specimen
+    contains a client id. Somebody copied it, ran it against their own tenant,
+    and met `AADSTS700016: Application with identifier
+    '11111111-2222-3333-4444-555555555555' was not found in the directory ...`
+    — an error naming their directory, which reads as though something is wrong
+    with it.
+
+    The GUID is well formed, so shape validation passes it. This is the same
+    principle one step further: a failure the directory should never have been
+    asked about is refused before a browser opens.
+    """
+    import pytest
+
+    from m365_governance.cli import AmbiguousIdentity, _application_id
+
+    for placeholder in (
+        "11111111-2222-3333-4444-555555555555",
+        "AAAAAAAA-BBBB-4CCC-8DDD-EEEEEEEEEEEE",
+        "00000000-0000-0000-0000-000000000000",
+    ):
+        with pytest.raises(AmbiguousIdentity) as refusal:
+            _application_id(placeholder)
+        assert "documentation placeholder" in str(refusal.value)
+
+
+def test_a_rehearsal_may_use_the_identifier_the_manual_prints():
+    """`--dry-run` contacts nothing, and a guard that refused the documented
+    example in the one mode where it is safe would make the manual unusable."""
+    from m365_governance.cli import _application_id
+
+    _application_id("11111111-2222-3333-4444-555555555555", reaches_a_directory=False)

@@ -801,7 +801,7 @@ def test_a_dry_run_reaches_no_tenant(capsys, tmp_path):
         "collect",
         "sharing",
         "--client-id",
-        "00000000-0000-0000-0000-000000000000",
+        "c0ffee00-0000-4000-8000-000000000001",
         "--site-url",
         "https://contoso.sharepoint.com",
         "--tenant-url",
@@ -831,7 +831,7 @@ def test_collect_refuses_without_the_url_it_needs(
         "collect",
         slice_name,
         "--client-id",
-        "00000000-0000-0000-0000-000000000000",
+        "c0ffee00-0000-4000-8000-000000000001",
         "--output",
         str(tmp_path / "out"),
     ]
@@ -860,7 +860,7 @@ def test_the_collector_command_line_never_carries_a_write_flag(tmp_path):
             continue
         outcome = collecting.run_slice(
             name,
-            client_id="00000000-0000-0000-0000-000000000000",
+            client_id="c0ffee00-0000-4000-8000-000000000001",
             output=tmp_path / "out",
             site_url="https://contoso.sharepoint.com",
             tenant_url="https://contoso-admin.sharepoint.com",

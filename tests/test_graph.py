@@ -34,7 +34,7 @@ POLICIES = "identity/conditionalAccess/policies"
 
 def _token(**claims) -> str:
     """A JWT-shaped string. Unsigned: nothing here verifies one."""
-    body = {"tid": "11111111-2222-3333-4444-555555555555", **claims}
+    body = {"tid": "c0ffee00-0000-4000-8000-000000000001", **claims}
     payload = base64.urlsafe_b64encode(json.dumps(body).encode()).decode().rstrip("=")
     return f"header.{payload}.signature"
 

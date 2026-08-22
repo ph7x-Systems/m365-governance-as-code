@@ -35,7 +35,7 @@ SESSION = {
     "connected": True,
     "host": "contoso.sharepoint.com",
     "url": "https://contoso-admin.sharepoint.com",
-    "client_id": "11111111-2222-3333-4444-555555555555",
+    "client_id": "c0ffee00-0000-4000-8000-000000000001",
     "identity_kind": "delegated",
     "connection_type": "TenantAdmin",
     "scopes": ["AllSites.FullControl", "User.Read"],
@@ -57,7 +57,7 @@ def _engine(lines: list[str], returncode: int = 0, cancelled: bool = False):
 
 def _attempt(**kwargs) -> Connection:
     settings = {
-        "client_id": "11111111-2222-3333-4444-555555555555",
+        "client_id": "c0ffee00-0000-4000-8000-000000000001",
         "tenant_url": "https://contoso-admin.sharepoint.com",
     }
     return connect(**{**settings, **kwargs})
@@ -67,7 +67,7 @@ def _established(**overrides) -> str:
     return "CONNECTION " + json.dumps({**SESSION, **overrides}, separators=(",", ":"))
 
 
-def _resolved(tenant_id: str | None = "fcea8c52-d8bb-4836-8ef1-a3ab74265d08", **over):
+def _resolved(tenant_id: str | None = "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee", **over):
     body = {
         "host": "contoso.sharepoint.com",
         "resolved_tenant_id": tenant_id,
@@ -258,7 +258,7 @@ def test_what_was_asked_is_carried_beside_what_was_established():
 
     assert attempt.requested["device_login"] is True
     assert attempt.requested["site_url"].endswith("/sites/marketing")
-    assert attempt.requested["client_id"] == "11111111-2222-3333-4444-555555555555"
+    assert attempt.requested["client_id"] == "c0ffee00-0000-4000-8000-000000000001"
 
 
 # ---------------------------------------------------------------------------
@@ -269,7 +269,7 @@ def test_what_was_asked_is_carried_beside_what_was_established():
 def test_connect_refuses_without_an_address(capsys):
     from m365_governance.cli import main
 
-    assert main(["connect", "--client-id", "11111111-2222-3333-4444-555555555555"]) == 2
+    assert main(["connect", "--client-id", "c0ffee00-0000-4000-8000-000000000001"]) == 2
     assert "an address to reach" in capsys.readouterr().err
 
 
@@ -285,7 +285,7 @@ def test_connect_reports_json_for_a_consumer(monkeypatch, capsys):
         [
             "connect",
             "--client-id",
-            "11111111-2222-3333-4444-555555555555",
+            "c0ffee00-0000-4000-8000-000000000001",
             "--tenant-url",
             "https://contoso-admin.sharepoint.com",
             "--format",
@@ -313,7 +313,7 @@ def test_connect_exits_one_when_it_could_not_reach(monkeypatch, capsys):
         [
             "connect",
             "--client-id",
-            "11111111-2222-3333-4444-555555555555",
+            "c0ffee00-0000-4000-8000-000000000001",
             "--tenant-url",
             "https://contoso-admin.sharepoint.com",
         ]
@@ -338,7 +338,7 @@ def test_resolving_an_address_is_not_observing_a_session():
     """
     attempt = _attempt(engine=_engine([_resolved(), _established()]))
 
-    assert attempt.resolved_tenant_id == "fcea8c52-d8bb-4836-8ef1-a3ab74265d08"
+    assert attempt.resolved_tenant_id == "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
     assert attempt.observed_tenant_id is None
 
 
@@ -354,7 +354,7 @@ def test_an_address_resolves_even_when_the_sign_in_fails():
     )
 
     assert attempt.reach is Reach.REFUSED
-    assert attempt.resolved_tenant_id == "fcea8c52-d8bb-4836-8ef1-a3ab74265d08"
+    assert attempt.resolved_tenant_id == "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
 
 
 def test_a_host_that_does_not_exist_says_so_rather_than_resolving_to_nothing():
@@ -434,7 +434,7 @@ def test_the_document_never_carries_the_resolved_id_as_an_observation():
     doc = document(_attempt(engine=_engine([_resolved(), _established()])))
 
     assert (
-        doc["address"]["resolved_tenant_id"] == "fcea8c52-d8bb-4836-8ef1-a3ab74265d08"
+        doc["address"]["resolved_tenant_id"] == "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"
     )
     assert doc["session"]["observed_tenant_id"] is None
     assert doc["address"]["how"] == "public-discovery"
