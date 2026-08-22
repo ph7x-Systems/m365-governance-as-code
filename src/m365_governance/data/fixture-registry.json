@@ -361,6 +361,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-customization-script-permitted.json",
+      "origin": "synthetic",
+      "purpose": "a site holding custom script open, which is the only state that reaches SPO-SCRIPT-001's fail path; every other customization fixture is blocked or unread",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-customization-tenant-read-not-made.json",
       "origin": "synthetic",
       "purpose": "the tenant-scoped read nobody made; constructed so unread is not read as unset",

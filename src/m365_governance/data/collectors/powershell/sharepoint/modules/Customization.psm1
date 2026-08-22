@@ -78,12 +78,23 @@ function Get-CustomizationFacts {
     # `not observed`, which a single field cannot do.
     if ($null -ne $TenantSite) {
         try {
-            $deny = $TenantSite.DenyAddAndCustomizePages
-            $c['custom_script'] = New-ScalarFact -Value ("$deny") `
+            # THE FACT IS NAMED FOR WHAT IT HOLDS, WHICH IS THE DENY FLAG.
+            # It was `custom_script` carrying `DenyAddAndCustomizePages`, so a
+            # reader who took it at its name had the meaning INVERTED: true
+            # meant custom script is blocked. A rule written against the old
+            # name would have reported every protected site as permissive. It
+            # is the same defect as a field called `service_plans` that held
+            # SKU identifiers, and it is caught the same way, by making the
+            # name say which direction the boolean runs.
+            #
+            # A BOOLEAN RATHER THAN THE STRING `"True"`. The property is a
+            # boolean and stringifying it made a rule compare text.
+            $c['custom_script_denied'] = New-ScalarFact `
+                -Value ([bool] $TenantSite.DenyAddAndCustomizePages) `
                 -RawField 'DenyAddAndCustomizePages'
         }
         catch {
-            $c['custom_script'] = New-AbsentFact `
+            $c['custom_script_denied'] = New-AbsentFact `
                 -State (Resolve-FailureState $_) -Detail $_.Exception.Message
         }
     }
@@ -95,7 +106,7 @@ function Get-CustomizationFacts {
         # what `missing` alone would hide. That gap is recorded for the owner in
         # outside this repository; until it is decided, the sentence is the only
         # thing keeping a read nobody made apart from a value nothing returned.
-        $c['custom_script'] = New-AbsentFact -State 'missing' `
+        $c['custom_script_denied'] = New-AbsentFact -State 'missing' `
             -Detail ('DenyAddAndCustomizePages is returned by a tenant-scoped ' +
                 'read, and this run did not make one for this site. Not read is ' +
                 'not the same as not set.')

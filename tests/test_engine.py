@@ -860,3 +860,30 @@ def test_no_produced_document_carries_a_score_a_percentage_or_a_grade():
         "a produced document carries an aggregate this product refuses:\n  "
         + "\n  ".join(offenders)
     )
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("site-customization-script-permitted", Outcome.FAIL),
+        ("site-customization-surfaces-observed", Outcome.PASS),
+        ("site-customization-pages-feature-absent", Outcome.PASS),
+        ("site-customization-tenant-read-not-made", Outcome.UNKNOWN),
+    ],
+)
+def test_custom_script_is_read_in_the_direction_the_flag_runs(fixture, outcome):
+    """`SPO-SCRIPT-001`, and the inversion it was one name away from.
+
+    The evidence fact held `DenyAddAndCustomizePages` under the name
+    `custom_script`, so true meant custom script is BLOCKED. A rule written
+    against that name reports every protected site as permissive. The fact is
+    now `custom_script_denied` and this asserts all four outcomes, including
+    the one no fixture reached until the rule was written.
+
+    `tenant-read-not-made` is `unknown` and never a pass: the setting comes
+    from a tenant-scoped read, and a run that did not make one has established
+    nothing about it.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("SPO-SCRIPT-001"), evidence(fixture)).outcome is outcome

@@ -123,6 +123,59 @@ explaining. Deciding `unknown` may be counted as a pass is redefining.
 over complete, partial and unknown observations is the artefact this engine
 exists to replace. Coverage is reported as the facts it is made of.
 
+### Current documentation is not the whole of first-party evidence
+
+**Learn says what the product does. It does not reliably say what the product
+is about to stop doing.** A rule written only against current documentation
+describes a state that may already carry a retirement date, and it will keep
+describing it after the date passes.
+
+Announced change is its own evidence surface and it is first-party: the
+Microsoft 365 Roadmap, and the tenant's own Message Center, whose posts carry an
+identifier, a date the change takes effect and a date any opt-out retires. When
+a change moves what an outcome MEANS, it is a **source of the rule**, not a note
+beside it.
+
+This was learnt on `SPO-SCRIPT-001`. Custom scripting became disabled by default
+on classic publishing sites on 15 September 2025 and the tenant-level opt-out
+retired on 15 March 2026, both announced in `MC1117115` and neither derivable
+from the reference pages the rule otherwise rests on. **A site reported as
+blocked may have been closed by an administrator or by that change**, and a rule
+that did not know would have published a decision where there was a default.
+
+Observing correctly and concluding falsely is still concluding falsely.
+
+**THE SURFACES, NAMED, BECAUSE `I SEARCHED` IS NOT A METHOD.** Each answers a
+different question and none of them answers another's:
+
+| Surface | What it settles | What it does not |
+|---|---|---|
+| The API response itself | what **is**, in this tenant, now | what any of it means |
+| Learn reference pages | what a value **means**, and the documented limits of a control | whether it is about to change |
+| Service descriptions | what a plan **includes**, per licence | what a tenant holds |
+| Microsoft Graph changelog | what the **API** gained or lost, with dates | what a portal shows |
+| Message Center | what **changes**, with an effect date and any opt-out retirement. Tenant-scoped; publicly mirrored | anything about a tenant that did not receive it |
+| Microsoft 365 Roadmap | what is **announced**. A status, never a fact | that it shipped, or when |
+| Retirement and deprecation notices | what **stops working**, and when | what replaces it |
+
+**The response outranks the prose.** Where a reference page and a tenant's own
+answer disagree, the answer is what is true and the page is what somebody
+intended; both are recorded and the disagreement is the finding.
+
+**THE SURFACES ARE ASKED BEFORE THE RULE IS WRITTEN, NOT AFTER.** This is a
+precondition and not a review step, and the difference is measured in hours.
+`SPO-SCRIPT-001` was written three times: once against a fact whose name ran the
+other way, once without the announced change that moves what its pass means, and
+once correctly. Every rewrite was a surface that had not been asked, and each one
+cost more than the reading would have.
+
+Read the response, the reference, and the change surfaces. Then write once.
+
+**A rule is not finished until the change surfaces have been asked.** Not
+because they usually say something, but because when they do, they move what an
+outcome means — and a rule that was correct on the day it was written keeps
+being published long after the day it stopped being.
+
 ### Live acquisition against a tenant is separately authorized
 
 **Installing or configuring an acquisition dependency never authorizes live
