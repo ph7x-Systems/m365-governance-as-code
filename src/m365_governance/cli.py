@@ -1005,8 +1005,19 @@ def _cmd_connect(args) -> int:
     several minutes into a collection, from a failure that looked like a tenant
     problem rather than a consent problem.
     """
+    # THE THING THEY LEFT OUT, BEFORE THE THING THEY MISTYPED. Both refusals
+    # are correct and only one of them is about what the caller did: somebody
+    # who omitted the address is told about the address, not about the identity
+    # they also passed.
+    _project(args)
+    if not args.site_url and not args.tenant_url:
+        print(
+            "connect needs --tenant-url or --site-url: an address to reach.",
+            file=sys.stderr,
+        )
+        return 2
+
     try:
-        _project(args)
         _authentication(args)
     except AmbiguousIdentity as refusal:
         print(f"refusing to run: {refusal}", file=sys.stderr)
@@ -1014,13 +1025,6 @@ def _cmd_connect(args) -> int:
 
     for problem in collecting.preflight():
         print(problem, file=sys.stderr)
-        return 2
-
-    if not args.site_url and not args.tenant_url:
-        print(
-            "connect needs --tenant-url or --site-url: an address to reach.",
-            file=sys.stderr,
-        )
         return 2
 
     # Printed as it arrives, and this one is not a convenience. A device-code
