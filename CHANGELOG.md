@@ -10,9 +10,78 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
-Work merged after `1.0.0b7` is recorded here and is not published, not
+Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
+
+---
+
+## 1.0.0b8 — 2026-08-22
+
+**Everything below was found by running this engine against a real tenant, or
+by a gate written after it was.** Every one of them passed every test that
+existed, because every one of them was a defect a test could agree with.
+
+### The tests could reach a tenant, and did
+
+`conftest` said `nothing here reaches a network or a tenant` in its first
+sentence and nothing enforced it. Giving `--output` one meaning removed a
+refusal a test asserted; with nothing to refuse, the test ran the collector,
+PowerShell opened an interactive sign-in, and a browser asked the person running
+`pytest` to authenticate against whichever directory they were signed into.
+A guard now refuses any test that launches a shipped collector, naming the test,
+before a process exists.
+
+### A run threw away eight families of evidence
+
+`run` gave every slice the same output directory and every slice names a
+document after the resource it read, so nine slices reading one site all wrote
+`<site>.json` and the last one won. The accounting then reported the losers as
+having written nothing and called them `failed`. On one real site: before, five
+rules produced a result; after, all twenty-one did.
+
+### A property that is not a boolean, and every cast to one said true
+
+`DenyAddAndCustomizePages` returns an enum of `Unknown`, `Disabled` and
+`Enabled`, and `Enabled` means the DENY is enabled. A site that PERMITTED custom
+script was collected as denying it and the report said it was protected. Found
+by setting the state in a tenant and collecting again.
+
+### New capability
+
+- **`SPO-SCRIPT-001`**, the first rule outside the eight the SharePoint family
+  shipped with. A pass carries what it does not settle: blocking custom script
+  stops nine file extensions and `.html` is not among them, and a site blocked
+  today may have been closed by an administrator or by the Microsoft default
+  that arrived on 15 September 2025.
+
+- **Per-SKU capacity semantics.** `capacity_kind` and `aggregation_eligibility`
+  on every observed subscription, with the documented rule that classified it.
+  Nothing is `comparable` from `subscribedSkus` alone, and that is the result
+  rather than a gap: `prepaidUnits.enabled` is not seats purchased, and a SKU's
+  presence is not a purchase. `prepaidUnits` carries all four counters.
+
+- **The commercial subscription surface**, joined by `subscribedSku.subscriptionIds`
+  to `companySubscription` at `/directory/subscriptions`, beta only. Seats are a
+  like-for-like unit; `isTrial` false establishes that a subscription is not a
+  trial and does NOT establish that anybody bought it. A group whose basis is
+  not established is not summed.
+
+- **`data/evidence-surfaces.json`**: the nine surfaces a claim may rest on, what
+  each settles and what it does not, and thirty-six places to look. A portal is
+  never a basis. A gate refuses any rule citing a host outside it.
+
+### Behaviour change
+
+- `--output` means a directory for every slice. It was a directory for one kind
+  and a file for another, and the guard tested whether the path already existed,
+  so the same command ran the first time and was refused the second.
+
+- `connect` refuses a client id that is a documentation placeholder before
+  opening a browser, and reports a missing address before an identity problem.
+
+- An area read in part is no longer published as an area nobody read.
+  `attention.unobserved` means what its own contract says it means.
 
 ### New capability
 
