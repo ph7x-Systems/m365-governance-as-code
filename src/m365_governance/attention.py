@@ -243,11 +243,7 @@ def for_run(results: list[dict], coverage: dict) -> dict[str, Any]:
             "rank": rank,
             "because": ["no rule was evaluated against this resource"],
             "counts": counts,
-            "unobserved": sorted(
-                name
-                for name, entry in unavailable.items()
-                if (entry or {}).get("state") != "partial"
-            ),
+            "unobserved": unobserved,
         }
 
     rank = min(present)
