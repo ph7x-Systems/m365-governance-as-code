@@ -369,9 +369,21 @@ Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                     New-Unavailable -State 'missing' `
                         -Detail 'No reporting period was requested, so no usage report was read.'
                 })
-            dependency = (New-Unavailable -State 'missing' `
-                    -Detail ('Dependency evidence is not collected by this run. What a ' +
-                        'capability is required for is not observable from an assignment ' +
-                        'or from usage.'))
+            # COVERAGE AND THE FACT HAVE TO AGREE, and they did not. The fact
+            # moved to `partial` when the collector learnt to calculate what one
+            # assignment uniquely delivers, and this entry still said the area
+            # was not read at all. A consumer renders coverage: the desktop
+            # client showed `dependency: not read` beside evidence that had
+            # just calculated part of it, which is the product contradicting
+            # itself on one screen. Found by opening the real binary against a
+            # real bundle and looking at it.
+            dependency = (New-Unavailable -State 'partial' `
+                    -Detail ('Part of this was read: what one assignment uniquely ' +
+                        'delivers is calculated from the service plans and the ' +
+                        'plans disabled on each assignment. What a capability is ' +
+                        'REQUIRED FOR -- a policy, a role, an obligation, a ' +
+                        'workload that would stop -- is not observable from an ' +
+                        'assignment or from usage, and nothing may be concluded ' +
+                        'about removing a licence without it.'))
         }) `
         -SourceApi 'Microsoft Graph v1.0' -SourceSystem 'Microsoft 365')

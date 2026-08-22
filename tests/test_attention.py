@@ -494,3 +494,65 @@ def test_an_opinion_is_attributed_where_it_is_read():
 
     assert "pH7x" in gloss
     assert gloss != "our position, stated as ours"
+
+
+def test_an_area_read_in_part_is_never_published_as_unread():
+    """The claim a partial reading must not be allowed to make.
+
+    Found by looking at the rendered product, not by reading the code: a
+    workspace whose licensing collector read the concealment setting and half
+    the dependency calculation announced `3 areas were not observed at all`,
+    naming both of them beside the one area nobody had touched.
+
+    `unobserved` is documented as the areas the collector COULD NOT READ. An
+    area read in part was read; saying otherwise overstates the gap, which is
+    the same class of defect as understating it and points the same way — a
+    reader deciding how much of their tenant this describes.
+
+    The tier does not move. Part of the estate was still unobserved either way,
+    and a partial reading that dropped out of the ranking would be this bug
+    with the opposite sign.
+    """
+    judged = attention.for_run(
+        [result(outcome="pass")],
+        {
+            "requested": ["assignment", "usage", "usage_identity", "dependency"],
+            "completed": ["assignment"],
+            "unavailable": {
+                "usage": {"state": "missing", "detail": "no period requested"},
+                "usage_identity": {"state": "partial", "detail": "names concealed"},
+                "dependency": {"state": "partial", "detail": "sole source only"},
+            },
+        },
+    )
+
+    assert judged["unobserved"] == ["usage"]
+    assert judged["state"] == "observe"
+    assert judged["rank"] == attention.RANK["evidence-absent"]
+
+    said = judged["because"][0]
+    assert "1 requested area(s) were not read: usage" in said
+    assert "2 were read only in part: dependency, usage_identity" in said
+
+
+def test_a_run_whose_only_shortfall_is_partial_still_asks_to_be_looked_at():
+    """A partial reading is a shortfall, and dropping it would be the same bug.
+
+    Nothing here was wholly unread, so the naive fix — build the ranking from
+    `unobserved` — would have called this run settled and published a clean
+    sentence over a collection that reached half of what it asked for.
+    """
+    judged = attention.for_run(
+        [result(outcome="pass")],
+        {
+            "requested": ["dependency"],
+            "completed": [],
+            "unavailable": {
+                "dependency": {"state": "partial", "detail": "sole source only"}
+            },
+        },
+    )
+
+    assert judged["unobserved"] == []
+    assert judged["rank"] == attention.RANK["evidence-absent"]
+    assert judged["because"][0] == "1 were read only in part: dependency"
