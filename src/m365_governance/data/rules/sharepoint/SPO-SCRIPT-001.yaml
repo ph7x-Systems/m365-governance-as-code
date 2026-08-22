@@ -36,7 +36,7 @@ basis:
     # a pass, so it is a source of this rule rather than a note beside it.
     - url: https://mc.merill.net/message/MC1117115
       title: >
-        MC1117115 — Updates to custom scripting in sites and Classic Publishing
+        MC1117115. Updates to custom scripting in sites and Classic Publishing
         site creation. Custom scripting disabled by default on classic
         publishing sites from 15 September 2025; the tenant-level opt-out
         command retired on 15 March 2026. A public mirror of the tenant Message
