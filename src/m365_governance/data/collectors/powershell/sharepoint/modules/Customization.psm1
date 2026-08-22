@@ -87,11 +87,48 @@ function Get-CustomizationFacts {
             # SKU identifiers, and it is caught the same way, by making the
             # name say which direction the boolean runs.
             #
-            # A BOOLEAN RATHER THAN THE STRING `"True"`. The property is a
-            # boolean and stringifying it made a rule compare text.
-            $c['custom_script_denied'] = New-ScalarFact `
-                -Value ([bool] $TenantSite.DenyAddAndCustomizePages) `
-                -RawField 'DenyAddAndCustomizePages'
+            # IT IS NOT A BOOLEAN AND CASTING IT TO ONE IS ALWAYS TRUE.
+            #
+            # FOUND BY PROVOKING THE STATE IN A TENANT, and it could not have
+            # been found any other way: `DenyAddAndCustomizePages` returns
+            # `DenyAddAndCustomizePagesStatus`, an enum whose three values are
+            # `Unknown`, `Disabled` and `Enabled`. `[bool]` on a non-empty
+            # string is `$true`, so a site that PERMITS custom script was
+            # collected as denying it, the rule passed, and the report said the
+            # site was protected. Every hand-written fixture used real booleans
+            # and agreed with the code.
+            #
+            # AND THE ENUM RUNS THE OTHER WAY AGAIN. `Enabled` means the DENY is
+            # enabled, so custom script is blocked. `Disabled` means the deny is
+            # off, so it is permitted. Two inversions stacked on one property.
+            #
+            # `Unknown` IS THE TENANT'S OWN THIRD ANSWER and is not coerced to
+            # either side: a value the platform will not commit to is not a
+            # finding about the site.
+            $status = [string] $TenantSite.DenyAddAndCustomizePages
+            switch ($status) {
+                'Enabled' {
+                    $c['custom_script_denied'] = New-ScalarFact -Value $true `
+                        -RawField 'DenyAddAndCustomizePages'
+                }
+                'Disabled' {
+                    $c['custom_script_denied'] = New-ScalarFact -Value $false `
+                        -RawField 'DenyAddAndCustomizePages'
+                }
+                'Unknown' {
+                    $c['custom_script_denied'] = New-AbsentFact -State 'missing' `
+                        -Detail ('DenyAddAndCustomizePages returned Unknown, which is a ' +
+                            'value of the status enum and not a failure to read. The ' +
+                            'platform did not commit to an answer, so neither does this.')
+                }
+                default {
+                    $c['custom_script_denied'] = New-AbsentFact -State 'invalid' `
+                        -Detail ("DenyAddAndCustomizePages returned '$status', which is " +
+                            'not one of the documented values Unknown, Disabled or ' +
+                            'Enabled. A value this collector does not recognise is not ' +
+                            'guessed at.')
+                }
+            }
         }
         catch {
             $c['custom_script_denied'] = New-AbsentFact `

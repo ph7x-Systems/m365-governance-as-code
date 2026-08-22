@@ -367,6 +367,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-customization-script-status-unknown.json",
+      "origin": "synthetic",
+      "purpose": "DenyAddAndCustomizePagesStatus is an enum of Unknown, Disabled and Enabled, and Unknown is the platform declining to answer rather than a read that failed. Born from the live tenant read that found the enum",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-customization-tenant-read-not-made.json",
       "origin": "synthetic",
       "purpose": "the tenant-scoped read nobody made; constructed so unread is not read as unset",
