@@ -97,12 +97,20 @@ exists to replace. Coverage is reported as the facts it is made of.
 
 ### Live acquisition against a tenant is separately authorized
 
-Installing, declaring or configuring an authentication dependency does not
-authorize establishing a session, reusing a cached credential, opening an
-interactive sign-in, or reading a tenant. Each of those requires authorization
-for that operation. One authorization does not extend to the next operation, to
-a second run, or to a different scope, and a session that already exists is not
-permission to use it.
+**Installing or configuring an acquisition dependency never authorizes live
+authentication or tenant access.** Not the module, not the package, not the
+application registration, not the connection string, not a credential already
+cached on the machine. Preparing the means and being permitted the act are
+different things, and a dependency that exists in order to reach a tenant is
+still not permission to reach one.
+
+Live acquisition requires separate explicit authorization: for that operation,
+against that tenant, obtained before it runs. One authorization does not extend
+to the next operation, to a second run, or to a different scope, and a session
+that already exists is not permission to use it.
+
+Documentary research, offline development, fixtures and tests require none of
+this, and reaching for authorization to do them is its own mistake.
 
 This engine acquires no credential, writes nothing to a tenant, and transmits
 no tenant evidence anywhere. See `docs/TRUST-MODEL.md`.

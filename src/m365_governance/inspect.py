@@ -253,6 +253,17 @@ def stats(path: Path) -> str:
     if unavailable:
         out.append(f"  not collected     {len(unavailable)}")
         for block, info in sorted(unavailable.items()):
+            # A NULL ENTRY IS A DEFECT IN THE PRODUCER AND MUST NOT BE A CRASH
+            # HERE. The first live licensing run wrote `"usage": null` for an
+            # area that had completed, and this line raised on a member of
+            # `None`: the collection had succeeded, the tenant had been read,
+            # and the tool could not open its own document. The writer no
+            # longer emits one; a reader still meets documents it did not
+            # write, and "a refusal is a state, not a crash" applies to
+            # malformed input too.
+            if not isinstance(info, dict):
+                out.append(f"    {block}: ? — no reason recorded")
+                continue
             out.append(
                 f"    {block}: {info.get('state', '?')} — {info.get('detail', '')}"
             )

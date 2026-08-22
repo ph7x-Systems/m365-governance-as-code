@@ -226,8 +226,16 @@ function Get-LicensingFacts {
     if ($null -ne $UsageWindows) {
         $l['usage_reports_read'] = New-ScalarFact -Value @($UsageWindows).Count `
             -RawField 'getM365App/Email/OneDrive/SharePoint/Teams usage reports'
+        # `@(...)` AROUND THE WHOLE PIPELINE, NOT ONLY AROUND ITS INPUT.
+        # PowerShell unwraps a one-element result, so this emitted `7` for one
+        # period and `[7, 30]` for two: the JSON TYPE of a published fact
+        # changed with how many periods the caller asked for, and a consumer
+        # parsing it as a number breaks on the second period while one parsing
+        # it as a list breaks on the first. Found by comparing the first live
+        # document against the fixture that was supposed to describe it -- the
+        # fixture had the list and nothing had ever compared the two.
         $l['usage_window_days'] = New-ScalarFact `
-            -Value (@($UsageWindows) | ForEach-Object { [int] $_.window_days } |
+            -Value @(@($UsageWindows) | ForEach-Object { [int] $_.window_days } |
                 Sort-Object -Unique) `
             -RawField 'report period'
 
