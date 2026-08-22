@@ -280,13 +280,21 @@ def _shortfall(unobserved: list[str], partial: list[str]) -> str:
     """
     said = []
     if unobserved:
-        said.append(
-            f"{len(unobserved)} requested area(s) were not read: "
-            + ", ".join(unobserved)
-        )
+        said.append(_areas(len(unobserved)) + " not read: " + ", ".join(unobserved))
     if partial:
-        said.append(f"{len(partial)} were read only in part: " + ", ".join(partial))
+        said.append(_areas(len(partial)) + " read only in part: " + ", ".join(partial))
     return "; ".join(said)
+
+
+def _areas(count: int) -> str:
+    """`n requested area(s) were`, inflected.
+
+    Read off the site's published specimen, which is generated from this: the
+    sentence said `1 were read only in part`. The `(s)` it replaces was the same
+    evasion written down — a hedge in the one place a reader is being asked to
+    trust the wording.
+    """
+    return "1 requested area was" if count == 1 else f"{count} requested areas were"
 
 
 def _leading_reason(
