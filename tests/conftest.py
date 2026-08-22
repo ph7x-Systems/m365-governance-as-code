@@ -70,3 +70,58 @@ def list_rule() -> dict:
 @pytest.fixture
 def site_rule() -> dict:
     return rule("SPO-SITE-001")
+
+
+# ── the suite cannot reach a tenant, and now it cannot pretend to ──────────
+#
+# THE DOCSTRING AT THE TOP OF THIS FILE SAID SO AND NOTHING ENFORCED IT.
+#
+# A test asserted that `collect` refuses a badly shaped `--output`. The guard it
+# tested was removed when `--output` was given one meaning, so `main` ran the
+# collector for real: PowerShell launched, `Connect-PnPOnline -Interactive`
+# opened a browser, and the person running `pytest` was asked to sign in to
+# whichever directory their browser was signed into. It named the client id
+# from the test file, which is how it was found — after being met three times
+# and blamed on the documentation.
+#
+# A promise in prose is not a property. This is the property: any test that
+# tries to start the collector fails, naming itself, before a process exists.
+#
+# A test that needs the collector patches `_run` for itself, which is what the
+# ones that mean to already do.
+@pytest.fixture(autouse=True)
+def _no_test_reaches_a_tenant(monkeypatch, request):
+    """Refuse to start the shipped collector from inside the suite."""
+    from m365_governance import collecting
+
+    real = collecting.subprocess.Popen
+
+    def guarded(argv, *rest, **named):
+        # AT THE BOUNDARY WHERE A PROCESS IS BORN, and not on the function that
+        # asks for one. The plumbing tests run `_run` against a harmless
+        # command on purpose, and one of them replaces `Popen` itself to prove
+        # that a missing `pwsh` arrives as an outcome. Guarding here lets both
+        # keep working: a test that patches `Popen` after this fixture wins,
+        # which is the right order.
+        # THE ENTRY POINT, NOT THE DIRECTORY. `pwsh -File <collector>.ps1` is
+        # the thing that connects; a test that imports a module inline to check
+        # what a function emits reaches nothing, and refusing it would be this
+        # guard forbidding the offline tests it exists to protect.
+        parts = [str(part) for part in (argv or [])]
+        entry = ""
+        for flag in ("-File", "-file"):
+            if flag in parts and parts.index(flag) + 1 < len(parts):
+                entry = parts[parts.index(flag) + 1]
+        if entry.endswith(".ps1") and (
+            "data/collectors" in entry or "data\\collectors" in entry
+        ):
+            raise AssertionError(
+                f"{request.node.nodeid} tried to start the shipped collector. "
+                "No test may: the process authenticates, and on a machine with "
+                "a browser it opens a sign-in against whatever directory is "
+                "signed in. Patch `collecting._run` for this test, or assert on "
+                "the refusal that should have happened before the process."
+            )
+        return real(argv, *rest, **named)
+
+    monkeypatch.setattr(collecting.subprocess, "Popen", guarded)

@@ -83,7 +83,7 @@ SECURITY_DEFAULTS = {
 def _token(**claims) -> str:
     """A JWT-shaped string. Unsigned: nothing in this engine verifies one."""
     body = {
-        "tid": "11111111-2222-3333-4444-555555555555",
+        "tid": "c0ffee00-0000-4000-8000-000000000001",
         "roles": ["Policy.Read.All"],
         **claims,
     }
@@ -416,7 +416,7 @@ def test_the_observed_tenant_id_comes_from_the_token_and_the_host_from_the_addre
 
     for document in collected.documents:
         tenant = document["provenance"]["tenant"]
-        assert tenant["id"] == "11111111-2222-3333-4444-555555555555"
+        assert tenant["id"] == "c0ffee00-0000-4000-8000-000000000001"
         assert tenant["host"] == "contoso.sharepoint.com"
 
 

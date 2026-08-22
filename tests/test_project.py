@@ -20,7 +20,7 @@ tenant_url = "https://contoso-admin.sharepoint.com"
 site_url = "https://contoso.sharepoint.com/sites/finance"
 
 [identity]
-client_id = "11111111-2222-3333-4444-555555555555"
+client_id = "c0ffee00-0000-4000-8000-000000000001"
 """
 
 
@@ -39,7 +39,7 @@ def test_it_fills_what_the_command_line_did_not_say(tmp_path):
     args = Args()
     filled = project.load(_project(tmp_path)).apply(args)
 
-    assert args.client_id == "11111111-2222-3333-4444-555555555555"
+    assert args.client_id == "c0ffee00-0000-4000-8000-000000000001"
     assert args.tenant_url == "https://contoso-admin.sharepoint.com"
     assert filled == ["client_id", "site_url", "tenant_url"]
 

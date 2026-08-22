@@ -623,13 +623,24 @@ class AmbiguousIdentity(Exception):
 
 #: What an Entra ID application registration is: a GUID. Matched here rather
 #: than parsed, because nothing in this engine reads inside it.
+#: THE IDENTIFIERS THAT ONLY EVER APPEAR IN WRITING. Every one of these is in
+#: a specimen somewhere in the manual, which is exactly why a reader can end up
+#: sending one to a real directory.
+_PLACEHOLDER_IDS = frozenset(
+    {
+        "11111111-2222-3333-4444-555555555555",
+        "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee",
+        "00000000-0000-0000-0000-000000000000",
+    }
+)
+
 _APPLICATION_ID = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
     r"[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
 )
 
 
-def _application_id(value: str) -> None:
+def _application_id(value: str, *, reaches_a_directory: bool = True) -> None:
     """Refuse an identifier that cannot be an application registration.
 
     BEFORE ANYTHING LEAVES THIS PROCESS. A value of the wrong shape used to
@@ -651,6 +662,32 @@ def _application_id(value: str) -> None:
             f"An Entra ID application id is a GUID. If you do not have one, "
             f"register an application in your own tenant: PnP.PowerShell has "
             f"shipped no application of its own since 2.12.0."
+        )
+
+    # A DOCUMENTATION PLACEHOLDER IS NOT A REGISTRATION, AND THE DIRECTORY
+    # SHOULD NEVER BE ASKED ABOUT ONE.
+    #
+    # The manual prints a specimen of what `connect` reports, and a specimen
+    # contains a client id. Somebody copied it, ran it against their own
+    # tenant, and met `AADSTS700016: Application with identifier
+    # '11111111-2222-3333-4444-555555555555' was not found in the directory` --
+    # an error that names their directory and reads as though something is
+    # wrong with it. It happened twice in one evening.
+    #
+    # The GUID is well-formed, so the check above passes it. This is the same
+    # principle applied one step further: a failure the directory should not
+    # have been asked about is refused before a browser opens.
+    #
+    # AND ONLY WHERE A DIRECTORY WOULD BE REACHED. `--dry-run` contacts
+    # nothing, and a rehearsal that refused the identifier printed in the
+    # manual would be this guard making the documented example unusable in the
+    # one mode where it is safe.
+    if reaches_a_directory and value.strip().lower() in _PLACEHOLDER_IDS:
+        raise AmbiguousIdentity(
+            f"--client-id is a documentation placeholder: {value!r}. It appears "
+            f"in specimens of what this command prints and it is not an "
+            f"application in any directory. Register one in your own tenant and "
+            f"pass its id."
         )
 
 
@@ -708,7 +745,7 @@ def _authentication(args) -> None:
             "PnP.PowerShell has shipped no application of its own since "
             f"2.12.0. Write it once in {project_file.NAME} to stop repeating it."
         )
-    _application_id(client_id)
+    _application_id(client_id, reaches_a_directory=not getattr(args, "dry_run", False))
 
     certificate = getattr(args, "certificate_path", None)
     device = getattr(args, "device_login", False)
@@ -770,24 +807,23 @@ def _cmd_collect(args) -> int:
     if chosen.needs_site and not args.site_url:
         print(f"collect {args.slice} needs --site-url", file=sys.stderr)
         return 2
-    # THE KIND OF PATH IS PART OF THE CONTRACT, and it was not checked. A
-    # slice that reads many resources writes a document per resource into a
-    # directory; a slice that reads one writes a file. Passing the wrong kind
-    # surfaced as `Clear-Content is only supported on files.` four seconds into
-    # a run, which is an internal error from another language and tells the
-    # reader nothing about what they did.
-    if chosen.writes_many and args.output.is_file():
+    # `--output` IS A DIRECTORY. ALWAYS. FOR EVERY SLICE.
+    #
+    # It used to be a directory for a slice that reads many resources and a
+    # file for one that reads one, which is one parameter with two meanings
+    # decided by which slice was named. The writer had already been fixed to
+    # take a directory unconditionally, and this guard was left behind
+    # disagreeing with it.
+    #
+    # AND IT DEPENDED ON WHETHER THE PATH HAPPENED TO EXIST. `is_dir()` is
+    # false for a path that is not there yet, so a single-resource slice ran
+    # happily the first time, created the directory, and refused on the second
+    # run with a message telling the caller to pass a file. The same command
+    # twice, two different answers, and neither of them about the tenant.
+    if args.output.is_file():
         print(
-            f"collect {args.slice} reads many resources and writes one document "
-            f"per resource, so --output is a directory. {args.output} is a file.",
-            file=sys.stderr,
-        )
-        return 2
-    if not chosen.writes_many and args.output.is_dir():
-        print(
-            f"collect {args.slice} reads one resource and writes one document, "
-            f"so --output is a file. {args.output} is a directory: give it a "
-            f"path such as {args.output / (args.slice + '.json')}.",
+            f"collect {args.slice} writes one document per resource into a "
+            f"directory, so --output is a directory. {args.output} is a file.",
             file=sys.stderr,
         )
         return 2
@@ -1205,7 +1241,8 @@ def _cmd_setup(args) -> int:
         return 0
 
     try:
-        _application_id(args.client_id)
+        # `setup` writes a project file and reaches nothing.
+        _application_id(args.client_id, reaches_a_directory=False)
     except AmbiguousIdentity as refusal:
         print(f"refusing to write: {refusal}", file=sys.stderr)
         return 2
