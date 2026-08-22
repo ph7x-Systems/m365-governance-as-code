@@ -302,18 +302,33 @@ def test_every_answerable_question_has_the_evidence_it_requires():
 
 
 def test_the_live_state_is_a_value_and_the_sentence_comes_from_it():
-    """Four states, and the prose beside them is rendered rather than typed.
+    """The states, and the prose beside them is rendered rather than typed.
 
     The field was a free string and the schema accepted any non-empty one, so
     five slices carried five phrasings and anything asking whether a question
     could be answered had to interpret prose. The sentence has to start with
     the state, or the two have drifted.
+
+    THE SET IS READ FROM THE CONTRACT, not repeated here. It was written out as
+    four names, a fifth arrived, and this test failed on the value rather than
+    on anything being wrong with it: a list of allowed values kept in two
+    places is the same defect the field itself was created to remove.
     """
     from m365_governance.collecting import Live
+    from m365_governance.loader import load_json
+    from m365_governance.resources import packaged
+
+    schema = load_json(packaged("schemas") / "capability-manifest.schema.json")
+    allowed = set(
+        schema["$defs"]["collector"]["properties"]["live_validation_state"]["enum"]
+    )
+    assert {str(member.name).lower().replace("_", "-") for member in Live} == allowed, (
+        "the engine's states and the contract's enum disagree"
+    )
 
     for capability in MANIFEST["capabilities"]:
         collector = capability["collector"]
         state = collector["live_validation_state"]
-        assert state in {"none", "negative-only", "provider-only", "full"}
+        assert state in allowed
         expected = Live[state.upper().replace("-", "_")]
         assert collector["live_validation"].startswith(str(expected))

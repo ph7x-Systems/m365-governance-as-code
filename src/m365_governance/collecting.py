@@ -89,8 +89,19 @@ class Live(StrEnum):
                     proved; that it reports something correctly is not.
     `provider_only` the transport underneath it read a real tenant, this
                     slice's own path did not.
+    `partial`       this slice's own path read a real tenant for SOME of the
+                    areas it covers, and never ran for the others.
     `full`          the path that produces this slice's evidence was observed
                     against a real tenant.
+
+    THE FIFTH STATE ARRIVED BECAUSE THE FOURTH WAS A LIE. Licensing reads four
+    independent coverage areas; two were observed against a real directory and
+    two have never run. `full` claims a path that was not taken and
+    `provider_only` says this slice's own path read nothing, which is false: it
+    read two of its four. There was no honest value, so the slice would have
+    shipped carrying a wrong one — and a wrong state is worse than a coarse
+    one, because everything downstream derives from it rather than from the
+    sentence beside it.
 
     The sentence is still published, and it is now RENDERED from the state, so
     the two cannot disagree.
@@ -99,6 +110,7 @@ class Live(StrEnum):
     NONE = "not live-validated"
     NEGATIVE_ONLY = "negative path validated"
     PROVIDER_ONLY = "provider live-validated, slice not live-validated"
+    PARTIAL = "partially live-validated"
     FULL = "live-validated"
 
 
@@ -502,10 +514,13 @@ SLICES = {
                 "ReportSettings.Read.All",
             ),
             # ASSIGNMENT AND REPORT IDENTIFIABILITY WERE OBSERVED AGAINST A REAL
-            # DIRECTORY; USAGE AND DEPENDENCY WERE NOT. `full` would claim the
-            # slice's whole path was observed and two of its four surfaces have
-            # never run against a tenant.
-            live=Live.PROVIDER_ONLY,
+            # DIRECTORY; USAGE AND DEPENDENCY WERE NOT.
+            live=Live.PARTIAL,
+            live_note=(
+                "assignment and report identifiability were observed against a "
+                "real directory; the usage report has never been requested from "
+                "one, and dependency evidence is collected by nothing"
+            ),
         ),
     ]
 }

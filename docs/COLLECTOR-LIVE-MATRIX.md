@@ -17,6 +17,8 @@ The tenant is not named here: this repository is public.
 |---|---|
 | `not live-validated` | offline tests only |
 | `negative path validated` | a typed refusal was observed, no successful read |
+| `provider live-validated, slice not live-validated` | the transport underneath read a real tenant, this slice's own path did not |
+| `partially live-validated` | this slice's own path read a real tenant for some of the areas it covers, and never ran for the others |
 | `live-validated` | a real read produced real evidence |
 | `fully live-validated` | both, for the paths this tenant can exercise |
 
@@ -38,6 +40,8 @@ to exercise.
 | `tenant-sharing` | ✓ | 3 properties, 2026-08-08 | — | n.a. | `SPO-SHARE-003`, `SPO-SHARE-004` | **live-validated** |
 | `spfx` | ✓ | not observed | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **negative path validated** |
 | `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | **none**, by decision | **provider live-validated, slice not live-validated** |
+| `customization` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
+| `licensing` | ✓ | assignment and report identifiability, 2026-08-21 — usage and dependency never requested | Graph modules absent → `not-supported` naming them | not reached | **none**, by decision | **partially live-validated** |
 
 ### What this table answers immediately
 

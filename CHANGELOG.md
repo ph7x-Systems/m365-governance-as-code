@@ -10,210 +10,255 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
-**Three published contracts had changed shape without changing name**, and
-nothing in the repository could say so.
+Nothing yet. Work merged after `1.0.0b7` is recorded here and is not published,
+not documented on the site, and not `tested_with` anything until it ships in a
+release of its own.
 
-- **`collection/1.0.0`, `comparison/3.0.0` and `evidence/3.0.0` were edited
-  after `1.0.0b6` published them.** `collection` gained a required
-  `identity.method` and repointed two references to `evidence/3.1.0`,
-  `comparison` repointed two, and `evidence/3.0.0` gained `identity_method`
-  and `client_id`. A consumer that had declared support for any of those three
-  would have carried on declaring it while reading a different shape. The
-  cascade that moved `run`, `run-set` and `assessment` to `4.1.0` moved them
-  by hand, and by hand is how these were missed.
-- **`collection` is now `2.0.0` and `comparison` is `3.1.0`**, with the
-  published text of each archived beside them. `collection` is a major because
-  a document written before it lacks a property the shape now requires;
-  `comparison` is a minor because only its references moved, to an evidence
-  version whose addition is optional. `evidence/3.0.0` keeps its identity and
-  gets its published bytes back: the two properties it had grown already exist
-  in `3.1.0`.
-- **A version's digest is now recorded when the version is.**
-  `data/published-contracts.json` holds the digest of every contract version
-  this engine has published, and a test reads it. The generated manifest could
-  not do this job: it is rewritten from whatever is on disk, so it agrees with
-  a silent edit by construction. This file is written by hand, disagrees, and
-  found all three of the above.
+---
 
-- **What is assigned, and whether its use can be observed at all.** A new
-  evidence family for Microsoft 365 licensing, and the first fact it collects is
-  the one that decides whether the rest means anything: Microsoft hides user
-  names in all usage reports by default, and the same setting applies to the
-  usage reports in Microsoft Graph, so in a default tenant **usage cannot be
-  joined to a user**. The reports also cover a window, arrive 24 to 72 hours
-  late, and lose a deleted user's data within 30 days. Every one of those is a
-  fact in the evidence rather than a footnote. `dependency_evidence` is recorded
-  as missing by construction, because this collector reads none, so a usage
-  figure cannot be read as an answer about changing anything.
+## 1.0.0b7
 
-- **An agent count now travels with the population it is a count of.** `count: 3`
-  reads as *this tenant has three agents* to anybody who did not write the
-  collector, and it is not that: it is three `.agent` files in one site's Site
-  Assets library, enumerated by one identity at one moment. The boundary used to
-  live in `coverage` as a sentence, and a sentence beside a number is read after
-  the number if at all. The evidence now carries `population`,
-  `acquisition_method` and `populations_not_observed`, the last naming what this
-  method cannot reach: an agent built in Agent Builder is not a file in a
-  library. **An inventory surface defines a population; it does not define
-  existence outside that population**, and that is now a field rather than a
-  convention. `acquisition_method` is `enumerated` here, so that the day a
-  collector queries instead, *this query returned zero* and *this enumerated
-  population is empty* are already different facts.
+The release that makes the desktop path real: evidence becomes a canonical
+bundle without reaching a tenant again, and three observation surfaces arrive
+that decide nothing on purpose.
 
-- **A new evidence family: the customization and page-execution surfaces of a
-  site.** `Customization.psm1` collects the custom script setting where a
-  tenant-scoped read was made, whether the identity holds
-  `AddAndCustomizePages`, whether the Site Pages web feature is present, whether
-  the Site Pages library is readable, and whether it carries unique permissions.
-  It answers *what surfaces are observable here* and refuses *is this site safe*:
-  **no rule reads any of it**, because Microsoft documents each of these controls
-  as reaching less than its name suggests and in two cases prints the limit
-  itself. Widen what can be observed first; decide what may be concluded after.
-- **A gap the new family found in the fact vocabulary.** A fact's state is one of
-  `observed`, `missing`, `not-supported`, `permission-denied`, `partial` and
-  `invalid`, and none of them means *this run did not make that read*. It is
-  carried as `missing` with a sentence saying so, and the decision is queued: for
-  a product whose claim is that an unknown is never a pass, a vocabulary that
-  cannot separate unread from unset is worth deciding rather than working around.
+Every claim below is classified. **New capability** is something the engine
+could not do before. **Behaviour change** is something it did differently.
+**Contract version change** is a shape a consumer validates against.
+**Known limitation** is a boundary this version has and keeps. **Not
+established** is something nobody has observed, named here so that its absence
+is not read as an absence of the problem.
 
-- **`evaluate --bundle` writes the folder a consumer opens**, from evidence that
-  already exists. The portable folder was reachable only through `run`, which
+### New capability
+
+- **`evaluate --bundle` writes the folder a consumer opens, from evidence that
+  already exists.** The portable folder was reachable only through `run`, which
   collects first, so somebody holding good evidence — a previous collection, a
   pipeline, a colleague's export — had to reach the tenant again to obtain the
   packaging. What was read and how it is carried are different questions. It is
   the same writer `run` calls, asserted against that writer's own bytes rather
   than against a shape described in a test, and it reaches no tenant: the whole
-  desktop experience is now provable offline against frozen evidence.
+  desktop experience is provable offline against frozen evidence.
+
+- **Microsoft 365 licensing evidence.** `collect licensing` reads what is
+  assigned in a tenant and whether the usage reports are permitted to name the
+  people who hold it, through Microsoft Graph rather than PnP. Four independent
+  coverage areas — `assignment`, `usage_identity`, `usage`, `dependency` — and
+  completing one implies nothing about the others. Microsoft conceals user names
+  in usage reports by default and the same setting reaches Graph, so in a default
+  tenant **usage cannot be joined to a user**; the reports also cover a window,
+  arrive 24 to 72 hours late, and lose a deleted user's data within 30 days. Each
+  of those is a fact in the evidence rather than a footnote.
+
+- **Page-execution and customization surfaces.** `collect customization` reads
+  the custom script setting where a tenant-scoped read was made, whether the
+  identity holds `AddAndCustomizePages`, whether the Site Pages web feature is
+  present, whether the Site Pages library is readable, and whether it carries
+  unique permissions. It answers *what surfaces are observable here* and refuses
+  *is this site safe*.
+
+- **Agent governance: a count that travels with the population it counts.**
+  `count: 3` reads as *this tenant has three agents* to anybody who did not write
+  the collector, and it is not that: it is three `.agent` files in one site's Site
+  Assets library, enumerated by one identity at one moment. The evidence carries
+  `population`, `acquisition_method` and `populations_not_observed`, the last
+  naming what this method cannot reach — an agent built in Agent Builder is not a
+  file in a library. **An inventory surface defines a population; it does not
+  define existence outside that population.**
+
+- **Microsoft Entra ID, starting with the access-policy surface.**
+  `collect conditional-access` reads Conditional Access policies, the named
+  locations they reference and the Security Defaults state in one session, and is
+  the first collector here that does not run PowerShell. An area that could not be
+  read produces a document carrying the state and the reason: writing nothing
+  would leave a directory indistinguishable from a tenant with no Conditional
+  Access at all, and a rule over that would pass.
+
+- **`setup`, `connect` and `run`.** The journey is three commands: `setup`
+  prepares the machine and writes the target down, `connect` proves the identity
+  can work here, `run` collects, evaluates and reports. Choosing among ten slices
+  was a decision this engine can make from the target it was given.
+  `m365-governance.toml` carries the tenant and site addresses, the application
+  registration and the authentication mode; the command line always wins, the file
+  that was read is named on every run, and a key naming a credential is refused
+  rather than ignored.
+
+- **`connect` answers whether an identity can work here, not only whether a
+  sign-in succeeded.** `Connect-PnPOnline` succeeds with zero permissions granted,
+  so one read is attempted and reported separately, and `not-attempted` is never
+  reported as established. A certificate now actually reaches the tenant: the
+  arguments were validated and then dropped, so the one command whose purpose is
+  to prove an application registration could not prove it for the identity an
+  unattended run uses.
+
+- **`capabilities` publishes what this engine can do**, as a contract rather
+  than as prose, and `--questions` projects the same document as *what can it
+  tell me* rather than *what does it touch*.
+
+- **`--period` on `collect`**, so the licensing usage window can be asked for at
+  all. Microsoft's four values, and no default invented here.
+
+- **`doctor` names the modules a collector needs**, with the acquisition surface
+  each one serves and the exact `Install-Module` command, so a machine that cannot
+  run a collector says which install is missing rather than reporting an empty
+  tenant. It also says how to install PowerShell 7.
+
+### Behaviour change
 
 - **The bundle is produced by the engine being published**, not by whatever
   `m365-governance` the PATH resolves to. It resolved to nothing here and every
-  sample was skipped in silence, because a fixture that failed to evaluate was
-  a `continue`: the only witness was a count at the end of the run, and it
-  spoke only once the number reached zero. A consumer had already vendored a
-  bundle three samples wide. A skipped fixture now fails the publish, and the
-  bundle carries seventy-one.
+  sample was skipped in silence, because a fixture that failed to evaluate was a
+  `continue`. A consumer had already vendored a bundle three samples wide. A
+  skipped fixture now fails the publish, and the bundle carries seventy-one.
 
-- **A shipped assessment its own engine refused.** The cascade rewrote the
-  contract each part of `fixtures/assessment/classification.json` declares, and
-  an assessment's identity is derived from the bytes of those parts, so the
-  document arrived at a consumer with digests describing what it used to say.
-  Only one of the two assessment fixtures was read by any test; the other was
-  read by nothing. Both are now verified, with the verifier a consumer uses.
+- **A shipped assessment its own verifier refused.** An assessment's identity is
+  derived from the bytes of its parts, the cascade rewrote the contract each part
+  declares, and the document reached a consumer carrying digests of what it used
+  to say. Both assessment fixtures are now verified, with the verifier a consumer
+  uses; before this, one of the two was read by no test at all.
 
-**`connect` now answers the question a person actually has**, which is not
-"did a sign-in succeed" but "can this identity work here".
+- **A path that is not there is a refusal, not a result.** `evaluate`, `assess`,
+  `stats`, `report`, `verify` and `diff` raised `FileNotFoundError` under exit
+  `1` — the code reserved for a negative governance result — so a typed path
+  reached a pipeline as a failing rule. It is exit `2` and one sentence.
 
-- **A certificate reaches the tenant.** `connect` accepted
-  `--certificate-path`, `--tenant-id` and `--certificate-password-env`,
-  validated every incoherent combination of them, and then dropped them: the
-  session opened as a person while the caller had asked for the application.
-  The one command whose purpose is to prove an application registration can
-  reach a tenant could not prove it for the identity an unattended run uses.
-- **The session says which identity it is.** `identity_kind` was hardcoded to
-  `delegated` in the connection facts, so a run holding a certificate described
-  itself as a person — in the field that decides what an empty result means.
-- **Authentication and authorization are two answers.**
-  `Connect-PnPOnline` succeeds with zero permissions granted, so one read is
-  now attempted and reported separately. `not-attempted` is never reported as
-  established.
-- **A failure carries a reason a program can act on.** `connection/1.1.0` adds
-  `reason`: consent that was never granted, an application absent from the
-  directory and a policy that blocked the sign-in all arrived as `refused`, and
-  a consumer wanting to tell them apart had to match on whatever
-  PnP.PowerShell printed. `reason` and `authorization` are optional in the
-  schema so documents written before 1.1.0 still validate; every producer at
-  1.1.0 emits both. `not-classified` is an answer, not a gap.
-- **An identifier that cannot be an application registration is refused before
-  the network.** A value of the wrong shape used to start PowerShell, open a
-  browser and fail in the directory, so the product's own worst error was
-  diagnosed by Microsoft, in a window, outside the terminal.
-- **A path that is not there is a refusal, not a result.** `evaluate`,
-  `assess`, `stats`, `report`, `verify` and `diff` raised `FileNotFoundError`
-  under exit `1` — the code reserved for a negative governance result — so a
-  typed path reached a pipeline as a failing rule. It is exit `2` and one
-  sentence now.
-- **A report names the resource it is about.** The header read
-  `resource["id"]`, a key no evidence document has ever carried — identity is
-  structured, and was deliberately never collapsed into a parsed string — so
-  every markdown report printed `<unknown>` beside a title that had the name in
-  it all along.
-- **A `--rules` path that is not there says so**, instead of reporting that the
-  rules do not validate and sending a reader to inspect rules that are fine.
-- **Every `--help` names the manual.**
-- **`doctor` says how to install PowerShell 7**, as it already did for
-  PnP.PowerShell.
-- **Provenance says how it knows which tenant a document is about.**
-  `evidence/3.1.0` adds `tenant.how` — `requested`, `public-discovery` or
-  `observed`. `tenant.id` is null throughout this engine, so the host carries
-  the identity, and that host is the address the caller asked for, verified by
-  nothing. Every document written today says `requested`, and nothing claims
-  `observed` until a collection path for the directory identity is proven on a
-  tenant. The report says it too.
-- **`setup` and `run`.** The journey is three commands: `setup` prepares the
-  machine and writes the target down, `connect` proves the identity can work,
-  `run` collects, evaluates and reports. Choosing among ten slices was a
-  decision this engine can make from the target it was given, and asking
-  somebody to make it before they had seen one finding was asking them to learn
-  the architecture in order to use the tool.
-- **`setup` names the command that produces an application registration**,
-  which nothing in this product named before. It registers nothing itself: this
-  engine reads and acquires nothing.
-- **A slice that will not be attempted is reported, never dropped.** `run`
-  prints the whole catalogue with a verdict against each, because a run that
-  quietly skipped half its slices would produce a report that looks complete to
-  the only person who could tell that it is not.
-- **The target is written down once.** `m365-governance.toml` carries the
-  tenant and site addresses, the application registration and the
-  authentication mode; the command line always wins over it, the file that was
-  read is named on every run, and a key that names a credential is refused
-  rather than ignored. Ten slices against one tenant were ten commands, each
-  repeating the same two arguments.
-- **An interactive sign-in no longer goes wherever the browser happens to be
-  signed in.** The collector resolves which directory owns an address before
-  signing in, and where nothing owned it, it signed in anyway — landing in an
-  unrelated directory and reporting what it found there as an answer about the
-  address that was typed. It is refused now, for **every** mode: the guard sits
-  with the one place that decides which URL is connected to, so the ten
-  commands that write evidence are covered and not only the one that writes
-  nothing. A certificate proceeds: `-Tenant` names the directory.
-- **`connect --dry-run`**, which `collect` has had since it existed.
-- **The first-run journey has an owner**, recorded in
-  [docs/FIRST-RUN-CONTRACT.md](docs/FIRST-RUN-CONTRACT.md).
+- **A report names the resource it is about.** The header read `resource["id"]`,
+  a key no evidence document has ever carried, so every markdown report printed
+  `<unknown>` beside a title that had the name in it all along.
 
-### Entra ID
-
-Microsoft Entra ID, starting with the access-policy surface, and the first
-collector in this product that does not run PowerShell.
-
-- **`collect conditional-access`** reads Conditional Access policies, the named
-  locations they reference and the Security Defaults state in one session. The
-  authentication strength a policy requires needs no fourth request: it arrives
-  inside `grantControls`.
-- **A denial is written down as evidence.** An area that could not be read
-  produces a document about the tenant carrying the state and the reason.
-  Writing nothing would leave a directory indistinguishable from a tenant that
-  has no Conditional Access at all — and a rule over that would pass.
-- **Every document carries the coverage of the whole run**, not its own area,
-  so that the collection manifest can still report an area that produced no
-  documents to carry it.
-- **The token is never acquired and never an argument.** It is read from
-  `M365_GOVERNANCE_GRAPH_TOKEN`: a token on a command line is in the process
-  list for every account on the machine and in the shell history afterwards.
 - **A rule now has to match the workload as well as the resource type.**
   `tenant` is a type name in every workload, so a SharePoint tenant rule applied
-  to an Entra tenant document the moment a second workload existed. The outcome
-  was `unknown` rather than wrong, which is worse than it sounds: a rule from
-  another surface appearing in a report until the day two workloads name one
-  fact the same.
-- **The fixture gate globbed one workload's directory** and would have gone on
-  passing the day a second arrived.
+  to an Entra tenant document the moment a second workload existed.
 
-No rule reads this evidence. Microsoft publishes no normative conclusion about
-which Conditional Access policies an organisation should have, so a threshold
-invented here would make a pass mean nothing; the inventory names its consumer
-instead. The slice is proved offline against the whole answer matrix and has
-not itself been run against a tenant — see `docs/COLLECTOR-LIVE-MATRIX.md`,
-which says so in its own row.
+- **An interactive sign-in no longer goes wherever the browser happens to be
+  signed in.** The collector resolves which directory owns an address before
+  signing in; where nothing owned it, it signed in anyway and reported what it
+  found in an unrelated directory as an answer about the address that was typed.
+  Refused now, for every mode. A certificate proceeds: `-Tenant` names the
+  directory.
+
+- **A slice that will not be attempted is reported, never dropped.** `run` prints
+  the whole catalogue with a verdict against each: a run that quietly skipped half
+  its slices produced a report that looked complete to the only person who could
+  tell that it is not.
+
+- **An identifier that cannot be an application registration is refused before
+  the network**, instead of starting PowerShell, opening a browser and being
+  diagnosed by Microsoft in a window outside the terminal.
+
+- **`spfx` is classified at what it establishes.** Both catalog scopes were
+  observed and no solution in either was behind its version, so the branch that
+  reports a finding has never been produced by a real catalog. It is
+  `negative-only`, not `full`. **This is a downward correction of a published
+  claim**, and it is the one number in this release that got smaller.
+
+- **A `--rules` path that is not there says so**, instead of reporting that the
+  rules do not validate. **Every `--help` names the manual.** **This engine says
+  what it says on a console that is not UTF-8.**
+
+### Contract version change
+
+Every version below is recorded in `data/published-contracts.json` with the
+digest it was published under, and a test reads it.
+
+| Contract | Was | Is | Why |
+| --- | --- | --- | --- |
+| `evidence` | `3.0.0` | `3.1.0` | `tenant.how` and identity fields; additive |
+| `collection` | `1.0.0` | `2.0.0` | a required `identity.method` an earlier document lacks |
+| `comparison` | `3.0.0` | `3.1.0` | references moved to an optional addition |
+| `connection` | `1.0.0` | `1.1.0` | `reason` and `authorization`, both optional |
+| `assessment` | `4.0.0` | `4.1.0` | cascade from `evidence` |
+| `run` | `4.0.0` | `4.1.0` | cascade |
+| `run-set` | `4.0.0` | `4.1.0` | cascade |
+| `capability-manifest` | — | `1.1.0` | new in this release, then a fifth live state |
+| `migration-read` | — | `1.0.0` | new in this release |
+| `migration-verification` | — | `1.0.0` | new in this release |
+
+- **Three published contracts had changed shape without changing name**, and
+  nothing in the repository could say so. `collection/1.0.0`, `comparison/3.0.0`
+  and `evidence/3.0.0` were edited after `1.0.0b6` published them: a consumer that
+  had declared support for any of the three would have carried on declaring it
+  while reading a different shape. The versions the cascade did move were moved by
+  hand, and by hand is how these were missed.
+
+- **A version's digest is recorded when the version is.** The generated manifest
+  could not do this job: it is rewritten from whatever is on disk, so it agrees
+  with a silent edit by construction. The ledger is written by hand, disagrees,
+  and found all three.
+
+- **`evidence/3.1.0` says how provenance knows which tenant a document is
+  about**: `tenant.how` is `requested`, `public-discovery` or `observed`.
+  `tenant.id` is null throughout this engine, so the host carries the identity,
+  and that host is the address the caller asked for, verified by nothing. Every
+  document written today says `requested`.
+
+- **`capability-manifest/1.1.0` adds a fifth live-validation state, `partial`.**
+  Four states could not describe a slice that reads several independent areas and
+  has observed some of them: `full` claims a path that was not taken, and
+  `provider-only` says this slice's own path read nothing, which is false when it
+  read two of its four. There was no honest value, so licensing would have shipped
+  carrying a wrong one — and a wrong state is worse than a coarse one, because
+  everything downstream derives from it rather than from the sentence beside it.
+
+### Known limitation
+
+- **Licensing produces no conclusion about changing an assignment**, and will
+  not until dependency evidence exists. That conclusion needs evidence of use
+  **and** of dependency; this reads the first at best. `dependency_evidence` is
+  recorded as missing by construction so that a usage figure cannot be read as an
+  answer.
+
+- **There is no total number of licences.** `units_purchased` existed and was
+  removed rather than corrected: it summed `prepaidUnits.enabled` across SKUs and
+  returned a seven-figure number on a tenant with a few dozen assigned seats —
+  arithmetically correct and meaningless, because the count means something
+  different on a paid seat SKU and on a free or effectively unlimited one. It is
+  not replaced by a better total. SKUs are published one row each.
+
+- **No rule reads licensing, customization, agents or conditional-access.** Four
+  of thirteen slices feed no rule, and each one names its consumer instead.
+  Microsoft documents the customization controls as reaching less than their names
+  suggest and in two cases prints the limit itself; it publishes no normative
+  conclusion about which Conditional Access policies an organisation should have.
+  A threshold invented here would make a pass mean nothing. Widen what can be
+  observed first; decide what may be concluded after.
+
+- **The fact vocabulary cannot separate *unread* from *unset*.** A fact's state
+  is one of `observed`, `missing`, `not-supported`, `permission-denied`, `partial`
+  and `invalid`, and none of them means *this run did not make that read*. It is
+  carried as `missing` with a sentence saying so. For a product whose claim is
+  that an unknown is never a pass, that is worth deciding rather than working
+  around, and the decision is queued rather than guessed.
+
+- **This engine writes nothing to a tenant and acquires no credential.** It
+  names the command that produces an application registration; it registers
+  nothing itself.
+
+### Not established
+
+- **The licensing usage report has never been requested from a real tenant**,
+  and dependency evidence is collected by nothing. Licensing is published as
+  `partial` for exactly that reason: assignment and report identifiability were
+  observed against a real directory on 2026-08-21, and the other two areas have
+  never run.
+
+- **`customization` has never run against a tenant.** It is published as
+  `none`: offline tests only, which is to say the collector behaves as somebody
+  believed the API behaves.
+
+- **The `conditional-access` slice has not itself been run against a tenant.**
+  The transport underneath it has, against the whole answer matrix; the slice's
+  own path has not. It is published as `provider-only`.
+
+- **`spfx` has never produced a finding from a real catalog.** See the downward
+  correction above.
+
+- **`tenant.how: observed` is claimed by nothing**, and will not be until a
+  collection path for the directory identity is proven on a tenant.
+
+- **Every state above is published in the capability manifest and in
+  `docs/COLLECTOR-LIVE-MATRIX.md`**, per slice, so that none of this has to be
+  remembered.
 
 ## 1.0.0b6
 

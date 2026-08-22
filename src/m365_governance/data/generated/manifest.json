@@ -8,7 +8,7 @@
     "itself opportunistically against whatever engine happened to be on",
     "the machine would be reproducible only on that machine."
   ],
-  "contract_version": "1.0.0b6",
+  "contract_version": "1.0.0b7",
   "generated": [
     "Assessment.g.cs",
     "Collection.g.cs",
@@ -38,6 +38,10 @@
     },
     "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0": {
       "digest": "5c817d7ebb3d8caa12f8360cfd9eca60171b397ee15f14f3152bf83dd80ca772",
+      "path": "schemas/archive/capability-manifest-1.0.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/capability-manifest/1.1.0": {
+      "digest": "8f932eda9569ee114767a558a536f23c1550720d6e94631477dd5f73af54a2f9",
       "path": "schemas/capability-manifest.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
@@ -129,5 +133,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "a08340b4c0793250ea4599b417a4be9a7d49659e8879be35211093049b2b9833"
+  "set_digest": "5bb3cd177c6685d7c6828de6f88e2a732a76dbf1da7a7b2e07115d953b81d1d3"
 }
