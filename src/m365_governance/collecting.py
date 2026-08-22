@@ -114,6 +114,20 @@ class Live(StrEnum):
     FULL = "live-validated"
 
 
+#: Where a comparison against a second authoritative surface stands. The last
+#: three are not interchangeable, and the difference between them is the point:
+#: `none-exists` is a finding about the vendor's surfaces,
+#: `not-observable-with-current-authority` names what is missing, and
+#: `not-yet-established` says nobody has looked yet.
+SECOND_SURFACE_STATES = (
+    "compared",
+    "named-not-run",
+    "none-exists",
+    "not-observable-with-current-authority",
+    "not-yet-established",
+)
+
+
 @dataclass(frozen=True)
 class Slice:
     """One question, and the collector mode that answers it."""
@@ -182,6 +196,33 @@ class Slice:
     #: Anything about this slice's live state that the four words do not carry.
     #: Rendered after the sentence, never instead of it.
     live_note: str = ""
+
+    #: HOW FAR VALIDATION WENT, WHICH IS A DIFFERENT AXIS FROM `live`.
+    #: `live` says what was OBSERVED. These say what was CHECKED about the
+    #: observation, and the two are not the same claim: a real acquisition
+    #: proves the acquisition path and proves nothing about whether the fields
+    #: mean what this engine says they mean. Written as prose once, they were a
+    #: standard nobody could fail; declared here, a slice that claims nothing
+    #: has to say so.
+    #:
+    #: What was done to check the evidence against what the product claims the
+    #: fields mean. Empty is a real answer and the manifest publishes it.
+    representation_checked: str = ""
+
+    #: The second authoritative surface for this slice's central claim, named.
+    #: NOT another client reading the same property: a cmdlet wrapping a REST
+    #: call, a portal rendering a value and a surface documented as FOLLOWING a
+    #: setting are consumers of one authority, and their agreement establishes
+    #: nothing.
+    second_surface: str = ""
+
+    #: Where the comparison stands. `not-yet-established` is the honest default
+    #: and is not the same sentence as `none-exists`.
+    second_surface_state: str = "not-yet-established"
+
+    #: What was found when two surfaces disagreed, and why. A divergence that
+    #: was resolved by preferring the agreeable answer is not investigated.
+    divergence: str = ""
     #: Whether a tenant address, when given, CHANGES WHAT THIS SLICE READS.
     #:
     #: `needs_tenant` says the slice cannot run without one. This says it can
@@ -276,6 +317,17 @@ SLICES = {
         Slice(
             "sites",
             "TenantSites",
+            representation_checked=(
+                "an enumerated read and a direct read of the same sites were "
+                "compared, property by property"
+            ),
+            second_surface="the same sites read individually rather than enumerated",
+            second_surface_state="compared",
+            divergence=(
+                "one site of five disagreed, in the dangerous direction. The "
+                "vendor documents the cause: filtered enumeration does not "
+                "populate that property and returns the enum zero member"
+            ),
             needs_site=False,
             needs_tenant=True,
             profile="capacity",
@@ -296,6 +348,7 @@ SLICES = {
         Slice(
             "owners",
             "SiteOwners",
+            second_surface_state="none-exists",
             needs_site=True,
             needs_tenant=False,
             profile="ownership",
@@ -332,6 +385,8 @@ SLICES = {
         Slice(
             "tenant-sharing",
             "TenantSharing",
+            second_surface="Microsoft Graph GET /admin/sharepoint/settings",
+            second_surface_state="not-observable-with-current-authority",
             needs_site=False,
             needs_tenant=True,
             profile="tenant-sharing",
@@ -346,6 +401,11 @@ SLICES = {
         Slice(
             "activity",
             "Activity",
+            second_surface=(
+                "the site usage report, a separate pipeline published behind "
+                "live activity"
+            ),
+            second_surface_state="named-not-run",
             needs_site=True,
             needs_tenant=True,
             profile="activity",
@@ -493,6 +553,11 @@ SLICES = {
         Slice(
             "licensing",
             "Licensing",
+            representation_checked=(
+                "the setting that claims reports will not name anybody was "
+                "checked against a report, which returned rows and named nobody"
+            ),
+            second_surface_state="none-exists",
             domain="licensing",
             script="licensing/Get-LicensingEvidence.ps1",
             tenant_parameter="-TenantHost",

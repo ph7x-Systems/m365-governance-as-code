@@ -102,6 +102,16 @@ def _capability(
             # where a consumer sees which capabilities that leaves them
             # without.
             "needs_tenant_surface": chosen.needs_tenant,
+            # HOW FAR VALIDATION WENT, published rather than described.
+            # `live_validation_state` says what was observed; this says what
+            # was checked about the observation, and a consumer deciding
+            # whether to rest a decision on this evidence needs both.
+            "validation": {
+                "representation_checked": chosen.representation_checked,
+                "second_surface": chosen.second_surface,
+                "second_surface_state": chosen.second_surface_state,
+                "divergence": chosen.divergence,
+            },
         },
         "produces": {"workload": workload, "resource_type": resource_type},
         "consumed_by": consuming if chosen.produces_findings else [],

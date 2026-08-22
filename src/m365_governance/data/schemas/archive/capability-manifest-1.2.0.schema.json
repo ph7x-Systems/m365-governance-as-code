@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.3.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.2.0",
   "title": "Capability manifest",
   "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand — and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
   "type": "object",
@@ -17,7 +17,7 @@
   "properties": {
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.3.0",
+      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.2.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it."
     },
     "engine_version": {
@@ -125,8 +125,7 @@
         "live_validation_state",
         "needs_tenant_surface",
         "permissions",
-        "reads",
-        "validation"
+        "reads"
       ],
       "properties": {
         "kind": {
@@ -174,41 +173,6 @@
             "full"
           ],
           "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the path that REPORTS A FINDING was never taken — because the surface was absent or empty, or because nothing in that tenant was in the state the rule looks for. The distinction is what was exercised, not what the surface looked like: a catalog of ten solutions with none of them behind its version proves the read and leaves the finding unproved exactly as an empty one does. `provider-only` means the transport underneath has read a real tenant and this slice's own path has not. `full` means the path that produces this evidence, INCLUDING the branch that reports a finding, was observed against a real tenant."
-        },
-        "validation": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": [
-            "representation_checked",
-            "second_surface",
-            "second_surface_state",
-            "divergence"
-          ],
-          "description": "HOW FAR VALIDATION WENT, which is a different axis from `live_validation_state`. That says what was OBSERVED; this says what was CHECKED about the observation. A real acquisition proves the acquisition path and proves nothing about whether the fields mean what this engine says they mean, and a consumer deciding whether to rest a decision on this evidence needs both answers.",
-          "properties": {
-            "representation_checked": {
-              "type": "string",
-              "description": "What was done to check the evidence against what the product claims the fields mean. Reading the same field twice is not a check: a setting that claims an effect is checked against the effect. Empty means nothing was done, and that is published rather than hidden."
-            },
-            "second_surface": {
-              "type": "string",
-              "description": "The second authoritative surface for this collector's central claim, named. NOT another client reading the same property: a cmdlet wrapping a REST call, a portal rendering a value, and a surface documented as FOLLOWING a setting are consumers of one authority, and their agreement establishes nothing."
-            },
-            "second_surface_state": {
-              "enum": [
-                "compared",
-                "named-not-run",
-                "none-exists",
-                "not-observable-with-current-authority",
-                "not-yet-established"
-              ],
-              "description": "Where the comparison stands. The last three are not interchangeable: `none-exists` is a finding about the vendor's surfaces, `not-observable-with-current-authority` names what is missing, and `not-yet-established` says nobody has looked yet."
-            },
-            "divergence": {
-              "type": "string",
-              "description": "What a comparison found when two surfaces disagreed, and why. A divergence settled by preferring whichever source agreed with the product has not been investigated. Empty where nothing diverged."
-            }
-          }
         }
       }
     },

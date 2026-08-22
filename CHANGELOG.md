@@ -296,7 +296,7 @@ digest it was published under, and a test reads it.
   collection path for the directory identity is proven on a tenant.
 
 - **Every state above is published in the capability manifest and in
-  `docs/COLLECTOR-LIVE-MATRIX.md`**, per slice, so that none of this has to be
+  `docs/LIVE-VALIDATION.md`**, per slice, so that none of this has to be
   remembered.
 
 ## 1.0.0b6

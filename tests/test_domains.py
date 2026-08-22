@@ -127,5 +127,5 @@ def test_the_matrix_reaches_a_consumer_through_the_published_command():
         check=True,
     )
     document = json.loads(result.stdout)
-    assert document["$schema"].endswith("/capability-manifest/1.2.0")
+    assert document["$schema"].endswith("/capability-manifest/1.3.0")
     assert len(document["domains"]) == len(domains.DOMAINS)
