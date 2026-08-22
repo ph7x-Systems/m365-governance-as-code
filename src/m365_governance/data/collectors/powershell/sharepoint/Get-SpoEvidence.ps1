@@ -398,8 +398,8 @@ switch ($Mode) {
                 IsCatalog, IsApplicationList, BaseTemplate, Hidden)
         Write-Host "$($lists.Count) lists"
         foreach ($list in $lists) {
-            $file = Join-Path $OutputPath ((Get-SafeName "$($TenantHost)-$($list.Title)") + '.json')
-            Write-Evidence -Path $file -Evidence (New-Evidence `
+            Write-Evidence -Path $OutputPath -Name "$($TenantHost)-$($list.Title)" `
+                -Evidence (New-Evidence `
                     -Resource ([ordered]@{
                         workload = 'sharepoint'; type = 'list'
                         native_id = "$SiteUrl::$($list.Title)"
@@ -562,8 +562,8 @@ switch ($Mode) {
             'this identity cannot see are absent from this run, and their ' +
             'number is not knowable from here.')
         foreach ($tenantSite in $sites) {
-            $file = Join-Path $OutputPath ((Get-SafeName $tenantSite.Url) + '.json')
-            Write-Evidence -Path $file -Evidence (New-Evidence `
+            Write-Evidence -Path $OutputPath -Name $tenantSite.Url `
+                -Evidence (New-Evidence `
                     -Resource ([ordered]@{
                         workload = 'sharepoint'; type = 'site'
                         native_id = [string] $tenantSite.Url

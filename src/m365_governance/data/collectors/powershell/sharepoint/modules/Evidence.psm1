@@ -144,7 +144,21 @@ function New-Evidence {
         [string[]] $Requested,
         [string[]] $Completed,
         $Unavailable,
-        [string] $SourceApi = 'PnP.PowerShell / CSOM'
+        [string] $SourceApi = 'PnP.PowerShell / CSOM',
+        # WHICH MICROSOFT 365 SERVICE THIS DOCUMENT IS ABOUT. It was hardcoded
+        # to SharePoint Online, and the first licensing document said so while
+        # describing a directory read: `source_api` said Microsoft Graph and
+        # `source_system` said SharePoint Online, in the same provenance block,
+        # about the same bytes.
+        #
+        # ONE VALUE FOR A DOCUMENT THAT READ MORE THAN ONE SURFACE IS A REAL
+        # LIMIT OF THIS FIELD. The licensing document reads the directory and
+        # the Microsoft 365 usage reports; calling the whole of it `Microsoft
+        # Entra ID` would be as narrow as calling it SharePoint Online was
+        # wrong. It says `Microsoft 365` until provenance can be carried per
+        # acquisition attempt, which is where the exact surface belongs and
+        # where `acquisition_attempts` already records the operation.
+        [string] $SourceSystem = 'SharePoint Online'
     )
     if (-not $script:CollectorName) {
         throw 'Initialize-Evidence was not called: an envelope has no provenance.'
@@ -160,7 +174,7 @@ function New-Evidence {
             collected_at      = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
             collector         = $script:CollectorName
             collector_version = $script:CollectorVersion
-            source_system     = 'SharePoint Online'
+            source_system     = $SourceSystem
             source_api        = $SourceApi
             # A tenant has one identity and any number of addresses, and the
             # block that says which is built in ONE place. It was built here as
@@ -181,7 +195,27 @@ function New-Evidence {
         coverage       = [ordered]@{
             requested   = $Requested
             completed   = $Completed
-            unavailable = $Unavailable
+            # A KEY WITH NO ENTRY IS NOT AN ABSENT KEY. A collector builds this
+            # table with one branch per area and assigns `$null` to the areas
+            # that completed; PowerShell keeps the key, `ConvertTo-Json` writes
+            # `"usage": null`, and the first consumer to read `unavailable`
+            # crashes on a member of `$null`. That happened on the first live
+            # licensing run: the collection succeeded, the usage report was
+            # read, and `stats` could not open the document it produced.
+            #
+            # Pruned HERE and not in each collector, because every collector
+            # builds this the same way and the contract is the same for all of
+            # them: an area is either unavailable with a reason, or it is not in
+            # this table.
+            unavailable = $(
+                $kept = [ordered]@{}
+                if ($null -ne $Unavailable) {
+                    foreach ($area in $Unavailable.Keys) {
+                        if ($null -ne $Unavailable[$area]) { $kept[$area] = $Unavailable[$area] }
+                    }
+                }
+                $kept
+            )
         }
         resource       = $Resource
         facts          = $Facts
@@ -189,7 +223,16 @@ function New-Evidence {
 }
 
 function Write-Evidence {
-    param($Evidence, [string] $Path)
+    param(
+        $Evidence,
+        # THE DIRECTORY THE EVIDENCE GOES INTO. Always. `collect --output` names
+        # a directory and this is where that promise is kept.
+        [string] $Path,
+        # The document's name, without extension, for a caller that writes many
+        # documents and needs to control which is which. Omitted, the name is
+        # derived from the resource being described.
+        [string] $Name
+    )
 
     # An optional field that could not be read is not written as null. The
     # schema rejects null, and it is right to: "not known" has its own state on
@@ -201,12 +244,33 @@ function Write-Evidence {
             $Evidence.resource.Remove($k)
         }
     }
-    $dir = Split-Path -Parent $Path
-    if ($dir -and -not (Test-Path $dir)) {
-        New-Item -ItemType Directory -Path $dir | Out-Null
+    # `-Path` IS A DIRECTORY. Not sometimes, and never decided by looking at
+    # the string: `collect --output` names a directory, so every layer beneath
+    # it names a directory, and the writer names the document.
+    #
+    # IT USED TO MEAN BOTH. A mode writing many documents joined a file name
+    # onto it; a mode writing one passed it straight through, so `--output
+    # ./evidence/licensing/` produced a FILE called `licensing` and the caller
+    # then failed creating the directory of that name. The collection had
+    # succeeded -- a tenant was read, the evidence was written -- and the run
+    # reported failure because of where the bytes landed. A caller that needs
+    # to choose the name passes `-Name`; nobody infers anything from `.json`.
+    $document = $Name
+    if (-not $document) {
+        $resource = $Evidence.resource
+        foreach ($k in @('url', 'native_id', 'display_name')) {
+            if ($resource.Contains($k) -and -not [string]::IsNullOrWhiteSpace($resource[$k])) {
+                $document = $resource[$k]
+                break
+            }
+        }
+        if (-not $document) { $document = "$($resource['workload'])-$($resource['type'])" }
     }
-    $Evidence | ConvertTo-Json -Depth 14 | Set-Content -Path $Path -Encoding utf8
-    Write-Host "  $Path"
+    if (-not (Test-Path $Path)) { New-Item -ItemType Directory -Path $Path | Out-Null }
+    $file = Join-Path $Path ((Get-SafeName $document) + '.json')
+
+    $Evidence | ConvertTo-Json -Depth 14 | Set-Content -Path $file -Encoding utf8
+    Write-Host "  $file"
 }
 
 function Get-SafeName {

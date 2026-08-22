@@ -181,7 +181,7 @@ if ($absent.Count -gt 0) {
                 dependency = (New-Unavailable -State 'missing' `
                         -Detail 'Dependency evidence is not collected by this run.')
             }) `
-            -SourceApi 'Microsoft Graph v1.0')
+            -SourceApi 'Microsoft Graph v1.0' -SourceSystem 'Microsoft 365')
     exit 0
 }
 
@@ -339,4 +339,4 @@ Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
                         'capability is required for is not observable from an assignment ' +
                         'or from usage.'))
         }) `
-        -SourceApi 'Microsoft Graph v1.0')
+        -SourceApi 'Microsoft Graph v1.0' -SourceSystem 'Microsoft 365')

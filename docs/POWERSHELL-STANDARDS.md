@@ -10,6 +10,36 @@ SharePoint Online collector and the modules it loads.
 
 ---
 
+
+## An array fact is forced to array shape after the whole pipeline
+
+**Any published fact whose contract is an array is wrapped in `@()` around the
+COMPLETE expression, never only around its input.**
+
+PowerShell unwraps a one-element pipeline result. A fact built like this
+
+```powershell
+-Value (@($windows) | ForEach-Object { $_.days } | Sort-Object -Unique)
+```
+
+publishes `7` when one period was read and `[7, 30]` when two were. **The JSON
+type of a published contract changed with how much the collector found**, so a
+consumer parsing it as a number breaks on the second period and one parsing it
+as a list breaks on the first.
+
+```powershell
+-Value @(@($windows) | ForEach-Object { $_.days } | Sort-Object -Unique)
+```
+
+It is checked at three cardinalities, by JSON type rather than by content:
+zero, one and many. Content was never wrong.
+
+**This was found by running against a tenant, not by a fixture.** The fixture
+had the array and was right; the collector had the scalar and was wrong; and
+nothing in the repository had ever compared what a collector emits with the
+document that claims to describe it. A semantically correct fixture is not
+enough on its own.
+
 ## The rule that outranks the rest
 
 > **Collectors observe. Rules decide. PowerShell must not contain governance

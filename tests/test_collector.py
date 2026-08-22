@@ -12,6 +12,7 @@ collector was split into modules. See docs/POWERSHELL-STANDARDS.md.
 
 from __future__ import annotations
 
+import json
 import re
 import shutil
 import subprocess
@@ -640,4 +641,135 @@ def test_no_evidence_family_disappears_from_the_bundle():
         + ", ".join(f"{m} (e.g. {families[m]})" for m in missing)
         + ".\n  Add them to `families` in tools/publish-contracts.py, or record "
         "why they are excluded in `not_evidence` above."
+    )
+
+
+def test_every_packaged_fixture_can_be_read_by_the_tool_that_reads_evidence():
+    """A document this engine produced, opened by this engine.
+
+    THE FIRST LIVE LICENSING RUN PRODUCED A DOCUMENT `stats` COULD NOT OPEN.
+    The collection had succeeded -- a tenant was read, the usage report was
+    returned -- and `coverage.unavailable` carried a `null` for an area that
+    had completed, so the reader raised on a member of `None`. Every test
+    passed, because no test had ever asked a reader to open the fixtures.
+
+    It reads every fixture rather than a chosen one: the defect was in a branch
+    nobody had a fixture for, and the only defence against that is breadth.
+    """
+    from m365_governance import inspect as inspect_module
+
+    fixtures = sorted((DATA / "fixtures").glob("*/*.json"))
+    assert fixtures, "no fixtures found"
+
+    unreadable = []
+    for path in fixtures:
+        document = json.loads(path.read_text(encoding="utf-8"))
+        if "facts" not in document or "coverage" not in document:
+            # Assessments and comparisons are not evidence and `stats` does not
+            # claim to read them.
+            continue
+        try:
+            inspect_module.stats(path)
+        except Exception as raised:  # noqa: BLE001 - the point is that none does
+            unreadable.append(f"{path.name}: {type(raised).__name__}: {raised}")
+
+    assert not unreadable, "evidence this engine cannot read:\n  " + "\n  ".join(
+        unreadable
+    )
+
+
+def test_a_coverage_area_that_completed_is_not_also_reported_as_unavailable():
+    """`unavailable` holds areas with a reason, and nothing else.
+
+    The collector built the table with one branch per area and assigned `$null`
+    to the ones that completed. PowerShell keeps the key, `ConvertTo-Json`
+    writes `"usage": null`, and the document says an area both completed and
+    did not.
+    """
+    for path in sorted((DATA / "fixtures").glob("*/*.json")):
+        document = json.loads(path.read_text(encoding="utf-8"))
+        coverage = document.get("coverage")
+        # The migration contracts carry a `coverage` of their own shape, a list
+        # rather than the evidence envelope's map. This is about the evidence
+        # contract and says nothing about theirs.
+        if not isinstance(coverage, dict):
+            continue
+        unavailable = coverage.get("unavailable") or {}
+        for area, reason in unavailable.items():
+            assert isinstance(reason, dict) and reason.get("state"), (
+                f"{path.name}: coverage.unavailable[{area!r}] carries no reason. "
+                "An area is unavailable with a state and a detail, or it is not "
+                "in this table."
+            )
+            assert area not in coverage.get("completed", []), (
+                f"{path.name}: {area!r} is both completed and unavailable."
+            )
+
+
+#: Facts whose published contract is an array. PowerShell unwraps a one-element
+#: pipeline result, so each of these can change JSON TYPE with the number of
+#: things it found unless the producer forces the shape after the whole
+#: pipeline.
+ARRAY_FACTS = ("usage_window_days", "usage_report_refresh_date", "skus")
+
+
+@pytest.mark.skipif(not shutil.which("pwsh"), reason="PowerShell 7 is not installed")
+def test_an_array_fact_is_an_array_at_zero_one_and_many():
+    """The bug this exists for changed a contract's TYPE with its cardinality.
+
+    `usage_window_days` was built by a pipeline whose input was wrapped and
+    whose result was not, so it published `7` for one period and `[7, 30]` for
+    two. A consumer parsing it as a number breaks on the second period; one
+    parsing it as a list breaks on the first. Nothing caught it: the fixture
+    had the array and no test had ever compared the fixture against what the
+    collector actually emits.
+
+    THE ASSERTION IS ABOUT JSON TYPE, NOT CONTENT. Content was never wrong.
+    """
+    module = COLLECTORS / "powershell" / "licensing" / "modules" / "Licensing.psm1"
+    shared = COLLECTORS / "powershell" / "sharepoint" / "modules" / "Evidence.psm1"
+    script = f"""
+        Import-Module '{shared}' -Force
+        Import-Module '{module}' -Force
+        $out = [ordered]@{{}}
+        foreach ($n in 0, 1, 3) {{
+            $windows = @(0..($n - 1) | ForEach-Object {{
+                [pscustomobject]@{{
+                    report = "svc$_"; window_days = (7 * ($_ + 1))
+                    report_refresh_date = "2026-08-0$($_ + 1)"
+                    rows = 1; rows_naming_a_principal = 0
+                }}
+            }})
+            if ($n -eq 0) {{ $windows = $null }}
+            $facts = Get-LicensingFacts -SubscribedSkus @() -Assignments @() `
+                -ReportSettings $null -UsageWindows $windows -Attempts $null
+            $out["$n"] = $facts.licensing
+        }}
+        $out | ConvertTo-Json -Depth 12
+    """
+    done = subprocess.run(
+        ["pwsh", "-NoProfile", "-Command", script],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 0, done.stderr
+    produced = json.loads(done.stdout)
+
+    wrong = []
+    for cardinality, facts in produced.items():
+        for name in ARRAY_FACTS:
+            node = facts.get(name)
+            if node is None or node.get("state") != "observed":
+                # An absent fact is a different statement and has its own state.
+                continue
+            if not isinstance(node.get("value"), list):
+                wrong.append(
+                    f"{name} at {cardinality} item(s) is "
+                    f"{type(node['value']).__name__}, not a list"
+                )
+
+    assert not wrong, (
+        "a published array changed shape with how much it found:\n  "
+        + "\n  ".join(wrong)
     )

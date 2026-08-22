@@ -41,7 +41,7 @@ to exercise.
 | `spfx` | ✓ | not observed | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **negative path validated** |
 | `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | **none**, by decision | **provider live-validated, slice not live-validated** |
 | `customization` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
-| `licensing` | ✓ | assignment and report identifiability, 2026-08-21 — usage and dependency never requested | Graph modules absent → `not-supported` naming them | not reached | **none**, by decision | **partially live-validated** |
+| `licensing` | ✓ | assignment, report identifiability and one usage report, 2026-08-22 — the report returned rows and named nobody | Graph modules absent → `not-supported` naming them; a concealed report is a positive read, not a refusal | one reporting window | **none**, by decision | **partially live-validated** |
 
 ### What this table answers immediately
 
