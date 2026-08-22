@@ -773,3 +773,78 @@ def test_an_array_fact_is_an_array_at_zero_one_and_many():
         "a published array changed shape with how much it found:\n  "
         + "\n  ".join(wrong)
     )
+
+
+def test_an_absence_carries_a_reason_and_not_a_restatement_of_itself():
+    """`not established` is a conclusion, and a conclusion has a reason.
+
+    The failure this refuses is not a missing field. It is a `detail` that
+    repeats the state in different words -- *unavailable*, *not available*,
+    *no data* -- which passes every structural check and tells a reader
+    nothing about what was tried, what could not be reached, or whose
+    limitation it is.
+
+    IT USES THE MODEL THAT EXISTS. Where a collector records
+    `acquisition_attempts`, every unavailable area must appear there with an
+    owner, because that is where whose-limitation-it-is already lives. Where a
+    collector records none, the reason must at least be a sentence rather than
+    a synonym for the state.
+    """
+    empty = {
+        "unavailable",
+        "not available",
+        "unknown",
+        "n/a",
+        "none",
+        "no data",
+        "not collected",
+        "missing",
+        "not found",
+        "not read",
+    }
+
+    thin, unattributed = [], []
+    for path in sorted((DATA / "fixtures").glob("*/*.json")):
+        document = json.loads(path.read_text(encoding="utf-8"))
+        coverage = document.get("coverage")
+        if not isinstance(coverage, dict):
+            continue
+        unavailable = coverage.get("unavailable") or {}
+        if not unavailable:
+            continue
+
+        attempts = None
+        for node in _fact_nodes(document.get("facts") or {}):
+            if node[0] == "acquisition_attempts" and isinstance(node[1], list):
+                attempts = node[1]
+
+        for area, reason in unavailable.items():
+            detail = (reason.get("detail") or "").strip()
+            if detail.lower().rstrip(".") in empty or len(detail.split()) < 4:
+                thin.append(f"{path.name}: {area} -> {detail!r}")
+            if attempts is not None:
+                named = {a.get("area") for a in attempts if isinstance(a, dict)}
+                if area in named:
+                    owners = {
+                        a.get("owner")
+                        for a in attempts
+                        if isinstance(a, dict) and a.get("area") == area
+                    }
+                    if not any(owners):
+                        unattributed.append(f"{path.name}: {area}")
+
+    assert not thin, "an absence that only restates itself:\n  " + "\n  ".join(thin)
+    assert not unattributed, (
+        "an unavailable area recorded in `acquisition_attempts` with no owner, "
+        "so nobody can tell whose limitation it is:\n  " + "\n  ".join(unattributed)
+    )
+
+
+def _fact_nodes(node, name=""):
+    """Every named node in a facts tree, depth first."""
+    if isinstance(node, dict):
+        if "state" in node and "value" in node:
+            yield name, node.get("value")
+            return
+        for key, value in node.items():
+            yield from _fact_nodes(value, key)

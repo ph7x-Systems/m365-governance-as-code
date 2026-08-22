@@ -332,3 +332,42 @@ def test_the_live_state_is_a_value_and_the_sentence_comes_from_it():
         assert state in allowed
         expected = Live[state.upper().replace("-", "_")]
         assert collector["live_validation"].startswith(str(expected))
+
+
+def test_how_far_validation_went_is_declared_and_not_left_to_prose():
+    """`live_validation_state` says what was observed. It does not say what was
+    checked about the observation, and those are different claims.
+
+    A real acquisition proves the acquisition path and nothing else. A field can
+    arrive from a real tenant and still be summed into a figure that means
+    nothing, or change its JSON type with how much the collector found. Written
+    as prose, that standard was one nobody could fail; declared per slice, a
+    capability that has checked nothing has to publish that it has checked
+    nothing.
+
+    `not-yet-established` is a legitimate answer and is the default. What is
+    refused is silence, and the incoherent pairs below.
+    """
+    from m365_governance.collecting import SECOND_SURFACE_STATES
+
+    for capability in MANIFEST["capabilities"]:
+        validation = capability["collector"]["validation"]
+        state = validation["second_surface_state"]
+        assert state in SECOND_SURFACE_STATES, (
+            f"{capability['name']} publishes a comparison state nobody defined"
+        )
+
+        # A NAMED SURFACE AND A CLAIM THAT NONE EXISTS CANNOT BOTH BE TRUE.
+        if state == "none-exists":
+            assert not validation["second_surface"], (
+                f"{capability['name']} says no second surface exists and names one"
+            )
+        if state in ("compared", "named-not-run"):
+            assert validation["second_surface"], (
+                f"{capability['name']} claims {state} without naming the surface"
+            )
+        # A divergence is what a comparison FOUND. It cannot precede one.
+        if validation["divergence"]:
+            assert state == "compared", (
+                f"{capability['name']} records a divergence without a comparison"
+            )

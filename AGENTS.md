@@ -46,11 +46,39 @@ outside that population.**
 
 Fixtures describe shapes. They are fabricated on purpose, they carry no tenant,
 and no count in one is evidence about anything. What a collector does against a
-real tenant is recorded per slice in `docs/COLLECTOR-LIVE-MATRIX.md` and
-published as a state in the capability manifest, and the states are ordered:
+real tenant is published as a state in the capability manifest, defined in
+`docs/LIVE-VALIDATION.md` and recorded per collector in
+`docs/COLLECTOR-LIVE-MATRIX.md`, and the states are ordered:
 `none`, `negative-only`, `provider-only`, `partial`, `full`. A collector with
 green tests and no live run has been proved to behave as somebody believed the
 API behaves.
+
+**Live-proven does not mean the code successfully called Microsoft 365.** It
+means a real observation crossed the complete product boundary and was
+independently checked against the thing the product claims that observation
+represents. A call that returned two hundred is not a proof; it is a call that
+returned two hundred.
+
+Where a second authoritative surface exists, the observation is compared with
+it, and **a divergence is investigated rather than resolved in favour of
+whichever source agrees with the product**. Two surfaces of one vendor can
+describe one state differently for a documented reason, and preferring the
+agreeable answer is how the dangerous one ships.
+
+### A live observation is not versioned, and a fixture is not an observation
+
+**Tenant-derived evidence never enters version control.** When a live
+observation validates a capability, what is preserved here is a sanitized or
+synthetic reproduction sufficient to protect the behaviour in a test — the
+behaviour, not the run that found it.
+
+**A fixture may reproduce what a tenant did. It may not claim to be that
+tenant's document.** Provenance classes are distinguished explicitly:
+synthetic, sanitized observation, and anything else. A file that blurs them
+teaches a reader to treat invented data as evidence.
+
+Whatever record an operator keeps of their own runs is theirs and does not
+belong in a source tree.
 
 ### A capability is not proven until its canonical artefact crosses the
 integration boundary
@@ -123,6 +151,56 @@ and issues. **Observation proves what happened, not what it means**: a product
 conclusion also needs the contract that defines the meaning. Where evidence
 cannot be obtained, the answer is `not established` — never an inference from
 an observation that could not be made.
+
+### `not established` is a conclusion, not a way of stopping early
+
+**It is valid only after the evidence surfaces relevant to the claim have been
+exhausted to a level appropriate to that claim.** It does not mean the first
+query returned nothing, the connector could not read it, this collector does
+not implement it, the first vendor page did not document it, or nobody knew
+where to look next.
+
+Before recording it, classify what is missing and continue accordingly:
+
+- **A claim about documented behaviour** is settled against current first-party
+  documentation: product, API, PowerShell, published limitations, and the
+  vendor's own change material where relevant. Search further when the official
+  documentation does not answer the question. Third-party material may suggest a
+  hypothesis or an experiment; it never quietly becomes vendor authority.
+- **A claim about tenant state** is settled by measuring the authoritative
+  acquisition surface. Graph, the SharePoint APIs, the administrative APIs, the
+  compliance surfaces, runtime observation and indexed search are **not
+  interchangeable**, and a limitation of one is not evidence that the fact
+  cannot be established from another.
+- **A claim about runtime behaviour** is not settled by documentation, because
+  the claim depends on execution. Build a controlled experiment and observe what
+  the claim actually requires.
+- **A claim about a population** is settled by enumeration. A search result
+  establishes what the query matched, never the contents of the population.
+
+Every unresolved question ends in one of these, and they are not
+interchangeable:
+
+| | |
+|---|---|
+| `established — documented authority` | a first-party source says so |
+| `established — live observation` | it was observed, and the observation crossed the whole boundary |
+| `not established — evidence surfaces exhausted` | looked for properly, and it is not there |
+| `not yet established — next measurement named` | the measurement that would settle it is written down |
+| `not observable with current authority` | the missing authority is named |
+| `not supported by current implementation` | the product gap is named |
+
+### A tool boundary is not an evidence boundary
+
+**If the connector, SDK, cmdlet or collector in front of you cannot answer the
+question, that is a fact about the tool.** Investigate whether another
+authoritative surface can. A tooling limitation is never promoted into a
+statement about Microsoft 365.
+
+This engine already refuses `unknown` as a pass. The rule above exists because
+that refusal has a twin that is just as expensive and much easier to miss:
+
+> **`I did not find it` is not `it is not there`.**
 
 ### Everything written here is in English
 

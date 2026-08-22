@@ -794,3 +794,69 @@ def test_the_storage_rule_shows_the_arithmetic_it_judged_on():
     assert result.outcome is Outcome.FAIL
     for numero in ("24100", "25600", "94"):
         assert numero in result.message, f"the message drops {numero}"
+
+
+def test_no_produced_document_carries_a_score_a_percentage_or_a_grade():
+    """`D5` as a gate rather than as a paragraph.
+
+    An aggregate proposed as a trust score, over complete, partial and unknown
+    observations at once, is the artefact this product exists to replace. It
+    was refused in prose and reviewed by reading, which held until a figure
+    summed quantities that are not commensurable and read as a licence count.
+
+    This does not attempt to recognise a bad aggregate by arithmetic. It refuses
+    the SHAPES an aggregate arrives in: a field whose name promises a single
+    number over unlike things, and a rendered percentage in a document about
+    outcomes. Coverage is reported as the facts it is made of, so a document
+    that needs one of these names has stopped doing that.
+    """
+    import json
+    import re
+
+    from conftest import DATA
+
+    #: Names that promise one number over unlike observations. `partial` and
+    #: `percentage_of` are absent on purpose: a count of things in a state is a
+    #: fact, and this is about the single figure that replaces them.
+    FORBIDDEN = re.compile(
+        r"\b("
+        r"score|scoring|grade|rating|ranked_?score|"
+        r"compliance_(score|percent\w*)|health_(score|percent\w*)|"
+        r"maturity|posture_score|overall_(score|result|health)"
+        r")\b",
+        re.IGNORECASE,
+    )
+    PERCENT = re.compile(r"\b\d{1,3}(\.\d+)?\s?%")
+
+    offenders = []
+    for path in sorted(DATA.glob("**/*.json")):
+        text = path.read_text(encoding="utf-8")
+        document = json.loads(text)
+
+        def walk(node, where="", name=path.name):
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if FORBIDDEN.search(key):
+                        offenders.append(f"{name}: field {where}.{key}")
+                    walk(value, f"{where}.{key}", name)
+            elif isinstance(node, list):
+                for item in node:
+                    walk(item, where, name)
+            elif isinstance(node, str) and PERCENT.search(node):
+                # PROSE IS NOT A PRODUCED VALUE. A percentage inside a quoted
+                # vendor limit is evidence; one inside a schema description is
+                # documentation, and the first thing this caught was the
+                # sentence explaining why percentages are refused.
+                prose = any(
+                    part in where
+                    for part in (".description", ".$comment", "._comment", ".detail")
+                )
+                if not prose and "raw" not in where and "source" not in where:
+                    offenders.append(f"{name}: percentage in {where}")
+
+        walk(document)
+
+    assert not offenders, (
+        "a produced document carries an aggregate this product refuses:\n  "
+        + "\n  ".join(offenders)
+    )
