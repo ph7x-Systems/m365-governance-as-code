@@ -887,3 +887,23 @@ def test_custom_script_is_read_in_the_direction_the_flag_runs(fixture, outcome):
     from conftest import rule
 
     assert evaluate_rule(rule("SPO-SCRIPT-001"), evidence(fixture)).outcome is outcome
+
+
+def test_the_platform_declining_to_answer_is_not_a_finding():
+    """`DenyAddAndCustomizePagesStatus` has three values and the third is
+    `Unknown`.
+
+    Found by provoking the state in a tenant, which is the only way it could
+    have been found: the property is an enum, `[bool]` on any of its values is
+    true, and a site that PERMITTED custom script was collected as denying it.
+    Every hand-written fixture used real booleans and agreed with the code.
+
+    `Unknown` is the platform not committing, and this refuses to commit for it.
+    """
+    from conftest import rule
+
+    result = evaluate_rule(
+        rule("SPO-SCRIPT-001"), evidence("site-customization-script-status-unknown")
+    )
+
+    assert result.outcome is Outcome.UNKNOWN
