@@ -213,6 +213,29 @@ STRATEGY = (
 AMBIGUOUS_AND_ALLOWED = ("customer", "commercial", "sell")
 
 
+def test_the_executor_contract_does_not_travel_with_a_clone():
+    """`AGENTS.md` is written for whoever is driving this repository on one
+    machine, and a clone of a public governance engine is not that person.
+
+    THE CONVENTION EXISTED AND KEPT NOTHING. It was stated in a comment inside
+    another test, as an aside about a file that test did not expect to find,
+    and the file was committed anyway and stayed for nine commits. Anything
+    held only in prose is kept by whoever happens to remember it, which is why
+    this asks git rather than the filesystem: what matters is not whether the
+    file is on this machine — it should be — but whether it is in the tree
+    somebody else receives.
+    """
+    import subprocess  # noqa: PLC0415
+
+    tracked = subprocess.run(
+        ["git", "ls-files"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.split()
+    assert "AGENTS.md" not in tracked, (
+        "AGENTS.md is tracked. It is the executor contract for this machine, "
+        "not part of the software: untrack it with `git rm --cached AGENTS.md`."
+    )
+
+
 def test_the_public_repository_explains_the_software_not_the_strategy():
     """The full documents exist, privately. This repository says what the
     software is and how to use it; the commercial model lives outside it.
@@ -225,9 +248,10 @@ def test_the_public_repository_explains_the_software_not_the_strategy():
     import subprocess  # noqa: PLC0415
 
     # Only what git actually carries. The first version globbed the working
-    # tree and flagged AGENTS.md, which is excluded and never leaves the
-    # machine: a guard that fails on files it does not ship teaches people to
-    # ignore it.
+    # tree and flagged AGENTS.md, which does not leave the machine: a guard
+    # that fails on files it does not ship teaches people to ignore it. That
+    # the file was excluded is now established by the test below rather than
+    # by this aside, which is all that held it for nine commits.
     # EVERYTHING GIT CARRIES, not only the Markdown. The first version scanned
     # `*.md` because that is where a roadmap would obviously go, and a section
     # comment inside a module reached the repository untouched. A schema

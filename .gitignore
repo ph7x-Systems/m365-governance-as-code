@@ -14,3 +14,12 @@ evidence/
 .coverage
 htmlcov/
 .DS_Store
+
+# THE EXECUTOR CONTRACT IS NOT PART OF THE SOFTWARE. AGENTS.md is written for
+# whoever is driving this repository on one machine, and this repository is
+# public: a clone is somebody installing a governance engine, not somebody
+# taking over its execution. The convention had been stated in a test comment
+# and in nothing that could stop a `git add`, and the file was committed anyway
+# and stayed for nine commits. A convention held only in prose is kept by
+# whoever remembers it.
+AGENTS.md
