@@ -75,12 +75,12 @@
           ]
         }
       },
-      "custom_script": {
+      "custom_script_denied": {
         "state": "observed",
-        "value": "True",
+        "value": true,
         "raw": {
           "field": "DenyAddAndCustomizePages",
-          "value": "True"
+          "value": true
         }
       },
       "add_and_customize_pages_held": {

@@ -75,7 +75,7 @@
           ]
         }
       },
-      "custom_script": {
+      "custom_script_denied": {
         "state": "missing",
         "detail": "DenyAddAndCustomizePages is returned by a tenant-scoped read, and this run did not make one for this site. Not read is not the same as not set."
       },

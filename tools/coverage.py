@@ -82,6 +82,12 @@ SUBJECT_VOCABULARY = {
     "SHARE": "Sharing",
     "SITE": "Sites and storage",
     "SPFX": "SPFx",
+    # Custom script: the classic scripting model, and the one control in the
+    # customization family for which Microsoft states a consequence rather than
+    # a preference. A coverage domain because the engine now commits to it end
+    # to end; the rest of that family stays a collected surface with no rule,
+    # for the reason recorded on the slice.
+    "SCRIPT": "Custom script",
     # Subjects, deliberately not coverage domains.
     "AGENTS": "Agents and Copilot",
     "PLATFORM": "Platform and evidence",
@@ -102,6 +108,7 @@ COVERAGE_DOMAINS = (
     "CLASS",
     "LIST",
     "MODERN",
+    "SCRIPT",
     "SHARE",
     "SITE",
     "SPFX",

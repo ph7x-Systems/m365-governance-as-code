@@ -172,7 +172,18 @@ STRATEGY = (
     r"\blicen[cs]e key\b",
     r"\bactivation\b",
     r"\bentitlement\b",
-    r"\btrial\b",
+    # OURS, NOT THE VENDOR'S. This was `\btrial\b` and it flagged
+    # `companySubscription.isTrial`, a Microsoft field a licensing collector
+    # must record, and every quotation of Microsoft's own wording about it.
+    # A guard that fires on the vocabulary of the thing being governed is how a
+    # guard teaches people to skip it, which this file already learnt once when
+    # `$0` flagged every shell script in tools/.
+    #
+    # What is forbidden is pH7x's commercial model, so the patterns say so.
+    r"\btrial (?:period|licen[cs]e|version)\b",
+    r"\b(?:start|begin|extend) (?:a |your )?trial\b",
+    r"\b\d+[- ]day trial\b",
+    r"\bfree trial of\b",
     r"\bupgrade to\b",
     # Asking for money, in any form. This repository is the product: it
     # explains the software, documents how it is licensed today, and asks for
