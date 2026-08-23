@@ -192,7 +192,7 @@ class Slice:
     permissions: tuple[str, ...] = ()
     #: What a run against a real tenant has established, as a value rather
     #: than a sentence. See `Live`.
-    live: Live = Live.NONE
+
     #: Anything about this slice's live state that the four words do not carry.
     #: Rendered after the sentence, never instead of it.
     live_note: str = ""
@@ -288,6 +288,26 @@ class Slice:
         """The collector that runs this slice."""
         return packaged("collectors") / "powershell" / self.script
 
+    @property
+    def live(self) -> Live:
+        """DERIVED FROM PROOF, NEVER DECLARED.
+
+        This was a field, and a field is a sentence somebody wrote. It
+        travelled from beside the collector into the capability manifest, out
+        through the site's generator, and onto a public page as *read from a
+        tenant, end to end* -- with nothing between the sentence and the page
+        checking that a tenant had ever been read.
+
+        It now comes from `data/live-proof.json`. A collector with no proof
+        record is `none` whatever anybody believes about it, and deleting a
+        record lowers the state that rested on it. The public claim is a
+        consequence of the proof, rather than the proof a consequence of the
+        claim.
+        """
+        from m365_governance.live_proof import established_state
+
+        return Live[established_state(self.name).upper()]
+
     def live_sentence(self) -> str:
         """The live state as a person reads it: the state, then any note."""
         return f"{self.live}, {self.live_note}" if self.live_note else str(self.live)
@@ -312,7 +332,6 @@ SLICES = {
             shaped_like="site-agents-with-sources",
             reads=("Get-PnPWeb", "Get-PnPCopilotAgent"),
             permissions=("Sites.Read.All",),
-            live=Live.FULL,
         ),
         Slice(
             "sites",
@@ -343,7 +362,6 @@ SLICES = {
             # reason and the minimum is simply unknown. An invented name is
             # worse than an admitted gap.
             permissions=(),
-            live=Live.FULL,
         ),
         Slice(
             "owners",
@@ -356,7 +374,6 @@ SLICES = {
             shaped_like="site-named-and-group-admins",
             reads=("Get-PnPWeb", "Get-PnPSiteCollectionAdmin"),
             permissions=("Sites.Read.All",),
-            live=Live.FULL,
         ),
         Slice(
             "modernity",
@@ -368,7 +385,6 @@ SLICES = {
             shaped_like="site-modern-publishing-on",
             reads=("Get-PnPWeb", "Get-PnPList", "Get-PnPFeature", "Get-PnPPage"),
             permissions=("Sites.Read.All",),
-            live=Live.FULL,
         ),
         Slice(
             "sharing",
@@ -380,7 +396,6 @@ SLICES = {
             shaped_like="site-sharing-anyone-default-anyone",
             reads=("Get-PnPWeb", "Get-PnPSite", "Get-PnPTenantSite"),
             permissions=(),
-            live=Live.FULL,
         ),
         Slice(
             "tenant-sharing",
@@ -396,7 +411,6 @@ SLICES = {
             shaped_like="tenant-sharing-default-anyone-and-edit",
             reads=("Get-PnPTenant",),
             permissions=(),
-            live=Live.FULL,
         ),
         Slice(
             "activity",
@@ -413,7 +427,6 @@ SLICES = {
             shaped_like="site-activity-stale",
             reads=("Get-PnPWeb", "Get-PnPTenantSite"),
             permissions=(),
-            live=Live.FULL,
         ),
         Slice(
             "classification",
@@ -429,7 +442,6 @@ SLICES = {
             shaped_like="site-class-group-unlabelled",
             reads=("Get-PnPWeb", "Get-PnPSite"),
             permissions=("Sites.Read.All",),
-            live=Live.FULL,
         ),
         Slice(
             "permissions",
@@ -446,7 +458,6 @@ SLICES = {
             also_shaped_like=("list-scopes-within-recommended",),
             reads=("Get-PnPList", "Get-PnPListItem"),
             permissions=("Sites.Read.All",),
-            live=Live.FULL,
         ),
         # SpfxCatalog only. The catalog is one call and feeds SPO-SPFX-001;
         # SpfxPages is a second, expensive mode whose evidence no rule reads
@@ -479,7 +490,6 @@ SLICES = {
             # nothing behind its version leaves the finding exactly as unproved
             # as an empty one does. The description is widened rather than a
             # fifth value added: the value already meant this.
-            live=Live.NEGATIVE_ONLY,
             live_note=(
                 "both scopes observed: a tenant catalog of ten solutions and a "
                 "site catalog of one. No solution in either was behind its "
@@ -542,7 +552,6 @@ SLICES = {
                 "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy",
             ),
             permissions=("Policy.Read.All",),
-            live=Live.PROVIDER_ONLY,
         ),
         Slice(
             "customization",
@@ -581,7 +590,6 @@ SLICES = {
                 "Get-PnPList -Identity SitePages",
             ),
             permissions=("Sites.Read.All",),
-            live=Live.NONE,
         ),
         Slice(
             "licensing",
@@ -624,7 +632,6 @@ SLICES = {
             ),
             # ASSIGNMENT AND REPORT IDENTIFIABILITY WERE OBSERVED AGAINST A REAL
             # DIRECTORY; USAGE AND DEPENDENCY WERE NOT.
-            live=Live.PARTIAL,
             live_note=(
                 "assignment, report identifiability and one usage report were "
                 "observed against a real directory; the report returned rows and "
