@@ -142,3 +142,49 @@ def test_the_two_ways_out_of_rank_five_are_not_the_same_one(surfaces):
     assert "TWO WAYS OUT OF RANK 5" in community["note"]
     assert "never cited for" in community["note"]
     assert any("method to run" in place for place in community["where"])
+
+
+def test_the_contract_names_the_file_that_owns_the_surfaces(surfaces):
+    """A decision is written once by its owner, and this is the seam.
+
+    The surfaces were described in prose in `AGENTS.md` and listed as data
+    here, which is two owners for one fact and the arrangement where a surface
+    is added to one and not the other. The prose now states what the ranking is
+    FOR and points at this file for what is IN it.
+    """
+    from pathlib import Path
+
+    contract = (Path(__file__).resolve().parents[1] / "AGENTS.md").read_text()
+
+    assert "data/evidence-surfaces.json" in contract, (
+        "the contract must name the file that owns the surfaces, or the two "
+        "drift and the prose wins by being the one people read"
+    )
+    assert "THE BOTTOM OF THE RANKING IS NOT ONE PILE" in contract
+
+
+def test_the_contract_states_the_order_the_surfaces_are_asked_in(surfaces):
+    """A list of sources is not a method, and `I searched` still is not one.
+
+    Every named termination state must appear: a piece of work that ends in a
+    sentence outside this set ends in something that reads as a fact to whoever
+    reads it next.
+    """
+    from pathlib import Path
+
+    contract = (Path(__file__).resolve().parents[1] / "AGENTS.md").read_text()
+
+    assert "### The order the surfaces are asked in" in contract
+
+    # The endings are named ONCE, in the table further down, and step 6 points
+    # at it. The first draft of this restated them beside the procedure and
+    # gained a seventh that belongs to a different repository's contract, which
+    # is what restating a list always eventually does.
+    endings = [
+        line for line in contract.splitlines() if line.startswith("| `established")
+        or line.startswith("| `not established") or line.startswith("| `not yet")
+        or line.startswith("| `not observable") or line.startswith("| `not supported")
+    ]
+
+    assert len(endings) == 6, f"expected the six named endings, found {len(endings)}"
+    assert "are not restated here" in contract
