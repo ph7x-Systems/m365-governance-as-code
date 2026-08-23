@@ -923,3 +923,56 @@ def test_the_two_axes_do_not_derive_from_each_other(monkeypatch):
 
     assert lp.established_state("customization") == "negative_only"
     assert lp.proof_state("customization") == "vertical-path-proven"
+
+
+def test_the_terminal_never_reports_a_state_the_stages_do_not_support():
+    """A PRESENTATION LAYER MAY EXPLAIN A CONTRACT VALUE AND NEVER WIDEN IT.
+
+    This programme has already made this mistake once, in the other direction:
+    a site rendered `full` as "read from a tenant, end to end", a sentence
+    wider than the value ever meant. The terminal was making it too. Every
+    capability printed `live   live-validated` -- one word, which reads as
+    proved against a tenant -- while the manifest beside it carried five
+    stages of which three were usually `not-attempted`.
+
+    So the human-readable output now prints the ladder state and the stage
+    strip together, and this pins the property that matters: a capability
+    whose acquisition was never attempted cannot appear anywhere in that line
+    as having been proven.
+    """
+    from m365_governance import capabilities
+
+    document = capabilities.manifest()
+    text = capabilities.describe(document)
+
+    for capability in document["capabilities"]:
+        proof = capability["collector"]["proof"]
+        if proof["state"] != "not-live-tested":
+            continue
+        lines = text.splitlines()
+        start = lines.index(f"  {capability['name']}")
+        block = "\n".join(lines[start : start + 7])
+        assert "not-live-tested" in block, (
+            f"{capability['name']} has not been run against a directory and "
+            "its line does not say so"
+        )
+        assert proof["stages"]["acquisition"] != "proven"
+
+
+def test_the_zero_is_printed_and_is_not_something_a_reader_has_to_derive():
+    """`vertical-path-proven` counts the capabilities proved along the whole
+    path. A product whose own tooling reported coverage without reporting that
+    number would be doing the thing it exists to replace."""
+    from m365_governance import capabilities
+
+    text = capabilities.describe(capabilities.manifest())
+
+    assert "Proof ladder" in text
+    assert "vertical-path-proven" in text
+    ladder = text.split("Proof ladder", 1)[1]
+    # The rung with nothing on it is printed WITH its zero rather than
+    # omitted. An absent line reads as an absent question.
+    assert any(
+        line.strip().startswith("vertical-path-proven") and line.strip().endswith("0")
+        for line in ladder.splitlines()
+    )

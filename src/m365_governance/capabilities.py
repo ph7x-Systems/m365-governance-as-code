@@ -568,9 +568,88 @@ def describe(document: dict[str, Any]) -> str:
             f"    reads      {', '.join(collector['reads']) or 'not-established'}",
             f"    needs      {', '.join(collector['permissions'])}",
             f"    live       {collector['live_validation']}",
+            # THE LADDER, WHERE A PERSON READS IT.
+            #
+            # The manifest has carried five stages per capability for a while
+            # and this line said `live-validated`, which is one word and reads
+            # as PROVED AGAINST A TENANT. What it means is that a read
+            # happened; whether a bundle was produced from that evidence, and
+            # whether anything ever opened one, are separate stages and were
+            # mostly `not-attempted`.
+            #
+            # That is the same defect this programme already recorded once,
+            # when a site rendered `full` as "read from a tenant, end to end".
+            # A presentation layer may explain a contract value and never
+            # widen it, and a terminal is a presentation layer.
+            f"    proof      {_ladder(collector['proof'])}",
             f"    rules      {', '.join(rules) if rules else capability['consumer']}",
         ]
     out += ["", f"Contracts  {len(document['contracts'])}"]
     out += [f"  {contract}" for contract in document["contracts"]]
     out += ["", f"Rules      {len(document['rules'])}"]
+    out += ["", *_ladder_summary(document)]
     return "\n".join(out) + "\n"
+
+
+#: One character per stage state. Deliberately not colour: a terminal without
+#: it, a log, a screenshot and a paste into an issue all have to carry the same
+#: meaning, so colour may reinforce it and never create it.
+STAGE = {
+    "proven": "+",
+    "refused": "x",
+    "attempted": "~",
+    "not-attempted": ".",
+    "not-applicable": "-",
+}
+
+#: The order the stages are walked, which is the order they depend on. A bundle
+#: cannot be proven before the evidence it holds.
+ORDER = ("acquisition", "evidence", "assessment", "bundle", "consumer")
+
+
+def _ladder(proof: dict[str, Any]) -> str:
+    """One capability's position, as the state and the stages that produced it.
+
+    The strip is five characters and a legend sits under the list, because a
+    reader who has to remember what the fourth column was is a reader who will
+    read it as whichever answer they expected.
+    """
+    stages = proof.get("stages") or {}
+    strip = "".join(STAGE.get(stages.get(name, "not-attempted"), "?") for name in ORDER)
+    return f"{proof.get('state', 'not-established')}  [{strip}]"
+
+
+def _ladder_summary(document: dict[str, Any]) -> list[str]:
+    """Where the whole engine stands, with the number that matters first.
+
+    THE ZERO GOES AT THE TOP AND IS NOT ROUNDED AWAY. `vertical-path-proven`
+    counts the capabilities proved along the whole path -- acquired from a
+    directory, written as evidence, decided on, bundled, and opened by
+    something that was not this engine. A product whose own tooling reported
+    coverage without reporting that number would be doing the thing it exists
+    to replace.
+    """
+    counts: dict[str, int] = {}
+    for capability in document["capabilities"]:
+        state = capability["collector"]["proof"].get("state", "not-established")
+        counts[state] = counts.get(state, 0) + 1
+
+    rungs = (
+        "vertical-path-proven",
+        "positive-acquisition-observed",
+        "acquisition-attempted",
+        "not-live-tested",
+    )
+    lines = [
+        "Proof ladder",
+        f"  stages     {' '.join(ORDER)}",
+        "  legend     "
+        + "  ".join(f"{mark} {name}" for name, mark in STAGE.items()),
+        "",
+    ]
+    for rung in rungs:
+        lines.append(f"  {rung:32} {counts.get(rung, 0):3}")
+    for state, count in sorted(counts.items()):
+        if state not in rungs:
+            lines.append(f"  {state:32} {count:3}")
+    return lines

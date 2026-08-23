@@ -594,7 +594,9 @@ SLICES = {
             reads=(
                 "GET /v1.0/policies/authorizationPolicy",
                 "GET /v1.0/roleManagement/directory/roleAssignments"
-                " ($filter on the Global Administrator template, $expand principal)",
+                " ($filter on the Global Administrator template, $select only)",
+                "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled"
+                " (once per principal, so that no display name is ever received)",
             ),
             permissions=("Policy.Read.All", "RoleManagement.Read.Directory"),
             # WHAT THE READ CANNOT SEE, said where a reader meets the slice
