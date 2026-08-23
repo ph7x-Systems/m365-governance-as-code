@@ -146,6 +146,33 @@ def write(
     return root
 
 
+def digest_of(root: Path, *, excluding: tuple[str, ...] = ()) -> str:
+    """One digest over a whole bundle, paths included.
+
+    WHY A BUNDLE NEEDS AN IDENTITY AT ALL. `bundle: proven` says an artefact
+    was produced and says nothing about WHICH, so the stage above it -- a
+    consumer opening one -- can never demonstrate it opened the same thing.
+    Two true sentences that cannot be shown to be about one artefact establish
+    nothing together.
+
+    OVER THE PATHS AS WELL AS THE BYTES. A digest of concatenated contents is
+    identical for a bundle whose files were renamed, and a consumer proving it
+    opened `runs/a` when the artefact now calls it `runs/b` has proved nothing
+    about what anybody holds.
+    """
+    parts = []
+    for path in sorted(Path(root).rglob("*")):
+        # A FILE THAT CARRIES THE DIGEST CANNOT BE INSIDE IT. The reference
+        # bundle's description holds its own digest, so digesting it would be
+        # asking for a fixed point. Named by the caller rather than guessed
+        # here: a bundler that decided which of its own files did not count
+        # would be deciding what the artefact is.
+        if path.is_file() and path.name not in excluding:
+            parts.append(str(path.relative_to(root)).replace("\\", "/"))
+            parts.append(hashlib.sha256(path.read_bytes()).hexdigest())
+    return "sha256:" + hashlib.sha256("\n".join(parts).encode()).hexdigest()
+
+
 def _collector(document: dict) -> str:
     """The collector's name, for a filename that says where a document came from."""
     provenance = document.get("provenance") or {}

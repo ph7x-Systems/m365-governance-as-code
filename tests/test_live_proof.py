@@ -462,11 +462,23 @@ def test_a_run_raises_only_the_stage_it_can_attribute():
         _FakeOutcome(), collector="customization", acquisition_method="pnp-powershell"
     )
 
-    raised = live_proof.upgrade_after_a_run(draft, evaluated=True, bundled=True)
+    raised = live_proof.upgrade_after_a_run(
+        draft, evaluated=True, bundled=True, artifact_digest="sha256:aaaa"
+    )
 
     assert raised["stages"]["assessment"] == "attempted"
     assert raised["stages"]["bundle"] == "proven"
+    assert raised["bundle_digest"] == "sha256:aaaa"
     assert raised["stages"]["consumer"] == "not-attempted"
+
+    # AND BUNDLING WITHOUT BEING ABLE TO SAY WHAT WAS BUNDLED RAISES NOTHING.
+    # `bundle: proven` with no identity leaves the stage above it unable ever
+    # to show it is about the same artefact, so the honest record is that
+    # something happened and nothing about it can be pointed at.
+    anonymous = live_proof.upgrade_after_a_run(draft, evaluated=True, bundled=True)
+
+    assert anonymous["stages"]["bundle"] == "not-attempted"
+    assert not anonymous.get("bundle_digest")
 
 
 def test_a_capability_with_no_rules_records_no_assessment_to_attempt():
@@ -686,7 +698,7 @@ def test_a_stage_that_does_not_exist_is_walked_through_and_never_treated_as_a_ga
             "observed_at": "2026-08-24",
             "artifact_digest": "sha256:aaaa",
         },
-        artifact_digest="sha256:aaaa",
+        bundle_digest="sha256:aaaa",
     )
 
     assert live_proof.incoherent("tenant-governance") == []
@@ -739,7 +751,7 @@ def _claiming(monkeypatch, consumer_proof, *, produced="sha256:aaaa", **stages):
         "collector": "customization",
         "provenance": live_proof.EMITTED,
         "establishes": "full",
-        "artifact_digest": produced,
+        "bundle_digest": produced,
         "stages": {
             "acquisition": "proven",
             "evidence": "proven",

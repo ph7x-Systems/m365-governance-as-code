@@ -382,6 +382,16 @@ def incoherent(collector: str) -> list[str]:
                 f"a stage that stands on one that was never reached."
             )
 
+    for record in records(collector):
+        if (record.get("stages") or {}).get("bundle") != "proven":
+            continue
+        if not record.get("bundle_digest"):
+            broken.append(
+                f"{collector}: `bundle` is recorded as proven and the record "
+                "does not say which bundle was produced. A stage above it can "
+                "never be shown to be about the same one."
+            )
+
     broken.extend(_consumer_problems(collector))
     return broken
 
@@ -433,7 +443,12 @@ def _consumer_problems(collector: str) -> list[str]:
             )
 
         opened = proof.get("artifact_digest")
-        produced = record.get("artifact_digest")
+        # AGAINST THE BUNDLE, NEVER AGAINST THE EVIDENCE. This compared with
+        # `artifact_digest`, which is the collected evidence: a consumer
+        # opening a bundle would have been asked to match the digest of
+        # something it never sees. The defect surfaced the first time the rule
+        # was pointed at a real record.
+        produced = record.get("bundle_digest")
         if opened and produced and opened != produced:
             problems.append(
                 f"{collector}: the consumer opened `{opened}` and the bundle "
@@ -443,8 +458,8 @@ def _consumer_problems(collector: str) -> list[str]:
         elif opened and not produced:
             problems.append(
                 f"{collector}: `consumer_proof` names an artefact and the "
-                "record does not say which artefact its bundle stage "
-                "produced, so the two cannot be shown to be the same one."
+                "record does not say which bundle its bundle stage produced, "
+                "so the two cannot be shown to be the same one."
             )
     return problems
 
@@ -476,7 +491,13 @@ def SLICE_FEEDS_RULES(collector: str) -> bool:
     return bool(chosen and chosen.produces_findings)
 
 
-def upgrade_after_a_run(draft: dict, *, evaluated: bool, bundled: bool) -> dict:
+def upgrade_after_a_run(
+    draft: dict,
+    *,
+    evaluated: bool,
+    bundled: bool,
+    artifact_digest: str = "",
+) -> dict:
     """What `run` may add to a `collect` record, from what it can attribute.
 
     `assessment` reaches `attempted` and never `proven`. A rule decides about a
@@ -493,6 +514,25 @@ def upgrade_after_a_run(draft: dict, *, evaluated: bool, bundled: bool) -> dict:
     stages = dict(draft.get("stages") or {})
     if evaluated and stages.get("assessment") == "not-attempted":
         stages["assessment"] = "attempted"
-    if bundled:
+
+    raised = {**draft, "stages": stages}
+    # `bundle: proven` SAYS AN ARTEFACT WAS PRODUCED AND NOT WHICH ONE, and
+    # a stage above it -- somebody opening a bundle -- can then never be
+    # shown to be about the same artefact. Two true sentences that cannot
+    # be tied to one object establish nothing together.
+    #
+    # So the stage is raised only WITH the identity. A run that bundled and
+    # could not say what it bundled leaves the stage unattempted, which is
+    # the honest record: something happened and nothing about it can be
+    # pointed at.
+    if bundled and artifact_digest:
         stages["bundle"] = "proven"
-    return {**draft, "stages": stages}
+        # `bundle_digest` AND NOT `artifact_digest`, WHICH IS A DIFFERENT
+        # ARTEFACT. A record's `artifact_digest` is the collected EVIDENCE --
+        # the register says so: it "proves CONTINUITY with the artefact
+        # observed at that moment", and it is deleted under the tenant-data
+        # rule. The bundle is what an assessment was written into and what a
+        # consumer opens. Putting both in one field would say a consumer
+        # opened the evidence, which nothing has ever done.
+        raised["bundle_digest"] = artifact_digest
+    return raised

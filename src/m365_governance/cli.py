@@ -1193,12 +1193,12 @@ def _cmd_run(args) -> int:
     # Without this the record a run leaves cannot reach the top of the ladder
     # by any route except somebody editing the field the ladder derives from,
     # which is the arrangement the proof registry exists to end.
-    _raise_the_proof_drafts(args.output, runs, bundled=bool(args.bundle))
+    _raise_the_proof_drafts(args.output, runs, bundle=args.bundle)
 
     return _exit_for(runs, args.fail_on)
 
 
-def _raise_the_proof_drafts(output: Path, runs: list[Run], *, bundled: bool) -> None:
+def _raise_the_proof_drafts(output, runs, *, bundle) -> None:
     """Upgrade each slice's draft with what this run can ATTRIBUTE to it.
 
     Two of the five stages are attributable here and one is not, and the
@@ -1228,11 +1228,25 @@ def _raise_the_proof_drafts(output: Path, runs: list[Run], *, bundled: bool) -> 
     from m365_governance import live_proof
 
     evaluated = bool(runs)
+
+    # THE IDENTITY OF WHAT WAS BUNDLED, COMPUTED FROM WHAT WAS BUNDLED.
+    #
+    # `bundle: proven` used to be raised from a boolean -- did this run write a
+    # bundle -- which says an artefact exists and never which one, so nothing
+    # above it could ever be shown to be about the same artefact. The digest is
+    # taken from the directory this run actually produced.
+    digest = ""
+    if bundle is not None:
+        try:
+            digest = bundling.digest_of(bundle)
+        except OSError:
+            digest = ""
+
     for draft_path in sorted(output.glob("*/**/live-proof-draft.json")):
         try:
             draft = json.loads(draft_path.read_text(encoding="utf-8"))
             raised = live_proof.upgrade_after_a_run(
-                draft, evaluated=evaluated, bundled=bundled
+                draft, evaluated=evaluated, bundled=bool(bundle), artifact_digest=digest
             )
             draft_path.write_text(
                 json.dumps(raised, indent=2, ensure_ascii=False) + "\n",

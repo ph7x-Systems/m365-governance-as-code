@@ -25,7 +25,6 @@ rather than read from a clock, and a test regenerates it and compares.
 from __future__ import annotations
 
 import argparse
-import hashlib
 import json
 import pathlib
 import shutil
@@ -34,8 +33,14 @@ import tempfile
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent / "src"))
 
-from m365_governance import __version__, bundling, canonical, engine, loader  # noqa: E402
-from m365_governance import registry, resources  # noqa: E402
+from m365_governance import (  # noqa: E402  # noqa: E402
+    __version__,
+    bundling,
+    engine,
+    loader,
+    registry,
+    resources,
+)
 from m365_governance.results import RunSet  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -78,19 +83,14 @@ def build(destination: pathlib.Path) -> dict:
 
 
 def digest_of(root: pathlib.Path) -> str:
-    """One digest over the whole tree, paths included.
+    """The bundle's identity, computed by the bundler that produces bundles.
 
-    OVER THE PATHS AS WELL AS THE BYTES. A digest of concatenated file contents
-    is the same for a bundle whose files were renamed, and a consumer proving
-    it opened `runs/a` when the artefact now calls it `runs/b` has proved
-    nothing about the artefact anybody holds.
+    NOT A SECOND IMPLEMENTATION. This had its own, and two digest functions
+    with slightly different rules give two answers for one artefact -- which
+    is the whole failure a digest exists to prevent, arriving through the
+    digest itself.
     """
-    parts = []
-    for path in sorted(root.rglob("*")):
-        if path.is_file() and path.name != "reference.json":
-            parts.append(str(path.relative_to(root)).replace("\\", "/"))
-            parts.append(hashlib.sha256(path.read_bytes()).hexdigest())
-    return "sha256:" + hashlib.sha256("\n".join(parts).encode()).hexdigest()
+    return bundling.digest_of(root, excluding=("reference.json",))
 
 
 def describe(root: pathlib.Path, built: dict) -> dict:
