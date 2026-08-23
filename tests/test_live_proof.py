@@ -247,3 +247,135 @@ def test_a_run_does_not_write_its_own_verdict():
 
     assert draft["establishes"] is None
     assert live_proof.established_state("customization") == "none"
+
+
+def test_a_collection_writes_its_draft_beside_the_evidence(tmp_path, monkeypatch):
+    """The step nobody has to remember, because it was forgotten once.
+
+    A real directory corrected the `customization` collector and no record of
+    that run exists. `docs/COLLECTOR-LIVE-MATRIX.md` still reads `not observed`
+    for it, and the state cannot be raised on the strength of a source comment
+    about a run nobody wrote down. That is the whole argument for emitting the
+    draft from the run rather than asking a person to.
+
+    Nothing here reaches a directory: the collection is stubbed at the boundary
+    and the assertion is about what the run leaves on disk afterwards.
+    """
+    from m365_governance import collecting
+
+    written = collecting._write_proof_draft(
+        _FakeOutcome(), name="customization", output=tmp_path
+    )
+
+    assert written is not None and written.exists()
+    draft = json.loads(written.read_text())
+
+    assert draft["collector"] == "customization"
+    assert draft["acquisition_method"] == "pnp-powershell"
+    assert draft["establishes"] is None, (
+        "a run does not write its own verdict; the steps between a successful "
+        "acquisition and a proved interpretation are in LIVE-VALIDATION.md"
+    )
+    assert not FORBIDDEN.search(written.read_text())
+
+
+def test_the_draft_does_not_land_inside_the_package(tmp_path):
+    """It goes where the evidence went, which is the operator's machine.
+
+    A draft written into `data/live-proof.json` would be a run editing the
+    registry that governs it. The registry is changed by a person, on purpose,
+    after reading the draft.
+    """
+    from m365_governance import collecting
+
+    written = collecting._write_proof_draft(
+        _FakeOutcome(), name="customization", output=tmp_path
+    )
+
+    assert tmp_path in written.parents
+    assert "m365_governance" not in str(written)
+
+
+# ---------------------------------------------------------------------------
+# the stages, and the sentence they exist to make impossible
+# ---------------------------------------------------------------------------
+
+
+def test_a_stage_nobody_wrote_about_is_not_attempted(registry):
+    """`bundle` and `consumer` are `not-attempted` on every migrated record.
+
+    The matrix those records were transcribed from does not mention either
+    one: no bundle produced from tenant evidence, no independent consumer
+    opening it. That is not a gap to fill in from memory, and the temptation to
+    round it up is precisely what this whole registry exists to refuse.
+    """
+    unwritten = {"bundle", "consumer"}
+    claimed = {
+        r["collector"]: {
+            stage: state
+            for stage, state in r["stages"].items()
+            if stage in unwritten and state != "not-attempted"
+        }
+        for r in registry["records"]
+        if r["provenance"] == live_proof.MIGRATED
+    }
+    offenders = {name: found for name, found in claimed.items() if found}
+
+    assert not offenders, (
+        f"migrated records claiming a stage the matrix never recorded: {offenders}"
+    )
+
+
+def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
+    """THE UNCOMFORTABLE ONE, and it is the point of the exercise.
+
+    Nine collectors carry `full`, which in the published contract means *a real
+    read produced real evidence*. It has never meant more. A presentation layer
+    rendered that as READ FROM A TENANT, END TO END -- a wider sentence than
+    the value supports, written by a layer that may explain a contract value
+    and never widen it.
+
+    With the stages separated, the honest count of capabilities proved along
+    the whole vertical is zero, because nobody recorded a bundle produced from
+    tenant evidence or a consumer opening one. This test pins that so the
+    number cannot drift upward without records behind it, and it is expected to
+    fail the day a real run proves one -- at which point the number moves
+    because the record moved it.
+    """
+    grouped = live_proof.population()
+
+    assert grouped["vertical-path-proven"] == [], (
+        "a capability reached the top of the ladder; if a run proved it, this "
+        "test is what tells the next person to check the record rather than "
+        "the claim"
+    )
+    assert grouped["not-live-tested"] == ["customization"]
+    assert set(grouped["acquisition-attempted"]) == {"conditional-access", "spfx"}
+
+
+def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment():
+    """`not-applicable` is a stage not existing, not a stage skipped.
+
+    `agents` and `licensing` feed no rule by a recorded decision, so demanding
+    an assessment of them would put the top of the ladder out of reach for a
+    capability that is complete. The distinction is in the data rather than in
+    a special case in the code.
+    """
+    for name in ("agents", "licensing"):
+        assert live_proof.stages(name)["assessment"] == "not-applicable"
+
+    # And the reverse: a collector that DOES feed a rule may not reach the top
+    # by leaving its assessment unattempted.
+    assert live_proof.stages("sites")["assessment"] == "not-attempted"
+    assert live_proof.proof_state("sites") == "positive-acquisition-observed"
+
+
+def test_a_refusal_proves_the_failure_path_and_never_the_acquisition():
+    """`spfx` was refused with a 403, which is a real observation.
+
+    Collapsing it into `not-attempted` would discard it; promoting it to an
+    acquisition would claim a read that never happened. It is its own state,
+    and it leaves the capability on the second rung rather than the third.
+    """
+    assert live_proof.stages("spfx")["acquisition"] == "refused"
+    assert live_proof.proof_state("spfx") == "acquisition-attempted"

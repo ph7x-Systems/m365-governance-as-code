@@ -52,6 +52,7 @@
     "https://ph7x.com/schemas/m365-governance/run/2.0.0": "6207e2886d5d99493ab1104a3a367758d30fa991988eec02d3e43cb6ea699d16",
     "https://ph7x.com/schemas/m365-governance/run/3.0.0": "7077816571e249ebf66bafa9ea7952c718fc4ed6dc0cfaf90e7dfd17da229ef1",
     "https://ph7x.com/schemas/m365-governance/run/4.0.0": "0b2a08c3c277a72da51deb1be253c017d0d2baaa5d25a2ad8b6485f82f2ffe59",
-    "https://ph7x.com/schemas/m365-governance/run/4.1.0": "929c9724b1fcfdd3b3082c3e9f1f7260b2956ea5c6ce16c88906cbccc82697d7"
+    "https://ph7x.com/schemas/m365-governance/run/4.1.0": "929c9724b1fcfdd3b3082c3e9f1f7260b2956ea5c6ce16c88906cbccc82697d7",
+    "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0": "ee7165f11b46c461a31142145ec6ef7237d419fc85a85466f6d17a1ea4a92bd3"
   }
 }

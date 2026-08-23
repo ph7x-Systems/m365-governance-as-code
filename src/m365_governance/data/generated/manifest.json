@@ -50,6 +50,10 @@
     },
     "https://ph7x.com/schemas/m365-governance/capability-manifest/1.3.0": {
       "digest": "ddb56df1893d3a25b5554136732014a05e1a08ea73140bbe5a7870e20d55160a",
+      "path": "schemas/archive/capability-manifest-1.3.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0": {
+      "digest": "ee7165f11b46c461a31142145ec6ef7237d419fc85a85466f6d17a1ea4a92bd3",
       "path": "schemas/capability-manifest.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
@@ -141,5 +145,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "85015df0c81865bd42acc12c4c7b1edd0061b780e5fcf2c6b235a78164fc8776"
+  "set_digest": "2e56fdd68b1e91cad05f4f5b1a33ef8671f2b8d8487ade6448df16440a6f6101"
 }

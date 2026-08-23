@@ -48,6 +48,49 @@ PROVENANCES = (MIGRATED, EMITTED)
 #: them.
 ESTABLISHES = ("negative_only", "provider_only", "partial", "full")
 
+#: THE FIVE THINGS A RUN CAN PROVE, and they are not one thing.
+#:
+#: `full` in the published contract means "a real read produced real evidence".
+#: It never claimed the rest, and a presentation layer rendered it as READ FROM
+#: A TENANT, END TO END -- which is a wider sentence than the value supports,
+#: made by a layer that may explain a contract value and never redefine it.
+#:
+#: Naming the stages separately is what makes that inflation impossible to
+#: repeat: a consumer asking "was this proved end to end" now has a field to
+#: read instead of a word to interpret.
+STAGES = (
+    # The Microsoft surface was actually read.
+    "acquisition",
+    # The document this collector promises was produced from that read.
+    "evidence",
+    # Rules actually consumed that evidence and decided something.
+    "assessment",
+    # The canonical artefact was produced from it.
+    "bundle",
+    # An independent consumer opened that artefact.
+    "consumer",
+)
+
+#: What a stage may be, and the two that are not failures.
+#:
+#: `refused` is a typed refusal: a 403, a `not-supported`. It proves the FAILURE
+#: path and never the positive one, and collapsing it into `not-attempted`
+#: would throw away a real observation.
+#:
+#: `not-applicable` is the stage not existing for this capability. A collector
+#: that feeds no rule has no assessment to prove, and demanding one would make
+#: `vertical path proven` unreachable for a capability that is complete.
+STAGE_STATES = ("proven", "refused", "attempted", "not-attempted", "not-applicable")
+
+#: The ladder a capability climbs, weakest first. DERIVED FROM THE STAGES, so
+#: it cannot say more than the stages under it.
+LADDER = (
+    "not-live-tested",
+    "acquisition-attempted",
+    "positive-acquisition-observed",
+    "vertical-path-proven",
+)
+
 
 @lru_cache(maxsize=1)
 def _registry() -> dict:
@@ -115,3 +158,68 @@ def draft_from_run(outcome, *, collector: str, acquisition_method: str) -> dict:
         "establishes": None,
         "provenance": EMITTED,
     }
+
+
+def stages(collector: str) -> dict[str, str]:
+    """Every stage for one collector, as the strongest thing any record proves.
+
+    A stage nobody wrote about is `not-attempted`. THE ABSENCE OF A RECORD IS
+    THE ANSWER: `bundle` and `consumer` are `not-attempted` for every migrated
+    record because the matrix those records came from does not mention either,
+    and a stage cannot be raised because it probably happened.
+    """
+    found = {stage: "not-attempted" for stage in STAGES}
+    for record in records(collector):
+        for stage, state in (record.get("stages") or {}).items():
+            if stage not in STAGES or state not in STAGE_STATES:
+                continue
+            if _PICK.index(state) < _PICK.index(found[stage]):
+                found[stage] = state
+    return found
+
+
+#: WHICH VALUE WINS WHEN RECORDS DISAGREE, and it is not the vocabulary order.
+#:
+#: `not-applicable` is not a weak stage. It is a statement that the stage does
+#: not exist for this capability, and it has to beat the `not-attempted` this
+#: function starts from -- otherwise the default silently overrides what a
+#: record actually says, which is how `agents` and `licensing` came back
+#: claiming an assessment was merely unattempted when the record said there is
+#: no assessment to attempt.
+_PICK = ("proven", "refused", "attempted", "not-applicable", "not-attempted")
+
+
+def proof_state(collector: str) -> str:
+    """Where this capability stands, derived from its stages and nothing else.
+
+    `vertical-path-proven` requires every APPLICABLE stage proven, so a
+    capability that feeds no rule reaches it without pretending an assessment
+    happened, and a capability that feeds one does not reach it by skipping.
+    """
+    if not records(collector):
+        return "not-live-tested"
+
+    by_stage = stages(collector)
+    if by_stage["acquisition"] != "proven":
+        # A refusal, a provider-only read, or an attempt that produced nothing
+        # positive. Real, recorded, and not an acquisition.
+        return "acquisition-attempted"
+
+    applicable = [state for state in by_stage.values() if state != "not-applicable"]
+    if all(state == "proven" for state in applicable):
+        return "vertical-path-proven"
+    return "positive-acquisition-observed"
+
+
+def population() -> dict[str, list[str]]:
+    """Every capability, grouped by where it stands. The site renders this.
+
+    Returned as the collectors themselves rather than as counts, because a
+    figure whose members cannot be listed is a figure nobody can check.
+    """
+    from m365_governance.collecting import SLICES
+
+    grouped: dict[str, list[str]] = {rung: [] for rung in LADDER}
+    for name in sorted(SLICES):
+        grouped[proof_state(name)].append(name)
+    return grouped
