@@ -49,3 +49,25 @@ judgement.
 These are the fraction of **domains** a surface reaches, not a claim
 about how good the coverage is inside one. A domain with a single
 Knowledge article counts the same as one with six.
+
+## Proof debt
+
+**Collectors that publish a conclusion the live path has not proved.**
+Authority ahead of proof: each of these will tell somebody their tenant
+is or is not a certain way, on behalf of a path no real directory has
+fully exercised.
+
+| Collector | Live state | What is still unproved |
+|---|---|---|
+| `customization` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
+| `spfx` | `negative_only` | the branch that reports something. Only the empty or absent surface was seen |
+| `conditional-access` | `provider_only` | this slice's own path. The transport underneath it read a tenant; the slice did not |
+
+**This queue takes precedence over opening a capability.** Not because
+it is more valuable, but because it is a debt already incurred: the
+conclusion is being published now, and every additional collector adds
+a second thing to prove before the first was proved once.
+
+There is no score here and there will not be one. The states order the
+rows; where two share a state, the tie is broken by whatever the facts
+do not settle, and that part is judgement and is named as such.

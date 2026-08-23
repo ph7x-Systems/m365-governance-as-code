@@ -496,7 +496,92 @@ def as_markdown(matrix: dict) -> str:
         "Knowledge article counts the same as one with six.",
         "",
     ]
+    lines += _proof_debt()
     return "\n".join(lines)
+
+
+def _proof_debt():
+    """The collectors that publish conclusions no real tenant has confirmed.
+
+    THIS IS THE ONE ORDERING IN THIS DOCUMENT THAT IS NOT A JUDGEMENT. A
+    collector that produces findings while its live state is below `full` has
+    authority running ahead of proof: it will tell somebody their tenant is or
+    is not a certain way, on behalf of a path no directory has ever exercised.
+    A collector that produces no findings and has never run live is incomplete;
+    this is different, and worse, and the difference is that one of them is
+    already speaking.
+
+    The states are an ORDER and not numbers. `none` is further from `full` than
+    `partial` is, and nothing here claims to know by how much: there is no
+    arithmetic on them, no total, and no score. The queue is printed in the
+    order the states are declared in and the reader compares rows, which is all
+    an ordinal scale permits.
+    """
+    from m365_governance.collecting import SLICES, Live
+
+    order = list(Live)
+    debt = sorted(
+        (
+            name
+            for name, s in SLICES.items()
+            if s.produces_findings and s.live is not Live.FULL
+        ),
+        key=lambda name: (order.index(SLICES[name].live), name),
+    )
+
+    out = ["## Proof debt", ""]
+    if not debt:
+        out += [
+            "**None.** Every collector that publishes a conclusion has had the",
+            "path that produces it observed against a real tenant.",
+            "",
+        ]
+        return out
+
+    out += [
+        "**Collectors that publish a conclusion the live path has not proved.**",
+        "Authority ahead of proof: each of these will tell somebody their tenant",
+        "is or is not a certain way, on behalf of a path no real directory has",
+        "fully exercised.",
+        "",
+        "| Collector | Live state | What is still unproved |",
+        "|---|---|---|",
+    ]
+    says = {
+        Live.NONE: (
+            "everything. Offline tests only, so the collector behaves as "
+            "somebody believed the API behaves"
+        ),
+        Live.NEGATIVE_ONLY: (
+            "the branch that reports something. Only the empty or absent "
+            "surface was seen"
+        ),
+        Live.PROVIDER_ONLY: (
+            "this slice's own path. The transport underneath it read a "
+            "tenant; the slice did not"
+        ),
+        Live.PARTIAL: (
+            "the areas that never ran. Some of this slice's areas were "
+            "observed and others have not been"
+        ),
+    }
+    for name in debt:
+        state = SLICES[name].live
+        out.append(f"| `{name}` | `{state.name.lower()}` | {says[state]} |")
+
+    out += [
+        "",
+        "**This queue takes precedence over opening a capability.** Not because",
+        "it is more valuable, but because it is a debt already incurred: the",
+        "conclusion is being published now, and every additional collector adds",
+        "a second thing to prove before the first was proved once.",
+        "",
+        "There is no score here and there will not be one. The states order the",
+        "rows; where two share a state, the tie is broken by whatever the facts",
+        "do not settle, and that part is judgement and is named as such.",
+        "",
+    ]
+    return out
 
 
 def main() -> int:
