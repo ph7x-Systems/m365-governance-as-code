@@ -39,9 +39,38 @@ to exercise.
 | `agents` | ✓ | 0 agents, 2026-08-10 | — | n.a. | **none**, by decision | **live-validated** |
 | `tenant-sharing` | ✓ | 3 properties, 2026-08-08 | — | n.a. | `SPO-SHARE-003`, `SPO-SHARE-004` | **live-validated** |
 | `spfx` | ✓ | not observed | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **negative path validated** |
-| `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | **none**, by decision | **provider live-validated, slice not live-validated** |
-| `customization` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
+| `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | `CA-STATE-001` | **provider live-validated, slice not live-validated** |
+| `customization` | ✓ | not observed | not observed | n.a. | `SPO-SCRIPT-001` | **not live-validated** |
 | `licensing` | ✓ | assignment, report identifiability and one usage report, 2026-08-22 — the report returned rows and named nobody | Graph modules absent → `not-supported` naming them; a concealed report is a positive read, not a refusal | one reporting window | **none**, by decision | **partially live-validated** |
+
+### One row is under investigation, and it is recorded rather than resolved
+
+`customization` reads `not observed` in both live columns, and the collector
+that fills it carries a comment saying the opposite: the `DenyAddAndCustomizePages`
+enum defect was **found by provoking the state in a tenant**, and the specific
+thing it describes — a site that PERMITS custom script collected as denying it,
+while every hand-written fixture used real booleans and agreed with the code —
+is not derivable offline. Both cannot be true.
+
+The row stays `not live-validated`, and this is not indecision. `Live` is
+defined as an observation that crossed the complete product boundary and was
+**recorded** here; a claim written in a source comment is evidence of intent
+and is not the record. What can be established today is narrower than either
+sentence: a run happened, nothing recorded what it covered, and no state can be
+raised on the strength of a comment about it.
+
+**What settles it is the run, not the adjudication.** The experiment is named:
+execute `customization` against the development tenant, record what each of its
+areas returned, and set the state from that. Until then the queue in
+`PRODUCT-STATE.md` is correct to list this collector first, and it would be
+correct for a second reason if the comment is right — a live run that leaves no
+record is a proof this repository cannot spend.
+
+**The gap that allowed it is closed.** Nothing read this document until
+`tests/test_live_matrix.py` existed, so a row could disagree with the manifest
+indefinitely. It now cannot: the status column is checked against the state the
+capability manifest publishes, and a collector feeding a rule can no longer
+claim it feeds none.
 
 ### What this table answers immediately
 

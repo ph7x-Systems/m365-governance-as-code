@@ -12,14 +12,14 @@ to point at it.
 
 | Domain | Rules | Collector | Profiles | Fixtures | Tests | Knowledge | Guide | Analysis | Compass | Complete |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Activity** (`ACTIVITY`) | 1 | 3 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
-| **Classification** (`CLASS`) | 4 | 2 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
-| **Custom script** (`SCRIPT`) | 1 | 2 | 1 | 3 | 1 | — | — | — | — | **no** |
-| **Modernity** (`MODERN`) | 3 | 3 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
-| **Permissions** (`LIST`) | 3 | 4 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
-| **SPFx** (`SPFX`) | 1 | 3 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
-| **Sharing** (`SHARE`) | 5 | 4 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
-| **Sites and storage** (`SITE`) | 3 | 5 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
+| **Activity** (`ACTIVITY`) | 1 | 4 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
+| **Classification** (`CLASS`) | 4 | 3 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
+| **Custom script** (`SCRIPT`) | 1 | 3 | 1 | 3 | 1 | 1 | — | — | — | **no** |
+| **Modernity** (`MODERN`) | 3 | 4 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
+| **Permissions** (`LIST`) | 3 | 5 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
+| **SPFx** (`SPFX`) | 1 | 4 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
+| **Sharing** (`SHARE`) | 5 | 5 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
+| **Sites and storage** (`SITE`) | 3 | 6 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
 
 **21 rules across 8 domains.** 4 complete, 4 not.
 
@@ -31,7 +31,7 @@ names, and this is the check that makes it arithmetic rather than
 judgement.
 
 - **Activity** — missing compass
-- **Custom script** — missing knowledge, guide, compass
+- **Custom script** — missing guide, compass
 - **Modernity** — missing compass
 - **SPFx** — missing compass
 
@@ -41,7 +41,7 @@ judgement.
 - **Collectors** 100%
 - **Fixtures** 100%
 - **Tests** 100%
-- **Knowledge** 88%
+- **Knowledge** 100%
 - **Guide** 88%
 - **Analysis** 12%
 - **Compass** 50%
@@ -49,3 +49,25 @@ judgement.
 These are the fraction of **domains** a surface reaches, not a claim
 about how good the coverage is inside one. A domain with a single
 Knowledge article counts the same as one with six.
+
+## Proof debt
+
+**Collectors that publish a conclusion the live path has not proved.**
+Authority ahead of proof: each of these will tell somebody their tenant
+is or is not a certain way, on behalf of a path no real directory has
+fully exercised.
+
+| Collector | Live state | What is still unproved |
+|---|---|---|
+| `customization` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
+| `spfx` | `negative_only` | the branch that reports something. Only the empty or absent surface was seen |
+| `conditional-access` | `provider_only` | this slice's own path. The transport underneath it read a tenant; the slice did not |
+
+**This queue takes precedence over opening a capability.** Not because
+it is more valuable, but because it is a debt already incurred: the
+conclusion is being published now, and every additional collector adds
+a second thing to prove before the first was proved once.
+
+There is no score here and there will not be one. The states order the
+rows; where two share a state, the tie is broken by whatever the facts
+do not settle, and that part is judgement and is named as such.

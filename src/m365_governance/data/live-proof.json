@@ -1,0 +1,240 @@
+{
+  "_readme": "THE PROOF REGISTRY. A collector's live state is DERIVED from these records and is no longer declared beside the collector. Without a record a collector is `none`, whatever anybody believes about it.\n\nThe direction is the whole point: a real execution produces a record, the record is validated, and the state follows. Never a state written first and a record produced to agree with it.\n\nNO TENANT DATA REACHES THIS FILE. No hostname, no tenant identifier, no user principal name, no resource name, and no evidence content. A population is a count or a shape, never a list.",
+  "_on_the_digest": "`artifact_digest` proves CONTINUITY with the artefact observed at that moment. It does not permit revalidating an artefact that no longer exists, and every record here carries `artifact_disposition` saying so plainly. A digest whose artefact was deleted under the tenant-data rule is a fingerprint of something nobody can produce again, and claiming more for it would be the same overreach this registry exists to remove.",
+  "_on_migration": "`migrated-from-the-collector-live-matrix` records transcribe what was recorded contemporaneously in docs/COLLECTOR-LIVE-MATRIX.md on the dates they carry. They are not fabricated and they are not as strong as a record an execution emitted: the artefact digests are gone, and several fields were never captured. THE SET IS CLOSED. No new record may carry this provenance, so the only way to raise a state from here on is to run.",
+  "records": [
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "sites",
+      "establishes": "full",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "pnp-powershell",
+      "population": "11 documents",
+      "coverage": "the slice's own path, positive and negative",
+      "result": "partial on the positive read; failed under a reduced identity holding AllSites.Read",
+      "limitations": [
+        "no pagination was exercised: the population was 11 items"
+      ]
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "owners",
+      "establishes": "full",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "pnp-powershell",
+      "population": "1 document",
+      "coverage": "the slice's own path",
+      "result": "completed",
+      "limitations": [
+        "one document is a population of one, and proves the path rather than the range"
+      ]
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "modernity",
+      "establishes": "full",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "pnp-powershell",
+      "population": "pages and web",
+      "coverage": "the slice's own path",
+      "result": "completed",
+      "limitations": [
+        "no pagination surface exists here"
+      ]
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "classification",
+      "establishes": "full",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "pnp-powershell",
+      "population": "not recorded beyond the outcome counts",
+      "coverage": "the slice's own path",
+      "result": "completed",
+      "limitations": [
+        "no pagination surface exists here"
+      ]
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "sharing",
+      "establishes": "full",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "pnp-powershell",
+      "population": "not recorded beyond the outcome counts",
+      "coverage": "the slice's own path",
+      "result": "completed",
+      "limitations": []
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "activity",
+      "establishes": "full",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "pnp-powershell",
+      "population": "not recorded beyond the outcome counts",
+      "coverage": "the slice's own path",
+      "result": "completed",
+      "limitations": []
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "permissions",
+      "establishes": "full",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "pnp-powershell",
+      "population": "17 documents",
+      "coverage": "the slice's own path",
+      "result": "completed",
+      "limitations": []
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "agents",
+      "establishes": "full",
+      "observed_at": "2026-08-10",
+      "acquisition_method": "pnp-powershell",
+      "population": "0 agents",
+      "coverage": "the slice's own path",
+      "result": "completed, and the surface was empty",
+      "limitations": [
+        "an empty surface proves the read and not the branch that reports a population"
+      ]
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "tenant-sharing",
+      "establishes": "full",
+      "observed_at": "2026-08-08",
+      "acquisition_method": "pnp-powershell",
+      "population": "3 properties",
+      "coverage": "the slice's own path",
+      "result": "completed",
+      "limitations": []
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration with a reduced permission set",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "spfx",
+      "establishes": "negative_only",
+      "observed_at": "2026-08-08",
+      "acquisition_method": "pnp-powershell",
+      "population": "none: the read was refused",
+      "coverage": "the refusal path only",
+      "result": "403 Forbidden, a typed refusal",
+      "limitations": [
+        "the branch that reports a component has never run against a directory"
+      ]
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "conditional-access",
+      "establishes": "provider_only",
+      "observed_at": "2026-08-17",
+      "acquisition_method": "microsoft-graph",
+      "population": "10 policies, 1 named location, the security defaults state",
+      "coverage": "the transport underneath the slice; the slice's own path did not run",
+      "result": "read by the provider; a reduced identity without Policy.Read.All returned 403",
+      "limitations": [
+        "no rule existed at the time, and the slice's own path is still unproved"
+      ]
+    },
+    {
+      "artifact_digest": null,
+      "artifact_disposition": "deleted-under-the-tenant-data-rule",
+      "provenance": "migrated-from-the-collector-live-matrix",
+      "identity_kind": "application registration, certificate credential",
+      "contract_versions": {
+        "evidence": "not recorded at the time"
+      },
+      "engine_version": "not recorded at the time",
+      "collector": "licensing",
+      "establishes": "partial",
+      "observed_at": "2026-08-22",
+      "acquisition_method": "microsoft-graph",
+      "population": "assignment, report identifiability, and one usage report",
+      "coverage": "two of the four areas this slice covers",
+      "result": "the report returned rows and named nobody, which is a positive read of a concealed report",
+      "limitations": [
+        "two of four areas have never run",
+        "the artefact digest is unrecoverable: the evidence was deleted when the vertical closed, correctly under the tenant-data rule and incorrectly under D69, and this record exists because of that loss"
+      ]
+    }
+  ]
+}

@@ -907,3 +907,58 @@ def test_the_platform_declining_to_answer_is_not_a_finding():
     )
 
     assert result.outcome is Outcome.UNKNOWN
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-conditional-access-report-only", Outcome.FAIL),
+        ("entra-conditional-access-mfa-for-admins", Outcome.PASS),
+    ],
+)
+def test_a_policy_in_report_only_mode_is_read_as_enforcing_nothing(fixture, outcome):
+    """`CA-STATE-001`, the first rule this engine carries outside SharePoint.
+
+    THE FAMILY HAD NO RULES FOR TWO REASONS AT ONCE, and only one of them was
+    a decision. The recorded one still stands: Microsoft publishes no normative
+    conclusion about which Conditional Access policies an organisation should
+    have, so this engine will not invent a threshold and call a tenant short of
+    it. The unrecorded one was a defect. The collector published each policy as
+    a single fact holding the entire Graph object, so an evidence path could
+    address the fact and never a field inside it: `..._policies.state` resolved
+    to the word `observed`, which is the FACT's state, and the policy's own
+    state was unreachable. A rule written before that was fixed would have
+    evaluated `unknown` against every tenant that ever ran it.
+
+    What the rule asserts is not what the tenant ought to have. It is whether
+    what the tenant HAS is doing anything, in Microsoft's own words: a policy
+    in report-only mode is evaluated at every sign-in and enforces neither
+    grant controls nor session controls. An organisation reading its own portal
+    sees the policy listed, and listed is not enforcing.
+
+    Both branches are asserted here because a rule proved on one branch is a
+    rule nobody proved decides anything.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("CA-STATE-001"), evidence(fixture)).outcome is outcome
+
+
+def test_a_policy_that_is_not_report_only_is_not_thereby_enforcing():
+    """The pass this rule issues is narrow, and the rule says so itself.
+
+    `enabled` means the policy is not in report-only mode. It does not mean the
+    policy grants or blocks anything: a policy scoped to no user, or carrying
+    no control, is `enabled` and enforces exactly as much as a report-only one.
+    That is written into the rule as `passes_without_resolving` rather than
+    left for a reader to discover, because a pass whose limits are unpublished
+    is the second authority this product exists to remove.
+    """
+    from conftest import rule
+
+    passing = rule("CA-STATE-001")
+
+    assert (passing.get("limitations") or {}).get("passes_without_resolving"), (
+        "CA-STATE-001 must publish what its pass does not establish; a policy "
+        "that is merely not report-only may still enforce nothing"
+    )

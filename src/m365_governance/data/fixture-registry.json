@@ -49,6 +49,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/entra/entra-conditional-access-report-only.json",
+      "origin": "synthetic",
+      "purpose": "a policy in report-only mode, which is the only state that reaches CA-STATE-001's fail path: it is evaluated at every sign-in and enforces nothing",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/entra/entra-conditional-access-permission-denied.json",
       "origin": "synthetic",
       "purpose": "an area the identity was not permitted to read, so that a denial can be told apart from a tenant with no Conditional Access",

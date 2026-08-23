@@ -165,8 +165,23 @@ def _observation(
     flattened or dropped: a field this engine does not understand today is a
     field a rule may need tomorrow, and a collector that removed it would have
     answered a narrower question than the one it was asked.
+
+    AND THAT PRINCIPLE HAD A CONSEQUENCE NOBODY NAMED: NO RULE COULD READ IT.
+    An evidence path addresses `family.fact` and reads that fact's value, so
+    `conditional_access_policies.state` resolved to the FACT's state -- the
+    word `observed` -- and never to the policy's. The family collected against
+    a real directory for weeks and carried zero rules, and the reason was not
+    that nobody had written one. It was that nobody could.
+
+    So the object stays whole and the fields a rule needs are published BESIDE
+    it, each naming the property it came from. Two ways to read the same
+    observation, and neither is a second copy: one is the vendor's bytes, the
+    other is this engine saying which of them it is prepared to answer about.
     """
     native = str(item.get("id") or "").strip() or f"{area}-without-an-id"
+    facts: dict[str, Any] = {_key(area): {"state": "observed", "value": item}}
+    facts.update(_addressable(area, item))
+
     return _document(
         reader,
         host,
@@ -175,8 +190,52 @@ def _observation(
         resource_type=TYPES[area],
         native_id=native,
         display_name=str(item.get("displayName") or native),
-        facts={_key(area): {"state": "observed", "value": item}},
+        facts=facts,
     )
+
+
+#: What a rule may address, per area, as `fact name -> the property it reads`.
+#:
+#: DELIBERATELY SHORT. A field arrives here when a rule needs it, so that the
+#: list is a record of what this engine will answer about rather than a second
+#: copy of the Graph shape drifting beside the first.
+ADDRESSABLE: dict[str, dict[str, str]] = {
+    "conditional-access-policies": {
+        "policy_state": "state",
+        "policy_name": "displayName",
+    },
+    "named-locations": {
+        "location_name": "displayName",
+        "is_trusted": "isTrusted",
+    },
+}
+
+
+def _addressable(area: str, item: dict[str, Any]) -> dict[str, Any]:
+    """The fields of one object, as facts a rule can name.
+
+    A PROPERTY THAT IS NOT THERE IS ABSENT, NOT FALSE. `isTrusted` is absent on
+    a country location and present on an IP one, and a collector that wrote
+    `false` for the first would have answered a question Microsoft did not.
+    """
+    out: dict[str, Any] = {}
+    for name, prop in ADDRESSABLE.get(area, {}).items():
+        if prop in item:
+            out[name] = {
+                "state": "observed",
+                "value": item[prop],
+                "raw": {"field": prop, "value": item[prop]},
+            }
+        else:
+            out[name] = {
+                "state": "missing",
+                "detail": (
+                    f"`{prop}` was not present on the object Microsoft returned. "
+                    f"Absent is not false: the property is not published for "
+                    f"every kind of {TYPES[area]}."
+                ),
+            }
+    return out
 
 
 def _refusal(

@@ -52,7 +52,7 @@
       "value": {
         "id": "aaaaaaaa-0000-4000-8000-000000000001",
         "displayName": "Require multifactor authentication for administrators",
-        "state": "enabled",
+        "state": "enabledForReportingButNotEnforced",
         "conditions": {
           "users": {
             "includeRoles": [
@@ -96,10 +96,10 @@
     },
     "policy_state": {
       "state": "observed",
-      "value": "enabled",
+      "value": "enabledForReportingButNotEnforced",
       "raw": {
         "field": "state",
-        "value": "enabled"
+        "value": "enabledForReportingButNotEnforced"
       }
     },
     "policy_name": {
