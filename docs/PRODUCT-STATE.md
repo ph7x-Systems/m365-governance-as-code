@@ -14,7 +14,7 @@ to point at it.
 |---|---|---|---|---|---|---|---|---|---|---|
 | **Activity** (`ACTIVITY`) | 1 | 4 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
 | **Classification** (`CLASS`) | 4 | 3 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
-| **Custom script** (`SCRIPT`) | 1 | 3 | 1 | 3 | 1 | — | — | — | — | **no** |
+| **Custom script** (`SCRIPT`) | 1 | 3 | 1 | 3 | 1 | 1 | — | — | — | **no** |
 | **Modernity** (`MODERN`) | 3 | 4 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
 | **Permissions** (`LIST`) | 3 | 5 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
 | **SPFx** (`SPFX`) | 1 | 4 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
@@ -31,7 +31,7 @@ names, and this is the check that makes it arithmetic rather than
 judgement.
 
 - **Activity** — missing compass
-- **Custom script** — missing knowledge, guide, compass
+- **Custom script** — missing guide, compass
 - **Modernity** — missing compass
 - **SPFx** — missing compass
 
@@ -41,7 +41,7 @@ judgement.
 - **Collectors** 100%
 - **Fixtures** 100%
 - **Tests** 100%
-- **Knowledge** 88%
+- **Knowledge** 100%
 - **Guide** 88%
 - **Analysis** 12%
 - **Compass** 50%

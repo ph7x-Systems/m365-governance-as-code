@@ -201,9 +201,10 @@
         "site-customization-surfaces-observed"
       ],
       "guide": [],
-      "knowledge": [],
+      "knowledge": [
+        "001"
+      ],
       "missing": [
-        "knowledge",
         "guide",
         "compass"
       ],
