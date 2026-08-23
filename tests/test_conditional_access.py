@@ -155,7 +155,7 @@ def test_a_policy_is_carried_whole_and_nothing_is_reshaped():
         for d in collected.documents
         if d["resource"]["type"] == "conditional-access-policy"
     )
-    assert policy["facts"]["conditional_access_policies"]["value"] == POLICY
+    assert policy["facts"]["conditional_access_policies"]["policy"]["value"] == POLICY
 
 
 def test_the_authentication_strength_arrives_without_a_fourth_request():
@@ -175,9 +175,8 @@ def test_the_authentication_strength_arrives_without_a_fourth_request():
         for d in collected.documents
         if d["resource"]["type"] == "conditional-access-policy"
     )
-    strength = policy["facts"]["conditional_access_policies"]["value"]["grantControls"][
-        "authenticationStrength"
-    ]
+    raw = policy["facts"]["conditional_access_policies"]["policy"]["value"]
+    strength = raw["grantControls"]["authenticationStrength"]
     assert strength["requirementsSatisfied"] == "mfa"
 
 
@@ -190,9 +189,8 @@ def test_unresolved_directory_ids_are_left_exactly_as_they_arrived():
         for d in collected.documents
         if d["resource"]["type"] == "conditional-access-policy"
     )
-    users = policy["facts"]["conditional_access_policies"]["value"]["conditions"][
-        "users"
-    ]
+    raw = policy["facts"]["conditional_access_policies"]["policy"]["value"]
+    users = raw["conditions"]["users"]
     assert users["includeRoles"] == ["62e90394-69f5-4237-9190-012177145e10"]
     assert "displayName" not in json.dumps(users)
 
@@ -208,9 +206,8 @@ def test_an_unknown_future_value_survives_without_becoming_a_pass():
         for d in collected.documents
         if d["resource"]["type"] == "conditional-access-policy"
     )
-    assert document["facts"]["conditional_access_policies"]["value"]["state"] == (
-        "unknownFutureValue"
-    )
+    raw = document["facts"]["conditional_access_policies"]["policy"]["value"]
+    assert raw["state"] == "unknownFutureValue"
 
 
 def test_every_document_declares_the_evidence_contract_and_validates():
@@ -333,10 +330,17 @@ def test_every_document_carries_the_coverage_of_the_whole_run():
 
     for document in collected.documents:
         coverage = document["coverage"]
-        assert coverage["requested"] == conditional_access.REQUESTED
-        assert "named-locations" not in coverage["completed"]
+        # THE DOCUMENT NAMES AREAS THE WAY ITS FACTS DO. `REQUESTED` holds
+        # area ids as the API names them; a document's coverage holds the fact
+        # keys a rule addresses, and the join is `_key`. They were the same
+        # list with two spellings, so anything asking which area a conclusion
+        # came from matched nothing.
+        assert coverage["requested"] == [
+            conditional_access._key(area) for area in conditional_access.REQUESTED
+        ]
+        assert "named_locations" not in coverage["completed"]
         assert (
-            coverage["unavailable"]["named-locations"]["state"] == "permission-denied"
+            coverage["unavailable"]["named_locations"]["state"] == "permission-denied"
         )
 
 
@@ -350,7 +354,7 @@ def test_the_run_writes_a_manifest_that_reports_the_denied_area(tmp_path):
 
     assert outcome.state is State.PARTIAL
     manifest = json.loads(outcome.manifest_path.read_text(encoding="utf-8"))
-    assert manifest["coverage"]["unavailable"]["named-locations"]["state"] == (
+    assert manifest["coverage"]["unavailable"]["named_locations"]["state"] == (
         "permission-denied"
     )
     assert manifest["slice"]["name"] == conditional_access.NAME

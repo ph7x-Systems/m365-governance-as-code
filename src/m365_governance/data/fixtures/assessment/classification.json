@@ -22,6 +22,26 @@
         "expected": null,
         "detail": "1 resource is stored. The total number the identity was expected to reach was not recorded, so this run does not establish complete coverage."
       },
+      "services": [
+        {
+          "service": "sharepoint",
+          "state": "observed",
+          "conclusions": 4,
+          "unresolved": 0,
+          "areas": [
+            {
+              "area": "classification",
+              "state": "observed",
+              "conclusions": 4,
+              "unresolved": 0,
+              "acquisition": [
+                "spo-collector"
+              ],
+              "population": 1
+            }
+          ]
+        }
+      ],
       "runs": [
         {
           "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
@@ -469,17 +489,17 @@
           "collected"
         ]
       },
-      "assessment_id": "aba16cdccb12185567d68fb1b3288fa94a1c39a6d8d631bb7b602cec1ec77da1"
+      "assessment_id": "8411735f24f9567b33f488253b84c3e1b09ffc92d3a8e89038f52e85976aeedb"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "3b621bcb13e5c8b4262a0bbc202c32cb417a6798699d9bf9ae2e04685b9244bb",
+        "run_set": "fdac47dcefddb0496cf144cfec8b37c41ac5542498d61474b50832ede68b222a",
         "evidence": "b8674199e754c1a7907064ed00e8e7af0b7856a6dabcf433d0b15b7b1f779433",
         "versions": "fc0860d67b23c575f10c0463e0638e1f821c0330180d60fc8435a12c8eaefb89",
         "manifest": "3ba617f03785ab93b8ca2ea38b1f3f6bb3f5537e70ba39d838025276d69b1f0c"
       },
-      "canonical_hash": "aba16cdccb12185567d68fb1b3288fa94a1c39a6d8d631bb7b602cec1ec77da1"
+      "canonical_hash": "8411735f24f9567b33f488253b84c3e1b09ffc92d3a8e89038f52e85976aeedb"
     }
   }
 }

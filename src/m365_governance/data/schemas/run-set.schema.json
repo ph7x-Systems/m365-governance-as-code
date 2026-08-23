@@ -7,12 +7,13 @@
   "additionalProperties": false,
   "required": [
     "$schema",
-    "resources",
     "by_class",
-    "set_aside",
     "counts",
+    "resources",
     "run_coverage",
-    "runs"
+    "runs",
+    "services",
+    "set_aside"
   ],
   "properties": {
     "resources": {
@@ -51,6 +52,96 @@
       "type": "string",
       "const": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
+    },
+    "services": {
+      "type": "array",
+      "description": "WHAT WAS OBSERVED, BY SERVICE AND BY AREA, so a consumer opens a result and sees which parts of Microsoft 365 were looked at before it sees a rule identifier. A reader was shown findings grouped by whatever the interface chose, which describes this engine's internals rather than their tenant.\n\nPUBLISHED RATHER THAN LEFT TO BE COMPUTED. A consumer deriving this would be a second authority on what a service is and what an area is, and the first thing it would disagree about is a service that collected evidence and reached no conclusion.\n\nNO PERCENTAGE IS DERIVABLE FROM THIS AND NONE IS INTENDED. `conclusions` is a count of conclusions, never a numerator: the denominator would be the number of questions somebody could have asked, which nobody knows, and `D5` forbids the aggregate that would produce.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "areas",
+          "conclusions",
+          "service",
+          "state",
+          "unresolved"
+        ],
+        "properties": {
+          "service": {
+            "type": "string",
+            "description": "The workload the evidence names, never a label chosen here."
+          },
+          "state": {
+            "enum": [
+              "not-observed",
+              "refused",
+              "partial",
+              "observed"
+            ],
+            "description": "THE WEAKEST AREA THIS SERVICE HAS. Reporting the strongest would be the aggregate this product refuses, in the place a reader looks first: a service that read four things and could not read one is not observed."
+          },
+          "conclusions": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Results that decided something, counted in the area they were decided FROM. A rule reading two areas counts in both, because picking one would be tidiness asserted as fact."
+          },
+          "unresolved": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Results that are `unknown` or `invalid-evidence`. Kept apart from conclusions because a rule that could not decide is not a rule that decided nothing is wrong."
+          },
+          "areas": {
+            "type": "array",
+            "description": "What the collector declared it requested, and how far each reading got.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "acquisition",
+                "area",
+                "conclusions",
+                "population",
+                "state",
+                "unresolved"
+              ],
+              "properties": {
+                "area": {
+                  "type": "string"
+                },
+                "state": {
+                  "enum": [
+                    "not-observed",
+                    "refused",
+                    "partial",
+                    "observed"
+                  ],
+                  "description": "`not-observed` is a reading nobody made; `refused` is one the tenant or this product declined; `partial` is one that returned some of what it covers. Three states that look alike on a screen and are not the same, and a product collapsing them describes a collector that never ran exactly as one that ran and could not answer."
+                },
+                "conclusions": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unresolved": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "population": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "How many documents contributed to this area. A count, never the things counted."
+                },
+                "acquisition": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The collectors whose documents fed this area, from their own provenance."
+                }
+              }
+            }
+          }
+        }
+      }
     }
   }
 }

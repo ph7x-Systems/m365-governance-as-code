@@ -71,13 +71,13 @@ severity:
   configurable: true
 
 evidence_requirements:
-  - path: policy_state
+  - path: conditional_access_policies.policy_state
     type: string
     required: true
 
 condition:
   operator: equals
-  evidence: policy_state
+  evidence: conditional_access_policies.policy_state
   value: enabledForReportingButNotEnforced
 
 outcomes:

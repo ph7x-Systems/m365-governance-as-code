@@ -131,10 +131,19 @@ def collect(reader: GraphReader, *, tenant_url: str, observed_at: str) -> Collec
         }
 
     outcome.completed.sort()
+    # ONE NAME PER AREA, AND IT USED TO BE TWO. Coverage said
+    # `conditional-access-policies` and the facts said
+    # `conditional_access_policies`, so anything joining the two -- which is
+    # anything asking WHICH AREA a conclusion came from -- matched nothing, and
+    # Conditional Access reported evidence collected and no conclusions while
+    # three rules were deciding on it. The facts key is the name, because that
+    # is what a rule addresses.
     coverage = {
-        "requested": outcome.requested,
-        "completed": outcome.completed,
-        "unavailable": outcome.unavailable,
+        "requested": [_key(area) for area in outcome.requested],
+        "completed": [_key(area) for area in outcome.completed],
+        "unavailable": {
+            _key(area): entry for area, entry in outcome.unavailable.items()
+        },
     }
 
     for area, read in reads:
@@ -179,20 +188,38 @@ def _observation(
     other is this engine saying which of them it is prepared to answer about.
     """
     native = str(item.get("id") or "").strip() or f"{area}-without-an-id"
-    facts: dict[str, Any] = {_key(area): {"state": "observed", "value": item}}
-    facts.update(_addressable(area, item))
+    # NESTED UNDER THE FAMILY, LIKE EVERY OTHER COLLECTOR. The addressable
+    # fields were published at the top level -- `policy_state` beside
+    # `conditional_access_policies` -- and every other collector in this engine
+    # publishes `permissions.unique_scope_count`, `items.count`,
+    # `forwarding.remote_domains`. The difference was invisible until something
+    # asked which AREA a conclusion came from: a flat `policy_state` belongs to
+    # no family, so Conditional Access reported evidence collected and no
+    # conclusions while two rules were deciding on it.
+    family = _key(area)
+    fields: dict[str, Any] = {}
+    fields.update(_addressable(area, item))
     # NESTED OBJECTS ARE FLATTENED ONE LEVEL, and only where a rule asked. A
     # policy's user scope lives at `conditions.users` and its controls at
     # `grantControls`, so a rule addressing `included_users` would otherwise
     # need a path grammar this engine does not have.
-    facts.update(
+    fields.update(
         _addressable(
             f"{area}:conditions",
             ((item.get("conditions") or {}).get("users") or {}),
         )
     )
-    facts.update(_addressable(f"{area}:grant", (item.get("grantControls") or {})))
-    facts.update(_exclusion_count(item))
+    fields.update(_addressable(f"{area}:grant", (item.get("grantControls") or {})))
+    fields.update(_exclusion_count(item))
+
+    # A FAMILY IS A GROUP OF FACTS, NOT A FACT WITH FACTS INSIDE IT. The
+    # evidence contract says so and every other collector obeys it:
+    # `permissions` holds `unique_scope_count` and carries no value of its own.
+    # The untouched Graph object is a fact named `policy` inside the family,
+    # which is where a reader looks for it and where the schema allows it.
+    facts: dict[str, Any] = {
+        family: {"policy": {"state": "observed", "value": item}, **fields}
+    }
 
     return _document(
         reader,
