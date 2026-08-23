@@ -46,10 +46,12 @@ from . import (
     connecting,
     explaining,
     graph,
+    graph_slice,
     migration,
     migration_graph,
     reporting,
     running,
+    tenant_governance,
 )
 from . import doctor as doctor_module
 from . import inspect as inspect_module
@@ -875,6 +877,16 @@ def _cmd_collect(args) -> int:
     return _report_collection(args, chosen, outcome)
 
 
+#: Every slice this engine collects over Microsoft Graph, by the name on the
+#: command line. A slice reaches this table by being a Graph slice, and the
+#: registry in `collecting` says which those are: a name in one and not the
+#: other is a defect a test reports rather than a silent no-op.
+GRAPH_SLICES = {
+    conditional_access.NAME: conditional_access,
+    tenant_governance.NAME: tenant_governance,
+}
+
+
 def _collect_from_graph(args, chosen) -> int:
     """The Graph half of `collect`, which acquires nothing.
 
@@ -892,18 +904,25 @@ def _collect_from_graph(args, chosen) -> int:
         print(f"refusing to run: {refusal}", file=sys.stderr)
         return 2
 
-    token = os.environ.get(conditional_access.TOKEN_VARIABLE, "")
+    # WHICH GRAPH SLICE, AND NOT THE ONLY ONE ANY MORE. This dispatched to
+    # Conditional Access by name because it was the only Graph collector there
+    # was, and the second one would have silently collected the first. The
+    # module is chosen from the slice the caller asked for, so a third costs a
+    # line here rather than a defect nobody sees until the evidence is wrong.
+    module = GRAPH_SLICES[args.slice]
+
+    token = os.environ.get(graph_slice.TOKEN_VARIABLE, "")
 
     if args.dry_run:
         paths = [
-            *conditional_access.AREAS.values(),
-            *conditional_access.SINGLE.values(),
+            *module.AREAS.values(),
+            *module.SINGLE.values(),
         ]
         held = "set" if token else "not set"
         print(
             f"collect {args.slice} would read, in one session:\n"
             + "\n".join(f"  GET {path}" for path in paths)
-            + f"\n\nwith the token in {conditional_access.TOKEN_VARIABLE}, "
+            + f"\n\nwith the token in {graph_slice.TOKEN_VARIABLE}, "
             f"which is {held}."
         )
         return 0
@@ -912,7 +931,7 @@ def _collect_from_graph(args, chosen) -> int:
         print(
             f"collect {args.slice} reads Microsoft Graph and never acquires a "
             f"token: it spends one you already hold. Put it in "
-            f"{conditional_access.TOKEN_VARIABLE}.\n\n{conditional_access.HOW}",
+            f"{graph_slice.TOKEN_VARIABLE}.\n\n{graph_slice.HOW}",
             file=sys.stderr,
         )
         return 2
@@ -920,7 +939,7 @@ def _collect_from_graph(args, chosen) -> int:
     def report(line: str) -> None:
         print(line, flush=True)
 
-    outcome = conditional_access.run(
+    outcome = module.run(
         token=token,
         output=args.output,
         tenant_url=args.tenant_url,
@@ -1090,7 +1109,7 @@ def _cmd_run(args) -> int:
     steps = running.plan(
         site_url=args.site_url,
         tenant_url=args.tenant_url,
-        has_graph_token=bool(os.environ.get(conditional_access.TOKEN_VARIABLE)),
+        has_graph_token=bool(os.environ.get(graph_slice.TOKEN_VARIABLE)),
         # Asked before the plan is printed rather than after it is acted on.
         # The same check runs below before anything reaches a tenant; what
         # changed is that a dry run no longer promises what it would refuse.

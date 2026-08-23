@@ -27,16 +27,15 @@ bigger claim than an id it was handed. The ids travel exactly as they arrived.
 
 from __future__ import annotations
 
-import json
-import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from . import collecting, registry
+from . import collecting, graph_slice
 from .connecting import tenant_host
-from .graph import GLOBAL, GraphReader, Read, Refused, Transport
+from .graph import GLOBAL, GraphReader, Read, Transport
+from .graph_slice import HOW, TOKEN_VARIABLE, Origin  # noqa: F401  (re-exported)
 
 #: The collections this slice reads, by the area name that reaches `coverage`.
 #: These names are the vocabulary a reader sees when something was not read, so
@@ -64,6 +63,13 @@ COLLECTOR = "graph-conditional-access"
 COLLECTOR_VERSION = "1.0.0"
 WORKLOAD = "entra"
 
+ORIGIN = Origin(
+    collector=COLLECTOR,
+    collector_version=COLLECTOR_VERSION,
+    workload=WORKLOAD,
+    source_system="Microsoft Entra ID",
+)
+
 #: Which resource type each area produces.
 TYPES = {
     "conditional-access-policies": "conditional-access-policy",
@@ -71,16 +77,9 @@ TYPES = {
     "security-defaults": "security-defaults-policy",
 }
 
-#: How an unreadable area is named in `coverage.unavailable`, whose vocabulary
-#: is four words and does not include `invalid`.
-#:
-#: RECORDED, NOT SMUGGLED. A `200` carrying something that is not readable as
-#: Graph is `invalid` to the reader and has no word of its own in the evidence
-#: contract, so it lands on `missing` — nobody read it — with the reader's own
-#: sentence kept intact. The gap is written up in the slice audit beside the
-#: `401` one rather than resolved by choosing the nearest available word and
-#: saying nothing.
-COVERAGE_STATE = {"invalid": "missing"}
+#: How an unreadable area is named in `coverage.unavailable`, written once
+#: for every Graph slice.
+COVERAGE_STATE = graph_slice.COVERAGE_STATE
 
 
 @dataclass
@@ -268,28 +267,15 @@ ADDRESSABLE: dict[str, dict[str, str]] = {
 def _addressable(area: str, item: dict[str, Any]) -> dict[str, Any]:
     """The fields of one object, as facts a rule can name.
 
-    A PROPERTY THAT IS NOT THERE IS ABSENT, NOT FALSE. `isTrusted` is absent on
-    a country location and present on an IP one, and a collector that wrote
-    `false` for the first would have answered a question Microsoft did not.
+    The rule that absent is not false lives in `graph_slice.addressable`, which
+    every Graph slice uses. What stays here is which fields this slice answers
+    about and what kind of thing they belong to.
     """
-    out: dict[str, Any] = {}
-    for name, prop in ADDRESSABLE.get(area, {}).items():
-        if prop in item:
-            out[name] = {
-                "state": "observed",
-                "value": item[prop],
-                "raw": {"field": prop, "value": item[prop]},
-            }
-        else:
-            out[name] = {
-                "state": "missing",
-                "detail": (
-                    f"`{prop}` was not present on the object Microsoft returned. "
-                    f"Absent is not false: the property is not published for "
-                    f"every kind of {TYPES.get(area.split(':', 1)[0], area)}."
-                ),
-            }
-    return out
+    return graph_slice.addressable(
+        ADDRESSABLE.get(area, {}),
+        item,
+        of=TYPES.get(area.split(":", 1)[0], area),
+    )
 
 
 def _refusal(
@@ -300,28 +286,8 @@ def _refusal(
     observed_at: str,
     coverage: dict[str, Any],
 ) -> dict[str, Any]:
-    """An area that could not be read, as a fact about the tenant.
-
-    THIS DOCUMENT IS THE POINT OF THE SLICE. Without it a denied read leaves the
-    same directory as a tenant that genuinely has no Conditional Access, and a
-    rule over that evidence would pass. With it the rule sees a fact whose state
-    is not `observed` and answers `unknown`, which is the honest answer and the
-    one nobody can act on by mistake.
-    """
-    assert read.unavailable is not None
-    state = COVERAGE_STATE.get(read.unavailable.state, read.unavailable.state)
-    return _document(
-        reader,
-        host,
-        observed_at,
-        coverage,
-        resource_type="tenant",
-        native_id=host,
-        display_name=host,
-        facts={_key(area): {"state": state, "detail": read.unavailable.detail}},
-        scope="tenant",
-        parent=None,
-    )
+    """An area that could not be read, as a fact about the tenant."""
+    return graph_slice.refusal(area, read, reader, host, observed_at, coverage, ORIGIN)
 
 
 def _document(
@@ -337,98 +303,34 @@ def _document(
     scope: str = "collection",
     parent: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    tenant = {
-        # From the token's own `tid` claim, and from nowhere else. Public
-        # discovery answers which directory owns an address, which anybody can
-        # ask without reaching the tenant; this field means the directory a
-        # session was actually opened in, and the two never share a field.
-        "id": reader.identity.observed_tenant_id,
-        "host": host,
-    }
-    if parent is None and resource_type != "tenant":
-        parent = {"workload": WORKLOAD, "type": "tenant", "native_id": host}
-
-    return {
-        "$schema": registry.contract("evidence"),
-        "provenance": {
-            "collected_at": observed_at,
-            "collector": COLLECTOR,
-            "collector_version": COLLECTOR_VERSION,
-            "source_system": "Microsoft Entra ID",
-            "source_api": reader.source_api,
-            # Read from the token rather than taken from the arguments. A caller
-            # cannot tell this engine which kind of identity it holds.
-            "identity_kind": reader.identity.kind,
-            "scopes": list(reader.identity.scopes),
-            "acquisition": "collected",
-            "tenant": dict(tenant),
-        },
-        "coverage": json.loads(json.dumps(coverage)),
-        "resource": {
-            "workload": WORKLOAD,
-            "type": resource_type,
-            "native_id": native_id,
-            "tenant": dict(tenant),
-            "scope": scope,
-            "parent": parent,
-            "display_name": display_name,
-        },
-        "facts": facts,
-    }
+    return graph_slice.document(
+        reader,
+        host,
+        observed_at,
+        coverage,
+        ORIGIN,
+        resource_type=resource_type,
+        native_id=native_id,
+        display_name=display_name,
+        facts=facts,
+        scope=scope,
+        parent=parent,
+    )
 
 
 def _key(area: str) -> str:
     """The area name as a facts key, which rules read by name."""
-    return area.replace("-", "_")
+    return graph_slice.key(area)
 
 
 def write(collected: Collected, directory: Path) -> list[Path]:
-    """Write one document per resource, into the directory the caller chose.
-
-    The filename carries the resource type and its native id. Two areas that
-    each refuse produce two documents about the same tenant, so the area is in
-    the name of a refusal: without it the second would overwrite the first and
-    the collection would report one denial where there were two.
-    """
-    directory.mkdir(parents=True, exist_ok=True)
-    written = []
-    for document in collected.documents:
-        resource = document["resource"]
-        if resource["type"] == "tenant":
-            stem = f"unavailable-{'-'.join(document['facts'])}"
-        else:
-            stem = f"{resource['type']}-{resource['native_id']}"
-        path = directory / (_safe(stem) + ".json")
-        path.write_text(
-            json.dumps(document, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-        )
-        written.append(path)
-    return sorted(written)
+    """Write one document per resource, into the directory the caller chose."""
+    return graph_slice.write(collected.documents, directory)
 
 
 def _safe(name: str) -> str:
     """A filename from an identifier this engine does not get to reshape."""
-    return "".join(c if c.isalnum() or c in "-._" else "-" for c in name)
-
-
-# ---------------------------------------------------------------------------
-# running it: one collection, with the same account of itself as every other
-# ---------------------------------------------------------------------------
-
-#: Where the bearer token is read from.
-#:
-#: THE ENVIRONMENT AND NEVER AN ARGUMENT. A token passed on the command line is
-#: in the process list for every account on the machine and in the shell history
-#: afterwards, and this engine never acquires one: it spends what somebody
-#: already holds, which is the whole of its relationship with consent.
-TOKEN_VARIABLE = "M365_GOVERNANCE_GRAPH_TOKEN"
-
-#: How to produce one, for somebody who has a PnP session and no token.
-HOW = (
-    "Connect-PnPOnline -Url https://<tenant>.sharepoint.com -Interactive "
-    "-ClientId <app>\n"
-    "$env:" + TOKEN_VARIABLE + " = Get-PnPAccessToken -ResourceTypeName Graph"
-)
+    return graph_slice.safe(name)
 
 
 def run(
@@ -441,67 +343,20 @@ def run(
     transport: Transport | None = None,
     on_progress: Callable[[str], None] | None = None,
 ) -> collecting.Outcome:
-    """Collect the slice and write its account of itself beside the evidence.
-
-    The outcome is the same type a PowerShell collection produces, and it earns
-    its state the same way: from what was written and what the documents say
-    they could not read, never from a return code chosen here. A collection that
-    was denied every area wrote three documents saying so, which is `partial` —
-    evidence that a reader can act on — and not `completed`.
-    """
-    started_at = collecting._now()
-    started = time.monotonic()
-
-    try:
-        reader = GraphReader(token, endpoint=endpoint, transport=transport)
-    except Refused as refused:
-        # No token, or nothing that can be read as one. Nothing was requested,
-        # so there is no coverage to report and no document to write: the
-        # collection did not happen.
-        return collecting.Outcome(
-            slice_name=NAME,
-            returncode=2,
-            seconds=time.monotonic() - started,
-            written=[],
-            stdout="",
-            stderr=str(refused),
-            started_at=started_at,
-            finished_at=collecting._now(),
-        )
-
-    collected = collect(reader, tenant_url=tenant_url, observed_at=collecting._now())
-    written = write(collected, output)
-
-    if on_progress is not None:
-        for area in collected.requested:
-            reason = collected.unavailable.get(area)
-            on_progress(
-                f"{area}: read" if reason is None else f"{area}: {reason['state']}"
-            )
-
-    outcome = collecting.Outcome(
-        slice_name=NAME,
-        # Zero because the reader returned rather than failed. Whether the
-        # collection is complete is a question the coverage answers, and an exit
-        # code standing in for it is the collapse the states exist to end.
-        returncode=0,
-        seconds=time.monotonic() - started,
-        written=written,
-        stdout="",
-        stderr="",
-        incomplete=collecting.incomplete_coverage(written),
-        started_at=started_at,
-        finished_at=collecting._now(),
-    )
-    outcome.manifest_path = collecting.write_manifest(
-        outcome,
-        directory=output,
-        client_id=client_id,
-        site_url=None,
+    """Collect the slice and write its account of itself beside the evidence."""
+    return graph_slice.run(
+        name=NAME,
+        collect=lambda reader, tenant, observed_at: collect(
+            reader, tenant_url=tenant, observed_at=observed_at
+        ),
+        token=token,
+        output=output,
         tenant_url=tenant_url,
-        device_login=False,
+        client_id=client_id,
+        endpoint=endpoint,
+        transport=transport,
+        on_progress=on_progress,
     )
-    return outcome
 
 
 def _exclusion_count(item: dict[str, Any]) -> dict[str, Any]:

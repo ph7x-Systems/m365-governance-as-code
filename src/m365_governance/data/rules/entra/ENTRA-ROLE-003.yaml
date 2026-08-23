@@ -1,0 +1,130 @@
+# THE RECOVERY ACCOUNT THAT DEPENDS ON THE THING IT RECOVERS FROM.
+#
+# Every Microsoft page about emergency access says the same two words before
+# "emergency access account": cloud-only. Not because on-premises accounts are
+# weaker, but because an account synchronised from a directory on the ground
+# stops working for the same reasons that directory does -- and a synchronised
+# directory being unreachable is one of the scenarios the account exists for.
+
+schema_version: "1.0"
+id: ENTRA-ROLE-003
+version: "1.0"
+title: Every Global Administrator is synchronised from on-premises
+description: >
+  No account holding the Global Administrator role in this tenant originates in
+  the cloud. Microsoft's emergency access guidance is specifically for
+  cloud-only accounts, and this tenant has none to designate.
+
+service: entra
+resource_type: privileged-role-summary
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access
+      title: Manage emergency access accounts in Microsoft Entra ID
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/identity/role-based-access-control/security-planning
+      title: Securing privileged access for hybrid and cloud deployments in Microsoft Entra ID
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft's recommendation names the origin of the account, not only its
+    role: "two cloud-only emergency access accounts permanently assigned the
+    Global Administrator role". The security-planning guidance gives the reason
+    in the failure it describes -- an organisation whose administrators all
+    authenticated through federation was locked out entirely when federation
+    failed.
+
+    An account synchronised from on-premises inherits the availability of the
+    directory it came from and of whatever connects them. That is acceptable
+    for daily administration and is the one property an emergency account
+    cannot have, because the emergency this guidance is written for includes
+    that connection being the thing that failed.
+
+severity:
+  default: medium
+  rationale: >
+    The tenant is not exposed and, on an ordinary day, nothing is harder. What
+    is missing is an independent path, and it is missing only in the scenarios
+    where the on-premises directory or its synchronisation is unavailable.
+    Below the rule about having fewer than two administrators because that one
+    has no path at all, where this one has a path with a shared dependency.
+  configurable: true
+
+evidence_requirements:
+  - path: global_administrators.cloud_only
+    type: number
+    required: true
+  - path: global_administrators.user_assignments
+    type: number
+    required: true
+
+# THE APPLICABILITY IS THERE SO THAT NOTHING BECOMES A FINDING. A tenant whose
+# role assignments read as an empty collection has a cloud-only count of zero,
+# and without this it would fail a rule about the origin of accounts that were
+# never observed. Zero cloud-only out of zero accounts is a different sentence
+# from zero out of five, and the second rule in this family is the one that
+# speaks about having none at all.
+applicability:
+  operator: greater-than
+  evidence: global_administrators.user_assignments
+  value: 0
+
+condition:
+  operator: equals
+  evidence: global_administrators.cloud_only
+  value: 0
+
+outcomes:
+  pass:
+    message: >
+      At least one account holding the Global Administrator role originates in
+      the cloud rather than being synchronised from on-premises.
+  fail:
+    message: >
+      Every account holding the Global Administrator role is synchronised from
+      an on-premises directory. If that directory or its synchronisation is
+      unavailable, there is no administrator whose sign-in does not depend on
+      it, and Microsoft's emergency access guidance asks for cloud-only
+      accounts precisely for that case.
+  unknown:
+    message: >
+      Whether the accounts holding this role originate in the cloud was not
+      read. This is not a pass.
+  not_applicable:
+    message: >
+      No user account holding the Global Administrator role was observed, so
+      there is nothing whose origin this rule could read. Whether the tenant
+      has enough administrators at all is a different question, answered by the
+      rule that counts them.
+  invalid_evidence:
+    message: >
+      The origin counts were returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Create the emergency access accounts as cloud-only accounts in this tenant,
+  following Microsoft's documented guidance for them, and leave the
+  synchronised accounts doing the daily administration they already do. This
+  is an addition rather than a migration.
+
+limitations:
+  passes_without_resolving: >
+    ONE CLOUD-ONLY ADMINISTRATOR IS NOT AN EMERGENCY ACCESS ACCOUNT. This reads
+    where accounts originate and nothing else: not whether any of them is held
+    for emergencies, not whether its credentials are recoverable during an
+    outage, and not whether a Conditional Access policy would block it at the
+    moment it is needed.
+  other:
+    - >
+      A principal whose `onPremisesSyncEnabled` property Graph did not return
+      is counted as neither cloud-only nor synchronised. The collector
+      publishes that third figure separately, and a tenant where it is large is
+      a tenant where this rule is reading less than it appears to.
+    - >
+      Service principals are excluded from these counts. A service principal
+      has no on-premises origin to read, and counting it as cloud-only would
+      let an automation account satisfy guidance written about a person signing
+      in during an outage.

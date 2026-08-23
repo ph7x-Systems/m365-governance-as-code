@@ -232,7 +232,12 @@ def test_the_plan_does_not_promise_what_the_machine_cannot_run():
     verdicts = {step.name: step.planned for step in steps}
 
     assert verdicts["sites"] is running.Planned.NO_POWERSHELL
-    # The Graph slice needs no interpreter and is the only one left, which is
-    # the honest plan on a machine with no PowerShell and a token.
-    assert [step.name for step in running.attempted(steps)] == ["conditional-access"]
+    # The Graph slices need no interpreter and are all that is left, which is
+    # the honest plan on a machine with no PowerShell and a token. There are two
+    # now, and the assertion is a list rather than a name for that reason: the
+    # day a third ships, this is where the plan says so.
+    assert [step.name for step in running.attempted(steps)] == [
+        "conditional-access",
+        "tenant-governance",
+    ]
     assert "doctor" in running.describe(steps)

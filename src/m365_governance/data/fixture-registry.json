@@ -43,6 +43,24 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/entra/entra-authorization-policy-directory-unreadable.json",
+      "origin": "synthetic",
+      "purpose": "the default user role prevented from reading other users, which Microsoft's own reference instructs in capitals not to do",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-open-defaults.json",
+      "origin": "synthetic",
+      "purpose": "the tenant's authorization policy on the values Microsoft ships by default, with consent for risky applications additionally enabled",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-restrained.json",
+      "origin": "synthetic",
+      "purpose": "the same policy with guest invitations, application creation, tenant creation and user consent all narrowed, which is the after state for four rules",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/entra/entra-conditional-access-everyone-no-exclusion.json",
       "origin": "synthetic",
       "purpose": "a policy including every user and excluding nobody: the fail path of CA-RECOVERY-001, where the administrators who would correct a misconfiguration are subject to it",
@@ -76,6 +94,30 @@
       "path": "fixtures/entra/entra-conditional-access-scoped-to-a-group.json",
       "origin": "synthetic",
       "purpose": "a policy scoped to one group: CA-RECOVERY-001 does not apply, because administrators outside the scope can still sign in and change it",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-all-synced.json",
+      "origin": "synthetic",
+      "purpose": "three Global Administrator assignments all synchronised from on-premises, so no cloud-only account exists to be an emergency access account",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-healthy.json",
+      "origin": "synthetic",
+      "purpose": "two cloud-only and one synchronised Global Administrator plus a service principal, which is the after state for all three role rules",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-single-account.json",
+      "origin": "synthetic",
+      "purpose": "one Global Administrator assignment, below the two Microsoft asks for so that a locked-out tenant has a way back in",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-too-many.json",
+      "origin": "synthetic",
+      "purpose": "seven Global Administrator assignments, above the fewer-than-five Microsoft publishes and draws an alert card at",
       "may_be_presented_as_tenant_observation": false
     },
     {

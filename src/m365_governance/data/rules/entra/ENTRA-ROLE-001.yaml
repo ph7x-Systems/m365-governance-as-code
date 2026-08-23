@@ -1,0 +1,118 @@
+# THE ONE NUMBER MICROSOFT ACTUALLY PUBLISHES ABOUT PRIVILEGE.
+#
+# Almost nothing in identity governance has a documented threshold. This does:
+# Microsoft writes "fewer than five" in its own best-practice page, and its
+# portal draws an alert card at five. That makes it one of the few rules this
+# engine can carry with a number in it that the engine did not invent.
+
+schema_version: "1.0"
+id: ENTRA-ROLE-001
+version: "1.0"
+title: Five or more accounts hold the role that can do anything
+description: >
+  This tenant has five or more assignments of the Global Administrator role.
+  Microsoft's documented recommendation is fewer than five, and its own portal
+  raises an alert card at the same number.
+
+service: entra
+resource_type: privileged-role-summary
+
+basis:
+  type: documented-limit
+  limit:
+    value: 5
+    unit: Global Administrator role assignments
+    statement: >
+      Microsoft recommends assigning the Global Administrator role to fewer
+      than five people, and displays an alert card at five or more privileged
+      Global Administrator role assignments.
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/role-based-access-control/best-practices
+      title: Best practices for Microsoft Entra roles
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft states it plainly: "As a best practice, Microsoft recommends that
+    you assign the Global Administrator role to fewer than five people in your
+    organization. Global Administrators essentially have unrestricted access,
+    and it is in your best interest to keep the attack surface low." The same
+    page records what the product does with the number: "If you have 5 or more
+    privileged Global Administrator role assignments, a Global Administrators
+    alert card is displayed on the Microsoft Entra Overview page."
+
+    THE NUMBER IS MICROSOFT'S AND SO IS THE BOUNDARY. A threshold this engine
+    chose would make a pass mean nothing, because a reader could not tell
+    whether five was a finding or an opinion. Five is where Microsoft's own
+    product starts telling the administrator the same thing.
+
+severity:
+  default: medium
+  rationale: >
+    Nothing is exposed by the count itself and no data is reachable that was
+    not reachable before: each of these accounts was deliberately granted the
+    role. What the count changes is how many credentials have to hold for the
+    tenant to hold, which is a standing exposure rather than an incident.
+    Raised above low because the role has no ceiling: a Global Administrator
+    can elevate to read data as well as change configuration.
+  configurable: true
+
+evidence_requirements:
+  - path: global_administrators.assignments
+    type: number
+    required: true
+
+condition:
+  operator: greater-than-or-equal
+  evidence: global_administrators.assignments
+  value: 5
+
+outcomes:
+  pass:
+    message: >
+      Fewer than five assignments of the Global Administrator role were
+      counted, which is what Microsoft recommends.
+  fail:
+    message: >
+      Five or more accounts hold the Global Administrator role. Microsoft
+      recommends fewer than five, and the Microsoft Entra overview page shows
+      an alert card at this number.
+  unknown:
+    message: >
+      How many accounts hold the Global Administrator role was not read, so
+      whether the tenant is above or below Microsoft's recommendation is not
+      known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource does not summarise privileged role assignments.
+  invalid_evidence:
+    message: >
+      The assignment count was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Review each assignment and move the ones whose work a narrower role covers:
+  a person who creates user accounts needs User Administrator, not this. Where
+  the assignment is genuinely needed only sometimes, Microsoft's documented
+  answer is an eligible assignment under Privileged Identity Management, which
+  this count does not include and which reduces it.
+
+limitations:
+  passes_without_resolving: >
+    A COUNT IS NOT A ROSTER. Four accounts that share one password, four
+    accounts belonging to people who left, and four accounts protected by
+    phishing-resistant multifactor authentication all count as four and all
+    pass. This rule reads how many, and nothing about who, whether they are
+    still used, or how they are protected.
+  other:
+    - >
+      THIS READS ACTIVE ASSIGNMENTS AND NOT ELIGIBLE ONES. Assignments held as
+      eligible under Privileged Identity Management live on another surface,
+      behind another licence, and are not counted here. A tenant using PIM as
+      Microsoft recommends may show one assignment and be able to activate
+      nine, and this rule will pass. The direction of the error is known: this
+      count is a floor, never a ceiling.
+    - >
+      Assignments to service principals are counted alongside those to people,
+      because the role is the same and so is what it can do. The collector
+      publishes both figures separately for a reader who wants to separate
+      them; this rule does not.

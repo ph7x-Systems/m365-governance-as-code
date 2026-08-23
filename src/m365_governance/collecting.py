@@ -564,6 +564,52 @@ SLICES = {
             permissions=("Policy.Read.All",),
         ),
         Slice(
+            "tenant-governance",
+            "TenantGovernance",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=True,
+            consumed_by="governance rules",
+            describes=(
+                "what every user in a tenant may do without asking, and how "
+                "many accounts hold the role that may do anything"
+            ),
+            # THIS SLICE EXISTS BECAUSE OF AN ARITHMETIC NOBODY LIKED. The
+            # catalogue was twenty-one SharePoint rules and five others, and
+            # Microsoft documents no less about the rest of Microsoft 365 --
+            # the rest was simply not being collected. Two surfaces, seven
+            # rules, and not one of them is about a site.
+            shaped_like="entra-authorization-policy-open-defaults",
+            also_shaped_like=(
+                "entra-authorization-policy-restrained",
+                "entra-global-administrators-too-many",
+                "entra-global-administrators-single-account",
+                "entra-global-administrators-all-synced",
+                "entra-global-administrators-healthy",
+            ),
+            reads=(
+                "GET /v1.0/policies/authorizationPolicy",
+                "GET /v1.0/roleManagement/directory/roleAssignments"
+                " ($filter on the Global Administrator template, $expand principal)",
+            ),
+            permissions=("Policy.Read.All", "RoleManagement.Read.Directory"),
+            # WHAT THE READ CANNOT SEE, said where a reader meets the slice
+            # rather than only inside the rules. Eligible assignments under
+            # Privileged Identity Management are another surface with another
+            # licence behind it, and a tenant using PIM well shows one
+            # permanent Global Administrator here and holds eight more.
+            second_surface=(
+                "roleManagement/directory/roleEligibilityScheduleInstances, for "
+                "the assignments Privileged Identity Management holds as "
+                "eligible rather than active"
+            ),
+            second_surface_state="not-yet-established",
+        ),
+        Slice(
             "forwarding",
             "Forwarding",
             domain="exchange",

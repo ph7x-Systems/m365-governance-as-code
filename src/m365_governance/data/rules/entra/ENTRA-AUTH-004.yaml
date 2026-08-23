@@ -1,0 +1,105 @@
+# THE DIRECTORY SOMEBODY MADE THAT NOBODY GOVERNS.
+#
+# A tenant is not a resource inside a tenant. When an ordinary user creates
+# one, the organisation acquires a directory that its policies do not reach,
+# its logs do not cover and its administrators cannot see -- created with a
+# work identity, and invisible from the tenant the identity belongs to.
+
+schema_version: "1.0"
+id: ENTRA-AUTH-004
+version: "1.0"
+title: Any user can create a new tenant this organisation does not govern
+description: >
+  The default user role in this tenant may create tenants. A directory created
+  this way is outside every policy, every Conditional Access rule and every log
+  this organisation has.
+
+service: entra
+resource_type: authorization-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/graph/api/resources/defaultuserrolepermissions
+      title: defaultUserRolePermissions resource type
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/fundamentals/users-default-permissions
+      title: Default user permissions in Microsoft Entra ID
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft documents the property as corresponding to the "Restrict non-admin
+    users from creating tenants" setting in the Microsoft Entra admin centre --
+    a control whose name is the recommendation. The reference also records what
+    restricting it does not do: "When this setting is `false`, users assigned
+    the Tenant Creator role can still create tenants", so closing it keeps the
+    capability available to the people who were given it.
+
+    What makes this worth a rule rather than a preference is where the created
+    directory sits. It is not a resource this organisation can audit, apply
+    policy to, or find. It is a peer, created with an organisational identity,
+    and the first time most organisations learn one exists is when somebody
+    puts data in it.
+
+severity:
+  default: medium
+  rationale: >
+    No existing data is exposed and nothing already in this tenant becomes
+    reachable. The exposure is prospective and unbounded: whatever is put in
+    the new directory is outside this organisation's governance from the moment
+    it arrives, and there is no report in which it appears. Not high because it
+    takes a deliberate act by a user to create one and another to move data
+    there.
+  configurable: true
+
+evidence_requirements:
+  - path: authorization_policy.users_may_create_tenants
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: authorization_policy.users_may_create_tenants
+  value: true
+
+outcomes:
+  pass:
+    message: >
+      Ordinary users cannot create tenants. The capability remains with the
+      Tenant Creator role, which Microsoft documents as unaffected by this
+      restriction.
+  fail:
+    message: >
+      Any user in this tenant can create a new one. The directory they create
+      is governed by nothing this organisation runs, appears in no report it
+      produces, and is reachable by no administrator it has.
+  unknown:
+    message: >
+      Whether ordinary users may create tenants was not read. This is not a
+      pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authorization policy.
+  invalid_evidence:
+    message: >
+      The permission was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Restrict tenant creation to the Tenant Creator role and assign that role to
+  whoever legitimately needs it -- typically the people who stand up test
+  directories. Microsoft's reference is explicit that the restriction leaves
+  that role working.
+
+limitations:
+  passes_without_resolving: >
+    RESTRICTING IT DOES NOT FIND THE ONES ALREADY CREATED. A tenant created
+    while this was open stays created, stays ungoverned and is not visible from
+    here. This rule reads whether it can happen again, and nothing about
+    whether it happened.
+  other:
+    - >
+      Users can also reach an ungoverned directory without creating one,
+      through a personal account or a free subscription that this setting does
+      not govern. The setting closes one documented path.

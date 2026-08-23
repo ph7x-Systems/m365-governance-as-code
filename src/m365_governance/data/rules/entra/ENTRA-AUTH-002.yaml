@@ -1,0 +1,107 @@
+# THE ONE PLACE MICROSOFT PUTS ITS RECOMMENDATION IN THE API REFERENCE.
+#
+# Product documentation recommends things constantly. A recommendation written
+# into the Graph resource reference, beside the property it is about, is
+# unusual enough to be worth reading twice -- and it is the reason this rule
+# does not have to invent a position.
+
+schema_version: "1.0"
+id: ENTRA-AUTH-002
+version: "1.0"
+title: Users may consent to applications Microsoft has flagged as risky
+description: >
+  This tenant allows users to grant consent to applications that Microsoft's
+  risk-based step-up consent has flagged. Microsoft's own API reference
+  recommends leaving this off, and off is the default.
+
+service: entra
+resource_type: authorization-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/graph/api/resources/authorizationpolicy
+      title: authorizationPolicy resource type
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/identity/enterprise-apps/configure-risk-based-step-up-consent
+      title: Configure risk-based step-up consent
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft writes the recommendation into the property's own description:
+    "We recommend keeping allowUserConsentForRiskyApps as `false`. Default
+    value is `false`."
+
+    Two facts follow and both matter. The position is Microsoft's, so a finding
+    here is not this engine's opinion about consent. And `false` is the
+    default, so `true` is a value somebody set: the finding is a record of a
+    decision rather than of an omission, and the remediation is a conversation
+    with whoever made it rather than a configuration change nobody has to
+    explain.
+
+severity:
+  default: high
+  rationale: >
+    Consent to an application is a durable grant against data, made by a user
+    at a moment of wanting something to work, and the flag Microsoft raises is
+    the signal that this particular application is one that consent processes
+    exist for. Rated high because the outcome is access to organisational data
+    by a third party, granted without an administrator, and surviving until
+    somebody revokes it. Not critical because it still requires a user to act.
+  configurable: true
+
+evidence_requirements:
+  - path: authorization_policy.user_consent_for_risky_apps
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: authorization_policy.user_consent_for_risky_apps
+  value: true
+
+outcomes:
+  pass:
+    message: >
+      User consent for applications flagged as risky is not allowed, which is
+      what Microsoft recommends and what the tenant would hold by default.
+  fail:
+    message: >
+      This tenant allows users to consent to applications Microsoft's
+      risk-based step-up consent has flagged. Microsoft's API reference
+      recommends keeping this off, and off is the default, so this value was
+      set deliberately.
+  unknown:
+    message: >
+      Whether users may consent to flagged applications was not read. This is
+      not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authorization policy.
+  invalid_evidence:
+    message: >
+      The consent setting was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Set the property back to `false`, which is Microsoft's recommendation and the
+  default. Before doing so, find out why it was changed: it is often turned off
+  to unblock one application, and turning it back on without replacing that
+  path breaks whatever was unblocked.
+
+limitations:
+  passes_without_resolving: >
+    THIS IS ONE SETTING ABOUT ONE CATEGORY OF APPLICATION. A tenant where this
+    is `false` still allows user consent to every application Microsoft has not
+    flagged, under whatever app consent policy the default user role holds. The
+    collector publishes how many consent policies are assigned; this rule does
+    not read them.
+  other:
+    - >
+      Which applications Microsoft flags is decided by Microsoft and changes
+      without notice to the tenant. A pass records that the tenant defers to
+      that judgement, not that no risky application was ever consented to.
+    - >
+      Consent already granted is unaffected by this setting. Turning it off
+      stops new grants and revokes nothing.

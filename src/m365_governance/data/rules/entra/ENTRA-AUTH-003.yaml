@@ -1,0 +1,111 @@
+# A RULE THAT FIRES WHEN SOMEBODY TIGHTENED SOMETHING.
+#
+# Every other rule in this catalogue reports a control that is open. This one
+# reports a control that was closed, because Microsoft's own API reference says
+# not to close it -- in capital letters, which is not a thing that reference
+# does anywhere else this engine has read.
+#
+# It is here deliberately. A governance tool whose every finding says "turn
+# something off" teaches an organisation that tightening is always safe, and
+# the first time that is wrong it is wrong in a way nobody is looking for.
+
+schema_version: "1.0"
+id: ENTRA-AUTH-003
+version: "1.0"
+title: Users cannot read other users, which Microsoft says not to do
+description: >
+  The default user role in this tenant cannot read other users in the
+  directory. Microsoft's API reference for the property carries an instruction
+  in capitals not to set it this way.
+
+service: entra
+resource_type: authorization-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/graph/api/resources/defaultuserrolepermissions
+      title: defaultUserRolePermissions resource type
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/fundamentals/users-default-permissions
+      title: Default user permissions in Microsoft Entra ID
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft's reference for `allowedToReadOtherUsers` says, in the property's
+    own description: "**DO NOT SET THIS VALUE TO `false`**". The emphasis is
+    Microsoft's.
+
+    The setting looks like data minimisation and is not. Reading other users is
+    what makes an address book resolve, a meeting invitation find a person, a
+    sharing dialogue offer a colleague and a group show its members. Turning it
+    off does not hide the directory from an attacker who has a token; it breaks
+    the products for the people who work there, in ways that surface later as
+    unrelated faults nobody connects back to this.
+
+    IT IS RECORDED AS GUIDANCE AND NOT AS A REQUIREMENT because the tenant
+    accepts the value and the API allows it. Microsoft states a position in the
+    strongest words it uses; it does not refuse the setting.
+
+severity:
+  default: medium
+  rationale: >
+    Nothing is exposed and no data is at risk -- the direction of this finding
+    is the opposite one. What it costs is function, and the reason it is not
+    low is that the cost lands diffusely across several products at once and is
+    very hard to diagnose from the symptom. Somebody looking at a broken people
+    picker does not look at the tenant's authorization policy.
+  configurable: true
+
+evidence_requirements:
+  - path: authorization_policy.users_may_read_other_users
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: authorization_policy.users_may_read_other_users
+  value: false
+
+outcomes:
+  pass:
+    message: >
+      The default user role can read other users, which is what Microsoft's
+      reference instructs.
+  fail:
+    message: >
+      The default user role cannot read other users. Microsoft's API reference
+      instructs, in capitals, not to set this value to `false`: it does not
+      protect the directory and it breaks the features across Microsoft 365
+      that resolve people.
+  unknown:
+    message: >
+      Whether the default user role can read other users was not read. This is
+      not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authorization policy.
+  invalid_evidence:
+    message: >
+      The permission was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Set the permission back to `true`. If it was set to `false` to keep one
+  population from seeing another, the documented mechanism for that is
+  administrative units or a business-to-business boundary, neither of which
+  requires disabling directory reads for everybody.
+
+limitations:
+  passes_without_resolving: >
+    THIS SAYS NOTHING ABOUT WHAT ELSE THE DEFAULT USER ROLE MAY DO. The same
+    permission set decides whether users may register applications, create
+    security groups, create tenants and read their own BitLocker keys. This
+    rule reads one of them.
+  other:
+    - >
+      A tenant may have been in this state for a long time without anybody
+      connecting a broken people picker, an empty group membership list or a
+      sharing dialogue that finds nobody to this setting. The finding explains
+      symptoms; it does not prove they are present.
