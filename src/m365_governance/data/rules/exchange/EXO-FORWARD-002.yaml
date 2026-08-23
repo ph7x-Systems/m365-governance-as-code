@@ -1,0 +1,127 @@
+# BLOCKING A REMOTE DOMAIN DOES NOT STOP MAIL LEAVING, AND MICROSOFT SAYS WHICH
+# HALF IT MISSES.
+#
+# `AutoForwardEnabled: $false` on a remote domain overrides what a USER set:
+# an Inbox rule, or the forwarding option in Outlook on the web. It does not
+# reach what an ADMINISTRATOR set. Microsoft's own table: "When admins use
+# other methods to configure automatic forwarding for users, the forwarded
+# messages aren't affected by the remote domain settings (messages are
+# forwarded to recipients on the remote domain even if automatic forwards are
+# disabled for the remote domain)."
+#
+# So a tenant that blocked every remote domain and reported "automatic
+# forwarding is disabled" has described one of the two ways mail leaves. The
+# other is mailbox forwarding an administrator configured, and mail flow rules.
+#
+# This is the `custom script disabled` shape in a different workload: a real
+# control, correctly reported, and a conclusion drawn from it that is wider
+# than the control.
+
+schema_version: "1.0"
+id: EXO-FORWARD-002
+version: "1.0"
+title: A remote domain permits automatic forwarding
+description: >
+  One or more remote domains allow automatically forwarded messages to be sent
+  to them. That is the default for a remote domain, and it is a legitimate
+  configuration; what it establishes is that this route out is open for user
+  forwarding. It does not establish anything about administrator-configured
+  mailbox forwarding or mail flow rules, which remote domain settings do not
+  reach in either direction.
+
+service: exchange
+resource_type: tenant
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/exchange/mail-flow-best-practices/remote-domains/remote-domains
+      title: Remote domains in Exchange Online
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/defender-office-365/outbound-spam-policies-external-email-forwarding
+      title: Control automatic external email forwarding from cloud mailboxes
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft documents the default and the limit together. "Allow or prevent
+    automatically forwarded messages to be sent to people on the remote domain.
+    The default is to allow automatic forwarding." And, for what the setting
+    reaches: it overrides forwarding a user configured through an Inbox rule or
+    Outlook on the web, while "when admins use other methods to configure
+    automatic forwarding for users, the forwarded messages aren't affected by
+    the remote domain settings".
+
+    An organisation may permit forwarding deliberately, and many do. What this
+    rule refuses is the reading in the other direction: a remote domain that
+    permits forwarding is not the only gate, and a remote domain that blocks it
+    is not the whole answer either. Both halves of that belong on the same
+    finding, which is why they are on this one.
+
+severity:
+  default: low
+  rationale: >
+    Permitting automatic forwarding to a remote domain is the product default
+    and is often exactly what the organisation intends. It is worth a person's
+    attention because forwarding is how mail leaves without anybody deciding
+    per message, and because the control's reach is narrower than its name
+    suggests.
+  configurable: true
+
+evidence_requirements:
+  - path: forwarding.remote_domains_allowing_forwarding
+    type: number
+    required: true
+
+condition:
+  operator: greater-than
+  evidence: forwarding.remote_domains_allowing_forwarding
+  value: 0
+
+outcomes:
+  pass:
+    message: >
+      No remote domain permits automatically forwarded messages. Forwarding a
+      user configured is blocked on every domain, and forwarding an
+      administrator configured is not affected by this control either way.
+  fail:
+    message: >
+      {forwarding.remote_domains_allowing_forwarding} remote domain or domains
+      permit automatically forwarded messages. This governs forwarding a user
+      configured through an Inbox rule or Outlook on the web; mailbox
+      forwarding an administrator configured, and mail flow rules, are not
+      affected by remote domain settings and reach these recipients regardless.
+  unknown:
+    message: >
+      The remote domains were not read, so whether any permits automatic
+      forwarding is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The remote domains were returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Where forwarding to a domain is not intended, set the remote domain to
+  prevent automatically forwarded messages. Where it is intended, the finding
+  is the record of that decision. In either case, the route an administrator
+  configured is a separate reading and is not closed by this setting.
+
+limitations:
+  passes_without_resolving: >
+    A PASS DOES NOT MEAN MAIL CANNOT LEAVE AUTOMATICALLY. Remote domain
+    settings do not affect mailbox forwarding configured by an administrator,
+    and they do not affect mail flow rules. A tenant blocking every remote
+    domain still forwards by both of those routes, and this rule reads neither.
+  other:
+    - >
+      Mail flow rules are the third control and are not read by this
+      collector. Whether any of them forwards externally is a question about
+      rule actions rather than about a forwarding setting.
+    - >
+      The outbound spam filter policy is the other gate, and Microsoft states
+      that where one control allows and another blocks, the block typically
+      wins. A remote domain permitting forwarding while the policy is set to
+      Off produces no forwarding at all.

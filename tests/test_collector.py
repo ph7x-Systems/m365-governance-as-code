@@ -439,7 +439,12 @@ def test_no_fixture_claims_an_api_the_collector_never_uses():
     # The orchestrator declares paths too: the admin one lives there and not
     # in the modules. Reading only the modules produced a gate that accused
     # true evidence.
-    for f in [COLLECTOR, *modules.glob("*.psm1")]:
+    # EVERY POWERSHELL COLLECTOR, NOT THE FIRST ONE. This read the SharePoint
+    # entry script and its modules, which was every collector on the day it was
+    # written. When a third arrived it accused that collector's own fixtures of
+    # claiming an API no collector uses -- correctly, from where it was looking.
+    collectors = DATA / "collectors" / "powershell"
+    for f in sorted(collectors.rglob("*.ps1")) + sorted(collectors.rglob("*.psm1")):
         for m in re.finditer(r"-SourceApi\s+'([^']+)'", f.read_text(encoding="utf-8")):
             paths.add(m.group(1))
     evid = (modules / "Evidence.psm1").read_text(encoding="utf-8")

@@ -91,6 +91,24 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/exchange/exchange-forwarding-ambiguous-mode.json",
+      "origin": "synthetic",
+      "purpose": "the default outbound spam policy on Automatic - System-controlled, whose behaviour differs by organisation: the fail path of EXO-FORWARD-001",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/exchange/exchange-forwarding-explicitly-off.json",
+      "origin": "synthetic",
+      "purpose": "every policy explicit and every remote domain blocking: both rules pass, and neither says mail cannot leave",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/exchange/exchange-forwarding-remote-domains-allow.json",
+      "origin": "synthetic",
+      "purpose": "a partner domain permitting automatic forwarding while the policies are explicit: EXO-FORWARD-002 fails and EXO-FORWARD-001 does not",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/licensing/tenant-assignment-observed.json",
       "origin": "sanitized-observation",
       "purpose": "the shape of a real assignment acquisition: SKUs and assigned units read, the report identifiability setting observed as concealed, usage and dependency not observed. The directory it came from is not identified and the counts are not that tenant's",

@@ -1,0 +1,124 @@
+# A SETTING WHOSE MEANING IS NOT IN THE VALUE, AND THE VENDOR SAYS SO.
+#
+# `AutoForwardingMode: Automatic` was equivalent to On when it was introduced.
+# In 2021 it became Off for new organisations and for existing organisations
+# that were not actively using it, and remained On for those that were. So two
+# tenants showing the same word have opposite behaviour, and which one you are
+# depends on your organisation's history rather than on anything visible today.
+#
+# Microsoft's instruction is not to reason about it. It is to stop using it.
+#
+# THIS IS THE PRODUCT'S OWN THESIS, WRITTEN BY THE VENDOR. A governance report
+# that renders `Automatic` as a value has rendered a word that does not carry
+# its own meaning, and the reader draws a conclusion the setting does not
+# support.
+
+schema_version: "1.0"
+id: EXO-FORWARD-001
+version: "1.0"
+title: Automatic forwarding is set to a value whose behaviour is not in the value
+description: >
+  One or more outbound spam filter policies leave automatic external forwarding
+  on Automatic - System-controlled. That value means On in some organisations
+  and Off in others, decided by whether the organisation was using it in 2021,
+  and nothing readable today says which. Whether mail can leave this
+  organisation automatically cannot be answered from this setting.
+
+service: exchange
+resource_type: tenant
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/defender-office-365/outbound-spam-policies-external-email-forwarding
+      title: Control automatic external email forwarding from cloud mailboxes
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/defender-office-365/recommended-settings-for-eop-and-office365
+      title: Recommended email and collaboration threat policy settings
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft describes the value and then tells you not to use it: "When this
+    value was introduced, it was equivalent to On - Forwarding is enabled. In
+    2021, the value changed to Off - Forwarding is disabled for new
+    organizations and for existing organizations that weren't actively using
+    the Automatic - System-controlled value. For existing organizations that
+    were already using the value, it can remain equivalent to On - Forwarding
+    is enabled. Because the behavior can differ by organization, configure On -
+    Forwarding is enabled or Off - Forwarding is disabled instead."
+
+    Their recommended-settings table says the same in one line: the default is
+    Automatic and both the Standard and Strict recommendations are Off, with
+    the comment that the behaviour of Automatic can differ by organization.
+
+    This rule does not say forwarding should be off. It says that while this
+    value is in place, nobody can read the setting and know which it is --
+    including the administrator, the auditor, and this engine.
+
+severity:
+  default: medium
+  rationale: >
+    Nothing is misconfigured and mail may be flowing exactly as intended. What
+    is worth a person's attention is that the tenant cannot answer a question
+    about itself: a report saying "automatic forwarding: Automatic" looks like
+    a reading and is the absence of one.
+  configurable: true
+
+evidence_requirements:
+  - path: forwarding.outbound_policies_ambiguous
+    type: number
+    required: true
+
+condition:
+  operator: greater-than
+  evidence: forwarding.outbound_policies_ambiguous
+  value: 0
+
+outcomes:
+  pass:
+    message: >
+      Every outbound spam filter policy states automatic forwarding explicitly,
+      as On or as Off. What the organisation permits can be read from the
+      setting.
+  fail:
+    message: >
+      {forwarding.outbound_policies_ambiguous} outbound spam filter policy or
+      policies leave automatic forwarding on Automatic - System-controlled.
+      That value means On in some organisations and Off in others, decided by
+      history rather than by anything readable now, and Microsoft's own
+      instruction is to replace it with On or Off.
+  unknown:
+    message: >
+      The outbound spam filter policies were not read, so which value they
+      carry is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The outbound spam filter policies were returned in a form this rule
+      cannot evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Set automatic forwarding explicitly to On - Forwarding is enabled or Off -
+  Forwarding is disabled in each outbound spam filter policy, which is what
+  Microsoft instructs. Either answer is a decision; Automatic is the absence of
+  one.
+
+limitations:
+  passes_without_resolving: >
+    A PASS SAYS THE VALUE IS READABLE AND NOT THAT MAIL CANNOT LEAVE. A policy
+    explicitly set to Off does not stop a mail flow rule from forwarding, and a
+    policy set to On is still subject to whatever the remote domains permit.
+    Microsoft states that where one control allows and another blocks, the
+    block typically wins, so no single setting answers whether mail leaves.
+  other:
+    - >
+      This reads the policies and not who they apply to. A custom policy
+      scoped to a few recipients decides for those recipients only, and a
+      tenant may be explicit for most people and ambiguous for some.
+    - >
+      Automatic forwarding between internal users is not affected by these
+      settings at all, so a fail here says nothing about mail that never
+      leaves the organisation.

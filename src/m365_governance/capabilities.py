@@ -453,12 +453,17 @@ def _shape_facts(name: str) -> tuple[dict[str, Any], ...]:
     slice_ = SLICES[name]
     found = []
     for shape in (slice_.shaped_like, *slice_.also_shaped_like):
-        for root in ("sharepoint", "entra", "."):
-            candidate = packaged("fixtures") / root / f"{shape}.json"
-            if candidate.exists():
-                document = json.loads(candidate.read_text(encoding="utf-8"))
-                found.append(document.get("facts", {}))
-                break
+        # SEARCHED, NOT LISTED. This was the fourth hand-written folder list in
+        # the tree and the last one still standing: `sharepoint`, `entra`, and
+        # the root. A rule whose fixture lives in a family nobody added here
+        # resolves to no facts, so the rule reports that no collector produces
+        # its evidence -- which is a true sentence about this function and a
+        # false one about the product. `_named` above already searches, and
+        # this now does too.
+        for candidate in sorted(packaged("fixtures").glob(f"*/{shape}.json")):
+            document = json.loads(candidate.read_text(encoding="utf-8"))
+            found.append(document.get("facts", {}))
+            break
     return tuple(found)
 
 

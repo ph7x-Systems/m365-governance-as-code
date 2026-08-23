@@ -352,7 +352,7 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # `brand-center` joins it the day it is registered, and it is registered
     # before it has ever run. That is the right order: a capability declares
     # what it reads before anybody points it at a directory.
-    assert grouped["not-live-tested"] == ["brand-center", "customization"]
+    assert grouped["not-live-tested"] == ["brand-center", "customization", "forwarding"]
     assert set(grouped["acquisition-attempted"]) == {"conditional-access", "spfx"}
 
 

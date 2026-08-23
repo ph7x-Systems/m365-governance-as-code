@@ -564,6 +564,47 @@ SLICES = {
             permissions=("Policy.Read.All",),
         ),
         Slice(
+            "forwarding",
+            "Forwarding",
+            domain="exchange",
+            script="exchange/Get-ExchangeEvidence.ps1",
+            tenant_parameter="-TenantHost",
+            takes_certificate=True,
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=True,
+            describes=(
+                "whether mail can leave this organisation automatically, and "
+                "which of the three controls that govern it are in which position"
+            ),
+            shaped_like="exchange-forwarding-ambiguous-mode",
+            also_shaped_like=(
+                "exchange-forwarding-explicitly-off",
+                "exchange-forwarding-remote-domains-allow",
+            ),
+            reads=(
+                "Get-HostedOutboundSpamFilterPolicy",
+                "Get-RemoteDomain",
+            ),
+            permissions=("Exchange.ManageAsApp",),
+            # THE SECOND SURFACE IS NAMED AND HAS NOT BEEN RUN. Microsoft Graph
+            # exposes `hostedOutboundSpamFilterPolicy` through Tenant
+            # Configuration Management, carrying `AutoForwardingMode` -- so the
+            # same setting is readable two ways, under different permissions,
+            # through a different endpoint.
+            #
+            # This collector reads the documented administration path. Whether
+            # the two agree is a measurement nobody here has made, and `D72`
+            # says a comparison state may not sit at `not-yet-established`
+            # without the next measurement named. It is named.
+            second_surface=(
+                "Microsoft Graph Tenant Configuration Management: "
+                "hostedOutboundSpamFilterPolicy"
+            ),
+            second_surface_state="named-not-run",
+        ),
+        Slice(
             "brand-center",
             "BrandCenter",
             needs_site=False,

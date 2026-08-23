@@ -113,7 +113,11 @@ def main() -> int:
     # here in the repository with four fixtures and absent from this list, so a
     # consumer received none of them and nothing said so. Excluding one is now a
     # decision somebody writes down rather than an omission nobody notices.
-    families = ("sharepoint", "entra", "licensing")
+    # A HAND-KEPT LIST, AND THE GATE THAT HOLDS IT IS WHY IT IS SAFE. Every
+    # evidence family in the tree must appear here or be recorded as excluded,
+    # so a family added without a consumer is caught rather than shipped
+    # invisible. `exchange` joined when forwarding did.
+    families = ("sharepoint", "entra", "licensing", "exchange")
     fixtures = sorted(f for family in families for f in (root / family).glob("*.json"))
     written = 0
     for fixture in fixtures:
