@@ -180,11 +180,14 @@ def test_the_contract_states_the_order_the_surfaces_are_asked_in(surfaces):
     # at it. The first draft of this restated them beside the procedure and
     # gained a seventh that belongs to a different repository's contract, which
     # is what restating a list always eventually does.
-    endings = [
-        line for line in contract.splitlines() if line.startswith("| `established")
-        or line.startswith("| `not established") or line.startswith("| `not yet")
-        or line.startswith("| `not observable") or line.startswith("| `not supported")
-    ]
+    named = (
+        "| `established",
+        "| `not established",
+        "| `not yet",
+        "| `not observable",
+        "| `not supported",
+    )
+    endings = [line for line in contract.splitlines() if line.startswith(named)]
 
     assert len(endings) == 6, f"expected the six named endings, found {len(endings)}"
     assert "are not restated here" in contract
