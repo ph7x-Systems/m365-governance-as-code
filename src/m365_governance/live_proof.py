@@ -135,9 +135,43 @@ def draft_from_run(outcome, *, collector: str, acquisition_method: str) -> dict:
     between those two. A collector that wrote its own `full` at the end of a
     successful call would be back where this started -- a claim produced by the
     thing it is a claim about.
+
+    THE STAGES ARE FILLED FROM WHAT WAS OBSERVED, NEVER FROM WHAT THE COMMAND
+    WAS ASKED TO DO. `collect` acquires and writes evidence and does nothing
+    else, so that is all it may claim; `run` evaluates and can bundle, and
+    upgrades the record afterwards from what those steps actually produced.
+    The first version of this emitted no stages at all, which would have left
+    the authorized run producing a record that could not feed the ladder the
+    whole registry exists to derive -- the field governing the derivation
+    filled in by hand, which is the shape this replaced.
     """
     written = len(getattr(outcome, "written", ()) or ())
+    state = str(getattr(outcome, "state", "") or "")
+
+    # A refusal is a real observation and is not an acquisition. Anything that
+    # produced no document acquired nothing, whatever it returned.
+    if state in ("refused", "permission-denied", "not-supported"):
+        acquisition = "refused"
+    elif written:
+        acquisition = "proven"
+    else:
+        acquisition = "attempted"
+
+    stages = {
+        "acquisition": acquisition,
+        "evidence": "proven" if written else "not-attempted",
+        # `collect` runs no rule. A capability that feeds none has no
+        # assessment to prove; one that does has an unattempted stage, and
+        # saying so is what stops a collection being read as a whole vertical.
+        "assessment": (
+            "not-applicable" if not SLICE_FEEDS_RULES(collector) else "not-attempted"
+        ),
+        "bundle": "not-attempted",
+        "consumer": "not-attempted",
+    }
+
     return {
+        "stages": stages,
         "collector": collector,
         "acquisition_method": acquisition_method,
         "observed_at": getattr(outcome, "started_at", None),
@@ -223,3 +257,38 @@ def population() -> dict[str, list[str]]:
     for name in sorted(SLICES):
         grouped[proof_state(name)].append(name)
     return grouped
+
+
+def SLICE_FEEDS_RULES(collector: str) -> bool:
+    """Whether any rule reads this collector's evidence.
+
+    Read from the capability manifest rather than kept beside it: a second list
+    of which collectors feed rules is a second thing to keep true, and the
+    first to go stale.
+    """
+    from m365_governance.collecting import SLICES
+
+    chosen = SLICES.get(collector)
+    return bool(chosen and chosen.produces_findings)
+
+
+def upgrade_after_a_run(draft: dict, *, evaluated: bool, bundled: bool) -> dict:
+    """What `run` may add to a `collect` record, from what it can attribute.
+
+    `assessment` reaches `attempted` and never `proven`. A rule decides about a
+    RESOURCE and evidence is composed by resource before evaluation, so a
+    result cannot be traced back to the collector whose fact it read; the
+    evidence's own provenance does not close it either, because eleven
+    SharePoint slices all publish `spo-collector`. A person confirms from the
+    report whether a rule decided anything from this slice's facts.
+
+    Recorded rather than worked around: `charter/IDEAS.md` carries it as the
+    same shape the Conditional Access family had, which is evidence not
+    carrying what a downstream question needs.
+    """
+    stages = dict(draft.get("stages") or {})
+    if evaluated and stages.get("assessment") == "not-attempted":
+        stages["assessment"] = "attempted"
+    if bundled:
+        stages["bundle"] = "proven"
+    return {**draft, "stages": stages}

@@ -63,16 +63,26 @@ COMPARED = [
     ("tenant-sharing-mitigated", "2026-08-01T09:00:00Z"),
 ]
 ASSESSED = ["site-agents-with-sources", "site-spfx-current", "list-class-content"]
+#: The second assessment in the published bundle, and IT HAD NO OWNER.
+#:
+#: It was frozen by hand and shipped saying engine `1.0.0b1` -- eight betas
+#: behind -- inside the contract bundle a consumer vendors. Nothing regenerated
+#: it and nothing checked it, so it went on declaring a contract the engine had
+#: replaced until a version bump made a downstream reader refuse it. The same
+#: shape as every other artefact with no generator, in the one place where a
+#: consumer treats what we ship as the reference.
+CLASSIFICATION = DATA / "fixtures" / "assessment" / "classification.json"
+CLASSIFIED = ["site-class-group-unlabelled"]
 #: Pinned so the same inputs produce the same bytes. An identity that moved
 #: because time passed would make the fixture unusable as a fixture.
 ASSESSED_AT = "2026-08-08T18:00:00Z"
 
 
-def assess() -> str:
+def assess(documents: list[str] | None = None) -> str:
     """One assessment, built by the command a user would run."""
     with tempfile.TemporaryDirectory() as scratch:
         folder = Path(scratch)
-        for name in ASSESSED:
+        for name in documents if documents is not None else ASSESSED:
             (folder / f"{name}.json").write_text(
                 (FIXTURES / f"{name}.json").read_text(encoding="utf-8"),
                 encoding="utf-8",
@@ -207,11 +217,16 @@ def main(argv: list[str] | None = None) -> int:
     EXAMPLES.mkdir(exist_ok=True)
     wanted = build()
     assessment = assess()
+    classification = assess(CLASSIFIED)
     comparison = compare()
 
     if args.check:
         stale = []
-        for path, body in ((ASSESSMENT, assessment), (COMPARISON, comparison)):
+        for path, body in (
+            (ASSESSMENT, assessment),
+            (CLASSIFICATION, classification),
+            (COMPARISON, comparison),
+        ):
             if not path.exists() or path.read_text(encoding="utf-8") != body:
                 print(f"stale:  {path.relative_to(ROOT)}", file=sys.stderr)
                 print("\nrun: python tools/examples.py", file=sys.stderr)
@@ -238,9 +253,10 @@ def main(argv: list[str] | None = None) -> int:
     for name, body in wanted.items():
         (EXAMPLES / name).write_text(body, encoding="utf-8")
     ASSESSMENT.write_text(assessment, encoding="utf-8")
+    CLASSIFICATION.write_text(classification, encoding="utf-8")
     COMPARISON.parent.mkdir(parents=True, exist_ok=True)
     COMPARISON.write_text(comparison, encoding="utf-8")
-    print(f"{len(wanted)} examples, 1 assessment and 1 comparison written.")
+    print(f"{len(wanted)} examples, 2 assessments and 1 comparison written.")
     return 0
 
 

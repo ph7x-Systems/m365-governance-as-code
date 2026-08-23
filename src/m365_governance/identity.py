@@ -67,3 +67,48 @@ def readable(resource: dict | None) -> str:
         f"{resource.get('workload', '?')} {resource.get('type', '?')} "
         f"{resource.get('native_id', '?')}"
     )
+
+
+def document_digest(document: dict) -> str:
+    """A stable identity for one evidence document.
+
+    NOT THE COLLECTOR'S NAME. Eleven SharePoint slices all publish
+    `provenance.collector = "spo-collector"`, so a name cannot tell two
+    acquisitions apart and every attribution built on one is wrong in exactly
+    the case that matters. The digest is over the document's canonical bytes,
+    which is the same machinery the engine already uses to let a stranger check
+    an artefact without trusting whoever sent it.
+
+    Prefixed and shortened. The full digest lives on the artefact; this is an
+    identifier a reader follows between two structures in one assessment, and
+    sixteen hex characters is unambiguous within one of those.
+    """
+    from . import canonical
+
+    return "sha256:" + canonical.digest(document)[:16]
+
+
+def attribution_of(document: dict) -> dict[str, str]:
+    """One document, as the run records it: an identity and a description.
+
+    THE DIGEST ALONE WAS NOT USABLE BY THE PRODUCT'S OWN SURFACE. It resolves
+    against the original documents, which an assessment carries and a standalone
+    run does not -- and the desktop client opens runs. A reader would have been
+    shown `sha256:a891ec...` and asked to believe it.
+
+    The digest stays the authority. Everything beside it is a PROJECTION OF THE
+    DOCUMENT IT NAMES rather than a second source: a consumer holding the
+    document checks the description against it, and one holding only the run
+    gets a sentence instead of a hash.
+    """
+    provenance = document.get("provenance") or {}
+    described = {
+        "document": document_digest(document),
+        "collector": str(provenance.get("collector") or "not-established"),
+        "collected_at": str(provenance.get("collected_at") or "not-established"),
+    }
+    for optional in ("source_system", "identity_kind"):
+        value = provenance.get(optional)
+        if value:
+            described[optional] = str(value)
+    return described
