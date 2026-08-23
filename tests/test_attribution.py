@@ -190,3 +190,103 @@ def test_an_unknown_is_not_a_decision_and_a_pass_is():
     assert not attribution.decided(result("unknown", "items.count"))
     assert not attribution.decided(result("invalid_evidence", "items.count"))
     assert not attribution.decided(result("not_applicable", "items.count"))
+
+
+# ---------------------------------------------------------------------------
+# is this granularity NECESSARY, or only elegant?
+# ---------------------------------------------------------------------------
+
+
+def test_the_coarser_models_cannot_answer_and_this_is_why_they_are_refused():
+    """THE NECESSITY PROOF, and it is a falsification rather than an argument.
+
+    Three candidate relations could carry attribution into the artefact:
+
+        finding      -> collector
+        assessment   -> collector
+        fact block   -> evidence document
+
+    The first two are cheaper and would have looked fine on every fixture in
+    this repository. This constructs the case they cannot answer and shows the
+    third answering it, so the choice is demonstrated rather than preferred.
+
+    ONE EVALUATION, TWO ACQUISITIONS, ONE COLLECTOR NAME. A rule reads the item
+    count and whether inheritance is broken; the two facts were acquired by two
+    separate runs of the SharePoint collector, minutes apart, and both publish
+    `provenance.collector = "spo-collector"`.
+
+    Ask the question a reader actually asks -- *which observation established
+    that this library holds 148,000 items?* -- and:
+
+      * `finding -> collector` answers `spo-collector`, which is true and
+        useless: it names something that ran twice and does not say which run,
+        so the reader cannot reach the population, the moment or the identity
+        behind the number they are being asked to act on.
+
+      * `assessment -> collector` is worse: it answers with the set of every
+        collector that contributed to the whole document, which for a real
+        assessment is most of them.
+
+      * `fact block -> evidence document` answers with one document, and from
+        that document the collector, the acquisition, the moment, the identity
+        kind and the population all follow. **The collector is derived from the
+        link and is not the link**, which is the whole distinction: a collector
+        is implementation, and an evidence document is a thing that happened.
+    """
+    early = document("spo-collector", "2026-08-17T09:00:00Z", items=148000)
+    later = document("spo-collector", "2026-08-17T09:05:00Z", permissions=17)
+
+    [(_, attributed)] = composing.composed([early, later])
+
+    finding = result("fail", "items.count", "permissions.inheritance_broken")
+
+    # The two coarser models, built the way somebody would have built them.
+    by_finding = {doc["provenance"]["collector"] for doc in (early, later)}
+    by_assessment = by_finding
+
+    assert by_finding == {"spo-collector"}, (
+        "`finding -> collector` collapses two acquisitions into one name, so "
+        "it cannot say which run established the count"
+    )
+    assert by_assessment == by_finding, (
+        "`assessment -> collector` is the same answer with a wider scope, and "
+        "answers a narrower question no better"
+    )
+
+    # The proposed relation, asked the same question.
+    links = attribution.chain(finding, attributed)
+    counted = [link for link in links if "items.count" in link["paths"]]
+
+    assert len(counted) == 1, "the count resolves to exactly one acquisition"
+    assert counted[0]["document"] == identity.document_digest(early)
+    assert counted[0]["document"] != identity.document_digest(later)
+
+    # And the chain reaches the ORIGINAL observation, not a name: everything a
+    # reader needs is on the document the link points at.
+    reached = {identity.document_digest(d): d for d in (early, later)}[
+        counted[0]["document"]
+    ]
+    assert reached["provenance"]["collected_at"] == "2026-08-17T09:00:00Z"
+    assert set(reached["facts"]) == {"items"}
+
+
+def test_a_single_evaluation_stays_unambiguous_across_both_acquisitions():
+    """The condition set for proceeding: one evaluation, two acquisitions, and
+    the chain unambiguous to BOTH original observations.
+
+    Not one of them, and not a set the reader has to disambiguate. Each path
+    resolves to its own document, and the two documents are different things.
+    """
+    early = document("spo-collector", "2026-08-17T09:00:00Z", items=148000)
+    later = document("spo-collector", "2026-08-17T09:05:00Z", permissions=17)
+
+    [(_, attributed)] = composing.composed([early, later])
+    links = attribution.chain(
+        result("fail", "items.count", "permissions.inheritance_broken"), attributed
+    )
+
+    by_path = {path: link["document"] for link in links for path in link["paths"]}
+
+    assert by_path["items.count"] == identity.document_digest(early)
+    assert by_path["permissions.inheritance_broken"] == identity.document_digest(later)
+    assert not attribution.unresolved(links)

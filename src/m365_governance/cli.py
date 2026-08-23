@@ -1635,7 +1635,7 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
     # The composition is for EVALUATION. `documents` stays as it was, so the
     # assessment still carries what each collector actually wrote.
     try:
-        composed = composing.compose(documents)
+        composed = composing.composed(documents)
     except composing.Conflict as clash:
         print(f"refusing to evaluate: {clash}", file=sys.stderr)
         raise _Refused from clash
@@ -1654,10 +1654,15 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
     # profile name does not resolve. The case where none was given stayed open.
     scoped = getattr(args, "profile", None) is None
     runs = []
-    for data in composed:
+    for data, attributed in composed:
         run = evaluate(rules, data, only_collected=scoped)
         run.set_aside = run.resource_class in aside
         run.rule_source = _rule_source(args).describe()
+        # The table the composition builds and used to discard. Carried on the
+        # run because the question it answers -- which observation supports
+        # this finding -- is asked of the artefact long after every process
+        # here has exited.
+        run.attribution = attributed
         runs.append(run)
     return runs, documents
 

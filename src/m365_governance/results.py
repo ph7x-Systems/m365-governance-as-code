@@ -187,6 +187,19 @@ class Run:
     #: reproducible, so this travels with the result rather than being known
     #: only by whoever typed the command.
     rule_source: str = ""
+    #: WHICH EVIDENCE DOCUMENT SUPPLIED EACH FACT BLOCK ON THIS RESOURCE.
+    #:
+    #: Documents describing one resource are composed for evaluation, and the
+    #: composition used to discard which document supplied what while carrying
+    #: the FIRST document's provenance for every fact in the result -- so a
+    #: fact acquired by one collector was presented under another's.
+    #:
+    #: The value is a digest over the document's canonical bytes and not a
+    #: collector name, because eleven SharePoint slices all publish
+    #: `spo-collector` and a name cannot tell two acquisitions apart. A
+    #: collector is implementation; an evidence document is a thing that
+    #: happened, and the collector is read FROM it rather than being the link.
+    attribution: dict[str, str] = field(default_factory=dict)
 
     def counts(self) -> dict[str, int]:
         tally = {o.value: 0 for o in Outcome}
@@ -204,6 +217,7 @@ class Run:
             resource_class=data.get("resource_class", ""),
             class_reason=data.get("class_reason", ""),
             set_aside=data.get("set_aside", False),
+            attribution=dict(data.get("attribution") or {}),
             rule_source=data.get("rule_source", ""),
         )
 
@@ -217,6 +231,7 @@ class Run:
             "resource_class": self.resource_class,
             "class_reason": self.class_reason,
             "set_aside": self.set_aside,
+            "attribution": dict(self.attribution),
             "rule_source": self.rule_source,
             "counts": self.counts(),
             "results": results,

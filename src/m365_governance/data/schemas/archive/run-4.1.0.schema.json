@@ -1,23 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
   "title": "Run",
   "description": "One evaluation of one resource, exactly as the engine emits it today. This describes `Run.to_dict()` and nothing more: where the current output is awkward, the awkwardness is documented rather than corrected, because a schema that describes what the code should do cannot validate what it does. Normalisation is a later, deliberate step with its own compatibility decision.",
   "type": "object",
   "additionalProperties": false,
   "required": [
     "$schema",
-    "attention",
-    "attribution",
-    "class_reason",
-    "counts",
-    "coverage",
     "provenance",
+    "coverage",
     "resource",
     "resource_class",
-    "results",
+    "class_reason",
+    "set_aside",
     "rule_source",
-    "set_aside"
+    "counts",
+    "results",
+    "attention"
   ],
   "properties": {
     "provenance": {
@@ -59,20 +58,11 @@
     },
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
+      "const": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     },
     "attention": {
       "$ref": "#/$defs/run_attention"
-    },
-    "attribution": {
-      "type": "object",
-      "description": "WHICH EVIDENCE DOCUMENT SUPPLIED EACH FACT BLOCK ON THIS RESOURCE, so a reader can go from a finding to the observation that supports it without the engine, without the collector, and without reading the human report.\n\nDocuments describing one resource are composed for evaluation, and the composition used to discard which document supplied what -- while carrying the FIRST document's provenance for every fact in the result. A fact acquired by one collector was presented under another's.\n\nThe key is a fact block name, which is the first segment of an evidence path: a result's `evidence_used[].path` of `permissions.unique_scope_count` addresses the `permissions` block. The value identifies the document that supplied that block.\n\nTHE VALUE IS A DIGEST AND NOT A COLLECTOR NAME, and that is the point. Eleven SharePoint slices all publish `spo-collector`, so a name cannot tell two acquisitions apart and an attribution keyed by one is wrong in exactly the case that matters while looking correct everywhere else. A COLLECTOR IS IMPLEMENTATION AND AN EVIDENCE DOCUMENT IS A THING THAT HAPPENED: the collector, the acquisition, the moment, the identity kind and the population are all read FROM the document this points at, and none of them is the link.\n\nResolved against `canonical.evidence` in the assessment, which carries the original documents whole. A consumer recomputes the digest over each one rather than being handed a list to trust, which is the same verification this product asks of everything else it publishes.",
-      "additionalProperties": {
-        "type": "string",
-        "pattern": "^sha256:[0-9a-f]{16}$",
-        "description": "`sha256:` and the first sixteen characters of the SHA-256 over the document's canonical bytes, as `canonical-json-and-digests` defines them. Shortened because this identifies a document among the handful in one assessment, not among all documents that exist."
-      }
     }
   },
   "$defs": {
