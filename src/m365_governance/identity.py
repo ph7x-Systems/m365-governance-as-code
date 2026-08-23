@@ -67,3 +67,22 @@ def readable(resource: dict | None) -> str:
         f"{resource.get('workload', '?')} {resource.get('type', '?')} "
         f"{resource.get('native_id', '?')}"
     )
+
+
+def document_digest(document: dict) -> str:
+    """A stable identity for one evidence document.
+
+    NOT THE COLLECTOR'S NAME. Eleven SharePoint slices all publish
+    `provenance.collector = "spo-collector"`, so a name cannot tell two
+    acquisitions apart and every attribution built on one is wrong in exactly
+    the case that matters. The digest is over the document's canonical bytes,
+    which is the same machinery the engine already uses to let a stranger check
+    an artefact without trusting whoever sent it.
+
+    Prefixed and shortened. The full digest lives on the artefact; this is an
+    identifier a reader follows between two structures in one assessment, and
+    sixteen hex characters is unambiguous within one of those.
+    """
+    from . import canonical
+
+    return "sha256:" + canonical.digest(document)[:16]

@@ -44,6 +44,29 @@ def compose(documents: list[dict]) -> list[dict]:
     several documents comes back once, carrying every fact and every coverage
     claim they made.
     """
+    return [document for document, _ in composed(documents)]
+
+
+def composed(documents: list[dict]) -> list[tuple[dict, dict[str, str]]]:
+    """Each composed document, and WHICH DOCUMENT SUPPLIED EACH FACT BLOCK.
+
+    THE TABLE WAS ALREADY BEING BUILT AND THROWN AWAY. `_facts` computes
+    `source[name]` as it unions, and returned only the union -- so a composed
+    document carried `documents[0]`'s provenance for every fact in it, and a
+    fact acquired by one collector was presented under another's. Not missing
+    information: computed, discarded, and then contradicted.
+
+    Keeping it is the whole of what `docs/ATTRIBUTION.md` asks for. Everything
+    downstream derives from this one relation: a finding names the evidence
+    paths it used, the first segment of a path is a fact block, and this says
+    which document that block came from. No filename, no slice naming
+    convention, no collector identity string, no regular expression, no
+    execution order, and no sentence read out of the human report.
+
+    The value is a document DIGEST rather than a collector name, because eleven
+    SharePoint slices all publish `spo-collector` and a name cannot tell two
+    acquisitions apart.
+    """
     order: list[tuple] = []
     grouped: dict[tuple, list[dict]] = {}
     for document in documents:
@@ -53,21 +76,26 @@ def compose(documents: list[dict]) -> list[dict]:
             order.append(key)
         grouped[key].append(document)
 
-    return [
-        grouped[key][0] if len(grouped[key]) == 1 else _one(grouped[key])
-        for key in order
-    ]
+    return [_one(grouped[key]) for key in order]
 
 
-def _one(documents: list[dict]) -> dict:
-    """Several documents about one resource, as one document."""
+def _one(documents: list[dict]) -> tuple[dict, dict[str, str]]:
+    """Several documents about one resource, as one document and its table.
+
+    A single document still gets a table: every fact in it came from it, and
+    saying so costs nothing and removes the special case a consumer would
+    otherwise have to know about.
+    """
+    facts, attribution = _facts(documents)
+    if len(documents) == 1:
+        return documents[0], attribution
     composed = dict(documents[0])
-    composed["facts"] = _facts(documents)
+    composed["facts"] = facts
     composed["coverage"] = _coverage(documents)
-    return composed
+    return composed, attribution
 
 
-def _facts(documents: list[dict]) -> dict[str, Any]:
+def _facts(documents: list[dict]) -> tuple[dict[str, Any], dict[str, str]]:
     """The union of every fact block, refusing a namespace claimed twice.
 
     Slices write into their own namespace -- `owners`, `sharing`, `spfx` -- so
@@ -77,8 +105,10 @@ def _facts(documents: list[dict]) -> dict[str, Any]:
     """
     facts: dict[str, Any] = {}
     source: dict[str, str] = {}
+    attribution: dict[str, str] = {}
     for document in documents:
         where = _where(document)
+        which = identity.document_digest(document)
         for name, block in (document.get("facts") or {}).items():
             if name in facts:
                 # EVEN WHEN THEY MATCH. Identical blocks mean the same evidence
@@ -94,7 +124,8 @@ def _facts(documents: list[dict]) -> dict[str, Any]:
                 )
             facts[name] = block
             source[name] = where
-    return facts
+            attribution[name] = which
+    return facts, attribution
 
 
 def _coverage(documents: list[dict]) -> dict[str, Any]:
