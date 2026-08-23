@@ -379,3 +379,102 @@ def test_a_refusal_proves_the_failure_path_and_never_the_acquisition():
     """
     assert live_proof.stages("spfx")["acquisition"] == "refused"
     assert live_proof.proof_state("spfx") == "acquisition-attempted"
+
+
+def test_a_collection_records_only_what_a_collection_did(tmp_path):
+    """`collect` acquires and writes evidence. It runs no rule and builds
+    nothing, and the record it leaves may not suggest otherwise.
+
+    The first version of this emitted NO stages at all, which would have left
+    the authorized run producing a record that cannot feed the ladder the whole
+    registry derives -- the governing field filled in by hand, which is the
+    arrangement the registry replaced.
+    """
+    from m365_governance import collecting
+
+    written = collecting._write_proof_draft(
+        _FakeOutcome(), name="customization", output=tmp_path
+    )
+    stages = json.loads(written.read_text())["stages"]
+
+    assert stages["acquisition"] == "proven"
+    assert stages["evidence"] == "proven"
+    assert stages["assessment"] == "not-attempted"
+    assert stages["bundle"] == "not-attempted"
+    assert stages["consumer"] == "not-attempted"
+
+
+def test_a_collection_that_wrote_nothing_acquired_nothing():
+    """Whatever it returned. A run that produced no document is not a read."""
+
+    class Empty:
+        written = ()
+        started_at = "2026-08-23T10:00:00Z"
+        state = "completed"
+        digest = None
+
+    draft = live_proof.draft_from_run(
+        Empty(), collector="customization", acquisition_method="pnp-powershell"
+    )
+
+    assert draft["stages"]["acquisition"] == "attempted"
+    assert draft["stages"]["evidence"] == "not-attempted"
+
+
+def test_a_refusal_is_recorded_as_a_refusal_and_not_as_an_attempt():
+    """`spfx` is the case: a 403 proves the failure path and is a real thing to
+    have observed. Flattening it into `attempted` discards it."""
+
+    class Refused:
+        written = ()
+        started_at = "2026-08-23T10:00:00Z"
+        state = "permission-denied"
+        digest = None
+
+    draft = live_proof.draft_from_run(
+        Refused(), collector="spfx", acquisition_method="pnp-powershell"
+    )
+
+    assert draft["stages"]["acquisition"] == "refused"
+
+
+def test_a_run_raises_only_the_stage_it_can_attribute():
+    """THE ONE THAT MATTERS, and it is a limit rather than a feature.
+
+    `bundle` is attributable: the artefact was written from these runs and this
+    slice's evidence was under the output they were evaluated from.
+
+    `assessment` is not, and refusing to claim it is the whole point. A rule
+    decides about a RESOURCE and evidence is composed by resource before
+    evaluation, so a result cannot be traced back to the collector whose fact
+    it read -- and the evidence's own provenance does not close it, because
+    eleven SharePoint slices all publish `spo-collector`. A run records the
+    attempt; a person confirms from the report.
+
+    `consumer` cannot be raised by this software at all. Somebody independent
+    opening the artefact is the one stage a program certifying it would be
+    certifying itself.
+    """
+    draft = live_proof.draft_from_run(
+        _FakeOutcome(), collector="customization", acquisition_method="pnp-powershell"
+    )
+
+    raised = live_proof.upgrade_after_a_run(draft, evaluated=True, bundled=True)
+
+    assert raised["stages"]["assessment"] == "attempted"
+    assert raised["stages"]["bundle"] == "proven"
+    assert raised["stages"]["consumer"] == "not-attempted"
+
+
+def test_a_capability_with_no_rules_records_no_assessment_to_attempt():
+    """`agents` feeds no rule by a recorded decision, so there is nothing to
+    attempt and the top of the ladder is not put out of its reach."""
+    draft = live_proof.draft_from_run(
+        _FakeOutcome(), collector="agents", acquisition_method="pnp-powershell"
+    )
+
+    assert draft["stages"]["assessment"] == "not-applicable"
+
+    raised = live_proof.upgrade_after_a_run(draft, evaluated=True, bundled=True)
+
+    assert raised["stages"]["assessment"] == "not-applicable"

@@ -1185,7 +1185,61 @@ def _cmd_run(args) -> int:
             return 2
         print(f"\n{written}: {len(runs)} run(s)", file=sys.stderr)
 
+    # THE VERTICAL RECORDS WHAT ITS OWN STEPS PRODUCED. `collect` acquires and
+    # writes evidence and may claim only that; `run` evaluated and possibly
+    # bundled, and the drafts each slice left behind are raised from what those
+    # steps actually did rather than from having been asked to do them.
+    #
+    # Without this the record a run leaves cannot reach the top of the ladder
+    # by any route except somebody editing the field the ladder derives from,
+    # which is the arrangement the proof registry exists to end.
+    _raise_the_proof_drafts(args.output, runs, bundled=bool(args.bundle))
+
     return _exit_for(runs, args.fail_on)
+
+
+def _raise_the_proof_drafts(output: Path, runs: list[Run], *, bundled: bool) -> None:
+    """Upgrade each slice's draft with what this run can ATTRIBUTE to it.
+
+    Two of the five stages are attributable here and one is not, and the
+    difference is a fact about the evidence rather than a shortcut.
+
+    `bundle` is attributable. The artefact was written from these runs, and a
+    slice whose evidence is under this output contributed to them.
+
+    `assessment` is NOT, and this is the second time the same shape has turned
+    up. A rule decides about a RESOURCE, and evidence documents are composed by
+    resource before evaluation, so a result cannot be traced back to the
+    collector whose fact it read. The evidence's own provenance does not close
+    the gap either: eleven SharePoint slices all publish `spo-collector`. So a
+    run may record that rules were evaluated over a set including this slice's
+    evidence -- an attempt -- and a person confirms from the report whether a
+    rule decided anything from THIS slice's facts. Writing `proven` here would
+    be the command certifying its own reach.
+
+    `consumer` is never raised here and cannot be: somebody independent opening
+    the artefact is the one stage this software is not in a position to
+    observe, and a program that certified it would be certifying itself.
+
+    Failure is silent by design. The evidence and the report are what the
+    command exists for, and a run that reached a directory is not thrown away
+    because a record beside it could not be rewritten.
+    """
+    from m365_governance import live_proof
+
+    evaluated = bool(runs)
+    for draft_path in sorted(output.glob("*/**/live-proof-draft.json")):
+        try:
+            draft = json.loads(draft_path.read_text(encoding="utf-8"))
+            raised = live_proof.upgrade_after_a_run(
+                draft, evaluated=evaluated, bundled=bundled
+            )
+            draft_path.write_text(
+                json.dumps(raised, indent=2, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+            )
+        except (OSError, ValueError):
+            continue
 
 
 def _exit_for(runs: list[Run], fail_on: str) -> int:
