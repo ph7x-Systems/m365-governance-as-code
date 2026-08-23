@@ -205,7 +205,9 @@ def test_asking_for_html_over_a_directory_returns_html(capsys, tmp_path):
 def test_the_delegated_warning_survives_the_many_resource_report(tmp_path):
     run_set = RunSet([_run_for("site-delegated-identity")])
     for rendered in (many_to_markdown(run_set), many_to_html(run_set)):
-        assert "Identity: delegated" in rendered
+        from m365_governance.reporting import IDENTITY
+
+        assert f"Identity: {IDENTITY['delegated'].label}" in rendered
 
 
 # ---------------------------------------------------------------------------

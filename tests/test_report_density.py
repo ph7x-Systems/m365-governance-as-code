@@ -148,7 +148,13 @@ def test_the_document_is_measured_whole_and_not_only_its_findings():
         "hand-off": 2,
         "context": 15,
     }, counts
-    assert len(document) == 2967, len(document)
+    # 2967 BEFORE THE IDENTITY DISCLOSURE WAS MADE COMPLETE. Seventy bytes,
+    # and they are the sentence saying what the identity that produced this
+    # evidence was able to reach. A density budget is for prose that competes
+    # with the finding; this is the sentence that bounds what every finding in
+    # the document may be read as, and it is the one line here that a reader
+    # cannot reconstruct from anything else.
+    assert len(document) == 3037, len(document)
     assert (
         counts["action"] + counts["unknown"] + counts["hand-off"] + counts["context"]
         == 31

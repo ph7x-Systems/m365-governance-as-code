@@ -4,7 +4,7 @@
 
 > **Run coverage: not established.** 1 resource is stored. The total number the identity was expected to reach was not recorded, so this run does not establish complete coverage.
 
-> **Identity: delegated.** These runs saw what one person sees. Nothing here may be read as a tenant-wide statement.
+> **Identity: Delegated.** This assessment reflects what the signed-in identity was permitted to read, which is what one person sees. Nothing here may be read as a tenant-wide statement.
 
 ## Summary
 

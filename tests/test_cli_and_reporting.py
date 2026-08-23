@@ -110,7 +110,13 @@ def test_not_applicable_is_not_counted_as_an_answer():
 
 def test_a_delegated_run_says_so():
     markdown = to_markdown(_run_one("site-delegated-identity"))
-    assert "Identity: delegated" in markdown
+    # DERIVED FROM THE TABLE THAT DECIDES IT, not from the wording it had
+    # when this was written. A test pinning the incidental string is the shape
+    # that let `test_the_wheel_would_carry_it` pass while a different file
+    # stopped shipping.
+    from m365_governance.reporting import IDENTITY
+
+    assert f"Identity: {IDENTITY['delegated'].label}" in markdown
     assert "one person sees" in markdown
 
 
