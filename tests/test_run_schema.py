@@ -131,6 +131,11 @@ def test_the_schemas_are_reachable_from_each_other():
             "error": 0,
         },
         "run_coverage": {},
+        # A RUN SET THAT DECIDED NOTHING STILL SAYS WHAT IT LOOKED AT, which
+        # here is nothing. Empty is the honest value and the field is required
+        # so that a consumer never has to distinguish "no services" from "this
+        # artefact does not carry them".
+        "services": [],
         "runs": [],
     }
     assert not list(schema.iter_errors(empty))

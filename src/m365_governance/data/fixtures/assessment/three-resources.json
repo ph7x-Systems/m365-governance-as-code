@@ -23,6 +23,66 @@
         "expected": null,
         "detail": "3 resources are stored. The total number the identity was expected to reach was not recorded, so this run does not establish complete coverage."
       },
+      "services": [
+        {
+          "service": "sharepoint",
+          "state": "partial",
+          "conclusions": 3,
+          "unresolved": 2,
+          "areas": [
+            {
+              "area": "agents",
+              "state": "observed",
+              "conclusions": 0,
+              "unresolved": 0,
+              "acquisition": [
+                "spo-collector"
+              ],
+              "population": 1
+            },
+            {
+              "area": "enumeration",
+              "state": "partial",
+              "conclusions": 0,
+              "unresolved": 0,
+              "acquisition": [
+                "spo-collector"
+              ],
+              "population": 1
+            },
+            {
+              "area": "items",
+              "state": "observed",
+              "conclusions": 1,
+              "unresolved": 0,
+              "acquisition": [
+                "spo-collector"
+              ],
+              "population": 1
+            },
+            {
+              "area": "permissions",
+              "state": "observed",
+              "conclusions": 1,
+              "unresolved": 2,
+              "acquisition": [
+                "spo-collector"
+              ],
+              "population": 1
+            },
+            {
+              "area": "spfx",
+              "state": "observed",
+              "conclusions": 1,
+              "unresolved": 0,
+              "acquisition": [
+                "spo-collector"
+              ],
+              "population": 1
+            }
+          ]
+        }
+      ],
       "runs": [
         {
           "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
@@ -893,17 +953,17 @@
           "collected"
         ]
       },
-      "assessment_id": "44c7d66bfc6cd0d85eee48e681d992cb3178b10b1a59b6922431b97d1cc3d985"
+      "assessment_id": "b81f5f3fd3ad6980c5db383a6988007b74636d3608ce0ece3a7d9b828577434c"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "2df673339e40622280df8432d3aa0cd035aa63f67ac93bd3b969376cf3dee1d9",
+        "run_set": "34c653145ba33c3fd2a3aefb8fdc264c6a49fff4bd4a8d2cd0fc3e064633ff7d",
         "evidence": "325b0e5371017a74c19e5d9f82ab748b36be59f72a6f2589841c90754434f70d",
         "versions": "bf99f3b399acad638558a77dc9fafc8375ea337c3a8c0c54349d89903a5fb9aa",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "44c7d66bfc6cd0d85eee48e681d992cb3178b10b1a59b6922431b97d1cc3d985"
+      "canonical_hash": "b81f5f3fd3ad6980c5db383a6988007b74636d3608ce0ece3a7d9b828577434c"
     }
   }
 }

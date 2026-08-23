@@ -266,6 +266,21 @@ class RunSet:
 
     runs: list[Run]
     coverage: dict = field(default_factory=dict)
+    #: The evidence documents these runs were decided from, when the caller has
+    #: them. Needed for the services projection and for nothing else: a run says
+    #: what was decided, a document says what was LOOKED AT, and an area that
+    #: was collected and decided nothing is the case a list of findings cannot
+    #: show. Empty is honest -- the projection then reports only what the runs
+    #: themselves name.
+    documents: list[dict] = field(default_factory=list)
+    #: The projection as a STORED artefact carries it.
+    #:
+    #: A run set read back from disk has its runs and not the documents they
+    #: were decided from, so recomputing would quietly produce less than the
+    #: artefact already published -- a service that collected evidence and
+    #: reached no conclusion would vanish, because nothing in the runs mentions
+    #: it. What was published is what is republished.
+    published_services: list[dict] | None = None
 
     def __post_init__(self) -> None:
         keys = [identity.key(run.resource) for run in self.runs]
@@ -312,6 +327,12 @@ class RunSet:
         }
 
     def to_dict(self) -> dict:
+        # IMPORTED HERE, LIKE `engine` IS EVERYWHERE ELSE IN THIS FILE. The
+        # projection reads results, and results is this module: a module-level
+        # import is a cycle, and the pattern this package already uses for the
+        # same reason is a local one.
+        from . import services
+
         return {
             # The exact contract this document claims. It replaces
             # `run_schema_version: "1.0"`, a second version maintained by hand
@@ -322,6 +343,15 @@ class RunSet:
             "set_aside": sum(1 for run in self.runs if run.set_aside),
             "counts": self.counts(),
             "run_coverage": self.run_coverage(),
+            # PUBLISHED RATHER THAN LEFT TO BE COMPUTED. A consumer deriving
+            # this would be a second authority on what a service is and what an
+            # area is, and the first thing it would disagree about is a service
+            # that collected evidence and reached no conclusion.
+            "services": (
+                self.published_services
+                if self.published_services is not None
+                else services.observed(self.runs, self.documents)["services"]
+            ),
             "runs": [run.to_dict() for run in self.runs],
         }
 
@@ -330,4 +360,5 @@ class RunSet:
         return cls(
             runs=[Run.from_dict(run) for run in data.get("runs", [])],
             coverage=data.get("run_coverage", {}),
+            published_services=data.get("services"),
         )

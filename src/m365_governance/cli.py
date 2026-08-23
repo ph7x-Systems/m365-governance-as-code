@@ -1165,7 +1165,7 @@ def _cmd_run(args) -> int:
         print(f"{args.output}: nothing was collected", file=sys.stderr)
         return 2
 
-    report = _render_many(RunSet(runs), args.format)
+    report = _render_many(RunSet(runs, documents=documents), args.format)
     if args.out:
         args.out.write_text(report, encoding="utf-8")
         print(f"\n{args.out}", file=sys.stderr)
@@ -1704,7 +1704,7 @@ def _cmd_evaluate(args) -> int:
     if not args.evidence.is_dir():
         sys.stdout.write(_render(runs[0], args.format))
     else:
-        sys.stdout.write(_render_many(RunSet(runs), args.format))
+        sys.stdout.write(_render_many(RunSet(runs, documents=documents), args.format))
 
     return _exit_for(runs, args.fail_on)
 
@@ -1735,7 +1735,7 @@ def _cmd_assess(args) -> int:
 
     try:
         document = assessment.build(
-            RunSet(runs),
+            RunSet(runs, documents=documents),
             documents,
             engine_version=__version__,
             created_at=created_at,
