@@ -55,32 +55,38 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"m365_governance.data" = [
-  "rules/**/*.yaml",
-  "profiles/*.yaml",
-  # Recursive on purpose. `schemas/*.json` matched six files and left the four
-  # ARCHIVED contracts out, so an installed engine could not read a document
-  # declaring one — and refusing it as "unknown" instead of "valid and
-  # unsupported" is the difference between a contract with history and one
-  # that pretends its past never happened.
-  "schemas/**/*.json",
-  # The consumer bundle is part of the release. Without it there is no way to
-  # obtain the contract except by cloning the repository, which is why nothing
-  # could answer "is this bundle current?" by any automated means.
-  "generated/manifest.json",
-  "generated/csharp/*.g.cs",
-  "collectors/**/*.ps1",
-  # The entry point is useless without them, and a glob that named only .ps1
-  # shipped a wheel whose collector could not import its own modules.
-  "collectors/**/*.psm1",
-  "fixtures/**/*.json",
-  "fixtures/**/*.md",
-  # The digest of every contract version as it was published. It ships because
-  # the check it enables is worth running against an installed engine and not
-  # only against a checkout: an installation that has been edited in place says
-  # so here, where the generated manifest would agree with the edit.
-  "published-contracts.json",
-]
+# EVERYTHING UNDER `data`, DISCOVERED RATHER THAN LISTED.
+#
+# This was a list of globs naming the directories somebody remembered, and it
+# was wrong three times in the same way. `collectors/**/*.ps1` shipped a
+# collector that could not import one of its own `.psm1` modules. Then the
+# whole list named directories only, so `data/live-proof.json` — the register
+# the proof ladder is derived from — never entered the wheel at all, and
+# `m365-governance capabilities` raised `FileNotFoundError` on every installed
+# engine while every gate stayed green.
+#
+# THE DEFECT IS THE SHAPE, NOT THE ENTRIES. A positive enumeration of an open
+# set is a list somebody has to remember to extend, at the moment they are
+# thinking about something else. The set of files this product needs at runtime
+# grows; the list did not grow with it, and nothing said so.
+#
+# So the pattern is total and the EXCLUSIONS are what is declared, in
+# `tests/test_distribution.py`, where each one carries the reason it is not
+# product data. A file added to `data/` now ships unless somebody writes down
+# why it should not.
+"m365_governance.data" = ["**/*"]
+
+# THE OTHER HALF OF THE RULE. Discovery without exclusion ships whatever the
+# machine that built the wheel happened to leave lying about. These are the
+# only files under `data` that are not product: they are this interpreter's
+# own cache, they differ between machines, and a wheel carrying them is a
+# wheel whose contents depend on who built it.
+#
+# Anything else added here needs the same kind of sentence. "It is not needed"
+# is not one: a file the runtime does not read today is a file the gate should
+# be told about, not one somebody quietly drops.
+[tool.setuptools.exclude-package-data]
+"m365_governance.data" = ["**/__pycache__/**", "**/*.pyc"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

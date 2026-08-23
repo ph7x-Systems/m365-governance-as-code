@@ -100,6 +100,16 @@ def main() -> int:
 
     said = run("doctor", expect=0)
     expect_in(said, "packaged content", "doctor names what shipped")
+
+    # THE COMMAND THAT PUBLISHES WHAT THIS ENGINE CLAIMS, run against the
+    # artefact somebody installed rather than against a checkout. It read a
+    # register that was in no wheel and raised FileNotFoundError for every
+    # installed engine, and this journey did not walk past it, so nothing said
+    # so. A reader reaching for `capabilities` on a fresh install met a
+    # traceback where the product's own account of itself should have been.
+    catalogue = run("capabilities", expect=0)
+    expect_in(catalogue, "Capabilities", "capabilities names what is collected")
+    expect_in(catalogue, "Rules", "capabilities names the catalogue it carries")
     # The remedy is a command where a command exists, and a link where one does
     # not. Naming what is missing is half a diagnosis.
     if "PowerShell 7" in said and "not found" in said:

@@ -253,32 +253,46 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
 
   step "The wheel carries the product"
   "$PY" - "$TMP" <<'PY'
-import collections, glob, pathlib, sys, zipfile
-names = zipfile.ZipFile(glob.glob(f"{sys.argv[1]}/dist/*.whl")[0]).namelist()
-found = collections.Counter(
-    n.split("/")[2] for n in names
-    if n.startswith("m365_governance/data/") and n.count("/") > 2)
-missing = [d for d in ("rules", "profiles", "schemas", "collectors", "fixtures")
-           if not found.get(d)]
-print("  " + str(dict(found)))
-if missing:
-    sys.exit(f"  ✗ the wheel is missing {missing}: the package does not contain the product")
+import glob, pathlib, sys, zipfile
 
-# Counting directories is not enough. A glob that named only *.ps1 left every
-# .psm1 out, and the count above still said `collectors: 1` while the collector
-# could not import a single one of its own modules. Compare against the tree.
+# THE TREE, NOT A LIST OF DIRECTORIES SOMEBODY REMEMBERED.
+#
+# This counted five names -- rules, profiles, schemas, collectors, fixtures --
+# and compared the tree only for PowerShell, because a glob naming .ps1 had
+# once left every .psm1 out. The lesson was applied to the directory where it
+# hurt and never generalised, so `data/live-proof.json` was introduced,
+# shipped in no wheel, and `m365-governance capabilities` raised
+# FileNotFoundError on every installed engine while this step printed a tick.
+#
+# A positive enumeration of an open set is a list somebody has to remember to
+# extend. So the set is walked and the EXCLUSIONS are declared, with their
+# reasons, in tests/test_distribution.py.
+names = set(zipfile.ZipFile(glob.glob(f"{sys.argv[1]}/dist/*.whl")[0]).namelist())
 data = pathlib.Path("src/m365_governance/data")
-on_disk = {str(p.relative_to(data.parent.parent))
-           for p in (data / "collectors").rglob("*")
-           if p.suffix in {".ps1", ".psm1"}}
-absent = sorted(on_disk - set(names))
+
+on_disk = {
+    str(path.relative_to(data.parent.parent))
+    for path in data.rglob("*")
+    if path.is_file()
+    and "__pycache__" not in path.parts
+    and path.suffix != ".pyc"
+}
+absent = sorted(on_disk - names)
+print(f"  {len(on_disk)} product files under data/, {len(absent)} missing")
 if absent:
-    sys.exit(f"  ✗ PowerShell files not carried by the wheel: {absent}")
+    sys.exit(
+        "  ✗ the wheel does not carry: "
+        + ", ".join(absent[:10])
+        + (f" (and {len(absent) - 10} more)" if len(absent) > 10 else "")
+    )
+
+# The other direction. A wheel carrying this machine's bytecode cache is a
+# wheel whose contents depend on who built it.
+stowaways = sorted(n for n in names if "__pycache__" in n or n.endswith(".pyc"))
+if stowaways:
+    sys.exit(f"  ✗ the wheel carries build leftovers: {stowaways[:5]}")
 PY
 
-  # ── 10. a clean installation is the reference environment ──────────────────
-  # `cd` out of the checkout is the whole point. Run from the repository and
-  # these steps prove nothing at all.
   step "Install into an empty environment and run from outside any checkout"
   note "creating an empty virtual environment"
   "$PY" -m venv "$TMP/env"
@@ -292,6 +306,17 @@ PY
     "$G" doctor > doctor.txt
     note "list-rules"
     "$G" list-rules > /dev/null
+    # EVERY COMMAND THAT MAKES A PRODUCT CLAIM RUNS HERE.
+    #
+    # This ran doctor, list-rules, validate, evaluate and a dry-run collect,
+    # and `capabilities` -- the command publishing what this engine can observe
+    # and how far each capability has been proven -- was not among them. It
+    # raised FileNotFoundError on every installed engine for as long as the
+    # register it reads was missing from the wheel, and nothing here noticed:
+    # a command nobody runs is a file nobody misses.
+    note "capabilities"
+    "$G" capabilities > /dev/null
+    "$G" capabilities --format json > /dev/null
     note "validate"
     "$G" validate > /dev/null
     FIXTURE=$("$TMP/env/bin/python" -c \
