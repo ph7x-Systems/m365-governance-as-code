@@ -554,6 +554,34 @@ SLICES = {
             permissions=("Policy.Read.All",),
         ),
         Slice(
+            "brand-center",
+            "BrandCenter",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=False,
+            # THE THIRD RECORDED EXCEPTION, and the narrowest of them. Microsoft
+            # publishes no conclusion about whether an organisation should
+            # publish its brand assets anonymously, and there is none to invent:
+            # a logo on a public CDN is the intended design, and something else
+            # there is a decision only the organisation can make. What has no
+            # answer is not the same as what has no consequence, which is why
+            # this collects.
+            consumed_by="the brand distribution surface in a report, and any viewer",
+            describes=(
+                "the organisation asset libraries a brand centre is built on, "
+                "and the boundary its assets are published across"
+            ),
+            shaped_like="tenant-brand-center-public-cdn",
+            reads=(
+                "Get-PnPOrgAssetsLibrary",
+                "Get-PnPTenantCdnEnabled -CdnType Public|Private",
+                "Get-PnPTenantCdnOrigin -CdnType Public|Private",
+                "Get-PnPTenantCdnPolicies -CdnType Public",
+            ),
+            permissions=("Sites.FullControl.All",),
+        ),
+        Slice(
             "customization",
             "Customization",
             needs_site=True,
