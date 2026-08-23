@@ -1,18 +1,18 @@
 {
   "$schema": "https://ph7x.com/schemas/m365-governance/comparison/3.1.0",
   "before": {
-    "assessment_id": "1fc50cdea9eac4404cb3c3e0d0c4e461ae9d24c53099fc1948585fa8aade253d",
+    "assessment_id": "f99e55585eb1a8ff3bbaa6b6996d43916642adfb6d9d4abf4ff937d5a0e69493",
     "created_at": "2026-07-01T09:00:00Z",
-    "canonical_hash": "1fc50cdea9eac4404cb3c3e0d0c4e461ae9d24c53099fc1948585fa8aade253d",
+    "canonical_hash": "f99e55585eb1a8ff3bbaa6b6996d43916642adfb6d9d4abf4ff937d5a0e69493",
     "tenant": {
       "id": null,
       "host": "contoso.sharepoint.com"
     }
   },
   "after": {
-    "assessment_id": "72754b977a3fe01bd0217cd2c80c1c9898348f6c2b1a651b031ef677ee5963a0",
+    "assessment_id": "a50a832151acd33c6e59514ddf41236b85d67f1424ed13491c9685dca53d15b0",
     "created_at": "2026-08-01T09:00:00Z",
-    "canonical_hash": "72754b977a3fe01bd0217cd2c80c1c9898348f6c2b1a651b031ef677ee5963a0",
+    "canonical_hash": "a50a832151acd33c6e59514ddf41236b85d67f1424ed13491c9685dca53d15b0",
     "tenant": {
       "id": null,
       "host": "contoso.sharepoint.com"

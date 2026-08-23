@@ -75,6 +75,14 @@ def observed(runs: list[Any], documents: list[dict]) -> dict[str, Any]:
                     "unresolved": 0,
                     "acquisition": set(),
                     "population": 0,
+                    # THE REASON, WHERE THE COLLECTOR GAVE ONE. A state without
+                    # it tells a reader that something is partial and not what
+                    # part, which is the shape of a status nobody can act on.
+                    "detail": None,
+                    # WHEN, because a reading is true of a moment. An area read
+                    # twice keeps the later one: what a reader wants is how
+                    # current this is, not when it first happened.
+                    "observed_at": None,
                 },
             )
             entry = unavailable.get(name)
@@ -85,10 +93,15 @@ def observed(runs: list[Any], documents: list[dict]) -> dict[str, Any]:
             )
             if STATES.index(state) > STATES.index(area["state"]):
                 area["state"] = state
+            if entry and (entry or {}).get("detail"):
+                area["detail"] = str(entry["detail"])
 
             provenance = document.get("provenance") or {}
             if provenance.get("collector"):
                 area["acquisition"].add(str(provenance["collector"]))
+            when = str(provenance.get("collected_at") or "")
+            if when and (area["observed_at"] is None or when > area["observed_at"]):
+                area["observed_at"] = when
             if state != "not-observed":
                 area["population"] += 1
 

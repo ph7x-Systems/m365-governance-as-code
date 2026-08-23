@@ -38,7 +38,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-08T18:00:00Z"
             },
             {
               "area": "enumeration",
@@ -48,7 +50,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": "Agents are files, so this is what the running identity can see in this site collection. A site with no agents and a site this identity cannot open return the same empty result.",
+              "observed_at": "2026-08-08T18:00:00Z"
             },
             {
               "area": "items",
@@ -58,7 +62,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-05T14:02:11Z"
             },
             {
               "area": "permissions",
@@ -68,7 +74,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-05T14:02:11Z"
             },
             {
               "area": "spfx",
@@ -78,7 +86,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-06T16:00:00Z"
             }
           ]
         }
@@ -953,17 +963,17 @@
           "collected"
         ]
       },
-      "assessment_id": "b81f5f3fd3ad6980c5db383a6988007b74636d3608ce0ece3a7d9b828577434c"
+      "assessment_id": "ec7586d84b40c021e3b4a5e089469541f9c994ca8ecf5dd902bd9050736c0cb5"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "34c653145ba33c3fd2a3aefb8fdc264c6a49fff4bd4a8d2cd0fc3e064633ff7d",
+        "run_set": "ac6fdff9e3d20c7c3d7bfdfacdd2d80dfad2550b1062d65abc0317d589735d55",
         "evidence": "325b0e5371017a74c19e5d9f82ab748b36be59f72a6f2589841c90754434f70d",
         "versions": "bf99f3b399acad638558a77dc9fafc8375ea337c3a8c0c54349d89903a5fb9aa",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "b81f5f3fd3ad6980c5db383a6988007b74636d3608ce0ece3a7d9b828577434c"
+      "canonical_hash": "ec7586d84b40c021e3b4a5e089469541f9c994ca8ecf5dd902bd9050736c0cb5"
     }
   }
 }
