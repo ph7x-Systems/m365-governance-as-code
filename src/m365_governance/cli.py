@@ -50,6 +50,7 @@ from . import (
     graph_token,
     migration,
     migration_graph,
+    presentation,
     reporting,
     running,
     tenant_governance,
@@ -853,7 +854,11 @@ def _cmd_collect(args) -> int:
     # only thing distinguishing a working collection from a hung one was the
     # patience of the person waiting.
     def report(line: str) -> None:
-        print(line, flush=True)
+        # TO STDERR, BECAUSE A PIPELINE REDIRECTING STDOUT WANTS THE RESULT.
+        # This was a bare `print`, so a collection's progress landed in
+        # whatever file somebody was capturing, to be found later by a parser
+        # that failed on a line saying which slice was running.
+        UI.progress(line)
 
     outcome = collecting.run_slice(
         args.slice,
@@ -976,7 +981,7 @@ def _collect_from_graph(args, chosen) -> int:
             return 2
 
     def report(line: str) -> None:
-        print(line, flush=True)
+        UI.progress(line)
 
     outcome = module.run(
         token=token,
@@ -1093,7 +1098,11 @@ def _cmd_connect(args) -> int:
             return
         shown = connecting.readable(line)
         if shown is not None:
-            print(shown, flush=True)
+            # STILL STDERR, AND THE DEVICE CODE TOO. A code somebody reads off
+            # the screen is the clearest case of something meant for a person
+            # rather than for a pipe, and a run whose stdout is captured must
+            # still show it to whoever is sitting there.
+            UI.progress(shown)
 
     established = connecting.connect(
         client_id=args.client_id,
@@ -2199,6 +2208,12 @@ def _readable_output() -> None:
         reconfigure = getattr(stream, "reconfigure", None)
         if reconfigure is not None:
             reconfigure(encoding="utf-8", errors="replace")
+
+
+#: THE ENGINE'S ONE VOICE. Created here rather than passed down, because a
+#: parameter threaded through forty commands is a parameter somebody forgets,
+#: and the forgotten one writes to stdout. Tests substitute the streams.
+UI = presentation.Presentation()
 
 
 def main(argv: list[str] | None = None) -> int:
