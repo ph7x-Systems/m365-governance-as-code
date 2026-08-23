@@ -962,3 +962,58 @@ def test_a_policy_that_is_not_report_only_is_not_thereby_enforcing():
         "CA-STATE-001 must publish what its pass does not establish; a policy "
         "that is merely not report-only may still enforce nothing"
     )
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-conditional-access-everyone-no-exclusion", Outcome.FAIL),
+        ("entra-conditional-access-everyone-with-break-glass", Outcome.PASS),
+        ("entra-conditional-access-scoped-to-a-group", Outcome.NOT_APPLICABLE),
+    ],
+)
+def test_a_policy_for_everyone_with_nothing_excluded_has_no_way_back(fixture, outcome):
+    """`CA-RECOVERY-001`, and the operator that would have made it pass silently.
+
+    The condition was first written as `not-exists excluded_users`, which is
+    the obvious reading and is wrong: a policy that excludes nobody publishes
+    three arrays that are PRESENT AND EMPTY, so the rule passed on exactly the
+    case it exists to catch. The path grammar has no way to say *this array is
+    empty*, so the collector counts the three exclusion lists together and the
+    rule reads the number.
+
+    Counting all three matters. A policy excluding one group and no users has a
+    recovery path, and a rule reading `excludeUsers` alone would have called it
+    a lockout.
+
+    The scope lives in applicability rather than in the condition: a policy
+    scoped to one group and excluding nobody has the same shape and is not the
+    lockout, because the administrators outside it can still sign in.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("CA-RECOVERY-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-conditional-access-everyone-no-exclusion", Outcome.FAIL),
+        ("entra-conditional-access-everyone-with-break-glass", Outcome.FAIL),
+        ("entra-conditional-access-scoped-to-a-group", Outcome.PASS),
+    ],
+)
+def test_a_user_scope_does_not_reach_workload_identities(fixture, outcome):
+    """`CA-SCOPE-001`, and it fires where the belief forms rather than where
+    the gap is.
+
+    Microsoft: "Calls made by service principals aren't blocked by Conditional
+    Access policies scoped to users." Every user-scoped policy has that gap.
+    The one an organisation reads as covering everything is the one including
+    `All`, which is why the break-glass fixture still fails: adding an
+    exclusion gives a recovery path and changes nothing about what the policy
+    reaches.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("CA-SCOPE-001"), evidence(fixture)).outcome is outcome

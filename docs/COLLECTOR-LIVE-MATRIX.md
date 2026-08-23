@@ -39,7 +39,7 @@ to exercise.
 | `agents` | ✓ | 0 agents, 2026-08-10 | — | n.a. | **none**, by decision | **live-validated** |
 | `tenant-sharing` | ✓ | 3 properties, 2026-08-08 | — | n.a. | `SPO-SHARE-003`, `SPO-SHARE-004` | **live-validated** |
 | `spfx` | ✓ | not observed | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **negative path validated** |
-| `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | `CA-STATE-001` | **provider live-validated, slice not live-validated** |
+| `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | `CA-STATE-001`, `CA-SCOPE-001`, `CA-RECOVERY-001` | **provider live-validated, slice not live-validated** |
 | `customization` | ✓ | not observed | not observed | n.a. | `SPO-SCRIPT-001` | **not live-validated** |
 | `brand-center` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
 | `licensing` | ✓ | assignment, report identifiability and one usage report, 2026-08-22 — the report returned rows and named nobody | Graph modules absent → `not-supported` naming them; a concealed report is a positive read, not a refusal | one reporting window | **none**, by decision | **partially live-validated** |

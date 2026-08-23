@@ -181,6 +181,18 @@ def _observation(
     native = str(item.get("id") or "").strip() or f"{area}-without-an-id"
     facts: dict[str, Any] = {_key(area): {"state": "observed", "value": item}}
     facts.update(_addressable(area, item))
+    # NESTED OBJECTS ARE FLATTENED ONE LEVEL, and only where a rule asked. A
+    # policy's user scope lives at `conditions.users` and its controls at
+    # `grantControls`, so a rule addressing `included_users` would otherwise
+    # need a path grammar this engine does not have.
+    facts.update(
+        _addressable(
+            f"{area}:conditions",
+            ((item.get("conditions") or {}).get("users") or {}),
+        )
+    )
+    facts.update(_addressable(f"{area}:grant", (item.get("grantControls") or {})))
+    facts.update(_exclusion_count(item))
 
     return _document(
         reader,
@@ -203,6 +215,21 @@ ADDRESSABLE: dict[str, dict[str, str]] = {
     "conditional-access-policies": {
         "policy_state": "state",
         "policy_name": "displayName",
+    },
+    # The condition and grant fields a rule needs, flattened from the nested
+    # objects Graph returns. They arrive here because a rule needed them, which
+    # is what keeps this list a record of what the engine answers about rather
+    # than a second copy of the Graph shape drifting beside the first.
+    "conditional-access-policies:conditions": {
+        "included_users": "includeUsers",
+        "excluded_users": "excludeUsers",
+        "excluded_groups": "excludeGroups",
+        "excluded_roles": "excludeRoles",
+    },
+    "conditional-access-policies:grant": {
+        "grant_operator": "operator",
+        "built_in_controls": "builtInControls",
+        "authentication_strength": "authenticationStrength",
     },
     "named-locations": {
         "location_name": "displayName",
@@ -232,7 +259,7 @@ def _addressable(area: str, item: dict[str, Any]) -> dict[str, Any]:
                 "detail": (
                     f"`{prop}` was not present on the object Microsoft returned. "
                     f"Absent is not false: the property is not published for "
-                    f"every kind of {TYPES[area]}."
+                    f"every kind of {TYPES.get(area.split(':', 1)[0], area)}."
                 ),
             }
     return out
@@ -448,3 +475,46 @@ def run(
         device_login=False,
     )
     return outcome
+
+
+def _exclusion_count(item: dict[str, Any]) -> dict[str, Any]:
+    """How many users, groups and roles a policy excludes, added up.
+
+    THE PATH GRAMMAR HAS NO WAY TO SAY `THIS ARRAY IS EMPTY`. `not-exists`
+    tests whether a fact is present, and a policy that excludes nobody
+    publishes three arrays that are present and empty, so a rule written
+    against absence passes on exactly the case it exists to catch.
+
+    A count is a fact about the policy rather than a judgement about it: it
+    adds three numbers the vendor returned and names all three in its raw
+    provenance. It covers the three lists together because a policy excluding
+    one group and no users has a recovery path, and a rule reading only
+    `excludeUsers` would have missed it.
+    """
+    users = (item.get("conditions") or {}).get("users") or {}
+    fields = ("excludeUsers", "excludeGroups", "excludeRoles")
+    present = [name for name in fields if isinstance(users.get(name), list)]
+    if not present:
+        return {
+            "exclusions_declared": {
+                "state": "missing",
+                "detail": (
+                    "None of `excludeUsers`, `excludeGroups` or `excludeRoles` "
+                    "was returned as a list, so how many principals this policy "
+                    "excludes was not established. Absent is not zero: zero is a "
+                    "policy that excludes nobody, and this is a reading that did "
+                    "not happen."
+                ),
+            }
+        }
+    total = sum(len(users.get(name) or []) for name in present)
+    return {
+        "exclusions_declared": {
+            "state": "observed",
+            "value": total,
+            "raw": {
+                "field": ", ".join(present),
+                "value": {name: users.get(name) for name in present},
+            },
+        }
+    }

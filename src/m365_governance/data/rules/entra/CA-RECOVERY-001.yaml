@@ -1,0 +1,140 @@
+# THE POLICY THAT LOCKS EVERYBODY OUT INCLUDING THE PEOPLE WHO WOULD FIX IT.
+#
+# A Conditional Access policy that includes every user and excludes nobody is
+# the strongest-looking policy an organisation can write, and it is the one
+# Microsoft tells you not to write. Every article that walks through building
+# one opens the same way: exclude your emergency access or break-glass accounts
+# "to prevent lockout due to policy misconfiguration".
+#
+# The consequence is not a weaker security posture. It is that the recovery
+# path runs through the control that failed. If the policy is wrong -- a
+# condition nobody tested, an authentication method that stops working, a
+# directory the tenant cannot reach -- the administrators who would correct it
+# are subject to it.
+
+schema_version: "1.0"
+id: CA-RECOVERY-001
+version: "1.0"
+title: A policy applying to everyone with nothing excluded has no way back in
+description: >
+  This policy includes every user and excludes no user, no group and no
+  directory role. If it prevents sign-in for a reason nobody anticipated, the
+  administrators who would change it are prevented too, and Microsoft's
+  documented answer to that situation is an account excluded in advance.
+
+service: entra
+resource_type: conditional-access-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength
+      title: Require multifactor authentication for all users
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access
+      title: Manage emergency access accounts in Microsoft Entra ID
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft recommends excluding "emergency access or break-glass accounts to
+    prevent lockout due to policy misconfiguration", and states what they are
+    for: "In the unlikely scenario where all administrators are locked out,
+    your emergency access administrative account can be used to sign in and
+    recover access."
+
+    It is guidance rather than a requirement, and an organisation may decline
+    it: a tenant with a documented recovery path that does not depend on a
+    Conditional Access exclusion is answering the same question a different
+    way. What this rule refuses is the case where nobody answered it at all,
+    which looks identical in the portal to the case where somebody did.
+
+    It reads the policy that would cause the lockout rather than looking for an
+    account somewhere else, because an exclusion that is not on this policy
+    does not help during this policy's failure.
+
+severity:
+  default: high
+  rationale: >
+    Rated above the other rules in this family because the consequence lands on
+    the recovery itself. A misconfiguration in any other policy is corrected by
+    an administrator signing in; a misconfiguration in this one is corrected by
+    Microsoft support, and the time that takes is the outage. It is not
+    critical because nothing is exposed and no data is lost.
+  configurable: true
+
+evidence_requirements:
+  - path: included_users
+    type: array
+    required: true
+  - path: exclusions_declared
+    type: number
+    required: true
+
+# THE SECOND FACT IS APPLICABILITY, NOT A COMPOUND CONDITION. The rule
+# contract reads one evidence path and decides; a rule with two conditions in
+# its condition block would be two claims wearing one identifier. So the scope
+# decides whether this question is being asked at all, and the exclusions
+# decide the answer.
+#
+# A policy scoped to one group and excluding nobody has the same shape and is
+# not the lockout: the administrators it does not include can still sign in and
+# change it. That is why the scope belongs in applicability rather than in the
+# condition.
+applicability:
+  operator: contains
+  evidence: included_users
+  value: All
+
+condition:
+  operator: equals
+  evidence: exclusions_declared
+  value: 0
+
+outcomes:
+  pass:
+    message: >
+      This policy does not apply to everyone with nothing excluded.
+  fail:
+    message: >
+      This policy includes all users and excludes no user, no group and no
+      directory role. If it prevents sign-in for any reason, the accounts that
+      would change it are subject to it, and recovery runs through Microsoft
+      support rather than through an administrator.
+  unknown:
+    message: >
+      The scope or the exclusions of this policy were not read, so whether a
+      recovery path exists on it is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This policy does not include all users, so the administrators outside its
+      scope can still sign in and change it. That is a recovery path, and it is
+      not the one this rule reads.
+  invalid_evidence:
+    message: >
+      The scope or exclusions were returned in a form this rule cannot
+      evaluate. The collector output does not match the evidence schema.
+
+remediation: >
+  Microsoft's documented answer is an emergency access account, excluded from
+  this policy in advance and managed under the guidance for such accounts. A
+  tenant whose recovery path is deliberately something else answers the same
+  question differently, and the finding is the record of which one this is.
+
+limitations:
+  passes_without_resolving: >
+    AN EXCLUSION IS NOT A RECOVERY PATH. This rule reads whether anything is
+    excluded, and it cannot read whether what was excluded is an emergency
+    access account, whether that account works, whether anybody knows its
+    credentials, or whether it is itself protected. A policy excluding one
+    disabled account passes this rule and helps nobody.
+  other:
+    - >
+      A tenant may be recoverable without any exclusion here: through another
+      administrator not covered by this policy's conditions, through a
+      different authentication method that still satisfies it, or through a
+      support process the organisation has rehearsed. None of those is visible
+      from this policy.
+    - >
+      This reads one policy. Two policies that each exclude somebody can still
+      lock out every administrator between them, and no rule here answers that.

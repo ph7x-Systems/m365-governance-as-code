@@ -546,6 +546,16 @@ SLICES = {
                 "Defaults state of one tenant"
             ),
             shaped_like="entra-conditional-access-mfa-for-admins",
+            # THREE RULES NOW, EACH READING SOMETHING ELSE. One reads the state
+            # and says whether the policy enforces anything at all; one reads
+            # the user scope and says what a user scope does not reach; one
+            # reads the exclusions and says whether there is a way back in.
+            # A slice feeding three rules needs the shapes all three decide on.
+            also_shaped_like=(
+                "entra-conditional-access-everyone-no-exclusion",
+                "entra-conditional-access-everyone-with-break-glass",
+                "entra-conditional-access-scoped-to-a-group",
+            ),
             reads=(
                 "GET /v1.0/identity/conditionalAccess/policies",
                 "GET /v1.0/identity/conditionalAccess/namedLocations",
