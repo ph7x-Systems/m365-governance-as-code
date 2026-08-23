@@ -120,3 +120,25 @@ def test_a_rule_that_cites_a_place_cites_one_of_these(surfaces):
                 f"{path.stem} cites {host}, which is not a named evidence "
                 f"surface. Add the surface deliberately or cite one that exists."
             )
+
+
+def test_the_two_ways_out_of_rank_five_are_not_the_same_one(surfaces):
+    """A digest gives an address. An investigation gives a method.
+
+    Both sit at the bottom of this ranking and neither may be a basis, and it
+    would be easy to read that as one undifferentiated pile of things not to
+    cite. It is not. A digest that keeps `MC1319213` is escalated by READING
+    that message at rank 2. A first-hand investigation -- somebody ran the
+    thing and wrote down what it did -- is escalated by RUNNING it here, which
+    lands at rank 1 as this engine's own observation.
+
+    The second kind decays and the first does not. A message id will read the
+    same in five years; a published experiment was true against the platform on
+    the day it ran, and the platform is the thing that changes. So the method
+    is what travels, and the conclusion is re-established rather than quoted.
+    """
+    community = next(s for s in surfaces if s["id"] == "community")
+
+    assert "TWO WAYS OUT OF RANK 5" in community["note"]
+    assert "never cited for" in community["note"]
+    assert any("method to run" in place for place in community["where"])
