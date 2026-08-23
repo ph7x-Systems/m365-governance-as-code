@@ -555,3 +555,23 @@ def test_licensing_reports_a_state_per_area_and_never_just_done(registry):
         "the acquisition is established and the conclusion is not, and "
         "collapsing the two is the entire failure this record documents"
     )
+
+
+def test_running_the_pipeline_offline_did_not_raise_the_live_stages(registry):
+    """THE DISCREPANCY WAS SETTLED BY EXECUTION AND SETTLED LESS THAN CLAIMED.
+
+    The bundle and consumer stages were run: the engine wrote a bundle from
+    licensing evidence and a Release build of the desktop client opened it,
+    reaching the acquisition behind the fact block. That is recorded.
+
+    It was run against a FIXTURE, because the live evidence no longer exists.
+    So the live stages stay `not-attempted`, and the difference between *these
+    stages work* and *this acquisition crossed them* is the whole reason the
+    registry exists.
+    """
+    licensing = next(r for r in registry["records"] if r["collector"] == "licensing")
+
+    assert licensing["pipeline_proven_offline"]["evidence"].startswith("fixture")
+    assert licensing["stages"]["bundle"] == "not-attempted"
+    assert licensing["stages"]["consumer"] == "not-attempted"
+    assert "SETTLED LESS THAN THE CLAIM" in licensing["contradiction"]

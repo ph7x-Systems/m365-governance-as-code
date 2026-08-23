@@ -342,7 +342,14 @@
         "dependency_evidence": "not-implemented",
         "optimization_conclusions": "not-established"
       },
-      "contradiction": "THE SITE CLAIMS MORE THAN THIS RECORD SUSTAINS AND ONE OF THEM IS WRONG. `src/manual/collectors/licensing.md` states that the whole chain was crossed -- collection, evidence directory, collection manifest, independent reader, canonical bundle, and a consumer opening it. This record's stages say `bundle: not-attempted` and `consumer: not-attempted`, because the matrix it was transcribed from does not mention either. Recorded for the owner rather than resolved in favour of whichever is more flattering: if the site is right, this record is missing evidence somebody had; if the record is right, the page overstates. The page is corrected to what the record sustains in the meantime, because a public claim may promise only what the chain already does."
+      "contradiction": "SETTLED BY EXECUTION ON 2026-08-23, AND IT SETTLED LESS THAN THE CLAIM IT REPLACED. The site stated the whole chain had been crossed for this collector, including the canonical bundle and a consumer opening it; these stages said neither had been attempted. Rather than resolve that in prose, both were run: the engine wrote a bundle from licensing evidence by its own path, and the desktop consumer opened it in a Release build, reaching the acquisition behind the fact block.\n\nIT WAS RUN AGAINST A FIXTURE, BECAUSE THE LIVE EVIDENCE NO LONGER EXISTS. It was deleted when the vertical closed -- correctly under the tenant-data rule and incorrectly under D69 -- and no offline run brings it back. A fixture is born from observed behaviour and never stands in for it, so `bundle` and `consumer` stay `not-attempted` FOR THE LIVE ACQUISITION and the site's claim stays corrected. What is now established is that those two stages work for licensing evidence, which is a smaller sentence and a true one.",
+      "pipeline_proven_offline": {
+        "bundle": "produced by `evaluate --bundle` from licensing evidence",
+        "consumer": "opened by the desktop client in a Release build",
+        "attribution": "the licensing fact block reached its acquisition",
+        "results": "none, which is the expected shape of an observation-only family",
+        "evidence": "fixture, not the live acquisition"
+      }
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."
