@@ -40,7 +40,46 @@ from importlib.resources import files
 from pathlib import Path
 
 #: The subdirectories of `m365_governance.data`, and what each holds.
-BUNDLED = ("rules", "profiles", "schemas", "collectors", "fixtures", "generated")
+#: What a working installation MUST have, and the absence of any of them is a
+#: broken install rather than a missing feature. `doctor` reports these.
+#:
+#: A CLOSED SET ON PURPOSE, unlike the one below. This is the floor: without
+#: rules there is nothing to evaluate, without schemas nothing to validate
+#: against, without collectors nothing to run. Adding to it is declaring that
+#: an engine lacking the new thing is broken, which is a real claim.
+REQUIRED = ("rules", "profiles", "schemas", "collectors", "fixtures", "generated")
+
+
+def _bundled() -> tuple[str, ...]:
+    """Every directory the installed package actually carries, discovered.
+
+    THE FOURTH TIME THIS SHAPE WAS WRONG. A glob naming `.ps1` left every
+    `.psm1` out; a wheel gate counting five directories let `live-proof.json`
+    vanish; three of the site's six refresh scripts were never wired into its
+    gate. Each was a positive enumeration of an open set, and this was the
+    same: `data/reference` shipped in the wheel and `packaged("reference")`
+    raised `KeyError`, because a tuple written before it existed did not know
+    about it.
+
+    So the set is read from what is there. `REQUIRED` above stays closed and
+    keeps a broken installation detectable: discovery alone would report an
+    engine carrying nothing as an engine missing nothing.
+    """
+    try:
+        root = Path(str(files("m365_governance.data")))
+    except (TypeError, ModuleNotFoundError):  # pragma: no cover
+        return REQUIRED
+    found = tuple(
+        sorted(
+            path.name
+            for path in root.iterdir()
+            if path.is_dir() and not path.name.startswith("__")
+        )
+    )
+    return found or REQUIRED
+
+
+BUNDLED = _bundled()
 
 
 @dataclass(frozen=True)
@@ -104,9 +143,13 @@ def missing() -> list[str]:
 
     Present so `doctor` can report a broken installation rather than a broken
     tenant. An empty list here is what the clean-install gate proves.
+
+    OVER `REQUIRED` AND NOT OVER WHAT WAS FOUND. Asking whether everything
+    discovered is present is asking whether what is there is there, which is
+    true of an engine carrying nothing at all.
     """
     absent = []
-    for name in BUNDLED:
+    for name in REQUIRED:
         try:
             if not packaged(name).is_dir():
                 absent.append(name)
