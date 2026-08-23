@@ -1,0 +1,114 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "resource": {
+    "workload": "exchange",
+    "type": "tenant",
+    "native_id": "contoso.onmicrosoft.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "contoso.onmicrosoft.com",
+    "url": "https://admin.exchange.microsoft.com"
+  },
+  "provenance": {
+    "collected_at": "2026-08-23T11:00:00Z",
+    "collector": "exo-collector",
+    "collector_version": "0.1.0",
+    "source_system": "Exchange Online",
+    "source_api": "ExchangeOnlineManagement",
+    "identity_kind": "application",
+    "acquisition": "collected",
+    "scopes": [
+      "Exchange.ManageAsApp"
+    ],
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com",
+      "how": "requested"
+    }
+  },
+  "facts": {
+    "forwarding": {
+      "outbound_policies": {
+        "state": "observed",
+        "value": [
+          {
+            "name": "Default",
+            "auto_forwarding_mode": "Off",
+            "is_default": true
+          }
+        ],
+        "raw": {
+          "field": "Get-HostedOutboundSpamFilterPolicy: Name, AutoForwardingMode, IsDefault",
+          "value": [
+            {
+              "name": "Default",
+              "auto_forwarding_mode": "Off",
+              "is_default": true
+            }
+          ]
+        }
+      },
+      "outbound_policies_ambiguous": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "AutoForwardingMode -eq Automatic, counted over every outbound spam filter policy",
+          "value": 0
+        }
+      },
+      "remote_domains": {
+        "state": "observed",
+        "value": [
+          {
+            "name": "Default",
+            "domain_name": "*",
+            "auto_forward_enabled": false
+          }
+        ],
+        "raw": {
+          "field": "Get-RemoteDomain: Name, DomainName, AutoForwardEnabled",
+          "value": [
+            {
+              "name": "Default",
+              "domain_name": "*",
+              "auto_forward_enabled": false
+            }
+          ]
+        }
+      },
+      "remote_domains_allowing_forwarding": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "AutoForwardEnabled -eq $true, counted over every remote domain",
+          "value": 0
+        }
+      },
+      "remote_domain_block_reaches": {
+        "state": "observed",
+        "value": "user-configured forwarding only",
+        "raw": {
+          "field": "documented: admin-configured mailbox forwarding and mail flow rules are not affected by remote domain settings",
+          "value": "user-configured forwarding only"
+        }
+      },
+      "mail_flow_rules": {
+        "state": "not-supported",
+        "detail": "Mail flow rules are not read by this collector. They are the third route by which mail leaves automatically, they are not affected by remote domain settings, and whether any of them forwards externally is a question about rule actions rather than about a forwarding setting."
+      }
+    }
+  },
+  "coverage": {
+    "requested": [
+      "forwarding"
+    ],
+    "completed": [
+      "forwarding"
+    ],
+    "unavailable": {}
+  }
+}

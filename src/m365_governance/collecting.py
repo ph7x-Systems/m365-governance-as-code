@@ -546,12 +546,91 @@ SLICES = {
                 "Defaults state of one tenant"
             ),
             shaped_like="entra-conditional-access-mfa-for-admins",
+            # THREE RULES NOW, EACH READING SOMETHING ELSE. One reads the state
+            # and says whether the policy enforces anything at all; one reads
+            # the user scope and says what a user scope does not reach; one
+            # reads the exclusions and says whether there is a way back in.
+            # A slice feeding three rules needs the shapes all three decide on.
+            also_shaped_like=(
+                "entra-conditional-access-everyone-no-exclusion",
+                "entra-conditional-access-everyone-with-break-glass",
+                "entra-conditional-access-scoped-to-a-group",
+            ),
             reads=(
                 "GET /v1.0/identity/conditionalAccess/policies",
                 "GET /v1.0/identity/conditionalAccess/namedLocations",
                 "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy",
             ),
             permissions=("Policy.Read.All",),
+        ),
+        Slice(
+            "forwarding",
+            "Forwarding",
+            domain="exchange",
+            script="exchange/Get-ExchangeEvidence.ps1",
+            tenant_parameter="-TenantHost",
+            takes_certificate=True,
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=True,
+            describes=(
+                "whether mail can leave this organisation automatically, and "
+                "which of the three controls that govern it are in which position"
+            ),
+            shaped_like="exchange-forwarding-ambiguous-mode",
+            also_shaped_like=(
+                "exchange-forwarding-explicitly-off",
+                "exchange-forwarding-remote-domains-allow",
+            ),
+            reads=(
+                "Get-HostedOutboundSpamFilterPolicy",
+                "Get-RemoteDomain",
+            ),
+            permissions=("Exchange.ManageAsApp",),
+            # THE SECOND SURFACE IS NAMED AND HAS NOT BEEN RUN. Microsoft Graph
+            # exposes `hostedOutboundSpamFilterPolicy` through Tenant
+            # Configuration Management, carrying `AutoForwardingMode` -- so the
+            # same setting is readable two ways, under different permissions,
+            # through a different endpoint.
+            #
+            # This collector reads the documented administration path. Whether
+            # the two agree is a measurement nobody here has made, and `D72`
+            # says a comparison state may not sit at `not-yet-established`
+            # without the next measurement named. It is named.
+            second_surface=(
+                "Microsoft Graph Tenant Configuration Management: "
+                "hostedOutboundSpamFilterPolicy"
+            ),
+            second_surface_state="named-not-run",
+        ),
+        Slice(
+            "brand-center",
+            "BrandCenter",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=False,
+            # THE THIRD RECORDED EXCEPTION, and the narrowest of them. Microsoft
+            # publishes no conclusion about whether an organisation should
+            # publish its brand assets anonymously, and there is none to invent:
+            # a logo on a public CDN is the intended design, and something else
+            # there is a decision only the organisation can make. What has no
+            # answer is not the same as what has no consequence, which is why
+            # this collects.
+            consumed_by="the brand distribution surface in a report, and any viewer",
+            describes=(
+                "the organisation asset libraries a brand centre is built on, "
+                "and the boundary its assets are published across"
+            ),
+            shaped_like="tenant-brand-center-public-cdn",
+            reads=(
+                "Get-PnPOrgAssetsLibrary",
+                "Get-PnPTenantCdnEnabled -CdnType Public|Private",
+                "Get-PnPTenantCdnOrigin -CdnType Public|Private",
+                "Get-PnPTenantCdnPolicies -CdnType Public",
+            ),
+            permissions=("Sites.FullControl.All",),
         ),
         Slice(
             "customization",

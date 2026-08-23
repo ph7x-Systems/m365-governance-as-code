@@ -45,14 +45,20 @@ def rule(rule_id: str) -> dict:
 
 
 def evidence(name: str) -> dict:
-    for folder in (FIXTURES, ENTRA):
-        path = folder / f"{name}.json"
-        if path.is_file():
-            return json.loads(path.read_text(encoding="utf-8"))
+    """One fixture by name, from wherever the tree keeps it.
+
+    IT USED TO NAME ITS FOLDERS. Two, then three when Entra arrived, and a
+    fourth would have been added the day Exchange did -- by whoever noticed the
+    FileNotFoundError, which is a worse way to find out than a search that just
+    works. A fixture's workload decides which folder it lives in; nothing about
+    that should be repeated here.
+    """
+    for path in sorted(FIXTURES.parent.rglob(f"{name}.json")):
+        return json.loads(path.read_text(encoding="utf-8"))
     # FileNotFoundError and not an assertion: a caller that deliberately asks
     # for a fixture that may not exist catches it, and an assertion would turn
     # that into a failure about the wrong thing.
-    raise FileNotFoundError(f"no fixture {name}.json under {FIXTURES} or {ENTRA}")
+    raise FileNotFoundError(f"no fixture {name}.json under {FIXTURES.parent}")
 
 
 def sabotage(document: dict, mutate) -> dict:

@@ -162,7 +162,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents')]
+    [ValidateSet('Connect', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -229,7 +229,7 @@ $CollectorName = 'spo-collector'
 
 $Modules = Join-Path $PSScriptRoot 'modules'
 foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions',
-        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents')) {
+        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents', 'BrandCenter')) {
     Import-Module (Join-Path $Modules "$module.psm1") -Force
 }
 
@@ -341,6 +341,26 @@ switch ($Mode) {
                 }) `
                 -Facts (Get-TenantSharingFacts -Tenant $tenant) `
                 -Requested @('tenant_sharing') -Completed @('tenant_sharing') `
+                -Unavailable ([ordered]@{}) `
+                -SourceApi 'PnP.PowerShell / SharePoint Admin')
+    }
+
+    'BrandCenter' {
+        # ONE RESOURCE: THE TENANT. Microsoft states the SharePoint brand
+        # centre "currently only allows one brand center for your
+        # organization" and creates it "in the primary geo of a tenant", so a
+        # per-site shape would be inventing a plurality the product does not
+        # have.
+        Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
+                -Resource ([ordered]@{
+                    workload = 'sharepoint'; type = 'tenant'
+                    native_id = $TenantHost
+                    tenant = (New-TenantIdentity)
+                    scope = 'tenant'; parent = $null
+                    display_name = $TenantUrl; url = $TenantUrl
+                }) `
+                -Facts (Get-BrandCenterFacts) `
+                -Requested @('brand_center') -Completed @('brand_center') `
                 -Unavailable ([ordered]@{}) `
                 -SourceApi 'PnP.PowerShell / SharePoint Admin')
     }

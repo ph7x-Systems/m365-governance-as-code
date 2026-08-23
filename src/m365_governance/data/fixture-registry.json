@@ -43,9 +43,27 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/entra/entra-conditional-access-everyone-no-exclusion.json",
+      "origin": "synthetic",
+      "purpose": "a policy including every user and excluding nobody: the fail path of CA-RECOVERY-001, where the administrators who would correct a misconfiguration are subject to it",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-conditional-access-everyone-with-break-glass.json",
+      "origin": "synthetic",
+      "purpose": "the same policy with one account excluded: CA-RECOVERY-001 passes and CA-SCOPE-001 still fails, because an exclusion is a recovery path and not workload identity coverage",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/entra/entra-conditional-access-mfa-for-admins.json",
       "origin": "synthetic",
       "purpose": "a policy requiring multifactor authentication for administrators, with the authentication strength embedded as Microsoft returns it",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-conditional-access-permission-denied.json",
+      "origin": "synthetic",
+      "purpose": "an area the identity was not permitted to read, so that a denial can be told apart from a tenant with no Conditional Access",
       "may_be_presented_as_tenant_observation": false
     },
     {
@@ -55,9 +73,9 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
-      "path": "fixtures/entra/entra-conditional-access-permission-denied.json",
+      "path": "fixtures/entra/entra-conditional-access-scoped-to-a-group.json",
       "origin": "synthetic",
-      "purpose": "an area the identity was not permitted to read, so that a denial can be told apart from a tenant with no Conditional Access",
+      "purpose": "a policy scoped to one group: CA-RECOVERY-001 does not apply, because administrators outside the scope can still sign in and change it",
       "may_be_presented_as_tenant_observation": false
     },
     {
@@ -73,6 +91,24 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/exchange/exchange-forwarding-ambiguous-mode.json",
+      "origin": "synthetic",
+      "purpose": "the default outbound spam policy on Automatic - System-controlled, whose behaviour differs by organisation: the fail path of EXO-FORWARD-001",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/exchange/exchange-forwarding-explicitly-off.json",
+      "origin": "synthetic",
+      "purpose": "every policy explicit and every remote domain blocking: both rules pass, and neither says mail cannot leave",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/exchange/exchange-forwarding-remote-domains-allow.json",
+      "origin": "synthetic",
+      "purpose": "a partner domain permitting automatic forwarding while the policies are explicit: EXO-FORWARD-002 fails and EXO-FORWARD-001 does not",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/licensing/tenant-assignment-observed.json",
       "origin": "sanitized-observation",
       "purpose": "the shape of a real assignment acquisition: SKUs and assigned units read, the report identifiability setting observed as concealed, usage and dependency not observed. The directory it came from is not identified and the counts are not that tenant's",
@@ -85,15 +121,15 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
-      "path": "fixtures/licensing/tenant-capacity-mixed.json",
-      "origin": "synthetic",
-      "purpose": "one SKU of every class the read can settle and one it cannot: a Company target, a subscription in warning, a cancelled one, an undocumented target class, and a row carrying a million units so no threshold can be introduced without failing a test",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
       "path": "fixtures/licensing/tenant-capacity-joined.json",
       "origin": "synthetic",
       "purpose": "the commercial subscriptions read and joined: a bought subscription, one on a free evaluation, a Company SKU, two free self-service programmes that report isTrial false, and one SKU whose subscription was not returned",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/licensing/tenant-capacity-mixed.json",
+      "origin": "synthetic",
+      "purpose": "one SKU of every class the read can settle and one it cannot: a Company target, a subscription in warning, a cancelled one, an undocumented target class, and a row carrying a million units so no threshold can be introduced without failing a test",
       "may_be_presented_as_tenant_observation": false
     },
     {
@@ -361,12 +397,6 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
-      "path": "fixtures/sharepoint/site-customization-surfaces-observed.json",
-      "origin": "synthetic",
-      "purpose": "every customization surface read; constructed to exercise the complete path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
       "path": "fixtures/sharepoint/site-customization-script-permitted.json",
       "origin": "synthetic",
       "purpose": "a site holding custom script open, which is the only state that reaches SPO-SCRIPT-001's fail path; every other customization fixture is blocked or unread",
@@ -376,6 +406,12 @@
       "path": "fixtures/sharepoint/site-customization-script-status-unknown.json",
       "origin": "synthetic",
       "purpose": "DenyAddAndCustomizePagesStatus is an enum of Unknown, Disabled and Enabled, and Unknown is the platform declining to answer rather than a read that failed. Born from the live tenant read that found the enum",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-customization-surfaces-observed.json",
+      "origin": "synthetic",
+      "purpose": "every customization surface read; constructed to exercise the complete path",
       "may_be_presented_as_tenant_observation": false
     },
     {
@@ -580,6 +616,12 @@
       "path": "fixtures/sharepoint/site-two-owners.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/tenant-brand-center-public-cdn.json",
+      "origin": "synthetic",
+      "purpose": "a tenant whose brand assets are published across a public CDN origin: two organisation asset libraries, public CDN on, private off, and the two documented consequences of a public origin carried as facts",
       "may_be_presented_as_tenant_observation": false
     },
     {

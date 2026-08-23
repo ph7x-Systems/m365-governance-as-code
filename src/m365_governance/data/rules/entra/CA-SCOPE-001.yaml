@@ -1,0 +1,123 @@
+# A DOCUMENTED HOLE IN A POLICY THAT LOOKS COMPLETE.
+#
+# A Conditional Access policy scoped to `All users` reads, on the portal and in
+# every summary anybody writes about it, as covering everything that signs in.
+# It does not. Microsoft states, in the article that tells an organisation how
+# to build exactly this policy: "Calls made by service principals aren't
+# blocked by Conditional Access policies scoped to users."
+#
+# That is not a caveat about an edge case. Service principals are how backend
+# services, scripts and applications reach a tenant, and they are outside a
+# control the organisation believes covers everyone. The fix Microsoft names is
+# a different feature -- Conditional Access for workload identities -- which is
+# a separate policy the same administrator has to know exists.
+
+schema_version: "1.0"
+id: CA-SCOPE-001
+version: "1.0"
+title: A policy scoped to all users does not cover workload identities
+description: >
+  This policy includes every user and applies a grant control to them. Calls
+  made by service principals are not blocked by it, because Conditional Access
+  policies scoped to users do not reach workload identities. Whatever this
+  policy requires of a person, it requires nothing of an application signing in
+  on its own behalf.
+
+service: entra
+resource_type: conditional-access-policy
+
+basis:
+  # THEIRS, WRITTEN AS A LIMIT OF THE PRODUCT. Not guidance and not our
+  # opinion: Microsoft states what a user-scoped policy does not do, in the
+  # article that recommends building one. The organisation is not in breach of
+  # anything; the control simply does not extend where a reader assumes it
+  # does.
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength
+      title: Require multifactor authentication for all users
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-cloud-apps
+      title: Target resources in Conditional Access policy
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft's sentence is unambiguous: "Calls made by service principals
+    aren't blocked by Conditional Access policies scoped to users. Use
+    Conditional Access for workload identities to define policies that target
+    service principals."
+
+    A policy including `All users` is the strongest-sounding scope the portal
+    offers, and it is the one this gap is easiest to miss under. An
+    organisation that has read its own policy list and concluded that every
+    sign-in requires multifactor authentication has concluded something the
+    product does not do.
+
+    This rule states the gap where the policy is, rather than requiring the
+    organisation to hold two features in mind at once.
+
+severity:
+  default: medium
+  rationale: >
+    Nothing is misconfigured and nothing is exposed by this policy existing.
+    What is worth a person's attention is the distance between what the scope
+    is called and what it reaches, because that distance is where a belief
+    about coverage forms.
+  configurable: true
+
+evidence_requirements:
+  - path: included_users
+    type: array
+    required: true
+
+condition:
+  operator: contains
+  evidence: included_users
+  value: All
+
+outcomes:
+  pass:
+    message: >
+      This policy is not scoped to all users, so the documented gap between a
+      user scope and workload identities is not the one to read it against.
+  fail:
+    message: >
+      This policy includes all users. Calls made by service principals are not
+      blocked by it: Conditional Access policies scoped to users do not reach
+      workload identities, and an application signing in on its own behalf is
+      not subject to what this policy requires.
+  unknown:
+    message: >
+      The user scope of this policy was not read, so whether it is the
+      all-users scope this gap applies to is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The user scope was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Where workload identities need the same treatment, Microsoft's named answer
+  is Conditional Access for workload identities, which is a separate policy
+  targeting service principals. Where they deliberately do not, the finding is
+  the record of that decision rather than a fault to fix.
+
+limitations:
+  passes_without_resolving: >
+    A PASS HERE IS NARROW AND SAYS ALMOST NOTHING. A policy scoped to a group
+    rather than to all users has exactly the same gap for workload identities;
+    it simply is not the policy an organisation reads as covering everything.
+    This rule fires where the belief forms, not where the gap is.
+  other:
+    - >
+      Whether this tenant has a workload identity policy is not read here.
+      This rule reads one policy and does not look for another, so a fail on a
+      tenant that has covered its service principals elsewhere is describing
+      this policy correctly and the tenant incompletely.
+    - >
+      Microsoft also recommends excluding service accounts from user-scoped
+      policies, so a policy that excludes them is following guidance rather
+      than leaving a gap. The exclusion is not read by this rule.

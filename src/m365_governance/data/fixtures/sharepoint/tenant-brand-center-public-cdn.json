@@ -1,0 +1,156 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "resource": {
+    "workload": "sharepoint",
+    "type": "tenant",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "https://contoso-admin.sharepoint.com",
+    "url": "https://contoso-admin.sharepoint.com"
+  },
+  "provenance": {
+    "collected_at": "2026-08-23T10:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / SharePoint Admin",
+    "identity_kind": "application",
+    "acquisition": "collected",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    },
+    "scopes": [
+      "Sites.FullControl.All"
+    ]
+  },
+  "facts": {
+    "brand_center": {
+      "organization_asset_libraries": {
+        "state": "observed",
+        "value": 2,
+        "raw": {
+          "field": "Get-PnPOrgAssetsLibrary",
+          "value": 2
+        }
+      },
+      "organization_asset_library_urls": {
+        "state": "observed",
+        "value": [
+          "https://contoso.sharepoint.com/sites/brand/SiteAssets",
+          "https://contoso.sharepoint.com/sites/brand/Templates"
+        ],
+        "raw": {
+          "field": "Get-PnPOrgAssetsLibrary",
+          "value": [
+            "https://contoso.sharepoint.com/sites/brand/SiteAssets",
+            "https://contoso.sharepoint.com/sites/brand/Templates"
+          ]
+        }
+      },
+      "public_cdn_enabled": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "Get-PnPTenantCdnEnabled -CdnType Public",
+          "value": true
+        }
+      },
+      "private_cdn_enabled": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "Get-PnPTenantCdnEnabled -CdnType Private",
+          "value": false
+        }
+      },
+      "public_cdn_origins": {
+        "state": "observed",
+        "value": [
+          "sites/brand/siteassets",
+          "sites/brand/templates",
+          "*/clientsideassets"
+        ],
+        "raw": {
+          "field": "Get-PnPTenantCdnOrigin -CdnType Public",
+          "value": [
+            "sites/brand/siteassets",
+            "sites/brand/templates",
+            "*/clientsideassets"
+          ]
+        }
+      },
+      "private_cdn_origins": {
+        "state": "observed",
+        "value": [],
+        "raw": {
+          "field": "Get-PnPTenantCdnOrigin -CdnType Private",
+          "value": []
+        }
+      },
+      "public_cdn_include_file_extensions": {
+        "state": "observed",
+        "value": "CSS,EOT,GIF,ICO,JPEG,JPG,JS,MAP,PNG,SVG,TTF,WOFF,WOFF2",
+        "raw": {
+          "field": "IncludeFileExtensions",
+          "value": "CSS,EOT,GIF,ICO,JPEG,JPG,JS,MAP,PNG,SVG,TTF,WOFF,WOFF2"
+        }
+      },
+      "public_cdn_exclude_restricted_site_classifications": {
+        "state": "observed",
+        "value": "",
+        "raw": {
+          "field": "ExcludeRestrictedSiteClassifications",
+          "value": ""
+        }
+      },
+      "public_cdn_exclude_if_no_script_disabled": {
+        "state": "observed",
+        "value": "False",
+        "raw": {
+          "field": "ExcludeIfNoScriptDisabled",
+          "value": "False"
+        }
+      },
+      "public_origin_access": {
+        "state": "observed",
+        "value": "anonymous",
+        "raw": {
+          "field": "documented: content in public origins is accessible anonymously",
+          "value": "anonymous"
+        }
+      },
+      "public_origin_removal_persists_days": {
+        "state": "observed",
+        "value": 30,
+        "raw": {
+          "field": "documented: an asset removed from a public origin may remain available from cache for up to 30 days",
+          "value": 30
+        }
+      },
+      "brand_center_site": {
+        "state": "not-supported",
+        "detail": "Which site hosts the brand centre app is set in the Microsoft 365 admin centre and is not exposed by the SharePoint administration surface this collector reads. The organisation asset libraries above are what the brand centre is built on, and a tenant may use them without having enabled a brand centre."
+      },
+      "brand_managers": {
+        "state": "not-supported",
+        "detail": "Brand managers are the site owners of the brand centre site. Reading them is a site-scoped permission read against a site this collector was not pointed at, not a tenant property."
+      }
+    }
+  },
+  "coverage": {
+    "requested": [
+      "brand_center"
+    ],
+    "completed": [
+      "brand_center"
+    ],
+    "unavailable": {}
+  }
+}

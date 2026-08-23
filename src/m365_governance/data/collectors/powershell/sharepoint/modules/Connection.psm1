@@ -20,7 +20,7 @@ $ErrorActionPreference = 'Stop'
 # tests that it does: `TenantSharing` was once added to the collector's switch
 # and not to this list, which made the mode demand a -SiteUrl its own slice
 # never passes. It would have failed on the first tenant run and on no test.
-$script:AdminModes = @('TenantSites', 'SiteSharing', 'TenantSharing')
+$script:AdminModes = @('TenantSites', 'SiteSharing', 'TenantSharing', 'BrandCenter')
 
 function Get-TenantHost {
     <#

@@ -962,3 +962,116 @@ def test_a_policy_that_is_not_report_only_is_not_thereby_enforcing():
         "CA-STATE-001 must publish what its pass does not establish; a policy "
         "that is merely not report-only may still enforce nothing"
     )
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-conditional-access-everyone-no-exclusion", Outcome.FAIL),
+        ("entra-conditional-access-everyone-with-break-glass", Outcome.PASS),
+        ("entra-conditional-access-scoped-to-a-group", Outcome.NOT_APPLICABLE),
+    ],
+)
+def test_a_policy_for_everyone_with_nothing_excluded_has_no_way_back(fixture, outcome):
+    """`CA-RECOVERY-001`, and the operator that would have made it pass silently.
+
+    The condition was first written as `not-exists excluded_users`, which is
+    the obvious reading and is wrong: a policy that excludes nobody publishes
+    three arrays that are PRESENT AND EMPTY, so the rule passed on exactly the
+    case it exists to catch. The path grammar has no way to say *this array is
+    empty*, so the collector counts the three exclusion lists together and the
+    rule reads the number.
+
+    Counting all three matters. A policy excluding one group and no users has a
+    recovery path, and a rule reading `excludeUsers` alone would have called it
+    a lockout.
+
+    The scope lives in applicability rather than in the condition: a policy
+    scoped to one group and excluding nobody has the same shape and is not the
+    lockout, because the administrators outside it can still sign in.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("CA-RECOVERY-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-conditional-access-everyone-no-exclusion", Outcome.FAIL),
+        ("entra-conditional-access-everyone-with-break-glass", Outcome.FAIL),
+        ("entra-conditional-access-scoped-to-a-group", Outcome.PASS),
+    ],
+)
+def test_a_user_scope_does_not_reach_workload_identities(fixture, outcome):
+    """`CA-SCOPE-001`, and it fires where the belief forms rather than where
+    the gap is.
+
+    Microsoft: "Calls made by service principals aren't blocked by Conditional
+    Access policies scoped to users." Every user-scoped policy has that gap.
+    The one an organisation reads as covering everything is the one including
+    `All`, which is why the break-glass fixture still fails: adding an
+    exclusion gives a recovery path and changes nothing about what the policy
+    reaches.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("CA-SCOPE-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("exchange-forwarding-ambiguous-mode", Outcome.FAIL),
+        ("exchange-forwarding-explicitly-off", Outcome.PASS),
+        ("exchange-forwarding-remote-domains-allow", Outcome.PASS),
+    ],
+)
+def test_a_forwarding_mode_whose_meaning_is_not_in_the_value(fixture, outcome):
+    """`EXO-FORWARD-001`, and it is this product's thesis written by the vendor.
+
+    `AutoForwardingMode: Automatic` was equivalent to On when introduced. In
+    2021 it became Off for new organisations and for existing ones that were
+    not actively using it, and stayed On for those that were. Two tenants
+    showing the same word have opposite behaviour, decided by history rather
+    than by anything readable today.
+
+    Microsoft does not ask anybody to reason about it. It says to stop using
+    it: "Because the behavior can differ by organization, configure On -
+    Forwarding is enabled or Off - Forwarding is disabled instead."
+
+    A report rendering `Automatic` as a value has rendered a word that does not
+    carry its own meaning.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("EXO-FORWARD-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("exchange-forwarding-remote-domains-allow", Outcome.FAIL),
+        ("exchange-forwarding-ambiguous-mode", Outcome.PASS),
+        ("exchange-forwarding-explicitly-off", Outcome.PASS),
+    ],
+)
+def test_a_remote_domain_block_does_not_reach_what_an_admin_configured(
+    fixture, outcome
+):
+    """`EXO-FORWARD-002`, and the pass is the half that matters.
+
+    A remote domain's `AutoForwardEnabled` overrides forwarding a USER set
+    through an Inbox rule or Outlook on the web. Microsoft states what it does
+    not reach: "When admins use other methods to configure automatic forwarding
+    for users, the forwarded messages aren't affected by the remote domain
+    settings."
+
+    So a tenant blocking every remote domain and reporting that automatic
+    forwarding is disabled has described one of the two ways mail leaves. It is
+    the `custom script disabled` shape in another workload: a real control,
+    correctly reported, and a conclusion wider than the control.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("EXO-FORWARD-002"), evidence(fixture)).outcome is outcome

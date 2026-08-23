@@ -1,0 +1,181 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-17T09:00:00Z",
+    "collector": "graph-conditional-access",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "conditional-access-policies",
+      "named-locations",
+      "security-defaults"
+    ],
+    "completed": [
+      "conditional-access-policies",
+      "named-locations",
+      "security-defaults"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "conditional-access-policy",
+    "native_id": "aaaaaaaa-0000-4000-8000-000000000001",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Require multifactor authentication for administrators"
+  },
+  "facts": {
+    "conditional_access_policies": {
+      "state": "observed",
+      "value": {
+        "id": "aaaaaaaa-0000-4000-8000-000000000001",
+        "displayName": "Require MFA for all users",
+        "state": "enabled",
+        "conditions": {
+          "users": {
+            "includeUsers": [
+              "All"
+            ],
+            "excludeUsers": [
+              "00000000-0000-0000-0000-000000000001"
+            ],
+            "excludeGroups": [],
+            "excludeRoles": []
+          },
+          "applications": {
+            "includeApplications": [
+              "All"
+            ]
+          },
+          "locations": {
+            "includeLocations": [
+              "All"
+            ],
+            "excludeLocations": [
+              "AllTrusted"
+            ]
+          }
+        },
+        "grantControls": {
+          "operator": "OR",
+          "builtInControls": [
+            "mfa"
+          ],
+          "authenticationStrength": null
+        }
+      }
+    },
+    "policy_state": {
+      "state": "observed",
+      "value": "enabled",
+      "raw": {
+        "field": "state",
+        "value": "enabled"
+      }
+    },
+    "policy_name": {
+      "state": "observed",
+      "value": "Require MFA for all users",
+      "raw": {
+        "field": "displayName",
+        "value": "Require MFA for all users"
+      }
+    },
+    "included_users": {
+      "state": "observed",
+      "value": [
+        "All"
+      ],
+      "raw": {
+        "field": "includeUsers",
+        "value": [
+          "All"
+        ]
+      }
+    },
+    "excluded_users": {
+      "state": "observed",
+      "value": [
+        "00000000-0000-0000-0000-000000000001"
+      ],
+      "raw": {
+        "field": "excludeUsers",
+        "value": [
+          "00000000-0000-0000-0000-000000000001"
+        ]
+      }
+    },
+    "excluded_groups": {
+      "state": "observed",
+      "value": [],
+      "raw": {
+        "field": "excludeGroups",
+        "value": []
+      }
+    },
+    "excluded_roles": {
+      "state": "observed",
+      "value": [],
+      "raw": {
+        "field": "excludeRoles",
+        "value": []
+      }
+    },
+    "grant_operator": {
+      "state": "observed",
+      "value": "OR",
+      "raw": {
+        "field": "operator",
+        "value": "OR"
+      }
+    },
+    "built_in_controls": {
+      "state": "observed",
+      "value": [
+        "mfa"
+      ],
+      "raw": {
+        "field": "builtInControls",
+        "value": [
+          "mfa"
+        ]
+      }
+    },
+    "exclusions_declared": {
+      "state": "observed",
+      "value": 1,
+      "raw": {
+        "field": "excludeUsers, excludeGroups, excludeRoles",
+        "value": {
+          "excludeUsers": [
+            "00000000-0000-0000-0000-000000000001"
+          ],
+          "excludeGroups": [],
+          "excludeRoles": []
+        }
+      }
+    }
+  }
+}
