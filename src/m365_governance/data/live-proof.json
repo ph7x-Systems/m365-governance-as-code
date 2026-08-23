@@ -21,7 +21,14 @@
       "result": "partial on the positive read; failed under a reduced identity holding AllSites.Read",
       "limitations": [
         "no pagination was exercised: the population was 11 items"
-      ]
+      ],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-attempted",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -41,7 +48,14 @@
       "result": "completed",
       "limitations": [
         "one document is a population of one, and proves the path rather than the range"
-      ]
+      ],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -61,7 +75,14 @@
       "result": "completed",
       "limitations": [
         "no pagination surface exists here"
-      ]
+      ],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -81,7 +102,14 @@
       "result": "completed",
       "limitations": [
         "no pagination surface exists here"
-      ]
+      ],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -99,7 +127,14 @@
       "population": "not recorded beyond the outcome counts",
       "coverage": "the slice's own path",
       "result": "completed",
-      "limitations": []
+      "limitations": [],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -117,7 +152,14 @@
       "population": "not recorded beyond the outcome counts",
       "coverage": "the slice's own path",
       "result": "completed",
-      "limitations": []
+      "limitations": [],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -135,7 +177,14 @@
       "population": "17 documents",
       "coverage": "the slice's own path",
       "result": "completed",
-      "limitations": []
+      "limitations": [],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -155,7 +204,14 @@
       "result": "completed, and the surface was empty",
       "limitations": [
         "an empty surface proves the read and not the branch that reports a population"
-      ]
+      ],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -173,7 +229,14 @@
       "population": "3 properties",
       "coverage": "the slice's own path",
       "result": "completed",
-      "limitations": []
+      "limitations": [],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-attempted",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -193,7 +256,14 @@
       "result": "403 Forbidden, a typed refusal",
       "limitations": [
         "the branch that reports a component has never run against a directory"
-      ]
+      ],
+      "stages": {
+        "acquisition": "refused",
+        "evidence": "not-attempted",
+        "assessment": "not-attempted",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -213,7 +283,14 @@
       "result": "read by the provider; a reduced identity without Policy.Read.All returned 403",
       "limitations": [
         "no rule existed at the time, and the slice's own path is still unproved"
-      ]
+      ],
+      "stages": {
+        "acquisition": "attempted",
+        "evidence": "not-attempted",
+        "assessment": "not-attempted",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     },
     {
       "artifact_digest": null,
@@ -234,7 +311,15 @@
       "limitations": [
         "two of four areas have never run",
         "the artefact digest is unrecoverable: the evidence was deleted when the vertical closed, correctly under the tenant-data rule and incorrectly under D69, and this record exists because of that loss"
-      ]
+      ],
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      }
     }
-  ]
+  ],
+  "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."
 }

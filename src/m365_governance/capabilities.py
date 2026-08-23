@@ -26,7 +26,7 @@ from functools import cache
 from pathlib import Path
 from typing import Any
 
-from . import collecting, domains, registry
+from . import collecting, domains, live_proof, registry
 from .loader import load_rules
 from .resources import packaged
 
@@ -96,6 +96,16 @@ def _capability(
             # tenant" had to interpret prose.
             "live_validation": chosen.live_sentence(),
             "live_validation_state": chosen.live.name.lower().replace("_", "-"),
+            # STAGE BY STAGE, because a run does not prove one thing. The value
+            # above says a real read produced real evidence and has never
+            # claimed more, and a consumer asking whether a capability was
+            # proved END TO END had no field to read: it had a word to
+            # interpret, and a presentation layer interpreted it wider than it
+            # goes. This is that field.
+            "proof": {
+                "state": live_proof.proof_state(chosen.name),
+                "stages": live_proof.stages(chosen.name),
+            },
             # Least privilege belongs in the composition, not only in the
             # documentation: an identity that reads sites and not the tenant
             # runs every collector where this is false, and the catalogue is

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.3.0",
   "title": "Capability manifest",
   "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand — and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
   "type": "object",
@@ -17,7 +17,7 @@
   "properties": {
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0",
+      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.3.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it."
     },
     "engine_version": {
@@ -125,7 +125,6 @@
         "live_validation_state",
         "needs_tenant_surface",
         "permissions",
-        "proof",
         "reads",
         "validation"
       ],
@@ -208,90 +207,6 @@
             "divergence": {
               "type": "string",
               "description": "What a comparison found when two surfaces disagreed, and why. A divergence settled by preferring whichever source agreed with the product has not been investigated. Empty where nothing diverged."
-            }
-          }
-        },
-        "proof": {
-          "type": "object",
-          "description": "WHAT A RUN AGAINST A REAL TENANT PROVED, STAGE BY STAGE, because it does not prove one thing. `live_validation_state` says a real read produced real evidence and has never claimed more; a consumer asking whether a capability was proved end to end had no field to read and had to interpret a word, and one presentation layer interpreted `full` as READ FROM A TENANT, END TO END. A layer may explain a contract value and never widen it, so the contract now carries the distinction rather than relying on everyone reading it the narrow way.",
-          "additionalProperties": false,
-          "required": [
-            "stages",
-            "state"
-          ],
-          "properties": {
-            "state": {
-              "enum": [
-                "not-live-tested",
-                "acquisition-attempted",
-                "positive-acquisition-observed",
-                "vertical-path-proven"
-              ],
-              "description": "Where this capability stands, DERIVED from the stages below and never declared beside them. `vertical-path-proven` requires every APPLICABLE stage proven, so a capability that feeds no rule reaches it without pretending an assessment happened, and one that feeds a rule does not reach it by skipping a stage."
-            },
-            "stages": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "acquisition",
-                "assessment",
-                "bundle",
-                "consumer",
-                "evidence"
-              ],
-              "description": "`refused` is a typed refusal, a 403 or a `not-supported`: it proves the FAILURE path and never the positive one, and collapsing it into `not-attempted` would discard a real observation. `not-applicable` is the stage not existing for this capability.",
-              "properties": {
-                "acquisition": {
-                  "enum": [
-                    "proven",
-                    "refused",
-                    "attempted",
-                    "not-attempted",
-                    "not-applicable"
-                  ],
-                  "description": "the Microsoft surface was actually read"
-                },
-                "assessment": {
-                  "enum": [
-                    "proven",
-                    "refused",
-                    "attempted",
-                    "not-attempted",
-                    "not-applicable"
-                  ],
-                  "description": "rules actually consumed that evidence and decided something"
-                },
-                "bundle": {
-                  "enum": [
-                    "proven",
-                    "refused",
-                    "attempted",
-                    "not-attempted",
-                    "not-applicable"
-                  ],
-                  "description": "the canonical artefact was produced from it"
-                },
-                "consumer": {
-                  "enum": [
-                    "proven",
-                    "refused",
-                    "attempted",
-                    "not-attempted",
-                    "not-applicable"
-                  ],
-                  "description": "somebody independent opened that artefact"
-                },
-                "evidence": {
-                  "enum": [
-                    "proven",
-                    "refused",
-                    "attempted",
-                    "not-attempted",
-                    "not-applicable"
-                  ],
-                  "description": "the document this collector promises was produced from that read"
-                }
-              }
             }
           }
         }

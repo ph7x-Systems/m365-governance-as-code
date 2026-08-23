@@ -882,7 +882,46 @@ def run_slice(
         device_login=device_login,
         certificate_path=certificate_path,
     )
+
+    # THE RUN LEAVES ITS OWN PROOF, because a step somebody has to remember is
+    # a step that gets skipped -- and the one time it was skipped, a collector
+    # was corrected by a real directory and the record of that run does not
+    # exist. See `docs/COLLECTOR-LIVE-MATRIX.md`, the customization row.
+    #
+    # The draft lands BESIDE THE EVIDENCE and not in this package. It is not a
+    # live state: `establishes` is empty and a person fills it in after the
+    # steps in `docs/LIVE-VALIDATION.md`, because a run proves an acquisition
+    # and not that what came back was read correctly. A collector that wrote
+    # its own verdict would be the claim produced by the thing it is a claim
+    # about, which is the arrangement the registry was built to end.
+    _write_proof_draft(outcome, name=name, output=output)
     return outcome
+
+
+def _write_proof_draft(outcome: Outcome, *, name: str, output: Path) -> Path | None:
+    """The sanitized record this run supports, written where the run wrote.
+
+    Failure here never fails a collection. The evidence is the point of the
+    command and a draft that could not be written is worth a line on the
+    outcome, not a run thrown away after it reached a tenant.
+    """
+    from m365_governance import live_proof
+
+    try:
+        draft = live_proof.draft_from_run(
+            outcome,
+            collector=name,
+            acquisition_method="microsoft-graph"
+            if SLICES[name].source == "graph"
+            else "pnp-powershell",
+        )
+        where = _collection_directory(output) / "live-proof-draft.json"
+        where.write_text(
+            json.dumps(draft, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+        return where
+    except OSError:
+        return None
 
 
 def _run(
