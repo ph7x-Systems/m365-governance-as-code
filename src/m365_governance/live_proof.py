@@ -245,6 +245,62 @@ def proof_state(collector: str) -> str:
     return "positive-acquisition-observed"
 
 
+#: Stages that cannot be proven on their own, and what each one stands on.
+#:
+#: A DEPENDENCY, NOT A PREFERENCE. Nothing can open a bundle that was never
+#: produced; no bundle can hold an assessment that never ran; no assessment can
+#: read evidence that was never written. These are facts about the pipeline,
+#: and a record claiming otherwise is describing something that did not happen.
+STANDS_ON = {
+    "evidence": "acquisition",
+    "assessment": "evidence",
+    "bundle": "evidence",
+    "consumer": "bundle",
+}
+
+
+def incoherent(collector: str) -> list[str]:
+    """Stages claimed as proven that nothing underneath them supports.
+
+    THE TEMPTATION THIS REFUSES IS PROMOTION, AND IT COMES FROM BOTH ENDS.
+
+    Upward: `consumer` proven must never raise `bundle`, because the whole
+    number this product is answerable for is derived from these stages and an
+    inference is exactly where a derived number starts being a claim. Nothing
+    here promotes; `stages()` takes the strongest thing a record ACTUALLY says
+    and defaults to `not-attempted`.
+
+    Downward is the hole this closes. A record could always say `consumer:
+    proven` beside `bundle: not-attempted`, and it was accepted in silence: the
+    contradiction quietly lowered the capability's state rather than being
+    reported, so the register held a sentence describing something impossible
+    and nobody was told. A weaker answer is not the same as a correct one, and
+    a register that absorbs its own contradictions is the second authority this
+    programme spends its effort removing.
+
+    `not-applicable` is not a gap. A stage that does not exist for a capability
+    cannot be the thing a later stage failed to stand on: what it stands on is
+    whatever the missing stage itself stood on, so the chain is walked through
+    it rather than broken by it.
+    """
+    by_stage = stages(collector)
+    broken = []
+    for stage, beneath in STANDS_ON.items():
+        if by_stage.get(stage) != "proven":
+            continue
+        while by_stage.get(beneath) == "not-applicable":
+            beneath = STANDS_ON.get(beneath, "")
+            if not beneath:
+                break
+        if beneath and by_stage.get(beneath) != "proven":
+            broken.append(
+                f"{collector}: `{stage}` is recorded as proven while "
+                f"`{beneath}` is `{by_stage.get(beneath)}`. Nothing can prove "
+                f"a stage that stands on one that was never reached."
+            )
+    return broken
+
+
 def population() -> dict[str, list[str]]:
     """Every capability, grouped by where it stands. The site renders this.
 

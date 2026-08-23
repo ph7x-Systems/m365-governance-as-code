@@ -578,3 +578,137 @@ def test_running_the_pipeline_offline_did_not_raise_the_live_stages(registry):
     assert licensing["stages"]["bundle"] == "not-attempted"
     assert licensing["stages"]["consumer"] == "not-attempted"
     assert "SETTLED LESS THAN THE CLAIM" in licensing["contradiction"]
+# ---------------------------------------------------------------------------
+# a stage is never promoted, in either direction
+# ---------------------------------------------------------------------------
+
+
+def _register(monkeypatch, stages):
+    """One collector with one record, so a claim can be made and examined."""
+    from m365_governance import live_proof
+
+    record = {
+        "collector": "tenant-governance",
+        "provenance": live_proof.EMITTED,
+        "establishes": "full",
+        "stages": stages,
+    }
+    monkeypatch.setattr(live_proof, "records", lambda name: [record])
+
+
+def test_a_later_stage_proven_never_raises_an_earlier_one(monkeypatch):
+    """THE INFERENCE THAT WOULD MAKE THE HEADLINE NUMBER A CLAIM.
+
+    A consumer opening a bundle strongly suggests a bundle exists, and that is
+    exactly the reasoning that must not be in the code. The number this product
+    is answerable for is derived from these stages; the moment one of them is
+    filled in by what probably happened, the number stops being derived.
+
+    The engine has made the convenient inference twice already, both times in
+    presentation, and both times it read as certainty nobody had recorded.
+    """
+    from m365_governance import live_proof
+
+    _register(
+        monkeypatch,
+        {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "proven",
+            "bundle": "not-attempted",
+            "consumer": "proven",
+        },
+    )
+
+    by_stage = live_proof.stages("tenant-governance")
+
+    assert by_stage["bundle"] == "not-attempted", (
+        "a proven consumer raised the bundle it must have opened"
+    )
+    assert live_proof.proof_state("tenant-governance") != "vertical-path-proven"
+
+
+def test_an_impossible_record_is_reported_rather_than_quietly_weakening_a_state(
+    monkeypatch,
+):
+    """Refusing to promote is only half of it.
+
+    The contradiction used to lower the capability's state and say nothing, so
+    the register held a sentence describing something that cannot happen and
+    nobody was told. A weaker answer is not a correct one, and a register that
+    absorbs its own contradictions is a second authority nobody is auditing.
+    """
+    from m365_governance import live_proof
+
+    _register(
+        monkeypatch,
+        {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "proven",
+            "bundle": "not-attempted",
+            "consumer": "proven",
+        },
+    )
+
+    problems = live_proof.incoherent("tenant-governance")
+
+    assert problems, "an impossible record passed without a word"
+    assert "consumer" in problems[0] and "bundle" in problems[0]
+
+
+def test_a_stage_that_does_not_exist_is_walked_through_and_never_treated_as_a_gap(
+    monkeypatch,
+):
+    """`not-applicable` is a statement that the stage does not exist for this
+    capability, not a stage that was skipped. A collector feeding no rule has
+    no assessment to prove, and a bundle above it stands on the evidence
+    instead -- the chain goes through the hole rather than breaking at it."""
+    from m365_governance import live_proof
+
+    _register(
+        monkeypatch,
+        {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "not-applicable",
+            "bundle": "proven",
+            "consumer": "proven",
+        },
+    )
+
+    assert live_proof.incoherent("tenant-governance") == []
+    assert live_proof.proof_state("tenant-governance") == "vertical-path-proven"
+
+
+def test_the_top_of_the_ladder_needs_every_applicable_stage_and_not_most_of_them(
+    monkeypatch,
+):
+    from m365_governance import live_proof
+
+    for missing in ("evidence", "assessment", "bundle", "consumer"):
+        stages = dict.fromkeys(live_proof.STAGES, "proven")
+        stages[missing] = "not-attempted"
+        _register(monkeypatch, stages)
+
+        assert live_proof.proof_state("tenant-governance") != "vertical-path-proven", (
+            f"the ladder was topped with `{missing}` never reached"
+        )
+
+
+def test_no_record_in_the_shipped_register_claims_something_impossible():
+    """The gate over the data, run against the data that ships.
+
+    This is what stops the number moving because somebody edited a file. A
+    record is a claim about what happened, and a claim that contradicts the
+    pipeline is caught here rather than in six months by whoever is asked to
+    reproduce it.
+    """
+    from m365_governance import live_proof
+    from m365_governance.collecting import SLICES
+
+    problems = [
+        problem for name in sorted(SLICES) for problem in live_proof.incoherent(name)
+    ]
+
+    assert problems == [], "\n".join(problems)
