@@ -136,7 +136,21 @@ def write(
                 encoding="utf-8",
             )
 
-    manifest = {"bundle": VERSION, "runs": sorted(written)}
+    # THE READING AS A WHOLE, AND THE BUNDLE HAD NO PLACE FOR IT. A workspace
+    # carried runs and evidence and nothing that said which services were
+    # looked at -- so the desktop client, which opens bundles, could not show
+    # what the engine had already worked out. A service that collected evidence
+    # and reached no conclusion appears in no run, which is exactly why it
+    # cannot be recovered from the runs.
+    from .results import RunSet
+
+    run_set = RunSet(list(runs), documents=list(documents))
+    (root / "run-set.json").write_text(
+        json.dumps(run_set.to_dict(), indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
+
+    manifest = {"bundle": VERSION, "runs": sorted(written), "run_set": "run-set.json"}
     if orphans:
         manifest["evidence"] = "evidence"
     (root / "manifest.json").write_text(

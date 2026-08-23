@@ -37,7 +37,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-06T16:55:00Z"
             }
           ]
         }
@@ -489,17 +491,17 @@
           "collected"
         ]
       },
-      "assessment_id": "8411735f24f9567b33f488253b84c3e1b09ffc92d3a8e89038f52e85976aeedb"
+      "assessment_id": "109492f3deb2271f61e6be011effc40686c427f4aefa0d651dc21a39ca806db1"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "fdac47dcefddb0496cf144cfec8b37c41ac5542498d61474b50832ede68b222a",
+        "run_set": "87f377396318f1f55d4c38ab83761ec629770ecd465ec0537daa34f8311c966a",
         "evidence": "b8674199e754c1a7907064ed00e8e7af0b7856a6dabcf433d0b15b7b1f779433",
         "versions": "fc0860d67b23c575f10c0463e0638e1f821c0330180d60fc8435a12c8eaefb89",
         "manifest": "3ba617f03785ab93b8ca2ea38b1f3f6bb3f5537e70ba39d838025276d69b1f0c"
       },
-      "canonical_hash": "8411735f24f9567b33f488253b84c3e1b09ffc92d3a8e89038f52e85976aeedb"
+      "canonical_hash": "109492f3deb2271f61e6be011effc40686c427f4aefa0d651dc21a39ca806db1"
     }
   }
 }
