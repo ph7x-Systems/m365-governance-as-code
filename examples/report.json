@@ -47,7 +47,13 @@
   "class_reason": "only lists are classified",
   "set_aside": false,
   "attribution": {
-    "owners": "sha256:92f59ab45e915b65"
+    "owners": {
+      "document": "sha256:92f59ab45e915b65",
+      "collector": "spo-collector",
+      "collected_at": "2026-08-05T14:02:11Z",
+      "source_system": "SharePoint Online",
+      "identity_kind": "application"
+    }
   },
   "rule_source": "shipped with this version",
   "counts": {

@@ -76,7 +76,7 @@ def test_one_finding_walks_back_to_the_observations_that_support_it(tmp_path):
             f"the finding used `{path}` and nothing says which document "
             f"supplied `{block}`"
         )
-        source = attribution[block]
+        source = attribution[block]["document"]
         assert source in by_digest, (
             f"`{block}` is attributed to {source}, which is not one of the "
             "documents this artefact carries"
@@ -118,6 +118,11 @@ def test_the_walk_uses_no_prose_from_the_human_report(tmp_path):
     # anybody has to parse for meaning.
     for run in runs:
         assert isinstance(run["attribution"], dict)
-        for block, source in run["attribution"].items():
+        for block, entry in run["attribution"].items():
             assert isinstance(block, str) and "." not in block
-            assert source.startswith("sha256:") and len(source) == 23
+            assert entry["document"].startswith("sha256:")
+            assert len(entry["document"]) == 23
+            # THE DESCRIPTION BESIDE THE IDENTITY. A surface that opens a run
+            # without its documents cannot resolve a digest, and would have
+            # shown a reader a hash and asked them to believe it.
+            assert entry["collector"] and entry["collected_at"]

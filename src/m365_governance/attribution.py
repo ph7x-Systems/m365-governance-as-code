@@ -40,7 +40,7 @@ def block_of(path: str) -> str:
     return str(path).split(".", 1)[0]
 
 
-def chain(result: dict, attribution: dict[str, str] | None) -> list[dict[str, Any]]:
+def chain(result: dict, attribution: dict[str, dict] | None) -> list[dict[str, Any]]:
     """Every acquisition one result depends on, and the paths that reach it.
 
     A rule reading two facts supplied by two acquisitions comes back with both.
@@ -58,12 +58,29 @@ def chain(result: dict, attribution: dict[str, str] | None) -> list[dict[str, An
         if not path:
             continue
         block = block_of(path)
+        # THE IDENTITY IS THE KEY AND THE DESCRIPTION TRAVELS WITH IT. The
+        # digest alone was unusable by a surface that opens a run without its
+        # documents, and a reader shown `sha256:a891ec...` was being asked to
+        # believe it.
+        described: dict[str, Any] = {}
         if attribution is None:
             document = UNATTRIBUTED
         else:
-            document = attribution.get(block, UNKNOWN_BLOCK)
+            # NOT `entry`. That is the evidence item this loop is reading, and
+            # shadowing it made `state` come back from the attribution table --
+            # which has none -- so every reading reported an empty state and an
+            # `unknown` stopped saying why it was unknown.
+            attributed = attribution.get(block)
+            if attributed is None:
+                document = UNKNOWN_BLOCK
+            else:
+                document = attributed["document"]
+                described = {
+                    key: value for key, value in attributed.items() if key != "document"
+                }
         found = reached.setdefault(
-            document, {"document": document, "paths": [], "states": []}
+            document,
+            {"document": document, "paths": [], "states": [], **described},
         )
         found["paths"].append(path)
         found["states"].append(str((entry or {}).get("state") or ""))

@@ -17,7 +17,11 @@ def document(collector: str, when: str, **facts) -> dict:
         "facts": {
             name: {"state": "observed", "value": value} for name, value in facts.items()
         },
-        "provenance": {"collector": collector, "collected_at": when},
+        "provenance": {
+            "collector": collector,
+            "collected_at": when,
+            "source_system": "SharePoint Online",
+        },
         "coverage": {},
     }
 
@@ -90,9 +94,15 @@ def test_two_acquisitions_sharing_a_collector_identity_stay_distinct():
 
     [(_, attributed)] = composing.composed([a, b])
 
-    assert attributed["owners"] != attributed["sharing"]
-    assert identity.document_digest(a) == attributed["owners"]
-    assert identity.document_digest(b) == attributed["sharing"]
+    assert attributed["owners"]["document"] != attributed["sharing"]["document"]
+    assert identity.document_digest(a) == attributed["owners"]["document"]
+    assert identity.document_digest(b) == attributed["sharing"]["document"]
+
+    # AND EACH CARRIES A DESCRIPTION, because a digest alone is an identity a
+    # reader has to take on trust. The collector is the same on both, which is
+    # exactly why the digest is the key and the name is not.
+    assert attributed["owners"]["collector"] == attributed["sharing"]["collector"]
+    assert attributed["owners"]["collected_at"] != attributed["sharing"]["collected_at"]
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +129,7 @@ def test_evidence_nobody_consumed_is_a_third_state():
 
     assert len(attributed) == 2
     assert len(consumed) == 1
-    untouched = set(attributed.values()) - consumed
+    untouched = {entry["document"] for entry in attributed.values()} - consumed
     assert len(untouched) == 1, "the collected-and-unread block must be visible"
 
 
@@ -147,7 +157,10 @@ def test_a_path_no_table_entry_covers_is_named_separately():
     composition; a table that does not exist is an older artefact. Collapsing
     them would send somebody to look in the wrong place.
     """
-    links = attribution.chain(result("fail", "ghost.count"), {"items": "sha256:aaaa"})
+    links = attribution.chain(
+        result("fail", "ghost.count"),
+        {"items": {"document": "sha256:aaaa", "collector": "spo-collector"}},
+    )
 
     assert attribution.unresolved(links) == [attribution.UNKNOWN_BLOCK]
 
@@ -173,6 +186,10 @@ def test_an_unknown_resolves_to_the_acquisition_that_tried():
 
     assert len(links) == 1
     assert links[0]["states"] == ["missing"]
+    assert links[0]["collector"] == "spo-collector", (
+        "an unknown reaches the acquisition that tried, so a reader learns "
+        "WHY it is unknown rather than only that it is"
+    )
     assert not attribution.decided(unknown), "an unknown is not a conclusion"
 
 
@@ -260,6 +277,10 @@ def test_the_coarser_models_cannot_answer_and_this_is_why_they_are_refused():
     assert len(counted) == 1, "the count resolves to exactly one acquisition"
     assert counted[0]["document"] == identity.document_digest(early)
     assert counted[0]["document"] != identity.document_digest(later)
+    assert counted[0]["collected_at"] == "2026-08-17T09:00:00Z", (
+        "the link carries a description as well as an identity, so a reader "
+        "sees a moment rather than a hash"
+    )
 
     # And the chain reaches the ORIGINAL observation, not a name: everything a
     # reader needs is on the document the link points at.
@@ -286,6 +307,8 @@ def test_a_single_evaluation_stays_unambiguous_across_both_acquisitions():
     )
 
     by_path = {path: link["document"] for link in links for path in link["paths"]}
+    when = {path: link["collected_at"] for link in links for path in link["paths"]}
+    assert when["items.count"] != when["permissions.inheritance_broken"]
 
     assert by_path["items.count"] == identity.document_digest(early)
     assert by_path["permissions.inheritance_broken"] == identity.document_digest(later)

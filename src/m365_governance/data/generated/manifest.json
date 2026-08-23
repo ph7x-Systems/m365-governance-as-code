@@ -153,9 +153,9 @@
       "path": "schemas/archive/run-4.1.0.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/run/4.2.0": {
-      "digest": "12e997e8ef8552ef8049fa990f36fe61c039dce7fb72a54badb28462bfe78b6d",
+      "digest": "e8df5f38ad852a501f8ab5f67446034f1c81e0ebfe1dac4c17dd8ed56618553f",
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "241f4c27da6f6331bf9b22e40caefb9bd8a5f5ea19cb100da6d1b609b48aa117"
+  "set_digest": "bda51cf55fbb1053efebbdd4913fbfecdc9e4fda34e41b86084860fb6672bd38"
 }

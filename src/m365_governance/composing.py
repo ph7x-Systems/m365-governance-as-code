@@ -47,7 +47,7 @@ def compose(documents: list[dict]) -> list[dict]:
     return [document for document, _ in composed(documents)]
 
 
-def composed(documents: list[dict]) -> list[tuple[dict, dict[str, str]]]:
+def composed(documents: list[dict]) -> list[tuple[dict, dict[str, dict[str, str]]]]:
     """Each composed document, and WHICH DOCUMENT SUPPLIED EACH FACT BLOCK.
 
     THE TABLE WAS ALREADY BEING BUILT AND THROWN AWAY. `_facts` computes
@@ -79,7 +79,7 @@ def composed(documents: list[dict]) -> list[tuple[dict, dict[str, str]]]:
     return [_one(grouped[key]) for key in order]
 
 
-def _one(documents: list[dict]) -> tuple[dict, dict[str, str]]:
+def _one(documents: list[dict]) -> tuple[dict, dict[str, dict[str, str]]]:
     """Several documents about one resource, as one document and its table.
 
     A single document still gets a table: every fact in it came from it, and
@@ -95,7 +95,7 @@ def _one(documents: list[dict]) -> tuple[dict, dict[str, str]]:
     return composed, attribution
 
 
-def _facts(documents: list[dict]) -> tuple[dict[str, Any], dict[str, str]]:
+def _facts(documents: list[dict]) -> tuple[dict[str, Any], dict[str, dict[str, str]]]:
     """The union of every fact block, refusing a namespace claimed twice.
 
     Slices write into their own namespace -- `owners`, `sharing`, `spfx` -- so
@@ -105,10 +105,10 @@ def _facts(documents: list[dict]) -> tuple[dict[str, Any], dict[str, str]]:
     """
     facts: dict[str, Any] = {}
     source: dict[str, str] = {}
-    attribution: dict[str, str] = {}
+    attribution: dict[str, dict[str, str]] = {}
     for document in documents:
         where = _where(document)
-        which = identity.document_digest(document)
+        which = identity.attribution_of(document)
         for name, block in (document.get("facts") or {}).items():
             if name in facts:
                 # EVEN WHEN THEY MATCH. Identical blocks mean the same evidence

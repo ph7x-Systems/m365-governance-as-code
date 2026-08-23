@@ -86,3 +86,29 @@ def document_digest(document: dict) -> str:
     from . import canonical
 
     return "sha256:" + canonical.digest(document)[:16]
+
+
+def attribution_of(document: dict) -> dict[str, str]:
+    """One document, as the run records it: an identity and a description.
+
+    THE DIGEST ALONE WAS NOT USABLE BY THE PRODUCT'S OWN SURFACE. It resolves
+    against the original documents, which an assessment carries and a standalone
+    run does not -- and the desktop client opens runs. A reader would have been
+    shown `sha256:a891ec...` and asked to believe it.
+
+    The digest stays the authority. Everything beside it is a PROJECTION OF THE
+    DOCUMENT IT NAMES rather than a second source: a consumer holding the
+    document checks the description against it, and one holding only the run
+    gets a sentence instead of a hash.
+    """
+    provenance = document.get("provenance") or {}
+    described = {
+        "document": document_digest(document),
+        "collector": str(provenance.get("collector") or "not-established"),
+        "collected_at": str(provenance.get("collected_at") or "not-established"),
+    }
+    for optional in ("source_system", "identity_kind"):
+        value = provenance.get(optional)
+        if value:
+            described[optional] = str(value)
+    return described

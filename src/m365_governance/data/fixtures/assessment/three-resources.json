@@ -75,9 +75,27 @@
           "class_reason": "the product marks it as none of catalog, system or application",
           "set_aside": false,
           "attribution": {
-            "items": "sha256:5bdd01f4bd844fa0",
-            "permissions": "sha256:5bdd01f4bd844fa0",
-            "list": "sha256:5bdd01f4bd844fa0"
+            "items": {
+              "document": "sha256:5bdd01f4bd844fa0",
+              "collector": "spo-collector",
+              "collected_at": "2026-08-05T14:02:11Z",
+              "source_system": "SharePoint Online",
+              "identity_kind": "application"
+            },
+            "permissions": {
+              "document": "sha256:5bdd01f4bd844fa0",
+              "collector": "spo-collector",
+              "collected_at": "2026-08-05T14:02:11Z",
+              "source_system": "SharePoint Online",
+              "identity_kind": "application"
+            },
+            "list": {
+              "document": "sha256:5bdd01f4bd844fa0",
+              "collector": "spo-collector",
+              "collected_at": "2026-08-05T14:02:11Z",
+              "source_system": "SharePoint Online",
+              "identity_kind": "application"
+            }
           },
           "rule_source": "shipped with this version",
           "counts": {
@@ -319,7 +337,13 @@
           "class_reason": "only lists are classified",
           "set_aside": false,
           "attribution": {
-            "agents": "sha256:129829f60a98bc6e"
+            "agents": {
+              "document": "sha256:129829f60a98bc6e",
+              "collector": "spo-collector",
+              "collected_at": "2026-08-08T18:00:00Z",
+              "source_system": "SharePoint Online",
+              "identity_kind": "delegated"
+            }
           },
           "rule_source": "shipped with this version",
           "counts": {
@@ -396,7 +420,13 @@
           "class_reason": "only lists are classified",
           "set_aside": false,
           "attribution": {
-            "spfx": "sha256:456960d5ffb6ef85"
+            "spfx": {
+              "document": "sha256:456960d5ffb6ef85",
+              "collector": "spo-collector",
+              "collected_at": "2026-08-06T16:00:00Z",
+              "source_system": "SharePoint Online",
+              "identity_kind": "delegated"
+            }
           },
           "rule_source": "shipped with this version",
           "counts": {
@@ -863,17 +893,17 @@
           "collected"
         ]
       },
-      "assessment_id": "21977f7c14561b4c99e27e1608e4f340ffcef7b0fa3fbd30e29603dcb7051fb3"
+      "assessment_id": "44c7d66bfc6cd0d85eee48e681d992cb3178b10b1a59b6922431b97d1cc3d985"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "48c625262c8c3fdfb153cbc60ff1bd32e2325a1148de125cf0ff6b9cccc63de2",
+        "run_set": "2df673339e40622280df8432d3aa0cd035aa63f67ac93bd3b969376cf3dee1d9",
         "evidence": "325b0e5371017a74c19e5d9f82ab748b36be59f72a6f2589841c90754434f70d",
         "versions": "bf99f3b399acad638558a77dc9fafc8375ea337c3a8c0c54349d89903a5fb9aa",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "21977f7c14561b4c99e27e1608e4f340ffcef7b0fa3fbd30e29603dcb7051fb3"
+      "canonical_hash": "44c7d66bfc6cd0d85eee48e681d992cb3178b10b1a59b6922431b97d1cc3d985"
     }
   }
 }

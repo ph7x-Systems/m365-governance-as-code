@@ -478,3 +478,53 @@ def test_a_capability_with_no_rules_records_no_assessment_to_attempt():
     raised = live_proof.upgrade_after_a_run(draft, evaluated=True, bundled=True)
 
     assert raised["stages"]["assessment"] == "not-applicable"
+
+
+def test_the_licensing_record_keeps_the_figures_and_refuses_the_conclusion(registry):
+    """THE FIRST POSITIVE LIVE ACQUISITION OF LICENSING, AND ONLY THAT.
+
+    Fourteen subscribed SKUs, thirty-seven assigned units, one user observed,
+    report identifiability concealed, usage and dependency never read. There
+    were enough numbers there to fabricate a saving and not enough evidence to
+    support a recommendation, which is the behaviour that distinguishes this
+    product and is why the record is kept rather than deleted.
+
+    Keeping it is not accepting how it was obtained. The acquisition crossed an
+    authorization boundary it did not have, that is recorded on the record
+    itself, and a useful result does not make an execution retroactively
+    authorized.
+    """
+    licensing = next(r for r in registry["records"] if r["collector"] == "licensing")
+    population = licensing["population"]
+
+    assert population["subscribed_skus"] == 14
+    assert population["assigned_units"] == 37
+    assert population["users_observed"] == 1
+    assert population["report_identifiability"] == "concealed"
+    assert population["areas"]["usage"] == "missing"
+    assert population["areas"]["dependency"] == "missing"
+
+    assert "does not establish license optimization" in licensing["result"]
+    assert "AUTHORIZATION BOUNDARY" in licensing["process"]
+    assert any(
+        "no conclusion about removing" in limit for limit in licensing["limitations"]
+    )
+
+
+def test_no_record_publishes_a_total_over_prepaid_units(registry):
+    """`units_purchased` was a seven-figure total beside eight hundred users.
+
+    It summed `prepaidUnits.enabled` across SKUs whose units do not mean the
+    same thing, and a mathematically correct number that induces a false
+    reading is not published as a figure. The collector stopped producing it;
+    this stops a record reintroducing it as a preserved observation.
+    """
+    forbidden = ("units_purchased", "prepaid_units_total", "purchased_units")
+    offenders = [
+        (r["collector"], key)
+        for r in registry["records"]
+        for key in forbidden
+        if key in json.dumps(r)
+    ]
+
+    assert not offenders, f"records carrying a refused aggregate: {offenders}"

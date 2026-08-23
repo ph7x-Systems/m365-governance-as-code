@@ -72,7 +72,13 @@
           "class_reason": "only lists are classified",
           "set_aside": false,
           "attribution": {
-            "classification": "sha256:593ef2add5b34326"
+            "classification": {
+              "document": "sha256:593ef2add5b34326",
+              "collector": "spo-collector",
+              "collected_at": "2026-08-06T16:55:00Z",
+              "source_system": "SharePoint Online",
+              "identity_kind": "delegated"
+            }
           },
           "rule_source": "shipped with this version",
           "counts": {
@@ -463,17 +469,17 @@
           "collected"
         ]
       },
-      "assessment_id": "6002be0af58ad3f9d7a370c35db6cc6af719aa5ecbfc9fb3731b2f5e5f88a855"
+      "assessment_id": "aba16cdccb12185567d68fb1b3288fa94a1c39a6d8d631bb7b602cec1ec77da1"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "027d2bff70fcc2ea8aab12c3b969ad2eebe6a1288e966d5a5518ab1b0d7c95d3",
+        "run_set": "3b621bcb13e5c8b4262a0bbc202c32cb417a6798699d9bf9ae2e04685b9244bb",
         "evidence": "b8674199e754c1a7907064ed00e8e7af0b7856a6dabcf433d0b15b7b1f779433",
         "versions": "fc0860d67b23c575f10c0463e0638e1f821c0330180d60fc8435a12c8eaefb89",
         "manifest": "3ba617f03785ab93b8ca2ea38b1f3f6bb3f5537e70ba39d838025276d69b1f0c"
       },
-      "canonical_hash": "6002be0af58ad3f9d7a370c35db6cc6af719aa5ecbfc9fb3731b2f5e5f88a855"
+      "canonical_hash": "aba16cdccb12185567d68fb1b3288fa94a1c39a6d8d631bb7b602cec1ec77da1"
     }
   }
 }
