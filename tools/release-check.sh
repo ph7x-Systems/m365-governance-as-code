@@ -181,6 +181,12 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   # The coverage matrix is derived, never maintained. This is what stops it
   # rotting: a rule, collector, fixture or article added without regenerating
   # fails here rather than leaving a document that quietly says otherwise.
+  # THE ARTEFACT A CONSUMER PROVES IT CAN OPEN. Its digest is what a consumer
+  # proof points at, so a release that changed it without saying so would
+  # invalidate every proof naming the old one, silently.
+  step "Reference bundle is what this engine produces"
+  "$PY" tools/reference-bundle.py --check
+
   step "Product coverage matrix is current"
   "$PY" tools/coverage.py --check
 

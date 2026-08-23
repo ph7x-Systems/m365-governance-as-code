@@ -1,0 +1,241 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
+  "provenance": {
+    "collected_at": "2026-08-17T09:00:00Z",
+    "collector": "graph-conditional-access",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "conditional_access_policies",
+      "named_locations",
+      "security_defaults"
+    ],
+    "completed": [
+      "conditional_access_policies",
+      "named_locations",
+      "security_defaults"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "conditional-access-policy",
+    "native_id": "aaaaaaaa-0000-4000-8000-000000000001",
+    "tenant": {
+      "id": "11111111-2222-3333-4444-555555555555",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Require multifactor authentication for administrators"
+  },
+  "resource_class": "unknown",
+  "class_reason": "only lists are classified",
+  "set_aside": false,
+  "attribution": {},
+  "rule_source": "",
+  "counts": {
+    "pass": 1,
+    "fail": 2,
+    "unknown": 0,
+    "not-applicable": 0,
+    "invalid-evidence": 0,
+    "error": 0
+  },
+  "results": [
+    {
+      "rule_id": "CA-RECOVERY-001",
+      "title": "A policy applying to everyone with nothing excluded has no way back in",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "workload": "entra",
+        "type": "conditional-access-policy",
+        "native_id": "aaaaaaaa-0000-4000-8000-000000000001"
+      },
+      "outcome": "fail",
+      "message": "This policy includes all users and excludes no user, no group and no directory role. If it prevents sign-in for any reason, the accounts that would change it are subject to it, and recovery runs through Microsoft support rather than through an administrator.",
+      "basis": "documented-guidance",
+      "severity": "high",
+      "evidence_used": [
+        {
+          "path": "conditional_access_policies.exclusions_declared",
+          "state": "observed",
+          "value": 0,
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": null
+        },
+        {
+          "path": "conditional_access_policies.included_users",
+          "state": "observed",
+          "value": [
+            "All"
+          ],
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": null
+        }
+      ],
+      "passes_without_resolving": "AN EXCLUSION IS NOT A RECOVERY PATH. This rule reads whether anything is excluded, and it cannot read whether what was excluded is an emergency access account, whether that account works, whether anybody knows its credentials, or whether it is itself protected. A policy excluding one disabled account passes this rule and helps nobody.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength",
+          "title": "Require multifactor authentication for all users",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-23"
+        },
+        {
+          "url": "https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access",
+          "title": "Manage emergency access accounts in Microsoft Entra ID",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-23"
+        }
+      ],
+      "remediation": "Microsoft's documented answer is an emergency access account, excluded from this policy in advance and managed under the guidance for such accounts. A tenant whose recovery path is deliberately something else answers the same question differently, and the finding is the record of which one this is.",
+      "message_degraded": false,
+      "engine_detail": "",
+      "attention": {
+        "state": "review",
+        "rank": 4,
+        "because": [
+          "the rule failed against a documented-guidance, which is a choice to weigh rather than a documented violation"
+        ]
+      }
+    },
+    {
+      "rule_id": "CA-SCOPE-001",
+      "title": "A policy scoped to all users does not cover workload identities",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "workload": "entra",
+        "type": "conditional-access-policy",
+        "native_id": "aaaaaaaa-0000-4000-8000-000000000001"
+      },
+      "outcome": "fail",
+      "message": "This policy includes all users. Calls made by service principals are not blocked by it: Conditional Access policies scoped to users do not reach workload identities, and an application signing in on its own behalf is not subject to what this policy requires.",
+      "basis": "documented-guidance",
+      "severity": "medium",
+      "evidence_used": [
+        {
+          "path": "conditional_access_policies.included_users",
+          "state": "observed",
+          "value": [
+            "All"
+          ],
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": null
+        }
+      ],
+      "passes_without_resolving": "A PASS HERE IS NARROW AND SAYS ALMOST NOTHING. A policy scoped to a group rather than to all users has exactly the same gap for workload identities; it simply is not the policy an organisation reads as covering everything. This rule fires where the belief forms, not where the gap is.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength",
+          "title": "Require multifactor authentication for all users",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-23"
+        },
+        {
+          "url": "https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-cloud-apps",
+          "title": "Target resources in Conditional Access policy",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-23"
+        }
+      ],
+      "remediation": "Where workload identities need the same treatment, Microsoft's named answer is Conditional Access for workload identities, which is a separate policy targeting service principals. Where they deliberately do not, the finding is the record of that decision rather than a fault to fix.",
+      "message_degraded": false,
+      "engine_detail": "",
+      "attention": {
+        "state": "review",
+        "rank": 4,
+        "because": [
+          "the rule failed against a documented-guidance, which is a choice to weigh rather than a documented violation"
+        ]
+      }
+    },
+    {
+      "rule_id": "CA-STATE-001",
+      "title": "The policy is in report-only mode and enforces nothing",
+      "rule_version": "1.0",
+      "schema_version": "1.0",
+      "resource": {
+        "workload": "entra",
+        "type": "conditional-access-policy",
+        "native_id": "aaaaaaaa-0000-4000-8000-000000000001"
+      },
+      "outcome": "pass",
+      "message": "This policy is not in report-only mode.",
+      "basis": "convention",
+      "severity": "medium",
+      "evidence_used": [
+        {
+          "path": "conditional_access_policies.policy_state",
+          "state": "observed",
+          "value": "enabled",
+          "lower_bound": null,
+          "upper_bound": null,
+          "detail": null
+        }
+      ],
+      "passes_without_resolving": "A POLICY THAT IS NOT REPORT-ONLY MAY STILL ENFORCE NOTHING. `disabled` is a separate state and this rule does not read it. A policy that is enabled may exclude every user it would otherwise apply to, apply to no application, or require a control that every sign-in already satisfies. This reads the state and nothing else, and a pass says only that the state is not the one Microsoft documents as not enforcing.",
+      "sources": [
+        {
+          "url": "https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-report-only",
+          "title": "Analyze Conditional Access policy impact",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-23"
+        },
+        {
+          "url": "https://learn.microsoft.com/graph/api/resources/conditionalaccesspolicy",
+          "title": "conditionalAccessPolicy resource type",
+          "publisher": "Microsoft",
+          "checked_at": "2026-08-23"
+        }
+      ],
+      "remediation": "Move the policy from Report-only to On when its impact has been reviewed, which is what the mode exists for. If it is parked here deliberately, the finding is the record of that: a reader of the policy list cannot tell the two apart, and this says which one they are looking at.",
+      "message_degraded": false,
+      "engine_detail": "",
+      "attention": {
+        "state": "review",
+        "rank": 4,
+        "because": [
+          "it passed, and the rule records something the pass does not settle"
+        ]
+      }
+    }
+  ],
+  "attention": {
+    "state": "review",
+    "rank": 4,
+    "because": [
+      "3 finding(s) were decided and are worth weighing"
+    ],
+    "counts": {
+      "act": 0,
+      "review": 3,
+      "observe": 0,
+      "none": 0,
+      "not-evaluated": 0
+    },
+    "unobserved": []
+  }
+}

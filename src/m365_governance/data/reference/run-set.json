@@ -1,0 +1,2188 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
+  "resources": 4,
+  "by_class": {
+    "unknown": 4
+  },
+  "set_aside": 0,
+  "counts": {
+    "pass": 1,
+    "fail": 5,
+    "unknown": 32,
+    "not-applicable": 0,
+    "invalid-evidence": 0,
+    "error": 0
+  },
+  "run_coverage": {
+    "state": "not-established",
+    "observed": 4,
+    "expected": null,
+    "detail": "4 resources are stored. The total number the identity was expected to reach was not recorded, so this run does not establish complete coverage."
+  },
+  "services": [],
+  "runs": [
+    {
+      "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
+      "provenance": {
+        "collected_at": "2026-08-05T14:02:11Z",
+        "collector": "spo-collector",
+        "collector_version": "0.1.0",
+        "source_system": "SharePoint Online",
+        "source_api": "PnP.PowerShell / CSOM",
+        "tenant": {
+          "id": null,
+          "host": "contoso.sharepoint.com",
+          "how": "requested"
+        },
+        "identity_kind": "application",
+        "acquisition": "collected",
+        "scopes": [
+          "Sites.Read.All"
+        ]
+      },
+      "coverage": {
+        "requested": [
+          "items",
+          "permissions"
+        ],
+        "completed": [
+          "items",
+          "permissions"
+        ],
+        "unavailable": {}
+      },
+      "resource": {
+        "workload": "sharepoint",
+        "type": "list",
+        "native_id": "contoso,list,archive",
+        "tenant": {
+          "id": null,
+          "host": "contoso.sharepoint.com"
+        },
+        "scope": "container",
+        "parent": {
+          "workload": "sharepoint",
+          "type": "site",
+          "native_id": "contoso,site,documents-host"
+        },
+        "display_name": "Archive",
+        "url": "https://contoso.sharepoint.com/sites/Finance/Shared%20Documents"
+      },
+      "resource_class": "unknown",
+      "class_reason": "none of is_catalog, is_system or is_application was collected",
+      "set_aside": false,
+      "attribution": {},
+      "rule_source": "",
+      "counts": {
+        "pass": 0,
+        "fail": 1,
+        "unknown": 2,
+        "not-applicable": 0,
+        "invalid-evidence": 0,
+        "error": 0
+      },
+      "results": [
+        {
+          "rule_id": "SPO-LIST-001",
+          "title": "A list or library past 100,000 items can no longer have its permission inheritance broken",
+          "rule_version": "2.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "list",
+            "native_id": "contoso,list,archive"
+          },
+          "outcome": "fail",
+          "message": "The list holds 148000 items, above Microsoft's documented limit of 100,000, and still inherits its permissions. Inheritance can no longer be broken on this list, so it cannot be given unique permissions later.",
+          "basis": "documented-limit",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "items.count",
+              "state": "observed",
+              "value": 148000,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            },
+            {
+              "path": "permissions.inheritance_broken",
+              "state": "observed",
+              "value": false,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            }
+          ],
+          "passes_without_resolving": "A list holding 99,000 items and growing passes this rule today and loses the ability permanently within weeks, without anything in the report changing to warn about it. The rule measures a position, not a trajectory, and the boundary it describes is the one place where being close to a limit matters more than being past it: once crossed, the option does not come back. Every pass here means \"not yet\", never \"safe\".",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+              "title": "SharePoint limits, Items in lists and libraries",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-05"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
+              "title": "Manage Permission Scopes in SharePoint",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-05"
+            }
+          ],
+          "remediation": "Microsoft's guidance is preventive, not corrective: \"share large folders before they hit 100,000 items\". For a container already past the limit, reducing the count does not restore the ability in every case, and the supported route is to restructure the content across containers that stay below it. Decide whether this container will ever need unique permissions before restructuring, because if the answer is no, no action is required.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "act",
+            "rank": 0,
+            "because": [
+              "the rule failed against a documented-limit, which the vendor documents"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-LIST-002",
+          "title": "A list or library may not hold more than 50,000 unique permission scopes",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "list",
+            "native_id": "contoso,list,archive"
+          },
+          "outcome": "unknown",
+          "message": "The scope count does not settle this list's position relative to the 50,000 limit: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
+          "basis": "documented-limit",
+          "severity": "high",
+          "evidence_used": [
+            {
+              "path": "permissions.unique_scope_count",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A list at 49,000 scopes passes and is one sharing operation away from the ceiling, and a list at 6,000 passes this rule while sitting well above the number Microsoft recommends for performance. This rule measures only the supported ceiling, and passing it says nothing about whether the list is usable.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+              "title": "SharePoint limits, Unique security scopes per list or library",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
+              "title": "Manage Permission Scopes in SharePoint",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Restructure the content so that fewer containers carry their own permissions. A folder shared with three people is one scope; three files shared individually are three. Where a list has grown past the ceiling, the supported route is to split the content across containers rather than to remove permissions one by one, which is slow and rarely finishes.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-LIST-003",
+          "title": "A list or library above 5,000 unique permission scopes is past the recommended limit",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "list",
+            "native_id": "contoso,list,archive"
+          },
+          "outcome": "unknown",
+          "message": "The scope count does not settle this list's position relative to the recommended 5,000: either it was not counted, or counting stopped before it could. The evidence beside this finding says which. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "permissions.unique_scope_count",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A list at 4,999 scopes passes, and if its access control lists are large it may already be slower than a list at 8,000 with small ones. Microsoft says so explicitly. The count is a proxy for a cost this rule cannot measure, and a pass here is not a statement that the list performs well.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/office365/servicedescriptions/sharepoint-online-service-description/sharepoint-online-limits",
+              "title": "SharePoint limits, Unique security scopes per list or library",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepoint/manage-permission-scope",
+              "title": "Manage Permission Scopes in SharePoint",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Treat it as a design question rather than a cleanup task. Microsoft's own advice is to design lists to have as few unique permissions as possible, and the cheapest version of that is usually to grant access at a folder rather than at each file inside it.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        }
+      ],
+      "attention": {
+        "state": "act",
+        "rank": 0,
+        "because": [
+          "1 of 3 findings failed against something the vendor documents"
+        ],
+        "counts": {
+          "act": 1,
+          "review": 0,
+          "observe": 2,
+          "none": 0,
+          "not-evaluated": 0
+        },
+        "unobserved": []
+      }
+    },
+    {
+      "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
+      "provenance": {
+        "collected_at": "2026-08-06T09:00:00Z",
+        "collector": "spo-collector",
+        "collector_version": "0.3.0",
+        "source_system": "SharePoint Online",
+        "source_api": "PnP.PowerShell / SharePoint Admin",
+        "tenant": {
+          "id": null,
+          "host": "contoso.sharepoint.com",
+          "how": "requested"
+        },
+        "identity_kind": "application",
+        "acquisition": "collected",
+        "scopes": [
+          "Sites.Read.All"
+        ]
+      },
+      "coverage": {
+        "requested": [
+          "site"
+        ],
+        "completed": [
+          "site"
+        ],
+        "unavailable": {}
+      },
+      "resource": {
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,archive-store",
+        "tenant": {
+          "id": null,
+          "host": "contoso.sharepoint.com"
+        },
+        "scope": "collection",
+        "parent": {
+          "workload": "sharepoint",
+          "type": "tenant",
+          "native_id": "contoso.sharepoint.com"
+        },
+        "display_name": "Archive Store",
+        "url": "https://contoso.sharepoint.com/sites/archive-store"
+      },
+      "resource_class": "unknown",
+      "class_reason": "only lists are classified",
+      "set_aside": false,
+      "attribution": {},
+      "rule_source": "",
+      "counts": {
+        "pass": 0,
+        "fail": 1,
+        "unknown": 15,
+        "not-applicable": 0,
+        "invalid-evidence": 0,
+        "error": 0
+      },
+      "results": [
+        {
+          "rule_id": "SPO-ACTIVITY-001",
+          "title": "No person has changed anything on this site for over a year",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "activity.changeable",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "activity.days_since_user_change",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Somebody correcting one typo resets this to zero. A single edit satisfies the rule completely and says nothing about whether the site is used, read, or worth keeping, and the sites most worth reviewing are often the ones with one dutiful edit a year.",
+          "sources": [],
+          "remediation": "Find out what it was for before deciding anything. The cheapest outcome is usually to archive it, which keeps the content and takes it out of every list somebody has to read; deleting is a decision that needs an owner, and a site in this state often no longer has one.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-001",
+          "title": "This site carries no sensitivity label and no classification",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "classification.classified",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Any label passes. A site labelled Public and a site labelled Highly Confidential are indistinguishable to this rule, and so is a site labelled with whatever came first in the dropdown. It reports that the question was answered, never that the answer was right.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/purview/deploymentmodels/depmod-secure-by-default-step3",
+              "title": "Secure by default with Microsoft Purview, Step 3: expand to your entire Microsoft 365 data estate",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Decide first whether the tenant is using container labels at all. If it is not, every site will fail this rule and the finding to act on is the tenant decision, not the site. If it is, the deployment model Microsoft publishes works outward from the sites that matter most rather than through the list in order, and this rule set can produce that list but cannot rank it.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-002",
+          "title": "This site carries a sensitivity label that could not be resolved to a name",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "classification.label_applied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "classification.label_resolved",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A resolved name passes, and a name is a word. It says nothing about what the label is configured to do: privacy, guest access, the default sharing link and conditional access are all label settings this rule never reads. A site labelled Confidential by a label that enforces nothing passes.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Nothing on the site needs changing. Either the identity that collected the evidence cannot read label definitions, in which case collect again with one that can, or the label was deleted in Purview and the sites still carry its id, in which case the label is the thing to fix and it will be carrying more sites than this one.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-003",
+          "title": "This group-connected site carries no sensitivity label",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "Whether this group-connected site carries a sensitivity label was not established. This is not a pass.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "classification.group_connected",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "classification.label_applied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Any label passes, including one configured to set nothing. A label whose protection settings were left empty leaves privacy and guest access exactly where this rule found them and satisfies it completely.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/entra/architecture/8-secure-access-sensitivity-labels",
+              "title": "Control external access to resources in Microsoft Entra ID with sensitivity labels",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-004",
+          "title": "A classification string is doing a label's job",
+          "rule_version": "1.0",
+          "schema_version": "2.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "Whether a sensitivity label sits behind this site's classification string was not read. The evidence beside this finding says why. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "classification.classification_set",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "classification.label_applied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Any label passes. A site whose label carries none of the protections the old string was meant to imply passes this rule exactly like one whose label enforces all of them: the rule reads that a label is applied, never what the label does.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/dev/solution-guidance/modern-experience-site-classification",
+              "title": "SharePoint \"modern\" sites classification",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            },
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            }
+          ],
+          "remediation": "Convert the classification value to a sensitivity label with the settings the string was standing in for, following Microsoft's conversion procedure for classic classifications, and then retire the string. The label carries privacy, external access and sharing defaults; the string carries a word.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-MODERN-001",
+          "title": "The classic publishing infrastructure is enabled on this site",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "web.web_feature_ids",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A site that never had the publishing feature can still be entirely classic: classic pages, classic web parts, and a custom master page all exist without it. This rule reads one feature identifier and says nothing about how the site is actually built.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/publishing-sites-classic-to-modern-experience",
+              "title": "Moving from publishing sites to communication sites",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepointmigration/spmt-supported-site-features",
+              "title": "SPMT supported SharePoint site features, feature identifiers",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Read Microsoft's guide before turning anything off. The feature is not the work: the page layouts, the master pages and the content that depends on them are, and disabling the feature without moving them first breaks pages rather than modernising them.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-MODERN-003",
+          "title": "The site uses a master page other than the ones SharePoint provides",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "web.custom_master_page_file",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A site on seattle.master can be as classic as any other: classic pages, classic web parts, alternate CSS and script editor web parts all survive a default master page. This rule reads one file name.",
+          "sources": [],
+          "remediation": "Find out what it does before deciding anything. A custom master page is sometimes a logo and sometimes a navigation system, and the two are different projects.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-MODERN-004",
+          "title": "The site loads an alternate stylesheet into every page",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "web.alternate_css_url",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "An empty setting says nothing about how the site is styled. Themes, custom page layouts, web part properties and script editor web parts all change appearance without this setting being used, and this rule reads only this setting.",
+          "sources": [],
+          "remediation": "Find the file and read it before removing the setting. A stylesheet that hides an element somebody relies on is a support call, not a cleanup.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SCRIPT-001",
+          "title": "The site permits custom script",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "The custom script setting was not read, so whether this site permits it is not known. This is not a pass: the setting is returned by a tenant-scoped read, and a run that did not make one has established nothing about it.",
+          "basis": "documented-guidance",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "customization.custom_script_denied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "BLOCKED IS NOT INERT, AND THIS IS THE MISREADING THE CONTROL INVITES. Under *What features are affected when custom scripts are blocked?* Microsoft lists exactly nine extensions that cannot be uploaded, copied, moved or opened: `.asmx`, `.ascx`, `.aspx`, `.htc`, `.jar`, `.master`, `.swf`, `.xap`, `.xsf`. `.html` and `.htm` are not among them. Writing about Content Security Policy, Microsoft states the same thing from the other side: added script will not execute, added HTML will still work. A site that passes this rule can still hold HTML, and other extensibility models are unaffected by this setting entirely.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/security-considerations-of-allowing-custom-script",
+              "title": "Security considerations of allowing custom script",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-22"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepoint/allow-or-prevent-custom-script",
+              "title": "Allow or prevent custom script",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-22"
+            },
+            {
+              "url": "https://mc.merill.net/message/MC1117115",
+              "title": "MC1117115. Updates to custom scripting in sites and Classic Publishing site creation. Custom scripting disabled by default on classic publishing sites from 15 September 2025; the tenant-level opt-out command retired on 15 March 2026. A public mirror of the tenant Message Center, which is the primary and is tenant-scoped.\n",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-22"
+            }
+          ],
+          "remediation": "Find what depends on it before closing it. Blocking custom script stops the classic scripting model, and a site that was built on it will lose behaviour a person is still using. Microsoft's own guidance is to move that behaviour to a supported extensibility model first.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SHARE-001",
+          "title": "A site that allows Anyone links permits access that cannot be attributed",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "sharing.capability",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A site with Anyone links turned off today may hold documents shared that way last year, and those links keep working. Turning the setting off does not revoke what it produced, and this rule reads only the setting.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/turn-external-sharing-on-or-off",
+              "title": "Manage sharing settings for SharePoint and OneDrive, external sharing options",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/microsoft-365/education/guide/2-baseline/applications/baseline-apps-odsp-sharing",
+              "title": "Share within Microsoft OneDrive and SharePoint, sharable links overview",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Decide whether this site needs it. Where it does, the controls Microsoft provides are expiry and view-only permission on Anyone links, and both are set per site. Where it does not, a more restrictive capability removes the option without removing external sharing.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SHARE-002",
+          "title": "The default sharing link should not be Anyone",
+          "rule_version": "1.0",
+          "schema_version": "2.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "sharing.capability",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "sharing.effective_default_link_type",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A default of Specific people means nothing about what people actually choose. Somebody who selects the Anyone link every time produces the same result on a site that passes this rule as on one that fails it, and the rule reads only the default.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/change-default-sharing-link",
+              "title": "Change the default sharing link type for a site",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Set the default to something more restrictive, per site, and leave the Anyone link available for the people who need it. Microsoft's own page describes exactly this arrangement.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SHARE-005",
+          "title": "The default sharing link should not hand out edit",
+          "rule_version": "1.0",
+          "schema_version": "2.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "What the default link lets its holder do is not settled here: the setting was not read. The evidence beside this finding says why. This is not a pass.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "sharing.default_link_permission",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A view default stops nobody from choosing edit on purpose. Somebody who selects edit on every share produces the same links on a site that passes this rule as on one that fails it, and the rule reads only the default.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/change-default-sharing-link",
+              "title": "Change the default sharing link type for a site",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepoint/collaboration-options",
+              "title": "Plan sharing and collaboration options in SharePoint and OneDrive",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            }
+          ],
+          "remediation": "Set the site's default link permission to view and leave edit available for the people who choose it. The setting is on the same admin page as the default link type, and Microsoft documents both together.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SITE-001",
+          "title": "A site should have at least two owners",
+          "rule_version": "1.1",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "The owner count cannot establish whether this site has two administrators: either a group among the owners was not expanded, or the owners could not be read.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "owners.count",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Two owners who are dormant, who have left, or who do not know they own the site satisfy this rule completely. The count is two and nobody is able to act. The rule measures the field, not the availability of a person.",
+          "sources": [],
+          "remediation": "Assign a second accountable owner, and review ownership when people change role. A second owner who does not know they are one is not a second owner: the point is that somebody else can act, not that a field has two values.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SITE-002",
+          "title": "A site should have at least one administrator who is a person",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "owners.direct_count",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "One named administrator who has left the organisation, changed role, or never knew they were named satisfies this rule completely. It reads a field; it cannot read whether the account is active or the person reachable.",
+          "sources": [],
+          "remediation": "Name at least one person alongside the groups, and tell them. The point is not the field: it is that somebody knows the site is theirs to decide about.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SITE-003",
+          "title": "A site above 90 per cent of its storage quota is close to stopping",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "fail",
+          "message": "The site uses 24100 MB of 25600 MB, which is 94 per cent of its quota. At this rate the next upload to fail will be somebody else's.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "site.storage_limit_set",
+              "state": "observed",
+              "value": true,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            },
+            {
+              "path": "site.storage_quota_mb",
+              "state": "observed",
+              "value": 25600,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            },
+            {
+              "path": "site.storage_used_mb",
+              "state": "observed",
+              "value": 24100,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            },
+            {
+              "path": "site.storage_used_percent",
+              "state": "observed",
+              "value": 94,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            }
+          ],
+          "passes_without_resolving": "A site at 40 per cent that doubles every month passes this rule twice before it fails it. The rule reads one number on one day: it measures a level and says nothing about a rate, and the rate is what decides when anybody needs to act.",
+          "sources": [],
+          "remediation": "Raise the quota, or move content out. Which one is right depends on whether the site is growing because it is being used or because nothing has ever been removed from it, and that is a question the numbers here do not answer.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "review",
+            "rank": 4,
+            "because": [
+              "the rule failed against a convention, which is a choice to weigh rather than a documented violation"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SPFX-001",
+          "title": "A solution is installed at an older version than the catalog holds",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,archive-store"
+          },
+          "outcome": "unknown",
+          "message": "Whether any solution is behind the version the catalog holds is not known: either the catalog was not read, or it was read and no solution in it reports an installed version to compare against. The evidence beside this finding says which. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "spfx.upgradable_count",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A catalog where every solution is current says nothing about whether any of them still works, is maintained by anybody, or should be there at all. This rule compares two version numbers.",
+          "sources": [],
+          "remediation": "Find out why before upgrading anything. A package that was uploaded and never claimed is sometimes an oversight and sometimes a rollback that nobody wrote down.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        }
+      ],
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "15 finding(s) reached no answer"
+        ],
+        "counts": {
+          "act": 0,
+          "review": 1,
+          "observe": 15,
+          "none": 0,
+          "not-evaluated": 0
+        },
+        "unobserved": []
+      }
+    },
+    {
+      "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
+      "provenance": {
+        "collected_at": "2026-08-05T14:02:11Z",
+        "collector": "spo-collector",
+        "collector_version": "0.1.0",
+        "source_system": "SharePoint Online",
+        "source_api": "PnP.PowerShell / CSOM",
+        "tenant": {
+          "id": null,
+          "host": "contoso.sharepoint.com",
+          "how": "requested"
+        },
+        "identity_kind": "application",
+        "acquisition": "collected",
+        "scopes": [
+          "Sites.Read.All"
+        ]
+      },
+      "coverage": {
+        "requested": [
+          "owners"
+        ],
+        "completed": [
+          "owners"
+        ],
+        "unavailable": {}
+      },
+      "resource": {
+        "workload": "sharepoint",
+        "type": "site",
+        "native_id": "contoso,site,marketing",
+        "tenant": {
+          "id": null,
+          "host": "contoso.sharepoint.com"
+        },
+        "scope": "collection",
+        "parent": {
+          "workload": "sharepoint",
+          "type": "tenant",
+          "native_id": "contoso.sharepoint.com"
+        },
+        "display_name": "Marketing",
+        "url": "https://contoso.sharepoint.com/sites/Marketing"
+      },
+      "resource_class": "unknown",
+      "class_reason": "only lists are classified",
+      "set_aside": false,
+      "attribution": {},
+      "rule_source": "",
+      "counts": {
+        "pass": 0,
+        "fail": 1,
+        "unknown": 15,
+        "not-applicable": 0,
+        "invalid-evidence": 0,
+        "error": 0
+      },
+      "results": [
+        {
+          "rule_id": "SPO-ACTIVITY-001",
+          "title": "No person has changed anything on this site for over a year",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "When a person last changed something on this site was not established, so how long it has been is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "activity.changeable",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "activity.days_since_user_change",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Somebody correcting one typo resets this to zero. A single edit satisfies the rule completely and says nothing about whether the site is used, read, or worth keeping, and the sites most worth reviewing are often the ones with one dutiful edit a year.",
+          "sources": [],
+          "remediation": "Find out what it was for before deciding anything. The cheapest outcome is usually to archive it, which keeps the content and takes it out of every list somebody has to read; deleting is a decision that needs an owner, and a site in this state often no longer has one.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-001",
+          "title": "This site carries no sensitivity label and no classification",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "Whether this site carries a label or a classification was not established. Neither property could be read, so the site may well be labelled. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "classification.classified",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Any label passes. A site labelled Public and a site labelled Highly Confidential are indistinguishable to this rule, and so is a site labelled with whatever came first in the dropdown. It reports that the question was answered, never that the answer was right.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/purview/deploymentmodels/depmod-secure-by-default-step3",
+              "title": "Secure by default with Microsoft Purview, Step 3: expand to your entire Microsoft 365 data estate",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Decide first whether the tenant is using container labels at all. If it is not, every site will fail this rule and the finding to act on is the tenant decision, not the site. If it is, the deployment model Microsoft publishes works outward from the sites that matter most rather than through the list in order, and this rule set can produce that list but cannot rank it.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-002",
+          "title": "This site carries a sensitivity label that could not be resolved to a name",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "Whether the label on this site resolves to a name was not established, because the label itself was not read. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "classification.label_applied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "classification.label_resolved",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A resolved name passes, and a name is a word. It says nothing about what the label is configured to do: privacy, guest access, the default sharing link and conditional access are all label settings this rule never reads. A site labelled Confidential by a label that enforces nothing passes.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Nothing on the site needs changing. Either the identity that collected the evidence cannot read label definitions, in which case collect again with one that can, or the label was deleted in Purview and the sites still carry its id, in which case the label is the thing to fix and it will be carrying more sites than this one.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-003",
+          "title": "This group-connected site carries no sensitivity label",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "Whether this group-connected site carries a sensitivity label was not established. This is not a pass.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "classification.group_connected",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "classification.label_applied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Any label passes, including one configured to set nothing. A label whose protection settings were left empty leaves privacy and guest access exactly where this rule found them and satisfies it completely.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces (groups and sites)",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/entra/architecture/8-secure-access-sensitivity-labels",
+              "title": "Control external access to resources in Microsoft Entra ID with sensitivity labels",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Read the group settings before applying anything. A label sets privacy and external access and locks them, so applying one to a group that is currently configured differently changes the group. That is the point of it and it is also how a labelling exercise removes somebody's access on a Tuesday afternoon.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-CLASS-004",
+          "title": "A classification string is doing a label's job",
+          "rule_version": "1.0",
+          "schema_version": "2.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "Whether a sensitivity label sits behind this site's classification string was not read. The evidence beside this finding says why. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "classification.classification_set",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "classification.label_applied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "Any label passes. A site whose label carries none of the protections the old string was meant to imply passes this rule exactly like one whose label enforces all of them: the rule reads that a label is applied, never what the label does.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/dev/solution-guidance/modern-experience-site-classification",
+              "title": "SharePoint \"modern\" sites classification",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            },
+            {
+              "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+              "title": "Use sensitivity labels to protect collaborative workspaces",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            }
+          ],
+          "remediation": "Convert the classification value to a sensitivity label with the settings the string was standing in for, following Microsoft's conversion procedure for classic classifications, and then retire the string. The label carries privacy, external access and sharing defaults; the string carries a word.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-MODERN-001",
+          "title": "The classic publishing infrastructure is enabled on this site",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "The enabled features of this web were not read, so whether the classic publishing infrastructure is on is not known. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "web.web_feature_ids",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A site that never had the publishing feature can still be entirely classic: classic pages, classic web parts, and a custom master page all exist without it. This rule reads one feature identifier and says nothing about how the site is actually built.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/publishing-sites-classic-to-modern-experience",
+              "title": "Moving from publishing sites to communication sites",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepointmigration/spmt-supported-site-features",
+              "title": "SPMT supported SharePoint site features, feature identifiers",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Read Microsoft's guide before turning anything off. The feature is not the work: the page layouts, the master pages and the content that depends on them are, and disabling the feature without moving them first breaks pages rather than modernising them.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-MODERN-003",
+          "title": "The site uses a master page other than the ones SharePoint provides",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "The master page of this site was not read, so whether it is a provided one is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "web.custom_master_page_file",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A site on seattle.master can be as classic as any other: classic pages, classic web parts, alternate CSS and script editor web parts all survive a default master page. This rule reads one file name.",
+          "sources": [],
+          "remediation": "Find out what it does before deciding anything. A custom master page is sometimes a logo and sometimes a navigation system, and the two are different projects.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-MODERN-004",
+          "title": "The site loads an alternate stylesheet into every page",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "The alternate stylesheet setting was not read, so whether one is loaded is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "web.alternate_css_url",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "An empty setting says nothing about how the site is styled. Themes, custom page layouts, web part properties and script editor web parts all change appearance without this setting being used, and this rule reads only this setting.",
+          "sources": [],
+          "remediation": "Find the file and read it before removing the setting. A stylesheet that hides an element somebody relies on is a support call, not a cleanup.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SCRIPT-001",
+          "title": "The site permits custom script",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "The custom script setting was not read, so whether this site permits it is not known. This is not a pass: the setting is returned by a tenant-scoped read, and a run that did not make one has established nothing about it.",
+          "basis": "documented-guidance",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "customization.custom_script_denied",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "BLOCKED IS NOT INERT, AND THIS IS THE MISREADING THE CONTROL INVITES. Under *What features are affected when custom scripts are blocked?* Microsoft lists exactly nine extensions that cannot be uploaded, copied, moved or opened: `.asmx`, `.ascx`, `.aspx`, `.htc`, `.jar`, `.master`, `.swf`, `.xap`, `.xsf`. `.html` and `.htm` are not among them. Writing about Content Security Policy, Microsoft states the same thing from the other side: added script will not execute, added HTML will still work. A site that passes this rule can still hold HTML, and other extensibility models are unaffected by this setting entirely.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/security-considerations-of-allowing-custom-script",
+              "title": "Security considerations of allowing custom script",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-22"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepoint/allow-or-prevent-custom-script",
+              "title": "Allow or prevent custom script",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-22"
+            },
+            {
+              "url": "https://mc.merill.net/message/MC1117115",
+              "title": "MC1117115. Updates to custom scripting in sites and Classic Publishing site creation. Custom scripting disabled by default on classic publishing sites from 15 September 2025; the tenant-level opt-out command retired on 15 March 2026. A public mirror of the tenant Message Center, which is the primary and is tenant-scoped.\n",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-22"
+            }
+          ],
+          "remediation": "Find what depends on it before closing it. Blocking custom script stops the classic scripting model, and a site that was built on it will lose behaviour a person is still using. Microsoft's own guidance is to move that behaviour to a supported extensibility model first.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SHARE-001",
+          "title": "A site that allows Anyone links permits access that cannot be attributed",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "The sharing capability of this site was not read, so whether it permits Anyone links is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "sharing.capability",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A site with Anyone links turned off today may hold documents shared that way last year, and those links keep working. Turning the setting off does not revoke what it produced, and this rule reads only the setting.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/turn-external-sharing-on-or-off",
+              "title": "Manage sharing settings for SharePoint and OneDrive, external sharing options",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            },
+            {
+              "url": "https://learn.microsoft.com/microsoft-365/education/guide/2-baseline/applications/baseline-apps-odsp-sharing",
+              "title": "Share within Microsoft OneDrive and SharePoint, sharable links overview",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Decide whether this site needs it. Where it does, the controls Microsoft provides are expiry and view-only permission on Anyone links, and both are set per site. Where it does not, a more restrictive capability removes the option without removing external sharing.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SHARE-002",
+          "title": "The default sharing link should not be Anyone",
+          "rule_version": "1.0",
+          "schema_version": "2.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "What a person gets when they press Share and change nothing is not settled here: either the setting was not read, or the site sets no default of its own and follows a tenant setting this collection did not read. The evidence beside this finding says which. This is not a pass.",
+          "basis": "documented-guidance",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "sharing.capability",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "sharing.effective_default_link_type",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A default of Specific people means nothing about what people actually choose. Somebody who selects the Anyone link every time produces the same result on a site that passes this rule as on one that fails it, and the rule reads only the default.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/change-default-sharing-link",
+              "title": "Change the default sharing link type for a site",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-06"
+            }
+          ],
+          "remediation": "Set the default to something more restrictive, per site, and leave the Anyone link available for the people who need it. Microsoft's own page describes exactly this arrangement.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SHARE-005",
+          "title": "The default sharing link should not hand out edit",
+          "rule_version": "1.0",
+          "schema_version": "2.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "What the default link lets its holder do is not settled here: the setting was not read. The evidence beside this finding says why. This is not a pass.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "sharing.default_link_permission",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A view default stops nobody from choosing edit on purpose. Somebody who selects edit on every share produces the same links on a site that passes this rule as on one that fails it, and the rule reads only the default.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/sharepoint/change-default-sharing-link",
+              "title": "Change the default sharing link type for a site",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            },
+            {
+              "url": "https://learn.microsoft.com/sharepoint/collaboration-options",
+              "title": "Plan sharing and collaboration options in SharePoint and OneDrive",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-11"
+            }
+          ],
+          "remediation": "Set the site's default link permission to view and leave edit available for the people who choose it. The setting is on the same admin page as the default link type, and Microsoft documents both together.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SITE-001",
+          "title": "A site should have at least two owners",
+          "rule_version": "1.1",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "fail",
+          "message": "The site has 1 owner. Ownership decisions on this site depend on one person being available.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "owners.count",
+              "state": "observed",
+              "value": 1,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            }
+          ],
+          "passes_without_resolving": "Two owners who are dormant, who have left, or who do not know they own the site satisfy this rule completely. The count is two and nobody is able to act. The rule measures the field, not the availability of a person.",
+          "sources": [],
+          "remediation": "Assign a second accountable owner, and review ownership when people change role. A second owner who does not know they are one is not a second owner: the point is that somebody else can act, not that a field has two values.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "review",
+            "rank": 4,
+            "because": [
+              "the rule failed against a convention, which is a choice to weigh rather than a documented violation"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SITE-002",
+          "title": "A site should have at least one administrator who is a person",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "The administrators of this site were not read, so whether any of them is an individual account is not known. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "owners.direct_count",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "One named administrator who has left the organisation, changed role, or never knew they were named satisfies this rule completely. It reads a field; it cannot read whether the account is active or the person reachable.",
+          "sources": [],
+          "remediation": "Name at least one person alongside the groups, and tell them. The point is not the field: it is that somebody knows the site is theirs to decide about.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SITE-003",
+          "title": "A site above 90 per cent of its storage quota is close to stopping",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "The storage figures for this site were not read, so how full it is remains unknown. This is not a pass.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "site.storage_limit_set",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "site.storage_quota_mb",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "site.storage_used_mb",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            },
+            {
+              "path": "site.storage_used_percent",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A site at 40 per cent that doubles every month passes this rule twice before it fails it. The rule reads one number on one day: it measures a level and says nothing about a rate, and the rate is what decides when anybody needs to act.",
+          "sources": [],
+          "remediation": "Raise the quota, or move content out. Which one is right depends on whether the site is growing because it is being used or because nothing has ever been removed from it, and that is a question the numbers here do not answer.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        },
+        {
+          "rule_id": "SPO-SPFX-001",
+          "title": "A solution is installed at an older version than the catalog holds",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "sharepoint",
+            "type": "site",
+            "native_id": "contoso,site,marketing"
+          },
+          "outcome": "unknown",
+          "message": "Whether any solution is behind the version the catalog holds is not known: either the catalog was not read, or it was read and no solution in it reports an installed version to compare against. The evidence beside this finding says which. This is not a pass.",
+          "basis": "convention",
+          "severity": "low",
+          "evidence_used": [
+            {
+              "path": "spfx.upgradable_count",
+              "state": "missing",
+              "value": null,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": "not present in the evidence"
+            }
+          ],
+          "passes_without_resolving": "A catalog where every solution is current says nothing about whether any of them still works, is maintained by anybody, or should be there at all. This rule compares two version numbers.",
+          "sources": [],
+          "remediation": "Find out why before upgrading anything. A package that was uploaded and never claimed is sometimes an oversight and sometimes a rollback that nobody wrote down.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "observe",
+            "rank": 3,
+            "because": [
+              "the evidence needed to decide this was not available"
+            ]
+          }
+        }
+      ],
+      "attention": {
+        "state": "observe",
+        "rank": 3,
+        "because": [
+          "15 finding(s) reached no answer"
+        ],
+        "counts": {
+          "act": 0,
+          "review": 1,
+          "observe": 15,
+          "none": 0,
+          "not-evaluated": 0
+        },
+        "unobserved": []
+      }
+    },
+    {
+      "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
+      "provenance": {
+        "collected_at": "2026-08-17T09:00:00Z",
+        "collector": "graph-conditional-access",
+        "collector_version": "1.0.0",
+        "source_system": "Microsoft Entra ID",
+        "source_api": "Microsoft Graph v1.0",
+        "identity_kind": "application",
+        "scopes": [
+          "Policy.Read.All"
+        ],
+        "acquisition": "collected",
+        "tenant": {
+          "id": "11111111-2222-3333-4444-555555555555",
+          "host": "contoso.sharepoint.com",
+          "how": "requested"
+        }
+      },
+      "coverage": {
+        "requested": [
+          "conditional_access_policies",
+          "named_locations",
+          "security_defaults"
+        ],
+        "completed": [
+          "conditional_access_policies",
+          "named_locations",
+          "security_defaults"
+        ],
+        "unavailable": {}
+      },
+      "resource": {
+        "workload": "entra",
+        "type": "conditional-access-policy",
+        "native_id": "aaaaaaaa-0000-4000-8000-000000000001",
+        "tenant": {
+          "id": "11111111-2222-3333-4444-555555555555",
+          "host": "contoso.sharepoint.com"
+        },
+        "scope": "collection",
+        "parent": {
+          "workload": "entra",
+          "type": "tenant",
+          "native_id": "contoso.sharepoint.com"
+        },
+        "display_name": "Require multifactor authentication for administrators"
+      },
+      "resource_class": "unknown",
+      "class_reason": "only lists are classified",
+      "set_aside": false,
+      "attribution": {},
+      "rule_source": "",
+      "counts": {
+        "pass": 1,
+        "fail": 2,
+        "unknown": 0,
+        "not-applicable": 0,
+        "invalid-evidence": 0,
+        "error": 0
+      },
+      "results": [
+        {
+          "rule_id": "CA-RECOVERY-001",
+          "title": "A policy applying to everyone with nothing excluded has no way back in",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "entra",
+            "type": "conditional-access-policy",
+            "native_id": "aaaaaaaa-0000-4000-8000-000000000001"
+          },
+          "outcome": "fail",
+          "message": "This policy includes all users and excludes no user, no group and no directory role. If it prevents sign-in for any reason, the accounts that would change it are subject to it, and recovery runs through Microsoft support rather than through an administrator.",
+          "basis": "documented-guidance",
+          "severity": "high",
+          "evidence_used": [
+            {
+              "path": "conditional_access_policies.exclusions_declared",
+              "state": "observed",
+              "value": 0,
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            },
+            {
+              "path": "conditional_access_policies.included_users",
+              "state": "observed",
+              "value": [
+                "All"
+              ],
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            }
+          ],
+          "passes_without_resolving": "AN EXCLUSION IS NOT A RECOVERY PATH. This rule reads whether anything is excluded, and it cannot read whether what was excluded is an emergency access account, whether that account works, whether anybody knows its credentials, or whether it is itself protected. A policy excluding one disabled account passes this rule and helps nobody.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength",
+              "title": "Require multifactor authentication for all users",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-23"
+            },
+            {
+              "url": "https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access",
+              "title": "Manage emergency access accounts in Microsoft Entra ID",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-23"
+            }
+          ],
+          "remediation": "Microsoft's documented answer is an emergency access account, excluded from this policy in advance and managed under the guidance for such accounts. A tenant whose recovery path is deliberately something else answers the same question differently, and the finding is the record of which one this is.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "review",
+            "rank": 4,
+            "because": [
+              "the rule failed against a documented-guidance, which is a choice to weigh rather than a documented violation"
+            ]
+          }
+        },
+        {
+          "rule_id": "CA-SCOPE-001",
+          "title": "A policy scoped to all users does not cover workload identities",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "entra",
+            "type": "conditional-access-policy",
+            "native_id": "aaaaaaaa-0000-4000-8000-000000000001"
+          },
+          "outcome": "fail",
+          "message": "This policy includes all users. Calls made by service principals are not blocked by it: Conditional Access policies scoped to users do not reach workload identities, and an application signing in on its own behalf is not subject to what this policy requires.",
+          "basis": "documented-guidance",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "conditional_access_policies.included_users",
+              "state": "observed",
+              "value": [
+                "All"
+              ],
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            }
+          ],
+          "passes_without_resolving": "A PASS HERE IS NARROW AND SAYS ALMOST NOTHING. A policy scoped to a group rather than to all users has exactly the same gap for workload identities; it simply is not the policy an organisation reads as covering everything. This rule fires where the belief forms, not where the gap is.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/entra/identity/conditional-access/policy-all-users-mfa-strength",
+              "title": "Require multifactor authentication for all users",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-23"
+            },
+            {
+              "url": "https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-cloud-apps",
+              "title": "Target resources in Conditional Access policy",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-23"
+            }
+          ],
+          "remediation": "Where workload identities need the same treatment, Microsoft's named answer is Conditional Access for workload identities, which is a separate policy targeting service principals. Where they deliberately do not, the finding is the record of that decision rather than a fault to fix.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "review",
+            "rank": 4,
+            "because": [
+              "the rule failed against a documented-guidance, which is a choice to weigh rather than a documented violation"
+            ]
+          }
+        },
+        {
+          "rule_id": "CA-STATE-001",
+          "title": "The policy is in report-only mode and enforces nothing",
+          "rule_version": "1.0",
+          "schema_version": "1.0",
+          "resource": {
+            "workload": "entra",
+            "type": "conditional-access-policy",
+            "native_id": "aaaaaaaa-0000-4000-8000-000000000001"
+          },
+          "outcome": "pass",
+          "message": "This policy is not in report-only mode.",
+          "basis": "convention",
+          "severity": "medium",
+          "evidence_used": [
+            {
+              "path": "conditional_access_policies.policy_state",
+              "state": "observed",
+              "value": "enabled",
+              "lower_bound": null,
+              "upper_bound": null,
+              "detail": null
+            }
+          ],
+          "passes_without_resolving": "A POLICY THAT IS NOT REPORT-ONLY MAY STILL ENFORCE NOTHING. `disabled` is a separate state and this rule does not read it. A policy that is enabled may exclude every user it would otherwise apply to, apply to no application, or require a control that every sign-in already satisfies. This reads the state and nothing else, and a pass says only that the state is not the one Microsoft documents as not enforcing.",
+          "sources": [
+            {
+              "url": "https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-report-only",
+              "title": "Analyze Conditional Access policy impact",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-23"
+            },
+            {
+              "url": "https://learn.microsoft.com/graph/api/resources/conditionalaccesspolicy",
+              "title": "conditionalAccessPolicy resource type",
+              "publisher": "Microsoft",
+              "checked_at": "2026-08-23"
+            }
+          ],
+          "remediation": "Move the policy from Report-only to On when its impact has been reviewed, which is what the mode exists for. If it is parked here deliberately, the finding is the record of that: a reader of the policy list cannot tell the two apart, and this says which one they are looking at.",
+          "message_degraded": false,
+          "engine_detail": "",
+          "attention": {
+            "state": "review",
+            "rank": 4,
+            "because": [
+              "it passed, and the rule records something the pass does not settle"
+            ]
+          }
+        }
+      ],
+      "attention": {
+        "state": "review",
+        "rank": 4,
+        "because": [
+          "3 finding(s) were decided and are worth weighing"
+        ],
+        "counts": {
+          "act": 0,
+          "review": 3,
+          "observe": 0,
+          "none": 0,
+          "not-evaluated": 0
+        },
+        "unobserved": []
+      }
+    }
+  ]
+}
