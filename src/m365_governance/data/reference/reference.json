@@ -9,6 +9,5 @@
     "run-set": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
     "evidence": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0"
   },
-  "digest": "sha256:faaf4ae7d0b15ff871766e410014813092e5591d15adddaf03aef98f46b9809c",
   "how_a_consumer_proves_it": "open this bundle, read the runs and the run set through the contracts above, and record consumer, consumer_version, independence, observed_at and this digest. Deserialising without an exception proves parsing and not interpretation"
 }

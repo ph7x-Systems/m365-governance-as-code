@@ -49,9 +49,22 @@ def test_the_reference_bundle_is_what_this_engine_produces():
 
 def test_it_carries_the_identity_a_proof_has_to_point_at(described):
     """A consumer proof names five things and this artefact has to supply the
-    one nobody else can: which artefact. Without a digest here, a proof either
-    names nothing or names something it invented."""
-    assert described["digest"].startswith("sha256:")
+    one nobody else can: which artefact.
+
+    IN THE MANIFEST AND NOT IN THE DESCRIPTION. The description carried a
+    digest too, and a bundle then held two identities that disagreed: the
+    manifest's was stamped when the bundler closed the bundle, and the
+    description's covered the tree after this tool had added files to it. One
+    artefact with two identifiers is the second authority every part of this
+    product exists to remove -- and a consumer of any other bundle finds the
+    identity in the manifest, because that is the only file every bundle has.
+    """
+    import json
+
+    manifest = json.loads((REFERENCE / "manifest.json").read_text(encoding="utf-8"))
+
+    assert manifest["bundle_digest"].startswith("sha256:")
+    assert "digest" not in described
     assert described["engine_version"]
     assert described["contracts"]["run"].startswith("https://")
 

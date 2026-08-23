@@ -1235,11 +1235,19 @@ def _raise_the_proof_drafts(output, runs, *, bundle) -> None:
     # bundle -- which says an artefact exists and never which one, so nothing
     # above it could ever be shown to be about the same artefact. The digest is
     # taken from the directory this run actually produced.
+    # READ FROM THE ARTEFACT, NOT RECOMPUTED BESIDE IT. The bundle declares its
+    # own identity when the producer closes it, and that declaration is what a
+    # consumer will read and repeat. A record computing its own value here
+    # would be a second answer to the same question, and the day the two
+    # disagree the record would say a consumer opened something it did not.
     digest = ""
     if bundle is not None:
         try:
-            digest = bundling.digest_of(bundle)
-        except OSError:
+            manifest = json.loads(
+                (bundle / "manifest.json").read_text(encoding="utf-8")
+            )
+            digest = str(manifest.get("bundle_digest") or "")
+        except (OSError, ValueError):
             digest = ""
 
     for draft_path in sorted(output.glob("*/**/live-proof-draft.json")):

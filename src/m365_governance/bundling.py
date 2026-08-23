@@ -139,14 +139,74 @@ def write(
     manifest = {"bundle": VERSION, "runs": sorted(written)}
     if orphans:
         manifest["evidence"] = "evidence"
-    (root / "manifest.json").write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
-    )
+
+    def _write(document: dict) -> None:
+        (root / "manifest.json").write_text(
+            json.dumps(document, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+
+    # THE IDENTITY TRAVELS INSIDE THE ARTEFACT, and the consumer reads it from
+    # the artefact it opened rather than being told it by whoever handed the
+    # bundle over. A consumer that repeats an identifier it was given has
+    # confirmed what somebody said; one that reads it from the bundle has
+    # confirmed what the bundle says about itself.
+    #
+    # NOT A SECOND IMPLEMENTATION IN THE CONSUMER EITHER. A consumer computing
+    # the hash independently would be a stronger claim and a duplicated
+    # algorithm, and two implementations give two answers for one artefact.
+    # What this establishes is precisely: the consumer opened the artefact that
+    # identified itself as the bundle the producer recorded. Nothing about
+    # cryptographic verification by the consumer, which is a different claim
+    # and is not made anywhere.
+    #
+    # Written twice because the digest covers the manifest with this field
+    # removed: the file has to exist before the tree can be hashed, and adding
+    # the value afterwards cannot change what was hashed.
+    _write(manifest)
+    manifest["bundle_digest"] = digest_of(root)
+    _write(manifest)
 
     return root
 
 
-def digest_of(root: Path, *, excluding: tuple[str, ...] = ()) -> str:
+#: Keys by which a document declares its own identity.
+#:
+#: A FILE THAT CARRIES THE IDENTITY DOES NOT CARRY IT INTO THE IDENTITY. A
+#: manifest holding `bundle_digest` is inside the tree the digest covers, so
+#: hashing it whole asks for a fixed point: the value depends on a file whose
+#: contents depend on the value.
+#:
+#: ONE RULE AND NOT A LIST OF EXCEPTED FILES. Excluding `manifest.json`
+#: entirely would leave the run list and the bundle version outside the
+#: identity, so a bundle could lose a run and keep its digest. Excluding the
+#: FIELD keeps everything else in.
+SELF_DECLARED = ("bundle_digest", "digest")
+
+
+def _for_digest(path: Path) -> bytes:
+    """One file's bytes as the identity sees them."""
+    raw = path.read_bytes()
+    if path.suffix != ".json":
+        return raw
+    try:
+        document = json.loads(raw)
+    except ValueError:
+        # Not readable as JSON is a fact about the file, and the identity
+        # covers it as it stands rather than skipping it.
+        return raw
+    if not isinstance(document, dict):
+        return raw
+    # UNCONDITIONALLY, AND THAT IS THE WHOLE OF IT. Applying this only when the
+    # field is present makes the same document hash two different ways: without
+    # the field it entered as raw bytes, with it as canonical JSON, so the
+    # digest a manifest declared never equalled the digest of the tree holding
+    # that manifest. The rule cannot depend on the value it exists to leave out.
+    stripped = {k: v for k, v in document.items() if k not in SELF_DECLARED}
+    return json.dumps(stripped, sort_keys=True, separators=(",", ":")).encode()
+
+
+def digest_of(root: Path) -> str:
     """One digest over a whole bundle, paths included.
 
     WHY A BUNDLE NEEDS AN IDENTITY AT ALL. `bundle: proven` says an artefact
@@ -159,17 +219,17 @@ def digest_of(root: Path, *, excluding: tuple[str, ...] = ()) -> str:
     identical for a bundle whose files were renamed, and a consumer proving it
     opened `runs/a` when the artefact now calls it `runs/b` has proved nothing
     about what anybody holds.
+
+    THE ARTEFACT ENDS WHERE THE PRODUCER CLOSES IT. Anything a consumer writes
+    beside the runs afterwards -- an index, a workspace file -- is that
+    consumer's local state and was never part of what it opened. So the digest
+    is computed once, by the producer, at the moment the bundle is finished.
     """
     parts = []
     for path in sorted(Path(root).rglob("*")):
-        # A FILE THAT CARRIES THE DIGEST CANNOT BE INSIDE IT. The reference
-        # bundle's description holds its own digest, so digesting it would be
-        # asking for a fixed point. Named by the caller rather than guessed
-        # here: a bundler that decided which of its own files did not count
-        # would be deciding what the artefact is.
-        if path.is_file() and path.name not in excluding:
+        if path.is_file():
             parts.append(str(path.relative_to(root)).replace("\\", "/"))
-            parts.append(hashlib.sha256(path.read_bytes()).hexdigest())
+            parts.append(hashlib.sha256(_for_digest(path)).hexdigest())
     return "sha256:" + hashlib.sha256("\n".join(parts).encode()).hexdigest()
 
 

@@ -89,12 +89,26 @@ def digest_of(root: pathlib.Path) -> str:
     with slightly different rules give two answers for one artefact -- which
     is the whole failure a digest exists to prevent, arriving through the
     digest itself.
+
+    NO EXCLUSION EITHER, ANY MORE. `reference.json` used to be left out whole,
+    because it carries the digest and hashing it asked for a fixed point. The
+    bundler now applies one rule to every JSON object it hashes -- the fields
+    by which a document declares its own identity do not enter that identity --
+    so the description is covered like everything else, minus the one value it
+    could not contain.
     """
-    return bundling.digest_of(root, excluding=("reference.json",))
+    return bundling.digest_of(root)
 
 
 def describe(root: pathlib.Path, built: dict) -> dict:
     """What a consumer needs to know about what it is holding.
+
+    IT DOES NOT CARRY A DIGEST EITHER. It used to, and a bundle then held two
+    identities that disagreed: the manifest's was stamped when the bundler
+    closed the bundle, and this one covered the tree after this tool had added
+    files to it. One artefact with two identifiers is the second authority
+    every part of this product exists to remove. The identity lives in
+    `manifest.json`, where a consumer of any bundle finds it.
 
     IT DOES NOT SAY `consumer: proven`, AND IT NEVER WILL. This file is the
     producer's half: what this is, which engine made it, which contracts it
@@ -115,7 +129,6 @@ def describe(root: pathlib.Path, built: dict) -> dict:
         "contracts": {
             name: registry.contract(name) for name in ("run", "run-set", "evidence")
         },
-        "digest": digest_of(root),
         "how_a_consumer_proves_it": (
             "open this bundle, read the runs and the run set through the "
             "contracts above, and record consumer, consumer_version, "
@@ -135,6 +148,18 @@ def main() -> int:
     (staging / "reference.json").write_text(
         json.dumps(describe(staging, built), indent=2, ensure_ascii=False) + "\n",
         encoding="utf-8",
+    )
+
+    # RE-STAMPED, BECAUSE THIS TOOL ADDED FILES AFTER THE BUNDLER CLOSED THE
+    # BUNDLE. The manifest's identity is computed when `bundling.write`
+    # finishes, and the run set and the description arrive afterwards. A
+    # declared identity that does not cover the whole artefact is worse than
+    # none: a consumer would repeat a value that matches nothing it holds.
+    manifest_path = staging / "manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["bundle_digest"] = digest_of(staging)
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
 
     if args.check:
