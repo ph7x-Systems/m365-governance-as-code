@@ -1,8 +1,8 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.1.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.2.0",
   "canonical": {
     "run_set": {
-      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.1.0",
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
       "resources": 1,
       "by_class": {
         "unknown": 1
@@ -12,7 +12,7 @@
         "pass": 0,
         "fail": 2,
         "unknown": 0,
-        "not-applicable": 1,
+        "not-applicable": 2,
         "invalid-evidence": 0,
         "error": 0
       },
@@ -24,11 +24,11 @@
       },
       "runs": [
         {
-          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.1.0",
+          "$schema": "https://ph7x.com/schemas/m365-governance/run/4.2.0",
           "provenance": {
-            "collected_at": "2026-08-10T19:20:25Z",
+            "collected_at": "2026-08-06T16:55:00Z",
             "collector": "spo-collector",
-            "collector_version": "0.3.0",
+            "collector_version": "0.10.0",
             "source_system": "SharePoint Online",
             "source_api": "PnP.PowerShell / CSOM",
             "tenant": {
@@ -54,7 +54,7 @@
           "resource": {
             "workload": "sharepoint",
             "type": "site",
-            "native_id": "https://contoso.sharepoint.com/sites/allcompany",
+            "native_id": "contoso,site,group-unlabelled",
             "tenant": {
               "id": null,
               "host": "contoso.sharepoint.com"
@@ -71,12 +71,15 @@
           "resource_class": "unknown",
           "class_reason": "only lists are classified",
           "set_aside": false,
+          "attribution": {
+            "classification": "sha256:593ef2add5b34326"
+          },
           "rule_source": "shipped with this version",
           "counts": {
             "pass": 0,
             "fail": 2,
             "unknown": 0,
-            "not-applicable": 1,
+            "not-applicable": 2,
             "invalid-evidence": 0,
             "error": 0
           },
@@ -89,7 +92,7 @@
               "resource": {
                 "workload": "sharepoint",
                 "type": "site",
-                "native_id": "https://contoso.sharepoint.com/sites/allcompany"
+                "native_id": "contoso,site,group-unlabelled"
               },
               "outcome": "fail",
               "message": "This site carries neither a sensitivity label nor a classification string. Nothing recorded on it says what kind of content it holds.",
@@ -139,7 +142,7 @@
               "resource": {
                 "workload": "sharepoint",
                 "type": "site",
-                "native_id": "https://contoso.sharepoint.com/sites/allcompany"
+                "native_id": "contoso,site,group-unlabelled"
               },
               "outcome": "not-applicable",
               "message": "No sensitivity label is applied to this site, so there is nothing to resolve. Whether it should carry one is SPO-CLASS-001.",
@@ -191,10 +194,10 @@
               "resource": {
                 "workload": "sharepoint",
                 "type": "site",
-                "native_id": "https://contoso.sharepoint.com/sites/allcompany"
+                "native_id": "contoso,site,group-unlabelled"
               },
               "outcome": "fail",
-              "message": "This site is connected to a Microsoft 365 group and carries no sensitivity label. Privacy and external user access rest on the settings of the group itself, and nothing pins them.",
+              "message": "This site is connected to a Microsoft 365 group and carries no sensitivity label. Privacy and external user access rest on the settings of the group itself, and nothing pins them. A classification string does not pin a group's access.",
               "basis": "convention",
               "severity": "medium",
               "evidence_used": [
@@ -240,6 +243,64 @@
                   "the rule failed against a convention, which is a choice to weigh rather than a documented violation"
                 ]
               }
+            },
+            {
+              "rule_id": "SPO-CLASS-004",
+              "title": "A classification string is doing a label's job",
+              "rule_version": "1.0",
+              "schema_version": "2.0",
+              "resource": {
+                "workload": "sharepoint",
+                "type": "site",
+                "native_id": "contoso,site,group-unlabelled"
+              },
+              "outcome": "not-applicable",
+              "message": "This site carries no classic classification string, so there is no string doing a label's job here. Whether the site should carry a label at all is SPO-CLASS-001's question.",
+              "basis": "documented-guidance",
+              "severity": "low",
+              "evidence_used": [
+                {
+                  "path": "classification.classification_set",
+                  "state": "observed",
+                  "value": false,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                },
+                {
+                  "path": "classification.label_applied",
+                  "state": "observed",
+                  "value": false,
+                  "lower_bound": null,
+                  "upper_bound": null,
+                  "detail": null
+                }
+              ],
+              "passes_without_resolving": "Any label passes. A site whose label carries none of the protections the old string was meant to imply passes this rule exactly like one whose label enforces all of them: the rule reads that a label is applied, never what the label does.",
+              "sources": [
+                {
+                  "url": "https://learn.microsoft.com/sharepoint/dev/solution-guidance/modern-experience-site-classification",
+                  "title": "SharePoint \"modern\" sites classification",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                },
+                {
+                  "url": "https://learn.microsoft.com/purview/sensitivity-labels-teams-groups-sites",
+                  "title": "Use sensitivity labels to protect collaborative workspaces",
+                  "publisher": "Microsoft",
+                  "checked_at": "2026-08-11"
+                }
+              ],
+              "remediation": "Convert the classification value to a sensitivity label with the settings the string was standing in for, following Microsoft's conversion procedure for classic classifications, and then retire the string. The label carries privacy, external access and sharing defaults; the string carries a word.",
+              "message_degraded": false,
+              "engine_detail": "",
+              "attention": {
+                "state": "none",
+                "rank": 5,
+                "because": [
+                  "the rule does not apply to this resource"
+                ]
+              }
             }
           ],
           "attention": {
@@ -252,7 +313,7 @@
               "act": 0,
               "review": 2,
               "observe": 0,
-              "none": 1,
+              "none": 2,
               "not-evaluated": 0
             },
             "unobserved": []
@@ -264,9 +325,9 @@
       {
         "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
         "provenance": {
-          "collected_at": "2026-08-10T19:20:25Z",
+          "collected_at": "2026-08-06T16:55:00Z",
           "collector": "spo-collector",
-          "collector_version": "0.3.0",
+          "collector_version": "0.10.0",
           "source_system": "SharePoint Online",
           "source_api": "PnP.PowerShell / CSOM",
           "tenant": {
@@ -292,7 +353,7 @@
         "resource": {
           "workload": "sharepoint",
           "type": "site",
-          "native_id": "https://contoso.sharepoint.com/sites/allcompany",
+          "native_id": "contoso,site,group-unlabelled",
           "tenant": {
             "id": null,
             "host": "contoso.sharepoint.com"
@@ -350,10 +411,10 @@
             },
             "group_id": {
               "state": "observed",
-              "value": "2c8f1e40-0000-4000-8000-00000000cc01",
+              "value": "9409c0de-0000-4000-8000-000000000001",
               "raw": {
                 "field": "GroupId",
-                "value": "2c8f1e40-0000-4000-8000-00000000cc01"
+                "value": "9409c0de-0000-4000-8000-000000000001"
               }
             },
             "teams_connected": {
@@ -373,18 +434,19 @@
       }
     ],
     "versions": {
-      "engine": "1.0.0b1",
+      "engine": "1.0.0b8",
       "rules": {
         "SPO-CLASS-001": "1.0",
         "SPO-CLASS-002": "1.0",
-        "SPO-CLASS-003": "1.0"
+        "SPO-CLASS-003": "1.0",
+        "SPO-CLASS-004": "1.0"
       },
       "collectors": {
-        "spo-collector": "0.3.0"
+        "spo-collector": "0.10.0"
       }
     },
     "manifest": {
-      "created_at": "2026-08-10T19:30:00Z",
+      "created_at": "2026-08-08T18:00:00Z",
       "tenant": {
         "id": null,
         "host": "contoso.sharepoint.com"
@@ -401,18 +463,17 @@
           "collected"
         ]
       },
-      "label": "classification",
-      "assessment_id": "5565dd6ed7982529bd9e9b93615068b4430e7e2eb3aad7973768027ac7963ba3"
+      "assessment_id": "6002be0af58ad3f9d7a370c35db6cc6af719aa5ecbfc9fb3731b2f5e5f88a855"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "8c13eb43ff302fe6d6b267ac25baad7264a4529393c09aacf8228f176c63b6f0",
-        "evidence": "58d54ed742e33beb2879ec49702e90f91ada1d78b7ec4f15ae19c68b7ba415cf",
-        "versions": "dccaff1b6d3821df75d2cad0b0512df81947350c439a2103568579a859f626df",
-        "manifest": "eef14b125b03f255739a1238e107724f8b912ad270f064677ce9815a3718dd51"
+        "run_set": "027d2bff70fcc2ea8aab12c3b969ad2eebe6a1288e966d5a5518ab1b0d7c95d3",
+        "evidence": "b8674199e754c1a7907064ed00e8e7af0b7856a6dabcf433d0b15b7b1f779433",
+        "versions": "fc0860d67b23c575f10c0463e0638e1f821c0330180d60fc8435a12c8eaefb89",
+        "manifest": "3ba617f03785ab93b8ca2ea38b1f3f6bb3f5537e70ba39d838025276d69b1f0c"
       },
-      "canonical_hash": "5565dd6ed7982529bd9e9b93615068b4430e7e2eb3aad7973768027ac7963ba3"
+      "canonical_hash": "6002be0af58ad3f9d7a370c35db6cc6af719aa5ecbfc9fb3731b2f5e5f88a855"
     }
   }
 }

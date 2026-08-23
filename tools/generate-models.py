@@ -372,7 +372,14 @@ def record(name: str, node: dict, nested: list, defs: dict | None = None) -> str
     for i, (prop, kind, doc, optional) in enumerate(members):
         comma = "," if i < len(members) - 1 else ""
         if doc:
-            lines.append(f"    /// <summary>{doc.replace('<', '&lt;')}</summary>")
+            # A NEWLINE ENDS A `///` COMMENT AND THE REST BECOMES CODE. The
+            # description is prose from the schema and may be several
+            # paragraphs; emitting it raw produced a file that does not
+            # compile, and it did so on the first field whose description was
+            # longer than a sentence. Collapsed to one line, which is what a
+            # single `<summary>` can hold.
+            flat = " ".join(doc.split())
+            lines.append(f"    /// <summary>{flat.replace('<', '&lt;')}</summary>")
         default = " = null" if optional else ""
         lines.append(
             f'    [property: JsonPropertyName("{prop}")] '

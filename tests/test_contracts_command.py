@@ -136,3 +136,37 @@ def test_the_wheel_would_carry_it(directory):
     else:
         assert '"generated/manifest.json"' in pyproject
         assert '"generated/csharp/*.g.cs"' in pyproject
+
+
+def test_every_sample_the_bundle_ships_declares_the_current_contract():
+    """A sample frozen at an old version is a reference that refuses to load.
+
+    `classification.json` shipped in the published contract bundle declaring
+    engine `1.0.0b1` and `assessment/4.1.0`, eight betas behind. Nothing
+    regenerated it and nothing checked it, so a downstream reader vendoring the
+    bundle got one sample it could parse and one it had to refuse -- correctly,
+    because a document of an older contract is valid and unsupported, not
+    something to reinterpret.
+
+    It is the same shape as every other artefact with no generator, in the one
+    place where a consumer treats what we ship as the reference. It has a
+    generator now, and this is what would have said so.
+    """
+    import json
+
+    from m365_governance.collecting import packaged
+
+    current = json.loads(
+        (packaged("schemas") / "assessment.schema.json").read_text(encoding="utf-8")
+    )["$id"]
+
+    stale = {}
+    for path in sorted((packaged("fixtures") / "assessment").glob("*.json")):
+        declared = json.loads(path.read_text(encoding="utf-8")).get("$schema")
+        if declared != current:
+            stale[path.name] = declared
+
+    assert not stale, (
+        f"sample assessments declaring an older contract than {current}: "
+        f"{stale}. Run `python tools/examples.py`."
+    )
