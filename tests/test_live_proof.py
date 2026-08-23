@@ -583,7 +583,7 @@ def test_running_the_pipeline_offline_did_not_raise_the_live_stages(registry):
 # ---------------------------------------------------------------------------
 
 
-def _register(monkeypatch, stages):
+def _register(monkeypatch, stages, **extra):
     """One collector with one record, so a claim can be made and examined."""
     from m365_governance import live_proof
 
@@ -592,6 +592,7 @@ def _register(monkeypatch, stages):
         "provenance": live_proof.EMITTED,
         "establishes": "full",
         "stages": stages,
+        **extra,
     }
     monkeypatch.setattr(live_proof, "records", lambda name: [record])
 
@@ -666,6 +667,9 @@ def test_a_stage_that_does_not_exist_is_walked_through_and_never_treated_as_a_ga
     instead -- the chain goes through the hole rather than breaking at it."""
     from m365_governance import live_proof
 
+    # The consumer claim carries its proof, because that rule now exists and
+    # this record would otherwise be incoherent for a different reason than
+    # the one under test.
     _register(
         monkeypatch,
         {
@@ -675,6 +679,14 @@ def test_a_stage_that_does_not_exist_is_walked_through_and_never_treated_as_a_ga
             "bundle": "proven",
             "consumer": "proven",
         },
+        consumer_proof={
+            "consumer": "a-separate-consumer",
+            "consumer_version": "1.4.0",
+            "independence": "separate-consumer",
+            "observed_at": "2026-08-24",
+            "artifact_digest": "sha256:aaaa",
+        },
+        artifact_digest="sha256:aaaa",
     )
 
     assert live_proof.incoherent("tenant-governance") == []
@@ -712,3 +724,185 @@ def test_no_record_in_the_shipped_register_claims_something_impossible():
     ]
 
     assert problems == [], "\n".join(problems)
+
+
+# ---------------------------------------------------------------------------
+# consumer is the stage written from outside, so it names its author
+# ---------------------------------------------------------------------------
+
+
+def _claiming(monkeypatch, consumer_proof, *, produced="sha256:aaaa", **stages):
+    """One record claiming a proven consumer, so the claim can be examined."""
+    from m365_governance import live_proof
+
+    record = {
+        "collector": "customization",
+        "provenance": live_proof.EMITTED,
+        "establishes": "full",
+        "artifact_digest": produced,
+        "stages": {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "proven",
+            "bundle": "proven",
+            "consumer": "proven",
+            **stages,
+        },
+    }
+    if consumer_proof is not None:
+        record["consumer_proof"] = consumer_proof
+    monkeypatch.setattr(live_proof, "records", lambda name: [record])
+
+
+def _proof(**over):
+    base = {
+        "consumer": "a-separate-consumer",
+        "consumer_version": "1.4.0",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:aaaa",
+    }
+    base.update(over)
+    return base
+
+
+def test_a_proven_consumer_with_no_proof_is_a_claim_nobody_can_check(monkeypatch):
+    """THE ONE STAGE NO RUN CAN RAISE.
+
+    `upgrade_after_a_run` moves `assessment` and `bundle` and deliberately
+    never touches `consumer`, because somebody independent opening the artefact
+    is the stage a program certifying it would be certifying itself. So the
+    claim arrives as a sentence written from outside, and a sentence with no
+    author stops answering "by whom?" the moment its writer moves on.
+    """
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, None)
+
+    problems = live_proof.incoherent("customization")
+
+    assert problems, "a proven consumer passed with nothing behind it"
+    assert "consumer_proof" in problems[0]
+
+
+def test_every_field_the_claim_needs_is_required_one_by_one(monkeypatch):
+    """Five fields, and each is missing a different answer.
+
+    Not a shape copied from somewhere: each is the answer to a question
+    somebody asks of a two-year-old record, and `proven` without it stops being
+    checkable rather than becoming merely terse.
+    """
+    from m365_governance import live_proof
+
+    for field in live_proof.CONSUMER_PROOF:
+        _claiming(monkeypatch, _proof(**{field: ""}))
+
+        problems = live_proof.incoherent("customization")
+
+        assert any(field in problem for problem in problems), (
+            f"`consumer_proof` without `{field}` was accepted"
+        )
+
+
+def test_the_digest_must_be_the_artefact_whose_bundle_stage_was_proven(
+    monkeypatch,
+):
+    """THE PROPERTY THAT KEEPS THE PROOF ATTACHED TO ITS OBJECT.
+
+    A record can hold a bundle stage proven for one artefact and a consumer
+    proof mentioning another. Read together they say a consumer opened THIS
+    capability's bundle, and nothing compared the two. It is the same shape as
+    a rule reading a fact from the wrong resource, and it is caught the same
+    way: by comparing the identifiers rather than trusting they were about the
+    same thing.
+    """
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, _proof(artifact_digest="sha256:bbbb"), produced="sha256:aaaa")
+
+    problems = live_proof.incoherent("customization")
+
+    assert any("does not establish anything about another" in p for p in problems)
+
+
+def test_a_consumer_proof_about_an_artefact_the_record_never_names(monkeypatch):
+    """A record whose bundle produced nothing identifiable cannot support a
+    claim about what somebody opened. The two cannot be shown to be the same
+    artefact, and unshown is not the same as shown."""
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, _proof(), produced=None)
+
+    problems = live_proof.incoherent("customization")
+
+    assert any("cannot be shown to be the same one" in p for p in problems)
+
+
+def test_independence_is_two_claims_and_not_two_degrees_of_one(monkeypatch):
+    """`separate-consumer` is what this product can establish about itself: a
+    different program, outside the producing process, opened the artefact and
+    read it correctly.
+
+    `external` is a claim about an ORGANISATION, and nothing here can produce
+    one. The vocabulary is closed so that a word invented today cannot let a
+    claim about a separate process be read later as a claim about a separate
+    organisation.
+    """
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, _proof(independence="audited"))
+
+    problems = live_proof.incoherent("customization")
+
+    assert any("separate organisation" in p for p in problems)
+
+    _claiming(monkeypatch, _proof(independence="separate-consumer"))
+    assert live_proof.incoherent("customization") == []
+
+
+def test_a_complete_claim_reaches_the_top_of_the_ladder(monkeypatch):
+    """The whole point of the gate is that a real claim passes it."""
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, _proof())
+
+    assert live_proof.incoherent("customization") == []
+    assert live_proof.proof_state("customization") == "vertical-path-proven"
+
+
+# ---------------------------------------------------------------------------
+# two axes, one register
+# ---------------------------------------------------------------------------
+
+
+def test_the_two_axes_do_not_derive_from_each_other(monkeypatch):
+    """Live Validation and Product Path Assurance answer different questions.
+
+    One asks how well the ACQUISITION was validated against Microsoft 365; the
+    other asks how far the capability was proved THROUGH THIS PRODUCT. A
+    capability can sit high on one and low on the other in both directions, and
+    a reader taking one for the other is how something gets described as proved
+    when half of what the word could mean was never attempted.
+    """
+    from m365_governance import live_proof
+
+    # Strong acquisition, nobody has opened a bundle.
+    _claiming(monkeypatch, None, bundle="not-attempted", consumer="not-attempted")
+    assert live_proof.established_state("customization") == "full"
+    assert live_proof.proof_state("customization") == "positive-acquisition-observed"
+
+    # The whole path walked, from an acquisition that established less.
+    from m365_governance import live_proof as lp
+
+    record = {
+        "collector": "customization",
+        "provenance": lp.EMITTED,
+        "establishes": "negative_only",
+        "artifact_digest": "sha256:aaaa",
+        "consumer_proof": _proof(),
+        "stages": dict.fromkeys(lp.STAGES, "proven"),
+    }
+    monkeypatch.setattr(lp, "records", lambda name: [record])
+
+    assert lp.established_state("customization") == "negative_only"
+    assert lp.proof_state("customization") == "vertical-path-proven"
