@@ -528,3 +528,30 @@ def test_no_record_publishes_a_total_over_prepaid_units(registry):
     ]
 
     assert not offenders, f"records carrying a refused aggregate: {offenders}"
+
+
+def test_licensing_reports_a_state_per_area_and_never_just_done(registry):
+    """`Licensing: done` would be four different claims in one word.
+
+    `partial` says two of four areas ran and does not say WHICH two, and the
+    two that did not are the two a recommendation rests on. Each reading
+    carries its own state so a reader learns what is established rather than
+    how far along it is.
+    """
+    licensing = next(r for r in registry["records"] if r["collector"] == "licensing")
+    areas = licensing["areas"]
+
+    assert areas["assignment"] == "live-proven"
+    assert areas["report_identifiability"] == "live-proven"
+    # A USAGE REPORT WAS READ. 812 rows, with its window and its refresh date.
+    # The first version of this recorded the acquisition as not yet proven,
+    # which is the same error in the other direction: understating an
+    # observation is as wrong as overstating one. What could not be done is
+    # attribute it to a person, and that is its own area with its own reason.
+    assert areas["usage_acquisition"] == "live-proven"
+    assert areas["usage_attribution"] == "not-observable-with-current-authority"
+    assert areas["dependency_evidence"] == "not-implemented"
+    assert areas["optimization_conclusions"] == "not-established", (
+        "the acquisition is established and the conclusion is not, and "
+        "collapsing the two is the entire failure this record documents"
+    )

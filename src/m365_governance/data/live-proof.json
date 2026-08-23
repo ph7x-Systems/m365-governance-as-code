@@ -320,8 +320,8 @@
       "coverage": "two of the four areas this slice covers",
       "result": "The first positive live acquisition of Licensing, and it establishes exactly that. It does not establish license optimization: the report returned rows and named nobody, so usage cannot be attributed to a person, and dependency was never read at all. THERE WERE ENOUGH NUMBERS HERE TO FABRICATE A SAVING AND NOT ENOUGH EVIDENCE TO SUPPORT A RECOMMENDATION, which is the behaviour that distinguishes the product and is why this record is kept.",
       "limitations": [
-        "two of four areas have never run: usage and dependency",
-        "usage cannot be attributed to a person while report identifiability is concealed, and that setting is tenant-level rather than a property of this read",
+        "the usage report was read and names nobody: attribution is not available while this tenant conceals identifiable information, which is a tenant setting rather than a property of this read",
+        "dependency is collected by nothing, so what a capability is required for is unknown rather than absent",
         "one user observed is a population of one and proves the path rather than the range",
         "no conclusion about removing or downgrading a licence follows from any of this, and none is published",
         "the artefact digest is unrecoverable: the evidence was deleted when the vertical closed, correctly under the tenant-data rule and incorrectly under D69, and this record exists because of that loss"
@@ -333,7 +333,16 @@
         "bundle": "not-attempted",
         "consumer": "not-attempted"
       },
-      "process": "THE ACQUISITION CROSSED AN AUTHORIZATION BOUNDARY IT DID NOT HAVE. Installing and declaring a Microsoft Graph dependency authorizes nothing: not authentication, not consent, not reuse of a cached session, not a read. A useful result does not make the execution retroactively authorized, and keeping the observation is not accepting the breach. The observation is preserved sanitized; the session was not continued; no further live read happens without explicit authorization for that operation against a named tenant."
+      "process": "THE ACQUISITION CROSSED AN AUTHORIZATION BOUNDARY IT DID NOT HAVE. Installing and declaring a Microsoft Graph dependency authorizes nothing: not authentication, not consent, not reuse of a cached session, not a read. A useful result does not make the execution retroactively authorized, and keeping the observation is not accepting the breach. The observation is preserved sanitized; the session was not continued; no further live read happens without explicit authorization for that operation against a named tenant.",
+      "areas": {
+        "assignment": "live-proven",
+        "report_identifiability": "live-proven",
+        "usage_acquisition": "live-proven",
+        "usage_attribution": "not-observable-with-current-authority",
+        "dependency_evidence": "not-implemented",
+        "optimization_conclusions": "not-established"
+      },
+      "contradiction": "THE SITE CLAIMS MORE THAN THIS RECORD SUSTAINS AND ONE OF THEM IS WRONG. `src/manual/collectors/licensing.md` states that the whole chain was crossed -- collection, evidence directory, collection manifest, independent reader, canonical bundle, and a consumer opening it. This record's stages say `bundle: not-attempted` and `consumer: not-attempted`, because the matrix it was transcribed from does not mention either. Recorded for the owner rather than resolved in favour of whichever is more flattering: if the site is right, this record is missing evidence somebody had; if the record is right, the page overstates. The page is corrected to what the record sustains in the meantime, because a public claim may promise only what the chain already does."
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."
