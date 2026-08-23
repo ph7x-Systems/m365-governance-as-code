@@ -19,14 +19,14 @@
   },
   "coverage": {
     "requested": [
-      "conditional-access-policies",
-      "named-locations",
-      "security-defaults"
+      "conditional_access_policies",
+      "named_locations",
+      "security_defaults"
     ],
     "completed": [
-      "conditional-access-policies",
-      "named-locations",
-      "security-defaults"
+      "conditional_access_policies",
+      "named_locations",
+      "security_defaults"
     ],
     "unavailable": {}
   },

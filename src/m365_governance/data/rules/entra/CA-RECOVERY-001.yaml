@@ -64,10 +64,10 @@ severity:
   configurable: true
 
 evidence_requirements:
-  - path: included_users
+  - path: conditional_access_policies.included_users
     type: array
     required: true
-  - path: exclusions_declared
+  - path: conditional_access_policies.exclusions_declared
     type: number
     required: true
 
@@ -83,12 +83,12 @@ evidence_requirements:
 # condition.
 applicability:
   operator: contains
-  evidence: included_users
+  evidence: conditional_access_policies.included_users
   value: All
 
 condition:
   operator: equals
-  evidence: exclusions_declared
+  evidence: conditional_access_policies.exclusions_declared
   value: 0
 
 outcomes:

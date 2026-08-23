@@ -18,13 +18,13 @@ somebody makes deliberately, gated. What is refused here is a list that exists
 because somebody had to remember it.
 """
 
-import ast
 import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "src" / "m365_governance"
 TESTS = ROOT / "tests"
+
 
 def _families() -> list[str]:
     """The evidence families in the tree, decided by what the documents ARE.
@@ -116,7 +116,6 @@ def test_every_family_is_reachable_without_being_named():
 
     sys.path.insert(0, str(TESTS))
     from conftest import evidence  # noqa: PLC0415
-
     from m365_governance import capabilities  # noqa: PLC0415
     from m365_governance.collecting import SLICES  # noqa: PLC0415
 

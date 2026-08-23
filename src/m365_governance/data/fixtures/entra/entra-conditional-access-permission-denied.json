@@ -19,16 +19,16 @@
   },
   "coverage": {
     "requested": [
-      "conditional-access-policies",
-      "named-locations",
-      "security-defaults"
+      "conditional_access_policies",
+      "named_locations",
+      "security_defaults"
     ],
     "completed": [
-      "named-locations",
-      "security-defaults"
+      "named_locations",
+      "security_defaults"
     ],
     "unavailable": {
-      "conditional-access-policies": {
+      "conditional_access_policies": {
         "state": "permission-denied",
         "detail": "authenticated and not permitted to read identity/conditionalAccess/policies. Least privilege for this surface is Policy.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Conditional Access Administrator. "
       }

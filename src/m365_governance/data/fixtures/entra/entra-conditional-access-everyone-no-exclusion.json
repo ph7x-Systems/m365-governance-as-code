@@ -19,14 +19,14 @@
   },
   "coverage": {
     "requested": [
-      "conditional-access-policies",
-      "named-locations",
-      "security-defaults"
+      "conditional_access_policies",
+      "named_locations",
+      "security_defaults"
     ],
     "completed": [
-      "conditional-access-policies",
-      "named-locations",
-      "security-defaults"
+      "conditional_access_policies",
+      "named_locations",
+      "security_defaults"
     ],
     "unavailable": {}
   },
@@ -48,124 +48,126 @@
   },
   "facts": {
     "conditional_access_policies": {
-      "state": "observed",
-      "value": {
-        "id": "aaaaaaaa-0000-4000-8000-000000000001",
-        "displayName": "Require MFA for all users",
-        "state": "enabled",
-        "conditions": {
-          "users": {
-            "includeUsers": [
-              "All"
+      "policy": {
+        "state": "observed",
+        "value": {
+          "id": "aaaaaaaa-0000-4000-8000-000000000001",
+          "displayName": "Require MFA for all users",
+          "state": "enabled",
+          "conditions": {
+            "users": {
+              "includeUsers": [
+                "All"
+              ],
+              "excludeUsers": [],
+              "excludeGroups": [],
+              "excludeRoles": []
+            },
+            "applications": {
+              "includeApplications": [
+                "All"
+              ]
+            },
+            "locations": {
+              "includeLocations": [
+                "All"
+              ],
+              "excludeLocations": [
+                "AllTrusted"
+              ]
+            }
+          },
+          "grantControls": {
+            "operator": "OR",
+            "builtInControls": [
+              "mfa"
             ],
+            "authenticationStrength": null
+          }
+        }
+      },
+      "policy_state": {
+        "state": "observed",
+        "value": "enabled",
+        "raw": {
+          "field": "state",
+          "value": "enabled"
+        }
+      },
+      "policy_name": {
+        "state": "observed",
+        "value": "Require MFA for all users",
+        "raw": {
+          "field": "displayName",
+          "value": "Require MFA for all users"
+        }
+      },
+      "included_users": {
+        "state": "observed",
+        "value": [
+          "All"
+        ],
+        "raw": {
+          "field": "includeUsers",
+          "value": [
+            "All"
+          ]
+        }
+      },
+      "excluded_users": {
+        "state": "observed",
+        "value": [],
+        "raw": {
+          "field": "excludeUsers",
+          "value": []
+        }
+      },
+      "excluded_groups": {
+        "state": "observed",
+        "value": [],
+        "raw": {
+          "field": "excludeGroups",
+          "value": []
+        }
+      },
+      "excluded_roles": {
+        "state": "observed",
+        "value": [],
+        "raw": {
+          "field": "excludeRoles",
+          "value": []
+        }
+      },
+      "grant_operator": {
+        "state": "observed",
+        "value": "OR",
+        "raw": {
+          "field": "operator",
+          "value": "OR"
+        }
+      },
+      "built_in_controls": {
+        "state": "observed",
+        "value": [
+          "mfa"
+        ],
+        "raw": {
+          "field": "builtInControls",
+          "value": [
+            "mfa"
+          ]
+        }
+      },
+      "exclusions_declared": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "excludeUsers, excludeGroups, excludeRoles",
+          "value": {
             "excludeUsers": [],
             "excludeGroups": [],
             "excludeRoles": []
-          },
-          "applications": {
-            "includeApplications": [
-              "All"
-            ]
-          },
-          "locations": {
-            "includeLocations": [
-              "All"
-            ],
-            "excludeLocations": [
-              "AllTrusted"
-            ]
           }
-        },
-        "grantControls": {
-          "operator": "OR",
-          "builtInControls": [
-            "mfa"
-          ],
-          "authenticationStrength": null
-        }
-      }
-    },
-    "policy_state": {
-      "state": "observed",
-      "value": "enabled",
-      "raw": {
-        "field": "state",
-        "value": "enabled"
-      }
-    },
-    "policy_name": {
-      "state": "observed",
-      "value": "Require MFA for all users",
-      "raw": {
-        "field": "displayName",
-        "value": "Require MFA for all users"
-      }
-    },
-    "included_users": {
-      "state": "observed",
-      "value": [
-        "All"
-      ],
-      "raw": {
-        "field": "includeUsers",
-        "value": [
-          "All"
-        ]
-      }
-    },
-    "excluded_users": {
-      "state": "observed",
-      "value": [],
-      "raw": {
-        "field": "excludeUsers",
-        "value": []
-      }
-    },
-    "excluded_groups": {
-      "state": "observed",
-      "value": [],
-      "raw": {
-        "field": "excludeGroups",
-        "value": []
-      }
-    },
-    "excluded_roles": {
-      "state": "observed",
-      "value": [],
-      "raw": {
-        "field": "excludeRoles",
-        "value": []
-      }
-    },
-    "grant_operator": {
-      "state": "observed",
-      "value": "OR",
-      "raw": {
-        "field": "operator",
-        "value": "OR"
-      }
-    },
-    "built_in_controls": {
-      "state": "observed",
-      "value": [
-        "mfa"
-      ],
-      "raw": {
-        "field": "builtInControls",
-        "value": [
-          "mfa"
-        ]
-      }
-    },
-    "exclusions_declared": {
-      "state": "observed",
-      "value": 0,
-      "raw": {
-        "field": "excludeUsers, excludeGroups, excludeRoles",
-        "value": {
-          "excludeUsers": [],
-          "excludeGroups": [],
-          "excludeRoles": []
         }
       }
     }
