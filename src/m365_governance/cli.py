@@ -47,6 +47,7 @@ from . import (
     explaining,
     graph,
     graph_slice,
+    graph_token,
     migration,
     migration_graph,
     reporting,
@@ -918,23 +919,61 @@ def _collect_from_graph(args, chosen) -> int:
             *module.AREAS.values(),
             *module.SINGLE.values(),
         ]
-        held = "set" if token else "not set"
+        # WHICH IDENTITY, SAID BEFORE THE RUN RATHER THAN AFTER. A dry run
+        # that named only the environment variable left a caller with a
+        # certificate believing the command could not work.
+        if token:
+            identity = f"the token in {graph_slice.TOKEN_VARIABLE}, which is set"
+        elif getattr(args, "certificate_path", None):
+            identity = (
+                f"an application-only token minted from {args.certificate_path} "
+                f"for application {getattr(args, 'client_id', '') or '(none)'} "
+                f"in directory {getattr(args, 'tenant_id', '') or '(none)'}"
+            )
+        else:
+            identity = (
+                f"no identity: {graph_slice.TOKEN_VARIABLE} is not set and no "
+                "--certificate-path was given"
+            )
         print(
             f"collect {args.slice} would read, in one session:\n"
             + "\n".join(f"  GET {path}" for path in paths)
-            + f"\n\nwith the token in {graph_slice.TOKEN_VARIABLE}, "
-            f"which is {held}."
+            + f"\n\nusing {identity}."
         )
         return 0
 
     if not token:
-        print(
-            f"collect {args.slice} reads Microsoft Graph and never acquires a "
-            f"token: it spends one you already hold. Put it in "
-            f"{graph_slice.TOKEN_VARIABLE}.\n\n{graph_slice.HOW}",
-            file=sys.stderr,
+        # THE APPLICATION REGISTRATION THIS ENGINE ALREADY HOLDS.
+        #
+        # Every PowerShell collector authenticates as an application with a
+        # certificate; the Graph half demanded a token pasted in by a person,
+        # so half the engine ran on a schedule and half ran when somebody
+        # remembered. The environment variable stays first -- a caller holding
+        # a token spends that one and reaches no directory to get another --
+        # and the certificate is what happens when there is none.
+        application = graph_token.Application(
+            client_id=getattr(args, "client_id", "") or "",
+            tenant_id=getattr(args, "tenant_id", "") or "",
+            certificate_path=getattr(args, "certificate_path", "") or "",
+            tenant_url=args.tenant_url,
+            certificate_password_env=getattr(args, "certificate_password_env", "")
+            or "",
         )
-        return 2
+        if not application.complete:
+            print(
+                f"collect {args.slice} reads Microsoft Graph and never creates "
+                f"a credential. Either put a token you already hold in "
+                f"{graph_slice.TOKEN_VARIABLE}, or give it the application "
+                f"registration the other collectors use: --client-id, "
+                f"--tenant-id and --certificate-path.\n\n{graph_slice.HOW}",
+                file=sys.stderr,
+            )
+            return 2
+        try:
+            token = graph_token.acquire(application)
+        except graph_token.Unavailable as refusal:
+            print(f"refusing to run: {refusal}", file=sys.stderr)
+            return 2
 
     def report(line: str) -> None:
         print(line, flush=True)
