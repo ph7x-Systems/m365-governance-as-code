@@ -88,6 +88,12 @@ SUBJECT_VOCABULARY = {
     # to end; the rest of that family stays a collected surface with no rule,
     # for the reason recorded on the slice.
     "SCRIPT": "Custom script",
+    # Conditional Access, and the first subject this engine carries outside
+    # SharePoint. What Microsoft declines to publish is which policies an
+    # organisation should have; what it does publish is what each policy STATE
+    # does, and a policy in report-only mode enforces nothing while appearing
+    # in the portal exactly as an enforcing one does.
+    "ACCESS": "Conditional Access",
     # Subjects, deliberately not coverage domains.
     "AGENTS": "Agents and Copilot",
     "PLATFORM": "Platform and evidence",

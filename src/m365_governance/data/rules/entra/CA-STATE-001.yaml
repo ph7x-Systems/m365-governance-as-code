@@ -1,0 +1,133 @@
+# The first rule outside SharePoint.
+#
+# A CONDITIONAL ACCESS POLICY IN REPORT-ONLY MODE IS IN EVERY LIST AND ENFORCES
+# NOTHING. It has a name, a state, conditions and grant controls; it appears in
+# the portal beside the policies that do enforce; and Microsoft states plainly
+# that during sign-in the system evaluates it and does not enforce it. An
+# administrator reading their own policy list has no way to tell the difference
+# without opening each one.
+#
+# THE STATE FIELD SAYS SO IN ITS OWN NAME. `enabledForReportingButNotEnforced`
+# is one of three documented values, and it is the only rule in this catalogue
+# whose basis is the vendor writing the answer into the identifier.
+
+schema_version: "1.0"
+id: CA-STATE-001
+version: "1.0"
+title: The policy is in report-only mode and enforces nothing
+description: >
+  A Conditional Access policy has three documented states. Two of them decide
+  whether a sign-in proceeds. The third, report-only, is evaluated at every
+  sign-in and enforces neither its grant controls nor its session controls:
+  nobody is prompted for multifactor authentication by it and nobody is blocked
+  by it.
+
+service: entra
+resource_type: conditional-access-policy
+
+basis:
+  # OURS, RESTING ON THEIR STATEMENT OF FACT, and the distinction is the point.
+  # `documented-limit` was the first choice and it is wrong twice: it wants a
+  # numeric limit, and it means the tenant is outside something the vendor
+  # wrote down. Report-only is supported, recommended, and the step Microsoft
+  # tells you to take before enforcing. Nobody is in breach of anything.
+  #
+  # What is ours is the judgement that a policy enforcing nothing belongs on a
+  # list somebody reads. What is theirs is the fact that it enforces nothing,
+  # and that is quoted rather than paraphrased.
+  type: convention
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/conditional-access/concept-conditional-access-report-only
+      title: Analyze Conditional Access policy impact
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/graph/api/resources/conditionalaccesspolicy
+      title: conditionalAccessPolicy resource type
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft states what the mode does, in the reference page for it: "Report-
+    only mode evaluates policies but doesn't enforce grant controls or session
+    controls. Users aren't prompted for multifactor authentication or blocked
+    by report-only policies." That is their sentence and it is not in dispute.
+
+    Ours is what follows: a policy that enforces nothing sits in the same list
+    as the policies that do, under the same name it will have when it is
+    switched on, and nothing distinguishes one parked there deliberately from
+    one nobody finished. An organisation reading its own policy list is reading
+    a list of intentions, some of which are in force. This says which.
+
+    A tenant that reviews its report-only policies deliberately can decline
+    this rule, and the declining is the point of a convention.
+
+severity:
+  default: medium
+  rationale: >
+    Report-only is a supported and recommended step before enforcement, so a
+    policy in it is often exactly where somebody meant to put it. What makes
+    this worth a person's attention is that nothing distinguishes a policy
+    parked there deliberately from one that was never switched on, and the
+    second is a protection an organisation believes it has.
+  configurable: true
+
+evidence_requirements:
+  - path: policy_state
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: policy_state
+  value: enabledForReportingButNotEnforced
+
+outcomes:
+  pass:
+    message: >
+      This policy is not in report-only mode.
+  fail:
+    message: >
+      This policy is in report-only mode. It is evaluated at every sign-in and
+      enforces nothing: no grant control is applied, no session control is
+      applied, nobody is prompted for multifactor authentication by it, and
+      nobody is blocked by it.
+  unknown:
+    message: >
+      The policy state was not read, so whether it enforces anything is not
+      known. This is not a pass.
+  not_applicable:
+    message: >
+      This rule does not apply to this resource.
+  invalid_evidence:
+    message: >
+      The policy state was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Move the policy from Report-only to On when its impact has been reviewed,
+  which is what the mode exists for. If it is parked here deliberately, the
+  finding is the record of that: a reader of the policy list cannot tell the
+  two apart, and this says which one they are looking at.
+
+limitations:
+  passes_without_resolving: >
+    A POLICY THAT IS NOT REPORT-ONLY MAY STILL ENFORCE NOTHING. `disabled` is a
+    separate state and this rule does not read it. A policy that is enabled may
+    exclude every user it would otherwise apply to, apply to no application, or
+    require a control that every sign-in already satisfies. This reads the
+    state and nothing else, and a pass says only that the state is not the one
+    Microsoft documents as not enforcing.
+  other:
+    - >
+      REPORT-ONLY DOES NOT COVER EVERYTHING, and where it does not, this
+      finding is describing a mode the policy could not have been tested in.
+      Microsoft records that policies scoped to User Actions cannot be
+      evaluated in report-only mode.
+    - >
+      A report-only policy is not inert on every device. Microsoft warns that
+      one requiring a compliant device can prompt for a device certificate on
+      macOS, iOS and Android during evaluation, so users can be interrupted by
+      a policy that enforces nothing.
+    - >
+      This rule reads one policy. Whether a tenant is protected is a question
+      about every policy that applies to a sign-in together, and no rule here
+      answers it.

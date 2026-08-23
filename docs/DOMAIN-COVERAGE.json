@@ -5,6 +5,7 @@
       "collector_modes": [
         "Activity",
         "Classification",
+        "ConditionalAccess",
         "Customization"
       ],
       "compass": [],
@@ -39,6 +40,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "ConditionalAccess",
         "Customization"
       ],
       "compass": [
@@ -88,6 +90,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "ConditionalAccess",
         "Customization",
         "TenantSites",
         "UniquePermissions"
@@ -144,6 +147,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "ConditionalAccess",
         "Customization",
         "Modernity"
       ],
@@ -186,6 +190,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "ConditionalAccess",
         "Customization"
       ],
       "compass": [],
@@ -217,6 +222,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "ConditionalAccess",
         "Customization",
         "SiteSharing",
         "TenantSharing"
@@ -278,6 +284,7 @@
       "analysis": [],
       "collector_modes": [
         "Classification",
+        "ConditionalAccess",
         "Customization",
         "SiteOwners",
         "TenantSites",
@@ -334,6 +341,7 @@
       ],
       "collector_modes": [
         "Classification",
+        "ConditionalAccess",
         "Customization",
         "SpfxCatalog"
       ],
@@ -368,6 +376,10 @@
   "generated_by": "tools/coverage.py",
   "site_repository": "observed",
   "subjects": {
+    "ACCESS": {
+      "coverage": "not defined",
+      "name": "Conditional Access"
+    },
     "ACTIVITY": {
       "coverage": "defined",
       "name": "Activity"

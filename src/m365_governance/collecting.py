@@ -501,14 +501,36 @@ SLICES = {
             needs_tenant=True,
             profile="default",
             writes_many=True,
-            produces_findings=False,
-            # The second recorded exception to the twin rule, on the same terms
-            # as `agents`: an inventory whose consumer is named. Microsoft
-            # publishes no normative conclusion about which Conditional Access
-            # policies an organisation should have, so a threshold invented here
-            # would make a pass mean nothing. What the tenant has is worth
-            # collecting; what it ought to have is not this engine's to assert.
-            consumed_by="the access-policy inventory in a report, and any viewer",
+            # IT PRODUCES ONE NOW, and the exception that used to sit here was
+            # right about the thing it refused and wrong about the size of it.
+            #
+            # It said Microsoft publishes no normative conclusion about which
+            # Conditional Access policies an organisation should have. That is
+            # still true, and this engine still will not invent one: no rule
+            # here says a tenant must require multifactor authentication for
+            # administrators, because Microsoft does not say it in a form that
+            # a machine may check and a threshold invented here would make a
+            # pass mean nothing.
+            #
+            # `CA-STATE-001` asserts nothing of the kind. It reads the state
+            # Microsoft publishes on the policy and reports what Microsoft says
+            # that state does: a report-only policy is evaluated at every
+            # sign-in and enforces neither grant controls nor session controls.
+            # The question is not whether the organisation should have the
+            # policy. It is whether the policy it has is doing anything, and an
+            # organisation that believes a control is enforced when it is only
+            # being measured has a gap no inventory would have shown it.
+            #
+            # THERE WAS A SECOND REASON THIS FAMILY HAD NO RULES, and it was not
+            # editorial. The collector published each policy as one opaque fact
+            # holding the whole Graph object, so no rule could address a field
+            # inside it -- `conditional_access_policies.state` resolved to the
+            # fact's own state and never to the policy's. See
+            # `conditional_access.ADDRESSABLE`. A restraint and a defect had
+            # been sitting on top of each other, and removing the restraint
+            # alone would have produced a rule that evaluated `unknown` forever.
+            produces_findings=True,
+            consumed_by="governance rules",
             describes=(
                 "the Conditional Access policies, named locations and Security "
                 "Defaults state of one tenant"

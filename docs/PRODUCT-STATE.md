@@ -12,14 +12,14 @@ to point at it.
 
 | Domain | Rules | Collector | Profiles | Fixtures | Tests | Knowledge | Guide | Analysis | Compass | Complete |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Activity** (`ACTIVITY`) | 1 | 3 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
-| **Classification** (`CLASS`) | 4 | 2 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
-| **Custom script** (`SCRIPT`) | 1 | 2 | 1 | 3 | 1 | — | — | — | — | **no** |
-| **Modernity** (`MODERN`) | 3 | 3 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
-| **Permissions** (`LIST`) | 3 | 4 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
-| **SPFx** (`SPFX`) | 1 | 3 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
-| **Sharing** (`SHARE`) | 5 | 4 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
-| **Sites and storage** (`SITE`) | 3 | 5 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
+| **Activity** (`ACTIVITY`) | 1 | 4 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
+| **Classification** (`CLASS`) | 4 | 3 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
+| **Custom script** (`SCRIPT`) | 1 | 3 | 1 | 3 | 1 | — | — | — | — | **no** |
+| **Modernity** (`MODERN`) | 3 | 4 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
+| **Permissions** (`LIST`) | 3 | 5 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
+| **SPFx** (`SPFX`) | 1 | 4 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
+| **Sharing** (`SHARE`) | 5 | 5 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
+| **Sites and storage** (`SITE`) | 3 | 6 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
 
 **21 rules across 8 domains.** 4 complete, 4 not.
 

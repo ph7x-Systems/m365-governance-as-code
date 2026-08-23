@@ -476,11 +476,48 @@ def test_the_slice_is_registered_as_a_graph_slice_that_writes_many():
     assert chosen.source == "graph"
     assert chosen.writes_many
     assert not chosen.needs_site
-    # An inventory with no rule, and the price of that exception is naming the
-    # consumer. Microsoft publishes no normative conclusion about which
-    # policies an organisation should have.
-    assert not chosen.produces_findings
-    assert chosen.consumed_by != "governance rules"
+    # IT FEEDS A RULE NOW. What Microsoft declines to publish is which policies
+    # an organisation should have, and no rule here asserts that. `CA-STATE-001`
+    # reads the state Microsoft does publish and reports what Microsoft says it
+    # does: report-only is evaluated at every sign-in and enforces nothing.
+    assert chosen.produces_findings
+    assert chosen.consumed_by == "governance rules"
+
+
+def test_a_rule_can_address_a_field_inside_a_policy():
+    """The reason this family carried no rules, and it was never editorial.
+
+    Each policy was published as ONE fact holding the whole Graph object, so
+    `conditional_access_policies.state` addressed the FACT and resolved to the
+    word `observed`. The policy's own state was one level down, unreachable by
+    any evidence path this engine has. The object still arrives whole -- that
+    principle was right -- and the fields a rule needs are published beside it.
+    """
+    item = {
+        "id": "p1",
+        "displayName": "Report only",
+        "state": "enabledForReportingButNotEnforced",
+    }
+
+    facts = conditional_access._addressable("conditional-access-policies", item)
+
+    assert facts["policy_state"]["value"] == "enabledForReportingButNotEnforced"
+    assert facts["policy_state"]["raw"]["field"] == "state"
+
+
+def test_a_property_the_object_does_not_carry_is_absent_and_not_false():
+    """`isTrusted` is published on an IP location and not on a country one.
+
+    A collector that wrote `false` for the second would have answered a
+    question Microsoft did not, and every country location in every tenant
+    would have read as deliberately untrusted.
+    """
+    facts = conditional_access._addressable(
+        "named-locations", {"id": "l1", "displayName": "Portugal"}
+    )
+
+    assert facts["is_trusted"]["state"] == "missing"
+    assert "value" not in facts["is_trusted"]
 
 
 def test_no_mutating_verb_is_reachable_from_this_slice():
