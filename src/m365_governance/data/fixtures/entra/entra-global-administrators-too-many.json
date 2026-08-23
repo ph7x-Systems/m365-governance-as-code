@@ -58,7 +58,7 @@
         "state": "observed",
         "value": 7,
         "raw": {
-          "field": "principal @odata.type user (count)",
+          "field": "principals answering in users (count)",
           "value": 7
         }
       },
@@ -66,7 +66,7 @@
         "state": "observed",
         "value": 0,
         "raw": {
-          "field": "principal not a user (count)",
+          "field": "principals not answering in users (count)",
           "value": 0
         }
       },
@@ -74,7 +74,7 @@
         "state": "observed",
         "value": 0,
         "raw": {
-          "field": "principal.onPremisesSyncEnabled true (count)",
+          "field": "onPremisesSyncEnabled true (count)",
           "value": 0
         }
       },
@@ -82,7 +82,7 @@
         "state": "observed",
         "value": 7,
         "raw": {
-          "field": "principal.onPremisesSyncEnabled returned and not true (count)",
+          "field": "onPremisesSyncEnabled returned and not true (count)",
           "value": 7
         }
       },
@@ -90,7 +90,7 @@
         "state": "observed",
         "value": 0,
         "raw": {
-          "field": "principal.onPremisesSyncEnabled not returned (count)",
+          "field": "onPremisesSyncEnabled not returned (count)",
           "value": 0
         }
       },

@@ -74,35 +74,22 @@ def policy(**over):
 
 
 def assignment(n: int, *, synced=None, service_principal=False):
-    """One role assignment, expanded onto its principal.
+    """One role assignment, and the principal it points at.
 
-    The principal carries a display name and an id because Graph returns them.
-    NOTHING HERE REACHES THE EVIDENCE -- the collector counts and discards, and
-    a fixture that omitted them would be testing a kinder input than the one a
-    tenant sends.
+    THE ASSIGNMENT CARRIES AN IDENTIFIER AND NOTHING ELSE, because that is what
+    the collector asks for. The account itself is answered separately, by the
+    transport below, with the two fields the collector selected -- so a display
+    name has nowhere to appear even in a fixture.
     """
-    if service_principal:
-        principal = {
-            "@odata.type": "#microsoft.graph.servicePrincipal",
-            "id": f"5{n:07d}-0000-4000-8000-00000000000{n}",
-            "displayName": f"Automation account {n}",
-        }
-    else:
-        principal = {
-            "@odata.type": "#microsoft.graph.user",
-            "id": f"1{n:07d}-0000-4000-8000-00000000000{n}",
-            "displayName": f"Administrator {n}",
-            "userPrincipalName": f"admin{n}@contoso.onmicrosoft.com",
-        }
-        if synced is not ...:
-            principal["onPremisesSyncEnabled"] = synced
-    return {
-        "id": f"assignment-{n}",
-        "roleDefinitionId": tenant_governance.GLOBAL_ADMINISTRATOR,
-        "principalId": principal["id"],
-        "directoryScopeId": "/",
-        "principal": principal,
-    }
+    kind = "sp" if service_principal else "user"
+    return (
+        {
+            "id": f"assignment-{n}",
+            "principalId": f"{kind}-{n:04d}-0000-4000-8000-00000000000{n}",
+            "directoryScopeId": "/",
+        },
+        synced,
+    )
 
 
 def token() -> str:
@@ -115,9 +102,25 @@ def token() -> str:
 
 
 def routed(*, roles, authorization):
+    """A transport that answers the three shapes this collector asks for.
+
+    The principal probe is the interesting one: it answers `404` for anything
+    that is not a user, which is how the collector tells a service principal
+    from a person without ever asking what either is called.
+    """
+    accounts = {a["principalId"]: synced for a, synced in roles}
+
     def transport(url, _token):
         if ROLES in url:
-            return (200, json.dumps({"value": roles}), {})
+            return (200, json.dumps({"value": [a for a, _ in roles]}), {})
+        if "/users/" in url:
+            principal = url.split("/users/")[1].split("?")[0]
+            if not principal.startswith("user-"):
+                return (404, json.dumps({"error": {"code": "Request_ResourceNotFound"}}), {})
+            body = {"id": principal}
+            if accounts[principal] is not ...:
+                body["onPremisesSyncEnabled"] = accounts[principal]
+            return (200, json.dumps(body), {})
         if POLICY in url:
             return (200, json.dumps(authorization), {})
         raise AssertionError(f"nothing was configured for {url}")

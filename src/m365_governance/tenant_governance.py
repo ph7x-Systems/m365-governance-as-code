@@ -42,11 +42,30 @@ GLOBAL_ADMINISTRATOR = "62e90394-69f5-4237-9190-012177145e10"
 
 #: The collections this slice reads, by the area name that reaches `coverage`.
 AREAS = {
+    # `$select` AND NOT `$expand`, AND THE REASON IS NOT PERFORMANCE.
+    #
+    # This first read `$expand=principal`, which returns each assignment with
+    # the account attached: display name, user principal name, object id. The
+    # collector counted them and dropped the rest, so nothing was published --
+    # and an administrator roster had still crossed the network, sat in this
+    # process's memory and passed through whatever logs and proxies are between
+    # here and Microsoft, in order to be discarded.
+    #
+    # Not receiving it is a stronger property than not publishing it, and it is
+    # available for the asking. Microsoft also documents the expansion as thin:
+    # the principal on a role assignment supports `$select` nested in `$expand`
+    # FOR ID ONLY, so the property this slice actually needs was never reliably
+    # coming through it anyway.
     "global-administrators": (
         "roleManagement/directory/roleAssignments"
-        f"?$filter=roleDefinitionId eq '{GLOBAL_ADMINISTRATOR}'&$expand=principal"
+        f"?$filter=roleDefinitionId eq '{GLOBAL_ADMINISTRATOR}'"
+        "&$select=id,principalId,directoryScopeId"
     ),
 }
+
+#: How one principal is asked whether it is synchronised. Two fields, and the
+#: identifier is one the caller already had: nothing here can return a name.
+PRINCIPAL = "users/{id}?$select=id,onPremisesSyncEnabled"
 
 #: Read as a single resource rather than a collection.
 SINGLE = {
@@ -176,7 +195,7 @@ def _document_for(
     """
     family = graph_slice.key(area)
     if area == "global-administrators":
-        facts = {family: _privileged_summary(read.items)}
+        facts = {family: _privileged_summary(read.items, reader)}
         display = "Global Administrator assignments"
     else:
         item = read.items[0] if read.items else {}
@@ -234,24 +253,55 @@ def _consent_policies(item: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def _privileged_summary(items: list[dict[str, Any]]) -> dict[str, Any]:
-    """Role assignments counted, with every principal discarded.
+def _privileged_summary(
+    items: list[dict[str, Any]], reader: GraphReader
+) -> dict[str, Any]:
+    """Role assignments counted, with no name ever received.
 
-    THREE COUNTS AND NOT TWO. A principal whose `onPremisesSyncEnabled` was not
-    returned is neither cloud-only nor synced: it is a reading that did not
+    ONE SMALL READ PER PRINCIPAL, AND NOT ONE LARGE ONE. Asking the directory
+    for each account by the identifier the assignment already gave, selecting
+    two fields, is more requests than expanding the relationship and is the
+    only shape in which a display name never arrives. The cost is bounded by
+    the number of people holding the most privileged role in the tenant, and a
+    tenant where that number makes this slow has already been told so by the
+    rule that counts them.
+
+    A PRINCIPAL THAT IS NOT A USER ANSWERS `404`, and that is how a service
+    principal is told from a person without asking what either is called. The
+    reader calls a `404` `not-supported`, which is right for its own purpose --
+    a surface this cloud does not serve -- and here means the object is not in
+    `users`. The local reading is written down rather than pushed into the
+    reader, whose general mapping is correct as it stands.
+
+    FOUR COUNTS AND NOT THREE. A principal the directory would not answer
+    about is neither cloud-only nor synchronised: it is a reading that did not
     happen, and folding it into either count would let a rule conclude from
-    evidence nobody collected. Microsoft documents the property as `true` when
-    the object is synced from an on-premises directory, so anything else that
-    was actually returned is not currently synced.
+    evidence nobody collected. Microsoft documents `onPremisesSyncEnabled` as
+    `true` when the object is synced from an on-premises directory, so
+    anything else that was actually returned is not currently synced.
     """
-    users = [
-        item
-        for item in items
-        if "user" in str((item.get("principal") or {}).get("@odata.type", "")).lower()
-    ]
-    principals = [item.get("principal") or {} for item in users]
-    synced = [p for p in principals if p.get("onPremisesSyncEnabled") is True]
-    established = [p for p in principals if "onPremisesSyncEnabled" in p]
+    users = 0
+    others = 0
+    synced = 0
+    established = 0
+
+    for principal in sorted(
+        {str(item.get("principalId") or "") for item in items} - {""}
+    ):
+        read = reader.one(PRINCIPAL.format(id=principal))
+        if read.unavailable is not None:
+            if read.unavailable.state == "not-supported":
+                # Not in `users`: a service principal, a group, or an object
+                # this directory no longer holds. Not a person either way.
+                others += 1
+            continue
+        users += 1
+        account = read.items[0] if read.items else {}
+        if "onPremisesSyncEnabled" not in account:
+            continue
+        established += 1
+        if account["onPremisesSyncEnabled"] is True:
+            synced += 1
 
     def observed(value: int, field_name: str) -> dict[str, Any]:
         return {
@@ -259,26 +309,25 @@ def _privileged_summary(items: list[dict[str, Any]]) -> dict[str, Any]:
             "value": value,
             # THE RAW PROVENANCE IS THE COUNT, NOT THE ROWS. Every other fact in
             # this engine carries what it read; this one carries what it counted
-            # and how, because carrying the rows is carrying the roster.
+            # and how, because carrying the rows is carrying the roster -- and
+            # in this shape the rows were never received to carry.
             "raw": {"field": field_name, "value": value},
         }
 
     return {
         "assignments": observed(len(items), "roleAssignments (count)"),
-        "user_assignments": observed(len(users), "principal @odata.type user (count)"),
+        "user_assignments": observed(users, "principals answering in users (count)"),
         "service_principal_assignments": observed(
-            len(items) - len(users), "principal not a user (count)"
+            others, "principals not answering in users (count)"
         ),
         "synced_from_on_premises": observed(
-            len(synced), "principal.onPremisesSyncEnabled true (count)"
+            synced, "onPremisesSyncEnabled true (count)"
         ),
         "cloud_only": observed(
-            len(established) - len(synced),
-            "principal.onPremisesSyncEnabled returned and not true (count)",
+            established - synced, "onPremisesSyncEnabled returned and not true (count)"
         ),
         "principals_not_established": observed(
-            len(principals) - len(established),
-            "principal.onPremisesSyncEnabled not returned (count)",
+            users - established, "onPremisesSyncEnabled not returned (count)"
         ),
         "role_definition_id": {
             "state": "observed",

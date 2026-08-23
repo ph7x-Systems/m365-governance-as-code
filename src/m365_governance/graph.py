@@ -130,7 +130,12 @@ class Unavailable:
     detail: str
 
     @staticmethod
-    def of(status: int, path: str, body: str = "") -> Unavailable:
+    def of(
+        status: int,
+        path: str,
+        body: str = "",
+        headers: dict[str, str] | None = None,
+    ) -> Unavailable:
         """What a status code means about a tenant, which is usually nothing.
 
         THE DISTINCTION THIS EXISTS FOR. `403` and an empty collection produce
@@ -139,7 +144,7 @@ class Unavailable:
         and a rule over the first must answer `unknown` while a rule over the
         second may decide.
         """
-        detail = (body or "").strip()[:400]
+        detail = ((body or "").strip()[:400] + _correlation(headers)).strip()
         if status == 401:
             # NOT `permission-denied`, and the difference is not cosmetic. A
             # `401` says the session is not valid -- expired, issued for another
@@ -309,9 +314,9 @@ class GraphReader:
                 self._sleep(_retry_after(headers))
                 continue
 
-            return Unavailable.of(status, path, body)
+            return Unavailable.of(status, path, body, headers)
 
-        return Unavailable.of(429, path)
+        return Unavailable.of(429, path, "", headers)
 
 
 def _page(body: str, path: str, single: bool) -> Page | Unavailable:
@@ -338,6 +343,37 @@ def _page(body: str, path: str, single: bool) -> Page | Unavailable:
         )
     items = [x for x in value if isinstance(x, dict)]
     return Page(items, document.get("@odata.nextLink"))
+
+
+#: What Microsoft calls the identifier of a request, in the two header names it
+#: uses. Read case-insensitively because a header name is not case-sensitive and
+#: a client that matched one casing works until the day a proxy changes it.
+CORRELATION = ("request-id", "client-request-id", "x-ms-ags-diagnostic", "date")
+
+
+def _correlation(headers: dict[str, str] | None) -> str:
+    """The identifiers Microsoft support asks for, kept with the refusal.
+
+    A REFUSAL IS EVIDENCE, AND EVIDENCE THAT CANNOT BE TRACED IS AN ANECDOTE.
+    A `403` that a tenant administrator disputes is settled by Microsoft
+    looking the request up, and they look it up by these. Without them the
+    conversation is "our tool says it was denied" against "our portal says the
+    permission is granted", and there is no third thing to consult.
+
+    They are recorded on the refusal rather than in a log, because the log is
+    on the machine that ran the collection and the refusal is what travels into
+    the evidence, the report and the archive somebody opens six months later.
+    """
+    if not headers:
+        return ""
+    found = {}
+    for name, value in headers.items():
+        key = name.strip().lower()
+        if key in CORRELATION and value:
+            found[key] = value
+    if not found:
+        return ""
+    return " [" + ", ".join(f"{k}: {v}" for k, v in sorted(found.items())) + "]"
 
 
 def _retry_after(headers: dict[str, str]) -> float:
