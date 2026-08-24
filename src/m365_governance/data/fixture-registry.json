@@ -43,6 +43,12 @@
    "may_be_presented_as_tenant_observation": false
   },
   {
+   "path": "fixtures/entra/entra-authorization-policy-closed-defaults-refused.json",
+   "origin": "synthetic",
+   "purpose": "the authorization_policy area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
    "path": "fixtures/entra/entra-authorization-policy-closed-defaults.json",
    "origin": "synthetic",
    "purpose": "the same policy with the documented closed values: email-verified join off, MSOnline PowerShell blocked, guests on the Restricted Guest User template",
@@ -109,6 +115,12 @@
    "may_be_presented_as_tenant_observation": false
   },
   {
+   "path": "fixtures/entra/entra-global-administrators-all-synced-refused.json",
+   "origin": "synthetic",
+   "purpose": "the global_administrators area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
    "path": "fixtures/entra/entra-global-administrators-all-synced.json",
    "origin": "synthetic",
    "purpose": "three Global Administrator assignments all synchronised from on-premises, so no cloud-only account exists to be an emergency access account",
@@ -142,6 +154,12 @@
    "path": "fixtures/entra/entra-security-defaults-off.json",
    "origin": "synthetic",
    "purpose": "Security Defaults observed as disabled, which is an observation and not a finding",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/exchange/exchange-forwarding-ambiguous-mode-refused.json",
+   "origin": "synthetic",
+   "purpose": "the forwarding area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
    "may_be_presented_as_tenant_observation": false
   },
   {
@@ -343,6 +361,12 @@
    "may_be_presented_as_tenant_observation": false
   },
   {
+   "path": "fixtures/sharepoint/site-activity-archived-refused.json",
+   "origin": "synthetic",
+   "purpose": "the activity area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
    "path": "fixtures/sharepoint/site-activity-archived.json",
    "origin": "synthetic",
    "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -382,6 +406,12 @@
    "path": "fixtures/sharepoint/site-agents-with-sources.json",
    "origin": "synthetic",
    "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-group-unlabelled-refused.json",
+   "origin": "synthetic",
+   "purpose": "the classification area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
    "may_be_presented_as_tenant_observation": false
   },
   {
@@ -445,6 +475,12 @@
    "may_be_presented_as_tenant_observation": false
   },
   {
+   "path": "fixtures/sharepoint/site-customization-pages-feature-absent-refused.json",
+   "origin": "synthetic",
+   "purpose": "the customization area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
    "path": "fixtures/sharepoint/site-customization-pages-feature-absent.json",
    "origin": "synthetic",
    "purpose": "the Site Pages feature absent and the library refused; constructed so absence and refusal are not conflated",
@@ -490,6 +526,12 @@
    "path": "fixtures/sharepoint/site-imported-inventory.json",
    "origin": "synthetic",
    "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-modern-clean-refused.json",
+   "origin": "synthetic",
+   "purpose": "the web area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
    "may_be_presented_as_tenant_observation": false
   },
   {
@@ -619,6 +661,12 @@
    "may_be_presented_as_tenant_observation": false
   },
   {
+   "path": "fixtures/sharepoint/site-spfx-behind-refused.json",
+   "origin": "synthetic",
+   "purpose": "the spfx area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
    "path": "fixtures/sharepoint/site-spfx-behind.json",
    "origin": "synthetic",
    "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -649,6 +697,12 @@
    "may_be_presented_as_tenant_observation": true
   },
   {
+   "path": "fixtures/sharepoint/site-storage-comfortable-refused.json",
+   "origin": "synthetic",
+   "purpose": "the site area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
    "path": "fixtures/sharepoint/site-storage-comfortable.json",
    "origin": "synthetic",
    "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -676,6 +730,12 @@
    "path": "fixtures/sharepoint/tenant-brand-center-public-cdn.json",
    "origin": "synthetic",
    "purpose": "a tenant whose brand assets are published across a public CDN origin: two organisation asset libraries, public CDN on, private off, and the two documented consequences of a public origin carried as facts",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/tenant-sharing-default-anyone-and-edit-refused.json",
+   "origin": "synthetic",
+   "purpose": "the tenant_sharing area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
    "may_be_presented_as_tenant_observation": false
   },
   {

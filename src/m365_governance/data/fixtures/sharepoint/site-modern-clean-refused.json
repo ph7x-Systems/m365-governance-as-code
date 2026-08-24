@@ -1,0 +1,58 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T15:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "pages",
+      "web"
+    ],
+    "completed": [
+      "pages"
+    ],
+    "unavailable": {
+      "web": {
+        "state": "permission-denied",
+        "detail": "authenticated and not permitted to read Get-PnPWeb; Get-PnPList; Get-PnPFeature; Get-PnPPage. Least privilege for this surface is Sites.Read.All."
+      }
+    }
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "contoso,site,comms",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Communication Site",
+    "url": "https://contoso.sharepoint.com/sites/comms"
+  },
+  "facts": {
+    "web": {
+      "state": "permission-denied",
+      "detail": "authenticated and not permitted to read Get-PnPWeb; Get-PnPList; Get-PnPFeature; Get-PnPPage. Least privilege for this surface is Sites.Read.All."
+    }
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-06T16:55:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.10.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / CSOM",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    },
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "scopes": [
+      "AllSites.Read"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "classification"
+    ],
+    "completed": [],
+    "unavailable": {
+      "classification": {
+        "state": "permission-denied",
+        "detail": "authenticated and not permitted to read Get-PnPWeb; Get-PnPSite. Least privilege for this surface is Sites.Read.All."
+      }
+    }
+  },
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "contoso,site,group-unlabelled",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "All Company",
+    "url": "https://contoso.sharepoint.com/sites/allcompany"
+  },
+  "facts": {
+    "classification": {
+      "state": "permission-denied",
+      "detail": "authenticated and not permitted to read Get-PnPWeb; Get-PnPSite. Least privilege for this surface is Sites.Read.All."
+    }
+  }
+}

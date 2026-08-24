@@ -1,0 +1,57 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-23T09:00:00Z",
+    "collector": "graph-tenant-governance",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All",
+      "RoleManagement.Read.Directory"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "authorization_policy",
+      "global_administrators"
+    ],
+    "completed": [
+      "authorization_policy"
+    ],
+    "unavailable": {
+      "global_administrators": {
+        "state": "permission-denied",
+        "detail": "authenticated and not permitted to read GET /v1.0/policies/authorizationPolicy; GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only); GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received). Least privilege for this surface is Policy.Read.All, RoleManagement.Read.Directory."
+      }
+    }
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "privileged-role-summary",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Global Administrator assignments"
+  },
+  "facts": {
+    "global_administrators": {
+      "state": "permission-denied",
+      "detail": "authenticated and not permitted to read GET /v1.0/policies/authorizationPolicy; GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only); GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received). Least privilege for this surface is Policy.Read.All, RoleManagement.Read.Directory."
+    }
+  }
+}
