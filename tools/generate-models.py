@@ -98,6 +98,20 @@ GENERATE = (
     # start, and a shape somebody depends on is a contract whether or not it is
     # called one.
     "connection.schema.json",
+    # WHAT THIS ENGINE KNOWS, WHICH A CONSUMER NEEDS BEFORE IT HAS ANY EVIDENCE.
+    #
+    # Every other model here describes something a run PRODUCED. This one
+    # describes what the engine can do at all -- its capabilities, and the whole
+    # rule catalogue with each rule's basis, sources, evidence requirements and
+    # limits. A consumer with no assessment could open nothing and say nothing
+    # about the product, so somebody had to install it, authorise a tenant and
+    # complete a run before learning what any rule claims.
+    #
+    # It was already published and already validated. It was simply the one
+    # contract nobody had generated a model for, so the only consumers that
+    # could read it were the ones willing to hand-write the shape -- which is
+    # how a second answer to an engine-owned question gets built by accident.
+    "capability-manifest.schema.json",
 )
 
 #: Constructs that decide the SHAPE. The generator handles these.

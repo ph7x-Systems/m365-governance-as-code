@@ -11,6 +11,7 @@
   "contract_version": "1.0.0b8",
   "generated": [
     "Assessment.g.cs",
+    "CapabilityManifest.g.cs",
     "Collection.g.cs",
     "Comparison.g.cs",
     "Connection.g.cs",
