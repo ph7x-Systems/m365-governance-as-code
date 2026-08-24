@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/run-set/4.3.0",
   "title": "RunSet",
   "description": "An evaluation over more than one resource, exactly as `RunSet.to_dict()` emits it. A directory is a stable input shape whether it holds one document today and fifty tomorrow, so its result is an envelope rather than a bare list. Described as it is: two field names disagree with the Run envelope and that is recorded here rather than corrected.",
   "type": "object",
@@ -50,7 +50,7 @@
     },
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
+      "const": "https://ph7x.com/schemas/m365-governance/run-set/4.3.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it. An instance convention and not the dialect keyword: inside a schema document `$schema` names the JSON Schema dialect, and using one field for both meanings is what this separation exists to prevent. It replaces `schema_version`, which was a second version that could not even express the one in the $id — `1.0` against a contract ending in `/1.2.0` — and was maintained by hand."
     },
     "services": {
@@ -136,6 +136,14 @@
                     "type": "string"
                   },
                   "description": "The collectors whose documents fed this area, from their own provenance."
+                },
+                "detail": {
+                  "type": ["string", "null"],
+                  "description": "WHY, IN THE COLLECTOR'S WORDS, where it gave a reason. A state alone cannot be acted on: `usage partial` tells a reader that something is incomplete and never WHAT is incomplete, and the collector had already written it down one layer below. Null where the reading succeeded and there was nothing to explain."
+                },
+                "observed_at": {
+                  "type": ["string", "null"],
+                  "description": "When this area was last read. A reading is true of a moment, and a bundle opened a year later describes the tenant of that day. The LATEST of the documents that fed it, because what a reader wants is how current this is rather than when it first happened. Null where nothing carrying a time fed it."
                 }
               }
             }

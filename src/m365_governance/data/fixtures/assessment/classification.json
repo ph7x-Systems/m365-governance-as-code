@@ -1,8 +1,8 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.2.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.3.0",
   "canonical": {
     "run_set": {
-      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.3.0",
       "resources": 1,
       "by_class": {
         "unknown": 1
@@ -37,7 +37,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-06T16:55:00Z"
             }
           ]
         }
@@ -489,17 +491,17 @@
           "collected"
         ]
       },
-      "assessment_id": "8411735f24f9567b33f488253b84c3e1b09ffc92d3a8e89038f52e85976aeedb"
+      "assessment_id": "8411bbe642b0c1d3a6977bf772659861ac28527c3dfc116f71f666a458b013d4"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "fdac47dcefddb0496cf144cfec8b37c41ac5542498d61474b50832ede68b222a",
+        "run_set": "f788b75b283b19ca7788f2d224b035df7393f56e894fcbdb53b3f7846f146582",
         "evidence": "b8674199e754c1a7907064ed00e8e7af0b7856a6dabcf433d0b15b7b1f779433",
         "versions": "fc0860d67b23c575f10c0463e0638e1f821c0330180d60fc8435a12c8eaefb89",
         "manifest": "3ba617f03785ab93b8ca2ea38b1f3f6bb3f5537e70ba39d838025276d69b1f0c"
       },
-      "canonical_hash": "8411735f24f9567b33f488253b84c3e1b09ffc92d3a8e89038f52e85976aeedb"
+      "canonical_hash": "8411bbe642b0c1d3a6977bf772659861ac28527c3dfc116f71f666a458b013d4"
     }
   }
 }

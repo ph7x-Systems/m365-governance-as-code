@@ -1,5 +1,5 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.3.0",
   "resources": 4,
   "by_class": {
     "unknown": 4
