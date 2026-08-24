@@ -4,7 +4,8 @@
 - Collected: 2026-08-17T09:00:00Z by `graph-conditional-access` 1.0.0
 - Source: Microsoft Entra ID via Microsoft Graph v1.0
 - **Tenant: `contoso.sharepoint.com`, as requested.** The address this collection was pointed at. Nothing read the directory the session was operating in, so this is what was asked for rather than what was observed.
-- Identity: application, scopes: Policy.Read.All
+- **Identity: Application.** This assessment reflects what the configured application was permitted to read, by tenant-granted application permissions. Its reach is not limited to what any one person can see.
+- Scopes: Policy.Read.All
 
 ## Attention
 

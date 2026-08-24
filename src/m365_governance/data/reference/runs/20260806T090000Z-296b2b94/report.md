@@ -4,7 +4,8 @@
 - Collected: 2026-08-06T09:00:00Z by `spo-collector` 0.3.0
 - Source: SharePoint Online via PnP.PowerShell / SharePoint Admin
 - **Tenant: `contoso.sharepoint.com`, as requested.** The address this collection was pointed at. Nothing read the directory the session was operating in, so this is what was asked for rather than what was observed.
-- Identity: application, scopes: Sites.Read.All
+- **Identity: Application.** This assessment reflects what the configured application was permitted to read, by tenant-granted application permissions. Its reach is not limited to what any one person can see.
+- Scopes: Sites.Read.All
 
 ## Attention
 
