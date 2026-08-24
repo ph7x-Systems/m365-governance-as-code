@@ -79,3 +79,35 @@ def test_the_fallback_never_passes_for_a_real_version():
             "Run `pip install -e .` before the suite: an assessment produced "
             "this way does not say which engine decided it."
         )
+
+
+def test_the_minimum_python_doctor_reports_is_the_one_the_package_requires():
+    """TWO PLACES SAID 3.11 AND NEITHER READ THE OTHER.
+
+    `pyproject.toml` decides what pip will install; `doctor.MINIMUM_PYTHON`
+    decides what a person is told they need. They agreed by having been typed
+    on the same afternoon, and the site's install page repeats the number a
+    third time from neither.
+
+    The packaging metadata is the authority, because it is the one an installer
+    enforces: a reader told the wrong minimum finds out from `pip`, and by then
+    the page has already been wrong for however long.
+    """
+    import tomllib
+    from pathlib import Path
+
+    from m365_governance import doctor
+
+    pyproject = tomllib.loads(
+        (Path(__file__).resolve().parents[1] / "pyproject.toml").read_text(
+            encoding="utf-8"
+        )
+    )
+    requires = pyproject["project"]["requires-python"]
+    reported = f">={doctor.MINIMUM_PYTHON[0]}.{doctor.MINIMUM_PYTHON[1]}"
+
+    assert requires.replace(" ", "") == reported, (
+        f"pyproject requires `{requires}` and doctor tells people they need "
+        f"`{reported}`. One of them is what pip enforces and the other is what "
+        "a person reads."
+    )

@@ -190,6 +190,16 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   step "Product coverage matrix is current"
   "$PY" tools/coverage.py --check
 
+  # ONE RULE AT A TIME, because the catalogue is about to grow and a catalogue
+  # grows in the direction of whatever nobody measures. The matrix above says
+  # how much of Microsoft 365 the product reaches; this says whether a rule
+  # that exists is finished -- basis, source, evidence, the boundary of a pass,
+  # and having been SEEN reaching every outcome it can reach. Live and product
+  # readiness are reported and never fail: a rule is not defective because
+  # nobody has pointed the product at a tenant yet.
+  step "Every rule is RULE-READY, and the table is current"
+  "$PY" tools/rule-readiness.py --check
+
   # What can be observed against what is observed. Regenerated so the gap is
   # measured on every release rather than remembered from the last time
   # somebody looked at a cmdlet list.
