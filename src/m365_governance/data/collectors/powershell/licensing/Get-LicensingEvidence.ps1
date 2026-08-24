@@ -343,10 +343,19 @@ $assignments = @(Get-MgUser -All -Property 'id,userPrincipalName,assignedLicense
 # FIRST, AND SEPARATELY. Everything the reports return is conditional on this
 # one tenant setting, so it is read on its own and reported even when the
 # reports themselves are not read.
+#
+# v1.0, NOT beta. This read was on `/beta/` while `adminReportSettings` has been
+# generally available, which the capability map surfaced by deriving the API
+# version from the calls a collector makes rather than from the label it gives
+# itself. Microsoft states that /beta is subject to change and unsupported in
+# production, so a released product resting on it carries a dependency it cannot
+# honour -- and this particular value decides whether every usage figure in the
+# bundle is identifiable, which is the last place to accept a surface that may
+# change without notice.
 $settings = $null
 try {
     $raw = Invoke-MgGraphRequest -Method GET `
-        -Uri 'https://graph.microsoft.com/beta/admin/reportSettings'
+        -Uri 'https://graph.microsoft.com/v1.0/admin/reportSettings'
     $settings = [ordered]@{ display_concealed_names = [bool] $raw.displayConcealedNames }
 }
 catch {

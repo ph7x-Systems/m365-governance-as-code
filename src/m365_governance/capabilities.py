@@ -120,6 +120,7 @@ def _capability(
                 "representation_checked": chosen.representation_checked,
                 "second_surface": chosen.second_surface,
                 "second_surface_state": chosen.second_surface_state,
+                "limitation": chosen.limitation,
                 "divergence": chosen.divergence,
             },
         },

@@ -223,6 +223,20 @@ class Slice:
     #: What was found when two surfaces disagreed, and why. A divergence that
     #: was resolved by preferring the agreeable answer is not investigated.
     divergence: str = ""
+
+    #: WHAT THIS SURFACE CANNOT SETTLE EVEN WHEN THE CALL SUCCEEDS.
+    #:
+    #: Not an error and not a refusal: a constraint that survives a 200. A
+    #: cloud where the endpoint does not exist, a role that returns the object
+    #: with a section silently missing, a licence tier below which the response
+    #: is empty for a reason that is not absence. None of it is visible to the
+    #: collector at runtime, so it is declared or it is lost.
+    #:
+    #: The candidate register carried this column from its first row and the
+    #: manifest had nowhere to put it, which meant a surface acquired its known
+    #: limitations while it was a candidate and lost them the day a collector
+    #: was written for it -- the exact moment they start to matter.
+    limitation: str = ""
     #: Whether a tenant address, when given, CHANGES WHAT THIS SLICE READS.
     #:
     #: `needs_tenant` says the slice cannot run without one. This says it can
@@ -725,7 +739,25 @@ SLICES = {
                 "the setting that claims reports will not name anybody was "
                 "checked against a report, which returned rows and named nobody"
             ),
-            second_surface_state="none-exists",
+            # `none-exists` was wrong, and the capability map found it: assignment
+            # is also published as a collection of its own, independent of the
+            # user properties this slice reads. It is beta, so it is named and
+            # not yet compared -- but `no second surface exists` and `the second
+            # surface is not one a released product may depend on` are different
+            # sentences, and only the second one is true.
+            second_surface=(
+                "admin/cloudLicensing/assignments, which publishes licence "
+                "assignment as a collection rather than as a property of each "
+                "user, and is available in beta only"
+            ),
+            second_surface_state="named-not-run",
+            limitation=(
+                "admin/reportSettings is served by the global service only: not "
+                "by US Government L4, US Government L5 (DOD) or China operated "
+                "by 21Vianet. In those clouds the concealment setting cannot be "
+                "read at all, so whether a usage figure is identifiable stays "
+                "unknown and no collector can close it"
+            ),
             domain="licensing",
             script="licensing/Get-LicensingEvidence.ps1",
             tenant_parameter="-TenantHost",
@@ -748,7 +780,7 @@ SLICES = {
             reads=(
                 "Get-MgSubscribedSku",
                 "Get-MgUser -Property assignedLicenses",
-                "GET /beta/admin/reportSettings",
+                "GET /v1.0/admin/reportSettings",
                 "GET /v1.0/reports/getOffice365ActiveUserDetail",
             ),
             permissions=(
