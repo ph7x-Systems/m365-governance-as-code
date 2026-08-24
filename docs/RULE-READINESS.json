@@ -3,6 +3,7 @@
  "rules": 36,
  "rule_ready": 36,
  "collectable": 36,
+ "least_privilege_established": 29,
  "tenant_proven": 16,
  "product_path": 0,
  "by_service": {
@@ -18,16 +19,33 @@
    "capabilities": [
     "conditional-access"
    ],
+   "endpoints": [
+    "GET /v1.0/identity/conditionalAccess/policies",
+    "GET /v1.0/identity/conditionalAccess/namedLocations",
+    "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy"
+   ],
+   "permissions": [
+    "Policy.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -40,16 +58,33 @@
    "capabilities": [
     "conditional-access"
    ],
+   "endpoints": [
+    "GET /v1.0/identity/conditionalAccess/policies",
+    "GET /v1.0/identity/conditionalAccess/namedLocations",
+    "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy"
+   ],
+   "permissions": [
+    "Policy.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -62,16 +97,33 @@
    "capabilities": [
     "conditional-access"
    ],
+   "endpoints": [
+    "GET /v1.0/identity/conditionalAccess/policies",
+    "GET /v1.0/identity/conditionalAccess/namedLocations",
+    "GET /v1.0/policies/identitySecurityDefaultsEnforcementPolicy"
+   ],
+   "permissions": [
+    "Policy.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -84,16 +136,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -106,16 +176,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -128,16 +216,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -150,16 +256,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -172,16 +296,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -194,16 +336,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -216,16 +376,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -238,16 +416,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -260,16 +456,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -282,16 +496,34 @@
    "capabilities": [
     "tenant-governance"
    ],
+   "endpoints": [
+    "GET /v1.0/policies/authorizationPolicy",
+    "GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)",
+    "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)"
+   ],
+   "permissions": [
+    "Policy.Read.All",
+    "RoleManagement.Read.Directory"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -304,16 +536,32 @@
    "capabilities": [
     "forwarding"
    ],
+   "endpoints": [
+    "Get-HostedOutboundSpamFilterPolicy",
+    "Get-RemoteDomain"
+   ],
+   "permissions": [
+    "Exchange.ManageAsApp"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -326,16 +574,32 @@
    "capabilities": [
     "forwarding"
    ],
+   "endpoints": [
+    "Get-HostedOutboundSpamFilterPolicy",
+    "Get-RemoteDomain"
+   ],
+   "permissions": [
+    "Exchange.ManageAsApp"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -348,16 +612,32 @@
    "capabilities": [
     "activity"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPTenantSite"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -370,16 +650,32 @@
    "capabilities": [
     "classification"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSite"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -392,16 +688,32 @@
    "capabilities": [
     "classification"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSite"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -414,16 +726,32 @@
    "capabilities": [
     "classification"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSite"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -436,16 +764,32 @@
    "capabilities": [
     "classification"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSite"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -458,16 +802,32 @@
    "capabilities": [
     "permissions"
    ],
+   "endpoints": [
+    "Get-PnPList",
+    "Get-PnPListItem"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -480,16 +840,32 @@
    "capabilities": [
     "permissions"
    ],
+   "endpoints": [
+    "Get-PnPList",
+    "Get-PnPListItem"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -502,16 +878,32 @@
    "capabilities": [
     "permissions"
    ],
+   "endpoints": [
+    "Get-PnPList",
+    "Get-PnPListItem"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -524,16 +916,34 @@
    "capabilities": [
     "modernity"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPList",
+    "Get-PnPFeature",
+    "Get-PnPPage"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -546,16 +956,34 @@
    "capabilities": [
     "modernity"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPList",
+    "Get-PnPFeature",
+    "Get-PnPPage"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -568,16 +996,34 @@
    "capabilities": [
     "modernity"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPList",
+    "Get-PnPFeature",
+    "Get-PnPPage"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -590,16 +1036,33 @@
    "capabilities": [
     "customization"
    ],
+   "endpoints": [
+    "Get-PnPWeb -Includes EffectiveBasePermissions",
+    "Get-PnPFeature -Scope Web",
+    "Get-PnPList -Identity SitePages"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -612,16 +1075,33 @@
    "capabilities": [
     "sharing"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSite",
+    "Get-PnPTenantSite"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -634,16 +1114,33 @@
    "capabilities": [
     "sharing"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSite",
+    "Get-PnPTenantSite"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -656,16 +1153,31 @@
    "capabilities": [
     "tenant-sharing"
    ],
+   "endpoints": [
+    "Get-PnPTenant"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -678,16 +1190,31 @@
    "capabilities": [
     "tenant-sharing"
    ],
+   "endpoints": [
+    "Get-PnPTenant"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -700,16 +1227,33 @@
    "capabilities": [
     "sharing"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSite",
+    "Get-PnPTenantSite"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -722,16 +1266,32 @@
    "capabilities": [
     "owners"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSiteCollectionAdmin"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -744,16 +1304,32 @@
    "capabilities": [
     "owners"
    ],
+   "endpoints": [
+    "Get-PnPWeb",
+    "Get-PnPSiteCollectionAdmin"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": true,
@@ -766,16 +1342,31 @@
    "capabilities": [
     "sites"
    ],
+   "endpoints": [
+    "Get-PnPTenantSite"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,
@@ -788,16 +1379,31 @@
    "capabilities": [
     "spfx"
    ],
+   "endpoints": [
+    "Get-PnPApp"
+   ],
+   "permissions": [
+    "Sites.Read.All"
+   ],
+   "permission_established": true,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
+    "service_named": true,
     "evidence_declared": true,
     "unknown_documented": true,
     "pass_boundary": true,
-    "collector_exists": true,
+    "unknown_cannot_pass": true,
+    "capability_known": true,
+    "endpoint_named": true,
+    "api_version_named": true,
+    "permission_declared": true,
+    "no_write_path": true,
+    "acquisition_declared": true,
     "observed_pass": true,
     "observed_fail": true,
-    "observed_unknown": true
+    "observed_unknown": true,
+    "observed_refusal": true
    },
    "rule_ready": true,
    "tenant_proven": false,

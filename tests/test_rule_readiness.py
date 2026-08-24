@@ -80,7 +80,7 @@ def _rule(**changed) -> dict:
 def test_a_rule_without_a_pass_boundary_is_refused(manifest):
     """`passes_without_resolving` is what separates this from a scanner."""
     verdict = readiness.readiness(
-        _rule(limitations={}), {"pass", "fail", "unknown"}, ["sites"], manifest
+        _rule(limitations={}), {"pass", "fail", "unknown"}, ["sites"], manifest, True
     )
     assert not verdict["rule_ready"]
     assert not verdict["checks"]["pass_boundary"]
@@ -88,16 +88,18 @@ def test_a_rule_without_a_pass_boundary_is_refused(manifest):
 
 def test_a_rule_nothing_can_decide_is_refused(manifest):
     """With no fixture reaching it, the three outcomes were never observed."""
-    verdict = readiness.readiness(_rule(), set(), ["sites"], manifest)
+    verdict = readiness.readiness(_rule(), set(), ["sites"], manifest, True)
     assert not verdict["rule_ready"]
     assert not any(verdict["checks"][f"observed_{o}"] for o in readiness.OBSERVED)
 
 
 def test_a_rule_no_collector_feeds_is_refused(manifest):
-    """A rule with no acquisition path is a question nobody can ask."""
-    verdict = readiness.readiness(_rule(), {"pass", "fail", "unknown"}, [], manifest)
+    """A rule with no acquisition path is a question nobody can ask, and with
+    no capability there is no endpoint, no API version and no permission
+    either: four conditions fall together because they are one fact."""
+    verdict = readiness.readiness(_rule(), {"pass", "fail", "unknown"}, [], manifest, True)
     assert not verdict["rule_ready"]
-    assert not verdict["checks"]["collector_exists"]
+    assert not verdict["checks"]["capability_known"]
 
 
 def test_there_is_no_exception_list(table):
@@ -127,3 +129,35 @@ def test_a_rule_that_never_met_a_tenant_does_not_pass(table):
         "run or this test stopped measuring"
     )
     assert table["tenant_proven"] + len(unproven) == table["rules"]
+
+
+def test_a_rule_that_never_met_a_refusal_is_refused(manifest):
+    """A refused read is not a missing fact.
+
+    One is the tenant saying no and the other is nobody having asked, and they
+    arrive at a rule looking identical: both are `unknown`. What separates them
+    is the coverage block. A rule shown only silence has an untested branch on
+    the path a real tenant reaches first, and this gate asked for a `refused`
+    OUTCOME at first -- which does not exist, so every rule failed it and the
+    failure looked like a catalogue problem rather than a gate problem.
+    """
+    verdict = readiness.readiness(
+        _rule(), {"pass", "fail", "unknown"}, ["sites"], manifest, False
+    )
+    assert not verdict["rule_ready"]
+    assert not verdict["checks"]["observed_refusal"]
+
+
+def test_a_permission_nobody_established_is_declared_rather_than_invented(tabela=None):
+    """`not-established` is an answer and passes; an empty list is an omission.
+
+    Least privilege is recorded where a source establishes it and invented
+    nowhere. A gate demanding a scope here would be asking somebody to make one
+    up, which is the failure this whole engine is built against.
+    """
+    table = readiness.build()
+    assert table["least_privilege_established"] < table["rules"], (
+        "every surface now has an established least privilege, or this stopped "
+        "measuring"
+    )
+    assert all(r["checks"]["permission_declared"] for r in table["detail"])
