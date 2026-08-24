@@ -1079,11 +1079,11 @@ def run_slice(
     # and not that what came back was read correctly. A collector that wrote
     # its own verdict would be the claim produced by the thing it is a claim
     # about, which is the arrangement the registry was built to end.
-    _write_proof_draft(outcome, name=name, output=output)
+    write_proof_draft(outcome, name=name, output=output)
     return outcome
 
 
-def _write_proof_draft(outcome: Outcome, *, name: str, output: Path) -> Path | None:
+def write_proof_draft(outcome: Outcome, *, name: str, output: Path) -> Path | None:
     """The sanitized record this run supports, written where the run wrote.
 
     Failure here never fails a collection. The evidence is the point of the
@@ -1391,6 +1391,23 @@ def _artefact(path: Path, parsed: dict | None, directory: Path) -> dict[str, Any
     }
 
 
+#: Files a collector writes BESIDE its evidence, which are not evidence.
+#:
+#: ONE LIST, READ BY EVERYTHING THAT WALKS AN OUTPUT DIRECTORY. There were two
+#: copies of this rule -- one here and one in the command line -- and only the
+#: first knew about the second name. `run` therefore wrote a live-proof draft
+#: into the evidence folder and then refused its own output: "the evidence does
+#: not match the schema. This is a defect in the collector". It was a defect in
+#: the list, and the one-command path was broken for every slice that records a
+#: proof.
+NOT_EVIDENCE = ("collection-manifest", "live-proof-draft")
+
+
+def is_evidence(path: Path) -> bool:
+    """Whether a `.json` under an output directory is a document to evaluate."""
+    return not path.name.startswith(NOT_EVIDENCE)
+
+
 def _union_coverage(documents: list[tuple[Path, dict | None]]) -> dict[str, Any]:
     """The artefacts' coverage, unioned by area name and never counted.
 
@@ -1497,16 +1514,12 @@ def _collection_directory(output: Path) -> Path:
 
 
 def _files(output: Path) -> list[Path]:
-    """The evidence under a path. Manifests are not evidence and never count.
+    """The evidence under a path. A collector's own bookkeeping never counts.
 
     Without this exclusion a second collection into one directory would read
     the first one's manifest as a document it had just written, digest it as
     evidence, and report it as having no coverage.
     """
     if output.is_dir():
-        return sorted(
-            path
-            for path in output.rglob("*.json")
-            if not path.name.startswith("collection-manifest")
-        )
+        return sorted(path for path in output.rglob("*.json") if is_evidence(path))
     return [output] if output.exists() else []

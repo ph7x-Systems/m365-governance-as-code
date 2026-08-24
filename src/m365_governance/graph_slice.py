@@ -320,4 +320,17 @@ def run(
         tenant_url=tenant_url,
         device_login=False,
     )
+
+    # THE GRAPH SLICES LEAVE THEIR PROOF TOO, and until now they did not.
+    #
+    # The draft is what raises a collector out of `none`, and only the
+    # PowerShell path wrote one -- so `tenant-governance` and
+    # `conditional-access` could be run against a real directory, return real
+    # evidence, decide thirteen rules, and still be published as never live
+    # tested. The registry was not wrong: nothing had ever told it.
+    #
+    # The comment on the PowerShell side says a step somebody has to remember
+    # is a step that gets skipped. That is exactly what happened here, one
+    # layer up: the writer was remembered for one of the two collectors.
+    collecting.write_proof_draft(outcome, name=name, output=output)
     return outcome

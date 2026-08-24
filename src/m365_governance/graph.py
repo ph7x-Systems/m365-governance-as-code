@@ -33,6 +33,7 @@ import base64
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
@@ -252,6 +253,27 @@ class GraphReader:
         self.identity = Identity.from_token(token)
         self.source_api = f"Microsoft Graph {version}"
 
+    @staticmethod
+    def _encoded(path: str) -> str:
+        """A path with its query encoded, because OData filters have spaces in.
+
+        `$filter=roleDefinitionId eq '62e9...'` is what Microsoft documents and
+        what a reader writes. It is also not a legal request target, and Python
+        refuses to send it: `URL can't contain control characters ... found at
+        least ' '`. So the slice that reads the directory's Global
+        Administrators could never have collected from any tenant, and no test
+        found it because none of them makes a request.
+
+        Only the query is touched, and `safe` keeps every character OData gives
+        meaning to -- `$`, `=`, `&`, `,`, `'` and the parentheses of a function
+        segment. Encoding those would change the request rather than transport
+        it, which is the failure this is fixing in the other direction.
+        """
+        head, sep, query = path.partition("?")
+        if not sep:
+            return head
+        return head + "?" + urllib.parse.quote(query, safe="$=&,'()/:*")
+
     def read(self, path: str) -> Read:
         """Every item of a collection, following the service's own next links.
 
@@ -259,7 +281,7 @@ class GraphReader:
         built its own page URLs would be deciding how the service paginates,
         and would keep working until the day the service changed its mind.
         """
-        url = f"{self._base}/{path.lstrip('/')}"
+        url = f"{self._base}/{self._encoded(path).lstrip('/')}"
         found: list[dict[str, Any]] = []
         seen: set[str] = set()
 
@@ -297,7 +319,9 @@ class GraphReader:
         Security Defaults is one object, not a list, and wrapping it in a list
         of one keeps every consumer reading a single shape.
         """
-        outcome = self._once(f"{self._base}/{path.lstrip('/')}", path, single=True)
+        outcome = self._once(
+            f"{self._base}/{self._encoded(path).lstrip('/')}", path, single=True
+        )
         if isinstance(outcome, Unavailable):
             return Read(path, [], outcome)
         return Read(path, outcome.items)

@@ -956,14 +956,7 @@ def _collect_from_graph(args, chosen) -> int:
         # remembered. The environment variable stays first -- a caller holding
         # a token spends that one and reaches no directory to get another --
         # and the certificate is what happens when there is none.
-        application = graph_token.Application(
-            client_id=getattr(args, "client_id", "") or "",
-            tenant_id=getattr(args, "tenant_id", "") or "",
-            certificate_path=getattr(args, "certificate_path", "") or "",
-            tenant_url=args.tenant_url,
-            certificate_password_env=getattr(args, "certificate_password_env", "")
-            or "",
-        )
+        application = _application_from(args)
         if not application.complete:
             print(
                 f"collect {args.slice} reads Microsoft Graph and never creates "
@@ -993,6 +986,43 @@ def _collect_from_graph(args, chosen) -> int:
     if outcome.stderr:
         print(outcome.stderr, file=sys.stderr)
     return _report_collection(args, chosen, outcome)
+
+
+#: One token per `run`, because minting it twice is signing in twice.
+_MINTED: dict[int, str] = {}
+
+
+def _graph_token_for(args) -> str:
+    """A Graph token for this invocation: the one exported, or one minted once.
+
+    THE ENVIRONMENT FIRST, ALWAYS. A caller holding a token spends that one and
+    reaches no directory to get another, which is the difference between using
+    an authorization and requesting a new one.
+    """
+    held = os.environ.get(graph_slice.TOKEN_VARIABLE, "")
+    if held:
+        return held
+    key = id(args)
+    if key not in _MINTED:
+        _MINTED[key] = graph_token.acquire(_application_from(args))
+    return _MINTED[key]
+
+
+def _application_from(args) -> graph_token.Application:
+    """The application registration named on the command line, if it is there.
+
+    One reading of these five arguments, shared by the command that mints a
+    token and the planner that decides whether one can be minted. Two readings
+    is how `run` and `collect` came to disagree about whether this machine
+    could reach Microsoft Graph.
+    """
+    return graph_token.Application(
+        client_id=getattr(args, "client_id", "") or "",
+        tenant_id=getattr(args, "tenant_id", "") or "",
+        certificate_path=getattr(args, "certificate_path", "") or "",
+        tenant_url=getattr(args, "tenant_url", "") or "",
+        certificate_password_env=getattr(args, "certificate_password_env", "") or "",
+    )
 
 
 def _report_collection(args, chosen, outcome) -> int:
@@ -1157,7 +1187,17 @@ def _cmd_run(args) -> int:
     steps = running.plan(
         site_url=args.site_url,
         tenant_url=args.tenant_url,
-        has_graph_token=bool(os.environ.get(graph_slice.TOKEN_VARIABLE)),
+        # A TOKEN THIS RUN COULD MINT COUNTS AS A TOKEN IT HAS.
+        #
+        # This asked only whether one was already exported, so `run` skipped
+        # every Graph slice while `collect` -- given the identical arguments --
+        # minted one from the certificate and collected. The operator supplied
+        # everything needed and the one command meant to take a target to a
+        # report silently dropped half the engine, including every rule about
+        # the directory. The plan then said `no token`, which was true and read
+        # as though nothing could be done about it.
+        has_graph_token=bool(os.environ.get(graph_slice.TOKEN_VARIABLE))
+        or _application_from(args).complete,
         # Asked before the plan is printed rather than after it is acted on.
         # The same check runs below before anything reaches a tenant; what
         # changed is that a dry run no longer promises what it would refuse.
@@ -1203,18 +1243,43 @@ def _cmd_run(args) -> int:
         # on its own, which is why nothing had ever seen this.
         into = args.output / step.name
         into.mkdir(parents=True, exist_ok=True)
-        outcome = collecting.run_slice(
-            step.name,
-            client_id=args.client_id,
-            output=into,
-            site_url=args.site_url,
-            tenant_url=args.tenant_url,
-            device_login=args.device_login,
-            tenant_id=args.tenant_id,
-            certificate_path=args.certificate_path,
-            certificate_password_env=args.certificate_password_env,
-            on_progress=lambda line: print(f"  {line}", file=sys.stderr, flush=True),
-        )
+        progress = lambda line: print(f"  {line}", file=sys.stderr, flush=True)  # noqa: E731
+        if step.slice.source == "graph":
+            # THE GRAPH SLICES RUN HERE TOO, and until now they could not.
+            #
+            # `run_slice` is the PowerShell path and refuses anything else, so
+            # every Graph slice reaching this line would have been refused --
+            # and before that the planner skipped them, so none ever reached
+            # it. Two halves of one omission, and together they meant the one
+            # command that takes a target to a report never read the directory:
+            # no authorization policy, no privileged roles, no authentication
+            # methods, and thirteen rules that could not appear in a report
+            # somebody ran the official way.
+            try:
+                graph = _graph_token_for(args)
+            except graph_token.Unavailable as refusal:
+                print(f"  {step.name}: {refusal}", file=sys.stderr)
+                continue
+            outcome = GRAPH_SLICES[step.name].run(
+                token=graph,
+                output=into,
+                tenant_url=args.tenant_url,
+                client_id=args.client_id,
+                on_progress=progress,
+            )
+        else:
+            outcome = collecting.run_slice(
+                step.name,
+                client_id=args.client_id,
+                output=into,
+                site_url=args.site_url,
+                tenant_url=args.tenant_url,
+                device_login=args.device_login,
+                tenant_id=args.tenant_id,
+                certificate_path=args.certificate_path,
+                certificate_password_env=args.certificate_password_env,
+                on_progress=progress,
+            )
         # Reported, never fatal. What a collection turned out to be is carried
         # in its own manifest, and a run that stopped at the first refusal
         # would throw away every slice that did work.
@@ -1610,9 +1675,7 @@ def _evidence_documents(path: Path) -> list[Path]:
     """
     if path.is_dir():
         return sorted(
-            found
-            for found in path.rglob("*.json")
-            if not found.name.startswith("collection-manifest")
+            found for found in path.rglob("*.json") if collecting.is_evidence(found)
         )
     if not path.exists():
         # Named here rather than left to the loader, because at this point the

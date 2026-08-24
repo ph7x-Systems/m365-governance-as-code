@@ -29,6 +29,7 @@ its caller spends immediately and nothing keeps.
 
 from __future__ import annotations
 
+import os
 import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -71,7 +72,26 @@ class Application:
 #: identifier that arrived from a project file is not a place to build a
 #: command out of string addition.
 SCRIPT = """
-param($ClientId, $TenantId, $CertificatePath, $Url, $PasswordEnv)
+# EVERY INPUT FROM THE ENVIRONMENT, AND NO `param()` BLOCK.
+#
+# This took its inputs as named parameters and was invoked with `-Command`,
+# which evaluates the text and never binds what follows it. So every value
+# arrived null and PnP reported the first null it refuses: `Cannot bind
+# argument to parameter 'Tenant'` -- a message about the directory, produced by
+# a working certificate against a working directory. No graph slice could
+# collect from any tenant.
+#
+# `-File` would bind them, and this module is forbidden to write ANY file: a
+# token it keeps outlives the authorization it was granted under, and the test
+# enforcing that scans this source for the calls that write, rather than
+# trusting intent. The environment costs nothing, binds reliably, and keeps
+# every value out of the process list -- which is what the password already
+# did, for the same reason.
+$ClientId = $env:PH7X_GRAPH_CLIENT_ID
+$TenantId = $env:PH7X_GRAPH_TENANT_ID
+$CertificatePath = $env:PH7X_GRAPH_CERTIFICATE
+$Url = $env:PH7X_GRAPH_URL
+$PasswordEnv = $env:PH7X_GRAPH_PASSWORD_ENV
 $ErrorActionPreference = 'Stop'
 Import-Module PnP.PowerShell -ErrorAction Stop
 $connect = @{
@@ -92,6 +112,27 @@ Get-PnPAccessToken -ResourceTypeName Graph
 """
 
 
+def environment_for(application: Application) -> dict[str, str]:
+    """What the child is told, as a value a test can read.
+
+    A function rather than a literal inside `acquire`, because the property
+    that matters here -- the password travels as the NAME of a variable and
+    never as the password -- was asserted against `argv` while the values were
+    parameters, and had nothing to read once they stopped being parameters. It
+    is asserted against this instead, which is the thing that decides it.
+    """
+    return {
+        "PH7X_GRAPH_CLIENT_ID": application.client_id,
+        "PH7X_GRAPH_TENANT_ID": application.tenant_id,
+        "PH7X_GRAPH_CERTIFICATE": application.certificate_path,
+        "PH7X_GRAPH_URL": application.tenant_url,
+        # THE NAME, NEVER THE PASSWORD. The child looks the variable up itself;
+        # this process never holds the value, and it is not in the process list
+        # for every account on this machine.
+        "PH7X_GRAPH_PASSWORD_ENV": application.certificate_password_env,
+    }
+
+
 def acquire(
     application: Application, *, timeout: int = 120, run: Runner | None = None
 ) -> str:
@@ -109,28 +150,13 @@ def acquire(
             "--certificate-path, or record them once in the project file."
         )
 
-    runner = run if run is not None else _subprocess(timeout)
-    argv = [
-        "pwsh",
-        "-NoProfile",
-        "-NonInteractive",
-        "-Command",
-        SCRIPT,
-        "-ClientId",
-        application.client_id,
-        "-TenantId",
-        application.tenant_id,
-        "-CertificatePath",
-        application.certificate_path,
-        "-Url",
-        application.tenant_url,
-        "-PasswordEnv",
-        # THE NAME, NEVER THE PASSWORD. A credential in `argv` is in
-        # the process list for every account on this machine and in
-        # the shell history afterwards. The child reads the variable
-        # itself; this process never holds the value.
-        application.certificate_password_env,
-    ]
+    argv = ["pwsh", "-NoProfile", "-NonInteractive", "-Command", SCRIPT]
+    environment = environment_for(application)
+    # THE ENVIRONMENT BELONGS TO THE RUNNER, NOT TO THE CALL. A second
+    # positional argument would have changed the contract every substituted
+    # runner in the tests is written against, to carry something no double
+    # needs. It is closed over here instead, so `Runner` stays `argv -> result`.
+    runner = run if run is not None else _subprocess(timeout, environment)
 
     try:
         finished = runner(argv)
@@ -170,13 +196,18 @@ def acquire(
     return token
 
 
-def _subprocess(timeout: int) -> Runner:
+def _subprocess(timeout: int, environment: dict[str, str] | None = None) -> Runner:
     """The real runner. Kept behind the parameter so the default is testable
     by substitution rather than by monkey-patching a module attribute."""
 
     def run(argv: list[str]) -> Any:
         return subprocess.run(  # noqa: S603
-            argv, capture_output=True, text=True, timeout=timeout, check=False
+            argv,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+            env={**os.environ, **(environment or {})},
         )
 
     return run

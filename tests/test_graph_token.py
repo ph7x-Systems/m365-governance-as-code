@@ -84,11 +84,20 @@ def test_the_certificate_password_travels_as_a_name_and_never_as_a_value():
     finally:
         del os.environ["PH7X_CERT_PASSWORD"]
 
-    assert argv[argv.index("-PasswordEnv") + 1] == "PH7X_CERT_PASSWORD", (
+    # THE ENVIRONMENT, NOT `argv`, AND THE PROPERTY IS THE SAME ONE. The values
+    # travelled as named parameters until a real run showed that `-Command`
+    # binds none of them, so they travel in the child's environment now. This
+    # asserts what decides it rather than where it used to be written.
+    environment = graph_token.environment_for(with_password)
+    assert environment["PH7X_GRAPH_PASSWORD_ENV"] == "PH7X_CERT_PASSWORD", (
         "what crosses is the name of the variable, and the child reads it"
     )
-    assert not any("correct-horse-battery-staple-8f21" in part for part in argv), (
+    leaked = "correct-horse-battery-staple-8f21"
+    assert not any(leaked in part for part in argv), (
         "the password itself reached the process list"
+    )
+    assert not any(leaked in value for value in environment.values()), (
+        "the password itself was handed to the child instead of its name"
     )
 
 

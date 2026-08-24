@@ -263,7 +263,7 @@ def test_a_collection_writes_its_draft_beside_the_evidence(tmp_path, monkeypatch
     """
     from m365_governance import collecting
 
-    written = collecting._write_proof_draft(
+    written = collecting.write_proof_draft(
         _FakeOutcome(), name="customization", output=tmp_path
     )
 
@@ -288,7 +288,7 @@ def test_the_draft_does_not_land_inside_the_package(tmp_path):
     """
     from m365_governance import collecting
 
-    written = collecting._write_proof_draft(
+    written = collecting.write_proof_draft(
         _FakeOutcome(), name="customization", output=tmp_path
     )
 
@@ -400,7 +400,7 @@ def test_a_collection_records_only_what_a_collection_did(tmp_path):
     """
     from m365_governance import collecting
 
-    written = collecting._write_proof_draft(
+    written = collecting.write_proof_draft(
         _FakeOutcome(), name="customization", output=tmp_path
     )
     stages = json.loads(written.read_text())["stages"]

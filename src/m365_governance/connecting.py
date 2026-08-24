@@ -478,8 +478,20 @@ def _because(
     if cancelled:
         reasons.append("the caller stopped the sign-in")
     if reach is Reach.ESTABLISHED:
-        reasons.append(f"a delegated session opened against {established.get('url')}")
-        scopes = established.get("scopes") or []
+        # THE KIND THE SESSION ACTUALLY WAS. This said `delegated` for every
+        # connection, and a certificate connection reported `identity
+        # application` four lines above it. The two halves of one screen
+        # disagreed about what had signed in -- and the wrong half was the one
+        # headed `Because:`, which is where a reader goes when they doubt the
+        # other.
+        kind = established.get("identity_kind") or "not-established"
+        article = "an" if kind[:1] in "aeiou" else "a"
+        opened = "a session" if kind == "not-established" else f"{article} {kind} session"
+        reasons.append(f"{opened} opened against {established.get('url')}")
+        # THE SAME FILTER THE RECORD USES, so the count and the list cannot
+        # disagree. It said `1 scopes granted` beside `scopes none reported`,
+        # because this counted a null the other had dropped.
+        scopes = [s for s in (established.get("scopes") or []) if isinstance(s, str) and s]
         reasons.append(
             f"{len(scopes)} scopes granted" if scopes else "no scopes were reported"
         )
@@ -562,7 +574,16 @@ def document(connection: Connection) -> dict[str, Any]:
             "client_id": session.get("client_id", ""),
             "identity_kind": session.get("identity_kind", "not-established"),
             "connection_type": session.get("connection_type", ""),
-            "scopes": list(session.get("scopes") or []),
+            # ONLY THE ONES THAT ARE STRINGS, and the reason is a real run.
+            # A certificate connection came back with a scope list holding a
+            # null, and `describe` joined it straight into a sentence: the CLI
+            # authenticated against a real tenant, established the session, and
+            # then died with a TypeError while printing what it had achieved.
+            # Nothing was wrong with the connection.
+            #
+            # Dropping it here rather than guarding the render keeps the record
+            # and the sentence agreeing, since both read this field.
+            "scopes": [s for s in (session.get("scopes") or []) if isinstance(s, str) and s],
             # NEVER `resolved_tenant_id`. That one is a lookup anybody can
             # perform without reaching this tenant, and copying it here would
             # make a public resolution indistinguishable from an observation, in
@@ -618,9 +639,14 @@ def describe(connection: Connection) -> str:
             f"  client id  {connection.established.get('client_id')}",
             f"  connection {connection.established.get('connection_type')}",
         ]
-        scopes = connection.established.get("scopes") or []
+        scopes = [s for s in (connection.established.get("scopes") or []) if s]
         if scopes:
             out.append(f"  scopes     {', '.join(sorted(scopes))}")
+        else:
+            # An application connection reports none, and that is not a finding
+            # about the grant: it is what the transport said. Saying so beats an
+            # absent line, which reads as a section nobody filled in.
+            out.append("  scopes     none reported by the connection")
         out += [
             "",
             "  WHICH DIRECTORY THIS SESSION OPERATED IN IS NOT ESTABLISHED, and",
