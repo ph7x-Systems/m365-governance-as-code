@@ -1,694 +1,706 @@
 {
-  "_readme": [
-    "WHAT EACH FIXTURE IS, and what may be said about it in public.",
-    "",
-    "This lives OUTSIDE the evidence documents on purpose. `acquisition`",
-    "answers how real evidence reached an Assessment -- `collected` or",
-    "`imported` -- and adding `synthetic` to it would let a production",
-    "Assessment validate constructed evidence. They are two questions: one is",
-    "about the evidence, the other is about what that file is for in this",
-    "repository.",
-    "",
-    "It exists because the product page presented `list-over-limit.json` with",
-    "`Collected` and a date, and it read as a reading taken from a tenant. It",
-    "is a construction. The result the Engine produces from it is true; the",
-    "evidence was never observed anywhere.",
-    "",
-    "`may_be_presented_as_tenant_observation` is the field consumers read.",
-    "No synthetic fixture may carry it as `true`."
-  ],
-  "fixtures": [
-    {
-      "path": "fixtures/archive/evidence-1.2.0-site.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/assessment/classification.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/assessment/three-resources.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/comparison/sharing-mitigated.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-authorization-policy-directory-unreadable.json",
-      "origin": "synthetic",
-      "purpose": "the default user role prevented from reading other users, which Microsoft's own reference instructs in capitals not to do",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-authorization-policy-open-defaults.json",
-      "origin": "synthetic",
-      "purpose": "the tenant's authorization policy on the values Microsoft ships by default, with consent for risky applications additionally enabled",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-authorization-policy-restrained.json",
-      "origin": "synthetic",
-      "purpose": "the same policy with guest invitations, application creation, tenant creation and user consent all narrowed, which is the after state for four rules",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-conditional-access-everyone-no-exclusion.json",
-      "origin": "synthetic",
-      "purpose": "a policy including every user and excluding nobody: the fail path of CA-RECOVERY-001, where the administrators who would correct a misconfiguration are subject to it",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-conditional-access-everyone-with-break-glass.json",
-      "origin": "synthetic",
-      "purpose": "the same policy with one account excluded: CA-RECOVERY-001 passes and CA-SCOPE-001 still fails, because an exclusion is a recovery path and not workload identity coverage",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-conditional-access-mfa-for-admins.json",
-      "origin": "synthetic",
-      "purpose": "a policy requiring multifactor authentication for administrators, with the authentication strength embedded as Microsoft returns it",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-conditional-access-permission-denied.json",
-      "origin": "synthetic",
-      "purpose": "an area the identity was not permitted to read, so that a denial can be told apart from a tenant with no Conditional Access",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-conditional-access-report-only.json",
-      "origin": "synthetic",
-      "purpose": "a policy in report-only mode, which is the only state that reaches CA-STATE-001's fail path: it is evaluated at every sign-in and enforces nothing",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-conditional-access-scoped-to-a-group.json",
-      "origin": "synthetic",
-      "purpose": "a policy scoped to one group: CA-RECOVERY-001 does not apply, because administrators outside the scope can still sign in and change it",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-global-administrators-all-synced.json",
-      "origin": "synthetic",
-      "purpose": "three Global Administrator assignments all synchronised from on-premises, so no cloud-only account exists to be an emergency access account",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-global-administrators-healthy.json",
-      "origin": "synthetic",
-      "purpose": "two cloud-only and one synchronised Global Administrator plus a service principal, which is the after state for all three role rules",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-global-administrators-single-account.json",
-      "origin": "synthetic",
-      "purpose": "one Global Administrator assignment, below the two Microsoft asks for so that a locked-out tenant has a way back in",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-global-administrators-too-many.json",
-      "origin": "synthetic",
-      "purpose": "seven Global Administrator assignments, above the fewer-than-five Microsoft publishes and draws an alert card at",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-named-location-trusted-range.json",
-      "origin": "synthetic",
-      "purpose": "a trusted IP named location, using a documentation range that belongs to nobody",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/entra/entra-security-defaults-off.json",
-      "origin": "synthetic",
-      "purpose": "Security Defaults observed as disabled, which is an observation and not a finding",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/exchange/exchange-forwarding-ambiguous-mode.json",
-      "origin": "synthetic",
-      "purpose": "the default outbound spam policy on Automatic - System-controlled, whose behaviour differs by organisation: the fail path of EXO-FORWARD-001",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/exchange/exchange-forwarding-explicitly-off.json",
-      "origin": "synthetic",
-      "purpose": "every policy explicit and every remote domain blocking: both rules pass, and neither says mail cannot leave",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/exchange/exchange-forwarding-remote-domains-allow.json",
-      "origin": "synthetic",
-      "purpose": "a partner domain permitting automatic forwarding while the policies are explicit: EXO-FORWARD-002 fails and EXO-FORWARD-001 does not",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-assignment-observed.json",
-      "origin": "sanitized-observation",
-      "purpose": "the shape of a real assignment acquisition: SKUs and assigned units read, the report identifiability setting observed as concealed, usage and dependency not observed. The directory it came from is not identified and the counts are not that tenant's",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-assignment-only.json",
-      "origin": "synthetic",
-      "purpose": "assignment read with no usage report; constructed so unread is not read as unused",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-capacity-joined.json",
-      "origin": "synthetic",
-      "purpose": "the commercial subscriptions read and joined: a bought subscription, one on a free evaluation, a Company SKU, two free self-service programmes that report isTrial false, and one SKU whose subscription was not returned",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-capacity-mixed.json",
-      "origin": "synthetic",
-      "purpose": "one SKU of every class the read can settle and one it cannot: a Company target, a subscription in warning, a cancelled one, an undocumented target class, and a row carrying a million units so no threshold can be introduced without failing a test",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-capacity-unsupported.json",
-      "origin": "synthetic",
-      "purpose": "the commercial subscription surface answering that it does not exist in this cloud, which is not the same answer as a run that did not ask",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-graph-modules-absent.json",
-      "origin": "sanitized-observation",
-      "purpose": "a real collector run on a machine without the Microsoft Graph modules; the host is replaced because the document establishes nothing about any tenant and the name would be a customer identifier for no evidential gain",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-usage-concealed.json",
-      "origin": "synthetic",
-      "purpose": "usage read and unattributable; constructed to exercise the default tenant, where no per-user licensing conclusion is possible",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-usage-identifiable.json",
-      "origin": "synthetic",
-      "purpose": "usage attributable; constructed to exercise the tenant that turned concealment off",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-usage-read-and-concealed.json",
-      "origin": "synthetic",
-      "purpose": "the same report in a tenant that conceals identifiable information; constructed so that rows returned and rows attributable are read as two different numbers",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/licensing/tenant-usage-read-and-named.json",
-      "origin": "synthetic",
-      "purpose": "a usage report read in a tenant that allows attribution; constructed to exercise rows that name a principal",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/migration/after-cutover.json",
-      "origin": "synthetic",
-      "purpose": "the same estate afterwards, with one library unreadable; constructed so a verification can be produced and checked without a tenant",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/migration/before-cutover.json",
-      "origin": "synthetic",
-      "purpose": "the estate as it stood before a move; constructed so a verification can be produced and checked without a tenant",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-catalog-over-hard-limit.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-class-application.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-class-catalog.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-class-content.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-class-system-and-application.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-class-system.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-class-unknown.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-count-invalid.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-count-not-collected.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-inheritance-not-collected.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-over-limit.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-scopes-counted-in-part.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-scopes-not-counted.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-scopes-over-hard-limit.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-scopes-over-recommended.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-scopes-within-recommended.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-unique-permissions.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/list-within-limit.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-activity-archived.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-activity-locked.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-activity-not-read.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-activity-recent.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-activity-stale.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-agents-none-in-this-population.json",
-      "origin": "synthetic",
-      "purpose": "zero agents in the enumerated population; constructed so a count of zero is not read as no agents existing in the tenant",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-agents-with-sources.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-group-unlabelled.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-invalid.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-label-invalid.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-label-unresolved.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-labelled.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-legacy-string.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-not-read.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-observed-20260810.json",
-      "origin": "sanitized-observation",
-      "purpose": "evidence read from a real site on 2026-08-10, with the tenant, the URL and the group GUID replaced",
-      "may_be_presented_as_tenant_observation": true
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-string-and-label.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-class-unlabelled.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-customization-pages-feature-absent.json",
-      "origin": "synthetic",
-      "purpose": "the Site Pages feature absent and the library refused; constructed so absence and refusal are not conflated",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-customization-script-permitted.json",
-      "origin": "synthetic",
-      "purpose": "a site holding custom script open, which is the only state that reaches SPO-SCRIPT-001's fail path; every other customization fixture is blocked or unread",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-customization-script-status-unknown.json",
-      "origin": "synthetic",
-      "purpose": "DenyAddAndCustomizePagesStatus is an enum of Unknown, Disabled and Enabled, and Unknown is the platform declining to answer rather than a read that failed. Born from the live tenant read that found the enum",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-customization-surfaces-observed.json",
-      "origin": "synthetic",
-      "purpose": "every customization surface read; constructed to exercise the complete path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-customization-tenant-read-not-made.json",
-      "origin": "synthetic",
-      "purpose": "the tenant-scoped read nobody made; constructed so unread is not read as unset",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-delegated-identity.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-groups-only-admins.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-imported-inventory.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-modern-clean.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-modern-custom-master.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-modern-not-read.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-modern-publishing-on.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-modern-subsite-default-master.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-named-and-group-admins.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-one-owner.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-owners-group-not-expanded.json",
-      "origin": "sanitized-observation",
-      "purpose": "the owners of a group-connected site, read on 2026-08-18, with the tenant, the site and the group id replaced. Two things broke here: the coverage block says the slice completed while the only administrator is a group nobody expanded, and the pair below shares this resource",
-      "may_be_presented_as_tenant_observation": true
-    },
-    {
-      "path": "fixtures/sharepoint/site-owners-not-collected.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-owners-unreadable-by-application.json",
-      "origin": "sanitized-observation",
-      "purpose": "the same site as site-owners-group-not-expanded, read on 2026-08-18 by an APPLICATION-only identity holding Sites.Read.All instead of a person. Get-PnPSiteCollectionAdmin returned nothing at all, and the collector published an exact zero with the expansion marked complete: SPO-SITE-001 reported `The site has 0 owner` about a site whose administrator the delegated read saw in the same minute",
-      "may_be_presented_as_tenant_observation": true
-    },
-    {
-      "path": "fixtures/sharepoint/site-partial-expansion-decides.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-partial-expansion-undecided.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-anyone-default-anyone.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-anyone-default-direct.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-beside-owners.json",
-      "origin": "sanitized-observation",
-      "purpose": "the sharing settings of the SAME site as the fixture above, read in the same run. It is here as a pair: two documents about one resource is what collect produces for two slices, and assess refused it",
-      "may_be_presented_as_tenant_observation": true
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-default-permission-edit.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-default-permission-inherits.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-default-permission-view.json",
-      "origin": "synthetic",
-      "purpose": "no tenant provenance; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-guests-only.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-inherits-tenant-default.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-sharing-not-collected.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-spfx-behind.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-spfx-current.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-spfx-no-catalog.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-spfx-pages-unreconciled.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-spfx-tenant-catalog-not-comparable.json",
-      "origin": "sanitized-observation",
-      "purpose": "a tenant app catalog read on 2026-08-18: ten solutions, none of them reporting an installed version, with the tenant, the site path and every solution title and id replaced. It is here because it is the shape that produced a false pass: a tenant catalog records installation per site, so nothing was comparable and the count of solutions behind was zero out of nothing",
-      "may_be_presented_as_tenant_observation": true
-    },
-    {
-      "path": "fixtures/sharepoint/site-storage-comfortable.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-storage-nearly-full.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-storage-no-quota.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/site-two-owners.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/tenant-brand-center-public-cdn.json",
-      "origin": "synthetic",
-      "purpose": "a tenant whose brand assets are published across a public CDN origin: two organisation asset libraries, public CDN on, private off, and the two documented consequences of a public origin carried as facts",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/tenant-sharing-default-anyone-and-edit.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/tenant-sharing-internal-only.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/tenant-sharing-mitigated.json",
-      "origin": "synthetic",
-      "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
-      "may_be_presented_as_tenant_observation": false
-    },
-    {
-      "path": "fixtures/sharepoint/tenant-sharing-observed-20260808.json",
-      "origin": "sanitized-observation",
-      "purpose": "cited in the record of a run against a tenant, with the tenant removed",
-      "may_be_presented_as_tenant_observation": true
-    }
-  ]
+ "_readme": [
+  "WHAT EACH FIXTURE IS, and what may be said about it in public.",
+  "",
+  "This lives OUTSIDE the evidence documents on purpose. `acquisition`",
+  "answers how real evidence reached an Assessment -- `collected` or",
+  "`imported` -- and adding `synthetic` to it would let a production",
+  "Assessment validate constructed evidence. They are two questions: one is",
+  "about the evidence, the other is about what that file is for in this",
+  "repository.",
+  "",
+  "It exists because the product page presented `list-over-limit.json` with",
+  "`Collected` and a date, and it read as a reading taken from a tenant. It",
+  "is a construction. The result the Engine produces from it is true; the",
+  "evidence was never observed anywhere.",
+  "",
+  "`may_be_presented_as_tenant_observation` is the field consumers read.",
+  "No synthetic fixture may carry it as `true`."
+ ],
+ "fixtures": [
+  {
+   "path": "fixtures/archive/evidence-1.2.0-site.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/assessment/classification.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/assessment/three-resources.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/comparison/sharing-mitigated.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-authorization-policy-closed-defaults.json",
+   "origin": "synthetic",
+   "purpose": "the same policy with the documented closed values: email-verified join off, MSOnline PowerShell blocked, guests on the Restricted Guest User template",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-authorization-policy-directory-unreadable.json",
+   "origin": "synthetic",
+   "purpose": "the default user role prevented from reading other users, which Microsoft's own reference instructs in capitals not to do",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-authorization-policy-guests-as-members.json",
+   "origin": "synthetic",
+   "purpose": "guests granted the full User role template, which Microsoft documents as one of three supported values",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-authorization-policy-open-defaults.json",
+   "origin": "synthetic",
+   "purpose": "the tenant's authorization policy on the values Microsoft ships by default, with consent for risky applications additionally enabled",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-authorization-policy-restrained.json",
+   "origin": "synthetic",
+   "purpose": "the same policy with guest invitations, application creation, tenant creation and user consent all narrowed, which is the after state for four rules",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-conditional-access-everyone-no-exclusion.json",
+   "origin": "synthetic",
+   "purpose": "a policy including every user and excluding nobody: the fail path of CA-RECOVERY-001, where the administrators who would correct a misconfiguration are subject to it",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-conditional-access-everyone-with-break-glass.json",
+   "origin": "synthetic",
+   "purpose": "the same policy with one account excluded: CA-RECOVERY-001 passes and CA-SCOPE-001 still fails, because an exclusion is a recovery path and not workload identity coverage",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-conditional-access-mfa-for-admins.json",
+   "origin": "synthetic",
+   "purpose": "a policy requiring multifactor authentication for administrators, with the authentication strength embedded as Microsoft returns it",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-conditional-access-permission-denied.json",
+   "origin": "synthetic",
+   "purpose": "an area the identity was not permitted to read, so that a denial can be told apart from a tenant with no Conditional Access",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-conditional-access-report-only.json",
+   "origin": "synthetic",
+   "purpose": "a policy in report-only mode, which is the only state that reaches CA-STATE-001's fail path: it is evaluated at every sign-in and enforces nothing",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-conditional-access-scoped-to-a-group.json",
+   "origin": "synthetic",
+   "purpose": "a policy scoped to one group: CA-RECOVERY-001 does not apply, because administrators outside the scope can still sign in and change it",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-global-administrators-all-synced.json",
+   "origin": "synthetic",
+   "purpose": "three Global Administrator assignments all synchronised from on-premises, so no cloud-only account exists to be an emergency access account",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-global-administrators-healthy.json",
+   "origin": "synthetic",
+   "purpose": "two cloud-only and one synchronised Global Administrator plus a service principal, which is the after state for all three role rules",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-global-administrators-single-account.json",
+   "origin": "synthetic",
+   "purpose": "one Global Administrator assignment, below the two Microsoft asks for so that a locked-out tenant has a way back in",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-global-administrators-too-many.json",
+   "origin": "synthetic",
+   "purpose": "seven Global Administrator assignments, above the fewer-than-five Microsoft publishes and draws an alert card at",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-named-location-trusted-range.json",
+   "origin": "synthetic",
+   "purpose": "a trusted IP named location, using a documentation range that belongs to nobody",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/entra/entra-security-defaults-off.json",
+   "origin": "synthetic",
+   "purpose": "Security Defaults observed as disabled, which is an observation and not a finding",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/exchange/exchange-forwarding-ambiguous-mode.json",
+   "origin": "synthetic",
+   "purpose": "the default outbound spam policy on Automatic - System-controlled, whose behaviour differs by organisation: the fail path of EXO-FORWARD-001",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/exchange/exchange-forwarding-explicitly-off.json",
+   "origin": "synthetic",
+   "purpose": "every policy explicit and every remote domain blocking: both rules pass, and neither says mail cannot leave",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/exchange/exchange-forwarding-remote-domains-allow.json",
+   "origin": "synthetic",
+   "purpose": "a partner domain permitting automatic forwarding while the policies are explicit: EXO-FORWARD-002 fails and EXO-FORWARD-001 does not",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-assignment-observed.json",
+   "origin": "sanitized-observation",
+   "purpose": "the shape of a real assignment acquisition: SKUs and assigned units read, the report identifiability setting observed as concealed, usage and dependency not observed. The directory it came from is not identified and the counts are not that tenant's",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-assignment-only.json",
+   "origin": "synthetic",
+   "purpose": "assignment read with no usage report; constructed so unread is not read as unused",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-capacity-joined.json",
+   "origin": "synthetic",
+   "purpose": "the commercial subscriptions read and joined: a bought subscription, one on a free evaluation, a Company SKU, two free self-service programmes that report isTrial false, and one SKU whose subscription was not returned",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-capacity-mixed.json",
+   "origin": "synthetic",
+   "purpose": "one SKU of every class the read can settle and one it cannot: a Company target, a subscription in warning, a cancelled one, an undocumented target class, and a row carrying a million units so no threshold can be introduced without failing a test",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-capacity-unsupported.json",
+   "origin": "synthetic",
+   "purpose": "the commercial subscription surface answering that it does not exist in this cloud, which is not the same answer as a run that did not ask",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-graph-modules-absent.json",
+   "origin": "sanitized-observation",
+   "purpose": "a real collector run on a machine without the Microsoft Graph modules; the host is replaced because the document establishes nothing about any tenant and the name would be a customer identifier for no evidential gain",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-usage-concealed.json",
+   "origin": "synthetic",
+   "purpose": "usage read and unattributable; constructed to exercise the default tenant, where no per-user licensing conclusion is possible",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-usage-identifiable.json",
+   "origin": "synthetic",
+   "purpose": "usage attributable; constructed to exercise the tenant that turned concealment off",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-usage-read-and-concealed.json",
+   "origin": "synthetic",
+   "purpose": "the same report in a tenant that conceals identifiable information; constructed so that rows returned and rows attributable are read as two different numbers",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/licensing/tenant-usage-read-and-named.json",
+   "origin": "synthetic",
+   "purpose": "a usage report read in a tenant that allows attribution; constructed to exercise rows that name a principal",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/migration/after-cutover.json",
+   "origin": "synthetic",
+   "purpose": "the same estate afterwards, with one library unreadable; constructed so a verification can be produced and checked without a tenant",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/migration/before-cutover.json",
+   "origin": "synthetic",
+   "purpose": "the estate as it stood before a move; constructed so a verification can be produced and checked without a tenant",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-catalog-over-hard-limit.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-class-application.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-class-catalog.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-class-content.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-class-system-and-application.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-class-system.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-class-unknown.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-count-invalid.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-count-not-collected.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-inheritance-not-collected.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-over-limit.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-scopes-counted-in-part.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-scopes-not-counted.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-scopes-over-hard-limit.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-scopes-over-recommended.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-scopes-within-recommended.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-unique-permissions.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/list-within-limit.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-activity-archived.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-activity-locked.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-activity-not-read.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-activity-recent.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-activity-stale.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-agents-none-in-this-population.json",
+   "origin": "synthetic",
+   "purpose": "zero agents in the enumerated population; constructed so a count of zero is not read as no agents existing in the tenant",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-agents-with-sources.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-group-unlabelled.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-invalid.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-label-invalid.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-label-unresolved.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-labelled.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-legacy-string.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-not-read.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-observed-20260810.json",
+   "origin": "sanitized-observation",
+   "purpose": "evidence read from a real site on 2026-08-10, with the tenant, the URL and the group GUID replaced",
+   "may_be_presented_as_tenant_observation": true
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-string-and-label.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-class-unlabelled.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-customization-pages-feature-absent.json",
+   "origin": "synthetic",
+   "purpose": "the Site Pages feature absent and the library refused; constructed so absence and refusal are not conflated",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-customization-script-permitted.json",
+   "origin": "synthetic",
+   "purpose": "a site holding custom script open, which is the only state that reaches SPO-SCRIPT-001's fail path; every other customization fixture is blocked or unread",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-customization-script-status-unknown.json",
+   "origin": "synthetic",
+   "purpose": "DenyAddAndCustomizePagesStatus is an enum of Unknown, Disabled and Enabled, and Unknown is the platform declining to answer rather than a read that failed. Born from the live tenant read that found the enum",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-customization-surfaces-observed.json",
+   "origin": "synthetic",
+   "purpose": "every customization surface read; constructed to exercise the complete path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-customization-tenant-read-not-made.json",
+   "origin": "synthetic",
+   "purpose": "the tenant-scoped read nobody made; constructed so unread is not read as unset",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-delegated-identity.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-groups-only-admins.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-imported-inventory.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-modern-clean.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-modern-custom-master.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-modern-not-read.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-modern-publishing-on.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-modern-subsite-default-master.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-named-and-group-admins.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-one-owner.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-owners-group-not-expanded.json",
+   "origin": "sanitized-observation",
+   "purpose": "the owners of a group-connected site, read on 2026-08-18, with the tenant, the site and the group id replaced. Two things broke here: the coverage block says the slice completed while the only administrator is a group nobody expanded, and the pair below shares this resource",
+   "may_be_presented_as_tenant_observation": true
+  },
+  {
+   "path": "fixtures/sharepoint/site-owners-not-collected.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-owners-unreadable-by-application.json",
+   "origin": "sanitized-observation",
+   "purpose": "the same site as site-owners-group-not-expanded, read on 2026-08-18 by an APPLICATION-only identity holding Sites.Read.All instead of a person. Get-PnPSiteCollectionAdmin returned nothing at all, and the collector published an exact zero with the expansion marked complete: SPO-SITE-001 reported `The site has 0 owner` about a site whose administrator the delegated read saw in the same minute",
+   "may_be_presented_as_tenant_observation": true
+  },
+  {
+   "path": "fixtures/sharepoint/site-partial-expansion-decides.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-partial-expansion-undecided.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-anyone-default-anyone.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-anyone-default-direct.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-beside-owners.json",
+   "origin": "sanitized-observation",
+   "purpose": "the sharing settings of the SAME site as the fixture above, read in the same run. It is here as a pair: two documents about one resource is what collect produces for two slices, and assess refused it",
+   "may_be_presented_as_tenant_observation": true
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-default-permission-edit.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-default-permission-inherits.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-default-permission-view.json",
+   "origin": "synthetic",
+   "purpose": "no tenant provenance; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-guests-only.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-inherits-tenant-default.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-sharing-not-collected.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-spfx-behind.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-spfx-current.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-spfx-no-catalog.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-spfx-pages-unreconciled.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-spfx-tenant-catalog-not-comparable.json",
+   "origin": "sanitized-observation",
+   "purpose": "a tenant app catalog read on 2026-08-18: ten solutions, none of them reporting an installed version, with the tenant, the site path and every solution title and id replaced. It is here because it is the shape that produced a false pass: a tenant catalog records installation per site, so nothing was comparable and the count of solutions behind was zero out of nothing",
+   "may_be_presented_as_tenant_observation": true
+  },
+  {
+   "path": "fixtures/sharepoint/site-storage-comfortable.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-storage-nearly-full.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-storage-no-quota.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/site-two-owners.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/tenant-brand-center-public-cdn.json",
+   "origin": "synthetic",
+   "purpose": "a tenant whose brand assets are published across a public CDN origin: two organisation asset libraries, public CDN on, private off, and the two documented consequences of a public origin carried as facts",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/tenant-sharing-default-anyone-and-edit.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/tenant-sharing-internal-only.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/tenant-sharing-mitigated.json",
+   "origin": "synthetic",
+   "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+   "may_be_presented_as_tenant_observation": false
+  },
+  {
+   "path": "fixtures/sharepoint/tenant-sharing-observed-20260808.json",
+   "origin": "sanitized-observation",
+   "purpose": "cited in the record of a run against a tenant, with the tenant removed",
+   "may_be_presented_as_tenant_observation": true
+  }
+ ]
 }

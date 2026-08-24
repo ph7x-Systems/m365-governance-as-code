@@ -1256,3 +1256,68 @@ def test_a_user_created_tenant_is_a_directory_nobody_here_governs(fixture, outco
     from conftest import rule
 
     assert evaluate_rule(rule("ENTRA-AUTH-004"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-open-defaults", Outcome.FAIL),
+        ("entra-authorization-policy-closed-defaults", Outcome.PASS),
+        ("entra-global-administrators-healthy", Outcome.UNKNOWN),
+    ],
+)
+def test_an_address_in_a_verified_domain_is_a_second_door(fixture, outcome):
+    """`ENTRA-AUTH-005`. The setting creates MEMBERS, not guests, and that is
+    why it is read separately from the invitation controls: an organisation
+    that restricted who may invite has not restricted this. Microsoft states it
+    is company-wide across every verified domain, so the reach of the finding
+    is the whole directory rather than one domain somebody remembers.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-005"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-open-defaults", Outcome.FAIL),
+        ("entra-authorization-policy-closed-defaults", Outcome.PASS),
+        ("entra-global-administrators-healthy", Outcome.UNKNOWN),
+    ],
+)
+def test_the_legacy_endpoint_is_the_finding_not_the_module(fixture, outcome):
+    """`ENTRA-AUTH-006`. Microsoft's own sentence is what makes this worth
+    checking: blocking the module "also disables user-based access to the
+    legacy service endpoint" and "doesn't affect Microsoft Entra Connect or
+    Microsoft Graph". The first half is the exposure and the second half is why
+    closing it is usually available.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-006"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-guests-as-members", Outcome.FAIL),
+        ("entra-authorization-policy-open-defaults", Outcome.PASS),
+        ("entra-authorization-policy-closed-defaults", Outcome.PASS),
+        ("entra-global-administrators-healthy", Outcome.UNKNOWN),
+    ],
+)
+def test_a_guest_holding_the_member_role_is_not_a_guest(fixture, outcome):
+    """`ENTRA-GUEST-001`. Microsoft publishes a closed set of three templates,
+    and the finding is which of the three. `User` is not a permissive guest
+    role: it is the member role, and a directory holding it has decided that
+    being invited and being employed read the organisation on the same terms.
+    Most tenants holding it did not decide that -- they inherited it.
+
+    The default, `Guest User`, passes here. A pass is not a statement that the
+    guest reach is right; it is a statement that it is narrower than a
+    member's.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-GUEST-001"), evidence(fixture)).outcome is outcome

@@ -1,0 +1,97 @@
+# THE OLD DOOR IS STILL OPEN.
+#
+# MSOnline PowerShell reaches a legacy service endpoint. The setting that
+# closes it is one boolean, and Microsoft documents exactly what closing it
+# does and does not affect.
+
+schema_version: "1.0"
+id: ENTRA-AUTH-006
+version: "1.0"
+title: The legacy MSOnline PowerShell endpoint is reachable by users
+description: >
+  User-based access to the legacy service endpoint the MSOnline PowerShell
+  module uses is not blocked, so that path into the directory is open to users
+  as well as to administrators.
+
+service: entra
+resource_type: authorization-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/graph/api/resources/authorizationpolicy
+      title: authorizationPolicy resource type
+      publisher: Microsoft
+      checked_at: "2026-08-24"
+  rationale: >
+    Microsoft documents the setting and its exact reach: "To disable the use of
+    MSOL PowerShell, set this property to `true`. This also disables user-based
+    access to the legacy service endpoint used by MSOL PowerShell. This doesn't
+    affect Microsoft Entra Connect or Microsoft Graph."
+
+    THE SECOND SENTENCE IS WHY THIS IS WORTH READING. What the flag closes is
+    not only a module: it is user-based access to a legacy endpoint. And the
+    third sentence is why closing it is usually available -- the paths an
+    organisation actually depends on, Entra Connect and Graph, are documented
+    as unaffected.
+
+    Microsoft states the mechanism rather than recommending a value, so this
+    reports what the setting leaves reachable and does not say it is wrong.
+
+severity:
+  default: medium
+  rationale: >
+    A legacy endpoint reachable by users is an authentication surface that
+    predates the controls applied to the modern ones. Not high because reaching
+    it still requires an account and whatever that account is subject to, and
+    not low because it is a path most tenants no longer intend to keep.
+  configurable: true
+
+evidence_requirements:
+  - path: authorization_policy.msol_powershell_blocked
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: authorization_policy.msol_powershell_blocked
+  value: false
+
+outcomes:
+  pass:
+    message: >
+      MSOnline PowerShell is blocked, which Microsoft documents as also
+      disabling user-based access to the legacy service endpoint it uses.
+  fail:
+    message: >
+      MSOnline PowerShell is not blocked, so user-based access to the legacy
+      service endpoint it uses remains open. Microsoft documents that blocking
+      it does not affect Microsoft Entra Connect or Microsoft Graph.
+  unknown:
+    message: >
+      Whether MSOnline PowerShell is blocked was not read, so whether the
+      legacy endpoint is reachable is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authorization policy.
+  invalid_evidence:
+    message: >
+      The MSOnline setting was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Setting `blockMsolPowerShell` to true disables the module and user-based
+  access to the legacy endpoint behind it. Microsoft documents that Microsoft
+  Entra Connect and Microsoft Graph are unaffected, so the paths most tenants
+  depend on continue to work.
+
+limitations:
+  passes_without_resolving: >
+    BLOCKED IS NOT UNTOUCHED. A pass says the door is shut now. It says
+    nothing about what was done through it while it was open, and nothing about
+    whether a script somewhere still expects it.
+  other:
+    - >
+      This reads one tenant-level setting. Whether any other legacy
+      authentication surface remains reachable is a separate question, and a
+      pass here is not an answer to it.

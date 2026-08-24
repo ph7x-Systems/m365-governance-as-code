@@ -1,0 +1,167 @@
+{
+ "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+ "provenance": {
+  "collected_at": "2026-08-23T09:00:00Z",
+  "collector": "graph-tenant-governance",
+  "collector_version": "1.0.0",
+  "source_system": "Microsoft Entra ID",
+  "source_api": "Microsoft Graph v1.0",
+  "identity_kind": "application",
+  "scopes": [
+   "Policy.Read.All",
+   "RoleManagement.Read.Directory"
+  ],
+  "acquisition": "collected",
+  "tenant": {
+   "id": "c0ffee00-0000-4000-8000-000000000001",
+   "host": "contoso.sharepoint.com"
+  }
+ },
+ "coverage": {
+  "requested": [
+   "authorization_policy",
+   "global_administrators"
+  ],
+  "completed": [
+   "global_administrators",
+   "authorization_policy"
+  ],
+  "unavailable": {}
+ },
+ "resource": {
+  "workload": "entra",
+  "type": "authorization-policy",
+  "native_id": "contoso.sharepoint.com",
+  "tenant": {
+   "id": "c0ffee00-0000-4000-8000-000000000001",
+   "host": "contoso.sharepoint.com"
+  },
+  "scope": "tenant",
+  "parent": {
+   "workload": "entra",
+   "type": "tenant",
+   "native_id": "contoso.sharepoint.com"
+  },
+  "display_name": "Authorization Policy (closed defaults)"
+ },
+ "facts": {
+  "authorization_policy": {
+   "policy": {
+    "state": "observed",
+    "value": {
+     "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#policies/authorizationPolicy/$entity",
+     "id": "authorizationPolicy",
+     "displayName": "Authorization Policy",
+     "description": "Used to manage authorization related settings across the company.",
+     "allowInvitesFrom": "everyone",
+     "allowUserConsentForRiskyApps": true,
+     "allowEmailVerifiedUsersToJoinOrganization": false,
+     "allowedToSignUpEmailBasedSubscriptions": true,
+     "allowedToUseSSPR": true,
+     "blockMsolPowerShell": true,
+     "guestUserRoleId": "2af84b1e-32c8-42b7-82bc-daa82404023b",
+     "defaultUserRolePermissions": {
+      "allowedToCreateApps": true,
+      "allowedToCreateSecurityGroups": true,
+      "allowedToCreateTenants": true,
+      "allowedToReadOtherUsers": true,
+      "allowedToReadBitlockerKeysForOwnedDevice": true,
+      "permissionGrantPoliciesAssigned": [
+       "ManagePermissionGrantsForSelf.microsoft-user-default-legacy"
+      ]
+     }
+    }
+   },
+   "guest_invitations_from": {
+    "state": "observed",
+    "value": "everyone",
+    "raw": {
+     "field": "allowInvitesFrom",
+     "value": "everyone"
+    }
+   },
+   "user_consent_for_risky_apps": {
+    "state": "observed",
+    "value": true,
+    "raw": {
+     "field": "allowUserConsentForRiskyApps",
+     "value": true
+    }
+   },
+   "email_verified_users_may_join": {
+    "state": "observed",
+    "value": false,
+    "raw": {
+     "field": "allowEmailVerifiedUsersToJoinOrganization",
+     "value": false
+    }
+   },
+   "msol_powershell_blocked": {
+    "state": "observed",
+    "value": true,
+    "raw": {
+     "field": "blockMsolPowerShell",
+     "value": true
+    }
+   },
+   "guest_role_template_id": {
+    "state": "observed",
+    "value": "2af84b1e-32c8-42b7-82bc-daa82404023b",
+    "raw": {
+     "field": "guestUserRoleId",
+     "value": "2af84b1e-32c8-42b7-82bc-daa82404023b"
+    }
+   },
+   "users_may_create_apps": {
+    "state": "observed",
+    "value": true,
+    "raw": {
+     "field": "allowedToCreateApps",
+     "value": true
+    }
+   },
+   "users_may_create_security_groups": {
+    "state": "observed",
+    "value": true,
+    "raw": {
+     "field": "allowedToCreateSecurityGroups",
+     "value": true
+    }
+   },
+   "users_may_create_tenants": {
+    "state": "observed",
+    "value": true,
+    "raw": {
+     "field": "allowedToCreateTenants",
+     "value": true
+    }
+   },
+   "users_may_read_other_users": {
+    "state": "observed",
+    "value": true,
+    "raw": {
+     "field": "allowedToReadOtherUsers",
+     "value": true
+    }
+   },
+   "users_may_read_own_bitlocker_keys": {
+    "state": "observed",
+    "value": true,
+    "raw": {
+     "field": "allowedToReadBitlockerKeysForOwnedDevice",
+     "value": true
+    }
+   },
+   "user_consent_policies_assigned": {
+    "state": "observed",
+    "value": 1,
+    "raw": {
+     "field": "permissionGrantPoliciesAssigned",
+     "value": [
+      "ManagePermissionGrantsForSelf.microsoft-user-default-legacy"
+     ]
+    }
+   }
+  }
+ }
+}
