@@ -154,17 +154,29 @@ def test_the_versions_come_from_the_engine_and_the_bundle():
 def test_nothing_planned_appears_and_nothing_shipped_is_hidden():
     """The manifest describes what is, and a gap says so out loud.
 
-    The conditional-access slice is the live case: its provider has read a real
-    tenant and the slice above it has not, so it is present with its own
-    sentence rather than absent until the story is tidier.
+    The conditional-access slice was the live case for years: its provider had
+    read a real tenant and the slice above it had not, so it was present with
+    its own sentence rather than absent until the story was tidier.
+
+    ON 2026-08-24 IT RAN, and the sentence moved because a record moved it --
+    eleven documents from a real directory in the same run as the rest, with
+    six rules reporting findings. What this test pins now is the other half of
+    the same property: the state follows the register, so a capability cannot
+    be shown as validated by anything except a record.
     """
     entry = next(
         c for c in MANIFEST["capabilities"] if c["name"] == "conditional-access"
     )
 
     assert entry["collector"]["kind"] == "graph"
-    assert "not live-validated" in entry["collector"]["live_validation"]
+    assert entry["collector"]["live_validation"] == "live-validated"
     assert entry["collector"]["permissions"] == ["Policy.Read.All"]
+
+    # And a capability with no record still says so, in the same field.
+    never_run = next(
+        c for c in MANIFEST["capabilities"] if c["name"] == "brand-center"
+    )
+    assert "not live-validated" in never_run["collector"]["live_validation"]
 
 
 def test_the_command_prints_the_same_document_it_publishes(capsys):

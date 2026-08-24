@@ -61,9 +61,7 @@ fully exercised.
 |---|---|---|
 | `customization` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
 | `forwarding` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
-| `tenant-governance` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
 | `spfx` | `negative_only` | the branch that reports something. Only the empty or absent surface was seen |
-| `conditional-access` | `provider_only` | this slice's own path. The transport underneath it read a tenant; the slice did not |
 
 **This queue takes precedence over opening a capability.** Not because
 it is more valuable, but because it is a debt already incurred: the

@@ -352,13 +352,18 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # `brand-center` joins it the day it is registered, and it is registered
     # before it has ever run. That is the right order: a capability declares
     # what it reads before anybody points it at a directory.
+    # `tenant-governance` AND `conditional-access` LEFT THESE LISTS ON
+    # 2026-08-24, and the record is what moved them. Both were collected from a
+    # real directory in one run by one application: three areas and eleven
+    # documents, thirteen and thirty rules concluding, and the branch that
+    # reports a finding taken in both. Neither reached the top -- no consumer
+    # has opened the bundle -- so the assertion above still holds.
     assert grouped["not-live-tested"] == [
         "brand-center",
         "customization",
         "forwarding",
-        "tenant-governance",
     ]
-    assert set(grouped["acquisition-attempted"]) == {"conditional-access", "spfx"}
+    assert set(grouped["acquisition-attempted"]) == {"spfx"}
 
 
 def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment():

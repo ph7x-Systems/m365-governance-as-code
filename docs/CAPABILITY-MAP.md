@@ -10,8 +10,8 @@ is derived from the capability manifest and the candidate half from
 
 | Service | Area | API | Least privilege | Produces | Rules | Live |
 | --- | --- | --- | --- | --- | --- | --- |
-| Microsoft Entra ID | `conditional-access` | v1.0 | Policy.Read.All | `conditional-access-policy` | 3 | provider-only |
-| Microsoft Entra ID | `tenant-governance` | v1.0 | Policy.Read.All, RoleManagement.Read.Directory, Policy.Read.AuthenticationMethod | `authorization-policy` | 13 | none |
+| Microsoft Entra ID | `conditional-access` | v1.0 | Policy.Read.All | `conditional-access-policy` | 3 | full |
+| Microsoft Entra ID | `tenant-governance` | v1.0 | Policy.Read.All, RoleManagement.Read.Directory, Policy.Read.AuthenticationMethod | `authorization-policy` | 13 | full |
 | Exchange Online | `forwarding` | powershell | Exchange.ManageAsApp | `tenant` | 2 | none |
 | Microsoft 365 | `licensing` | powershell + v1.0 | Organization.Read.All, User.Read.All, Reports.Read.All, ReportSettings.Read.All | `tenant` | 0 | partial |
 | SharePoint Online | `activity` | powershell | not-established | `site` | 1 | full |
@@ -38,7 +38,7 @@ discoverable only by running the collector.
 
 ## Endpoints, by capability
 
-**`conditional-access`** — Microsoft Entra ID, v1.0, proof `acquisition-attempted`
+**`conditional-access`** — Microsoft Entra ID, v1.0, proof `positive-acquisition-observed`
 
 - `GET /v1.0/identity/conditionalAccess/policies`
 - `GET /v1.0/identity/conditionalAccess/namedLocations`
@@ -46,7 +46,7 @@ discoverable only by running the collector.
 
 Second surface: none named (`not-yet-established`).
 
-**`tenant-governance`** — Microsoft Entra ID, v1.0, proof `not-live-tested`
+**`tenant-governance`** — Microsoft Entra ID, v1.0, proof `positive-acquisition-observed`
 
 - `GET /v1.0/policies/authorizationPolicy`
 - `GET /v1.0/policies/authenticationMethodsPolicy (the method configurations are expanded by the service, so this is one read and not one per method)`
