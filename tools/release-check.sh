@@ -200,6 +200,19 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   step "Every rule is RULE-READY, and the table is current"
   "$PY" tools/rule-readiness.py --check
 
+  # WHAT IS COLLECTED, AND WHAT IS NOT. The map is generated from the capability
+  # manifest and the candidate register, so a stale one is a document that
+  # describes a product two commits ago while looking current.
+  step "The capability map is current"
+  "$PY" tools/capability-map.py --check
+
+  # The register's Graph claims, put to the service's own schema. Anonymous, no
+  # tenant, no identity. Offline it reports `not established` and fails rather
+  # than passing quietly, because a check that could not run must never leave a
+  # row looking verified.
+  step "Every recorded Graph surface exists in the version claimed for it"
+  "$PY" tools/graph-schema-check.py --check
+
   # What can be observed against what is observed. Regenerated so the gap is
   # measured on every release rather than remembered from the last time
   # somebody looked at a cmdlet list.
