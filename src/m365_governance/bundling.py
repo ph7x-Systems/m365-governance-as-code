@@ -74,7 +74,11 @@ def _identity(run: Run) -> str | None:
 
 
 def write(
-    root: Path, runs: list[Run], documents: list[dict], fmt: str = "markdown"
+    root: Path,
+    runs: list[Run],
+    documents: list[dict],
+    fmt: str = "markdown",
+    run_set: dict | None = None,
 ) -> Path:
     """Write one folder per run under `root`, and return `root`.
 
@@ -136,6 +140,25 @@ def write(
                 encoding="utf-8",
             )
 
+    # THE TENANT-SCALE VIEW, BESIDE THE RUNS RATHER THAN DERIVED FROM THEM.
+    #
+    # A bundle carried runs and nothing else, so a consumer opening one had no
+    # way to show a SERVICE that collected evidence and concluded nothing: it
+    # appears in no run at all, because there is no run to appear in. Deriving
+    # it on the other side would make the consumer a second authority on what a
+    # service is and what an area is, and that is the first thing it would get
+    # wrong.
+    #
+    # Written only when the caller has one. `evaluate` over a directory has a
+    # run set; a caller that does not is not made to invent one.
+    if run_set is not None:
+        (root / "run-set.json").write_text(
+            json.dumps(run_set, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
+
+    # NOT IN `runs`. That list is what a consumer walks to find run documents,
+    # and a run set is not a run: putting it there would have every reader
+    # trying to parse the tenant-scale view against the run contract.
     manifest = {"bundle": VERSION, "runs": sorted(written)}
     if orphans:
         manifest["evidence"] = "evidence"

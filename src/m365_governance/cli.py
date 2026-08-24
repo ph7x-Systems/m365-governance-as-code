@@ -1311,7 +1311,10 @@ def _cmd_run(args) -> int:
     # unwrapping that had never had a reason to exist.
     if args.bundle:
         try:
-            written = bundling.write(args.bundle, runs, documents, args.format)
+            written = bundling.write(
+                args.bundle, runs, documents, args.format,
+                run_set=RunSet(runs, documents=documents).to_dict(),
+            )
         except bundling.BundleError as refusal:
             print(f"refusing to write the bundle: {refusal}", file=sys.stderr)
             return 2
@@ -1840,7 +1843,10 @@ def _cmd_evaluate(args) -> int:
     # definition of it, and the one nobody tested wins.
     if getattr(args, "bundle", None):
         try:
-            written = bundling.write(args.bundle, runs, documents, args.format)
+            written = bundling.write(
+                args.bundle, runs, documents, args.format,
+                run_set=RunSet(runs, documents=documents).to_dict(),
+            )
         except bundling.BundleError as refusal:
             print(f"refusing to write the bundle: {refusal}", file=sys.stderr)
             return 2
