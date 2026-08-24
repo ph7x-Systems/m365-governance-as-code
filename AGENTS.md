@@ -329,6 +329,18 @@ external evidence, quoted as it arrived because changing the text destroys what
 it proves, and localized product content, which this repository does not carry.
 Enforced by `tools/language-check.sh`, inside the gate.
 
+## How a rule family is built
+
+**Microsoft docs → API surface → endpoint observed → collector, evidence and
+rule → tenant acquisition → CLI on the same tenant → bundle → consumer →
+derived site refresh.** No stage is skipped, no stage is stopped at for an
+intermediate report, and the site is never edited by hand to announce a rule.
+
+Graph Explorer proves the API; the command line proves the product. Neither
+substitutes for the other, and the whole contract -- what each stage
+establishes, where it is recorded, and the three states that are never added
+together -- is `docs/RULE-DELIVERY-PIPELINE.md`.
+
 ## The gate
 
 ```bash

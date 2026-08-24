@@ -302,13 +302,26 @@ def unproven(table: dict) -> list[dict]:
 
 
 def as_text(table: dict) -> str:
+    """THREE NUMBERS, NEVER ONE.
+
+    The states are reported apart and are never added together. `39 rules` is
+    one claim, `16 have been run against a tenant` is another, and a catalogue
+    that publishes the first while implying the second is the artefact this
+    product exists to replace. The names are the delivery pipeline's -- see
+    `docs/RULE-DELIVERY-PIPELINE.md` -- so that the gate, the contract and
+    anybody reporting progress are using one vocabulary rather than three.
+    """
     lines = [
-        f"{table['rules']} rules",
-        f"{table['collectable']} collectable",
-        f"{table['least_privilege_established']} with least privilege established",
-        f"{table['tenant_proven']} tenant-proven",
-        f"{table['product_path']} product-path proven",
+        f"IMPLEMENTED       {table['rule_ready']} of {table['rules']} rules "
+        f"(RULE-READY: sixteen conditions, code and deterministic tests)",
+        f"TENANT-OBSERVED   {table['tenant_proven']} "
+        f"(TENANT-PROVEN: a real directory produced the evidence)",
+        f"PRODUCT-OBSERVED  {table['product_path']} "
+        f"(PRODUCT-PATH: the command line, the bundle and a consumer)",
         "",
+        f"  {table['collectable']} collectable · "
+        f"{table['least_privilege_established']} with least privilege "
+        f"established",
         "  " + " · ".join(f"{n} {s}" for s, n in table["by_service"].items()),
     ]
     unfinished = [r for r in table["detail"] if not r["rule_ready"]]
