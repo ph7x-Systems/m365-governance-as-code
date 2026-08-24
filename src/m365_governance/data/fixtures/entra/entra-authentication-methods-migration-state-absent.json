@@ -1,0 +1,80 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-24T10:00:00Z",
+    "collector": "graph-tenant-governance",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All",
+      "RoleManagement.Read.Directory"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "authentication_methods_policy"
+    ],
+    "completed": [
+      "authentication_methods_policy"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "authentication-methods-policy",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "display_name": "Authentication methods policy",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    }
+  },
+  "facts": {
+    "authentication_methods_policy": {
+      "policy": {
+        "state": "observed",
+        "value": {
+          "id": "authenticationMethodsPolicy",
+          "displayName": "Authentication Methods Policy",
+          "description": "The tenant-wide policy that controls authentication methods.",
+          "lastModifiedDateTime": "2026-08-01T09:00:00Z",
+          "policyVersion": "1.5",
+          "registrationEnforcement": {
+            "authenticationMethodsRegistrationCampaign": {
+              "snoozeDurationInDays": 1,
+              "state": "default",
+              "excludeTargets": [],
+              "includeTargets": []
+            }
+          },
+          "authenticationMethodConfigurations": []
+        }
+      },
+      "policy_migration_state": {
+        "state": "missing",
+        "detail": "`policyMigrationState` was not present on the object Microsoft returned. Absent is not false: the property is not published for every kind of authentication methods policy."
+      },
+      "method_sms": {
+        "state": "missing",
+        "detail": "no configuration identified as `Sms` carried a `state` in what Microsoft returned. Absent is not disabled: the method's state was not established."
+      },
+      "method_voice": {
+        "state": "missing",
+        "detail": "no configuration identified as `Voice` carried a `state` in what Microsoft returned. Absent is not disabled: the method's state was not established."
+      }
+    }
+  }
+}

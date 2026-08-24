@@ -604,15 +604,31 @@ SLICES = {
                 "entra-global-administrators-single-account",
                 "entra-global-administrators-all-synced",
                 "entra-global-administrators-healthy",
+                # THE THIRD SURFACE. Which methods a tenant permits, and which
+                # policy is deciding that at all -- three rules, and the shapes
+                # they decide on are the ones where a method is on alone, where
+                # neither is, and where the state did not arrive.
+                "entra-authentication-methods-sms-enabled",
+                "entra-authentication-methods-voice-enabled",
+                "entra-authentication-methods-telephony-off",
+                "entra-authentication-methods-premigration",
+                "entra-authentication-methods-states-absent",
             ),
             reads=(
                 "GET /v1.0/policies/authorizationPolicy",
+                "GET /v1.0/policies/authenticationMethodsPolicy"
+                " (the method configurations are expanded by the service, so"
+                " this is one read and not one per method)",
                 "GET /v1.0/roleManagement/directory/roleAssignments"
                 " ($filter on the Global Administrator template, $select only)",
                 "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled"
                 " (once per principal, so that no display name is ever received)",
             ),
-            permissions=("Policy.Read.All", "RoleManagement.Read.Directory"),
+            permissions=(
+                "Policy.Read.All",
+                "RoleManagement.Read.Directory",
+                "Policy.Read.AuthenticationMethod",
+            ),
             # WHAT THE READ CANNOT SEE, said where a reader meets the slice
             # rather than only inside the rules. Eligible assignments under
             # Privileged Identity Management are another surface with another
@@ -622,6 +638,16 @@ SLICES = {
                 "roleManagement/directory/roleEligibilityScheduleInstances, for "
                 "the assignments Privileged Identity Management holds as "
                 "eligible rather than active"
+            ),
+            limitation=(
+                "the authentication methods policy publishes what a tenant "
+                "permits and never what anybody registered or used. A method "
+                "disabled here can still be the only one a user holds, and a "
+                "method enabled here can have nobody on it: registration is a "
+                "separate surface with a separate permission and this does not "
+                "read it. The policy can also target a method at named groups, "
+                "so a tenant-wide state is not a statement about who is in "
+                "scope"
             ),
             second_surface_state="not-yet-established",
         ),

@@ -1321,3 +1321,86 @@ def test_a_guest_holding_the_member_role_is_not_a_guest(fixture, outcome):
     from conftest import rule
 
     assert evaluate_rule(rule("ENTRA-GUEST-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authentication-methods-sms-enabled", Outcome.FAIL),
+        ("entra-authentication-methods-premigration", Outcome.FAIL),
+        ("entra-authentication-methods-voice-enabled", Outcome.PASS),
+        ("entra-authentication-methods-telephony-off", Outcome.PASS),
+        ("entra-authentication-methods-states-absent", Outcome.UNKNOWN),
+        ("entra-authentication-methods-refused", Outcome.UNKNOWN),
+    ],
+)
+def test_sms_is_a_method_with_a_published_end_date(fixture, outcome):
+    """`ENTRA-METHOD-001`. Not a preference between methods.
+
+    Microsoft has put a date on this one: telecom delivery it provides for SMS
+    and voice is retired from 1 February 2027, and "SMS and voice are no longer
+    positioned as secure authentication methods". A tenant reading `enabled`
+    here is reading a value whose meaning expires, which is exactly the case
+    this engine's source hierarchy says an announced change is a source of a
+    rule rather than an afterthought to one.
+
+    THE VOICE FIXTURE PASSES HERE, and that pairing is the point of splitting
+    the two: a tenant with voice on and SMS off is a real configuration, and a
+    single rule reporting `one of them is on` would have hidden which.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-METHOD-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authentication-methods-voice-enabled", Outcome.FAIL),
+        ("entra-authentication-methods-premigration", Outcome.FAIL),
+        ("entra-authentication-methods-sms-enabled", Outcome.PASS),
+        ("entra-authentication-methods-telephony-off", Outcome.PASS),
+        ("entra-authentication-methods-states-absent", Outcome.UNKNOWN),
+        ("entra-authentication-methods-refused", Outcome.UNKNOWN),
+    ],
+)
+def test_voice_is_the_other_half_and_answers_separately(fixture, outcome):
+    """`ENTRA-METHOD-002`. The mirror of the rule above, and it has to be.
+
+    `states-absent` is the fixture that matters most: the configurations did
+    not arrive, and Microsoft documents them as expanded automatically on this
+    read. So their absence is a response this engine did not understand, and
+    writing `disabled` would have turned a collector's bad day into a clean
+    result on the read that decides whether a second factor can be intercepted.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-METHOD-002"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authentication-methods-premigration", Outcome.FAIL),
+        ("entra-authentication-methods-migration-in-progress", Outcome.PASS),
+        ("entra-authentication-methods-telephony-off", Outcome.PASS),
+        ("entra-authentication-methods-migration-state-absent", Outcome.UNKNOWN),
+        ("entra-authentication-methods-refused", Outcome.UNKNOWN),
+    ],
+)
+def test_which_policy_governs_is_a_prior_question_to_what_it_says(fixture, outcome):
+    """`ENTRA-METHOD-003`. A deprecation whose date has already passed.
+
+    Microsoft stopped allowing authentication methods to be managed in the
+    legacy MFA and SSPR policies on 30 September 2025, and in `premigration`
+    those legacy settings are still what the tenant is governed by. The
+    settings are in force and out of reach at the same time.
+
+    `migration-in-progress` passes. The intermediate state applies the
+    authentication methods policy to sign-in and password reset while the
+    legacy settings are still respected, which is what makes the change safe to
+    stage -- so it is a tenant that has started, not one that has not.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-METHOD-003"), evidence(fixture)).outcome is outcome

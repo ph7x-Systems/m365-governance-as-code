@@ -70,6 +70,11 @@ PRINCIPAL = "users/{id}?$select=id,onPremisesSyncEnabled"
 #: Read as a single resource rather than a collection.
 SINGLE = {
     "authorization-policy": "policies/authorizationPolicy",
+    # THE METHOD CONFIGURATIONS ARRIVE WITHOUT BEING ASKED FOR. Microsoft
+    # documents `authenticationMethodConfigurations` as automatically expanded
+    # on this GET, so there is no `$expand` here and no second call: one read
+    # returns the policy and the state of every method in it.
+    "authentication-methods-policy": "policies/authenticationMethodsPolicy",
 }
 
 REQUESTED = sorted([*AREAS, *SINGLE])
@@ -87,6 +92,7 @@ ORIGIN = Origin(
 TYPES = {
     "global-administrators": "privileged-role-summary",
     "authorization-policy": "authorization-policy",
+    "authentication-methods-policy": "authentication-methods-policy",
 }
 
 #: What a rule may address, per area, as `fact name -> the property it reads`.
@@ -112,6 +118,28 @@ ADDRESSABLE: dict[str, dict[str, str]] = {
         "users_may_read_other_users": "allowedToReadOtherUsers",
         "users_may_read_own_bitlocker_keys": "allowedToReadBitlockerKeysForOwnedDevice",
     },
+    "authentication-methods-policy": {
+        # WHICH POLICY THE TENANT IS ACTUALLY GOVERNED BY. The same document
+        # means three different things depending on this one value: the policy
+        # may be used for authentication only with the legacy MFA and SSPR
+        # policies still respected, for both with the legacy ones still
+        # respected, or for both with the legacy ones ignored. A rule that
+        # reads a method's state without reading this has read a value out of
+        # the context that decides whether it is in force.
+        "policy_migration_state": "policyMigrationState",
+    },
+}
+
+#: The methods this engine will answer about, by the identifier Microsoft gives
+#: each configuration.
+#:
+#: A SUBSET, AND ON PURPOSE. A method arrives here when a rule needs it, so the
+#: list stays a record of what this engine answers rather than a second copy of
+#: Microsoft's method catalogue drifting beside the first. The two here are the
+#: two the vendor has published a dated end for.
+METHODS = {
+    "sms": "Sms",
+    "voice": "Voice",
 }
 
 
@@ -197,6 +225,18 @@ def _document_for(
     if area == "global-administrators":
         facts = {family: _privileged_summary(read.items, reader)}
         display = "Global Administrator assignments"
+    elif area == "authentication-methods-policy":
+        item = read.items[0] if read.items else {}
+        facts = {
+            family: {
+                "policy": {"state": "observed", "value": item},
+                **graph_slice.addressable(
+                    ADDRESSABLE[area], item, of="authentication methods policy"
+                ),
+                **_method_states(item),
+            }
+        }
+        display = "Authentication methods policy"
     else:
         item = read.items[0] if read.items else {}
         facts = {
@@ -230,6 +270,64 @@ def _document_for(
         facts=facts,
         scope="tenant",
     )
+
+
+def _method_states(item: dict[str, Any]) -> dict[str, Any]:
+    """Whether each method this engine answers about is enabled, as a flat fact.
+
+    THE PATH GRAMMAR ADDRESSES `family.fact` AND CANNOT REACH INTO A LIST. The
+    states arrive as a collection of configurations, each identified by its own
+    `id`, so a rule written against the collection would have nothing to name.
+    One fact per method, flattened here, is what makes the question askable.
+
+    ABSENT IS NOT DISABLED, and here that distinction has teeth. Microsoft
+    expands every configuration on this read, so a method missing from the
+    response is not a method that is off: it is a response this engine did not
+    get what it expected from. Writing `disabled` would turn a collector's bad
+    day into a tenant's clean result, which is the failure this engine exists
+    to remove -- and it would do it on the read that decides whether the
+    tenant's second factor can be intercepted.
+    """
+    configurations = item.get("authenticationMethodConfigurations")
+    if not isinstance(configurations, list):
+        return {
+            f"method_{name}": {
+                "state": "missing",
+                "detail": (
+                    "`authenticationMethodConfigurations` was not returned as a "
+                    "list. Microsoft documents it as automatically expanded on "
+                    "this read, so its absence is a reading that did not "
+                    f"happen rather than {identifier} being disabled."
+                ),
+            }
+            for name, identifier in METHODS.items()
+        }
+
+    by_id = {
+        c.get("id"): c for c in configurations if isinstance(c, dict) and c.get("id")
+    }
+    out: dict[str, Any] = {}
+    for name, identifier in METHODS.items():
+        configuration = by_id.get(identifier)
+        if configuration is None or "state" not in configuration:
+            out[f"method_{name}"] = {
+                "state": "missing",
+                "detail": (
+                    f"no configuration identified as `{identifier}` carried a "
+                    "`state` in what Microsoft returned. Absent is not "
+                    "disabled: the method's state was not established."
+                ),
+            }
+            continue
+        out[f"method_{name}"] = {
+            "state": "observed",
+            "value": configuration["state"],
+            "raw": {
+                "field": f"authenticationMethodConfigurations[{identifier}].state",
+                "value": configuration["state"],
+            },
+        }
+    return out
 
 
 def _consent_policies(item: dict[str, Any]) -> dict[str, Any]:

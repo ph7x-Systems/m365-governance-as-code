@@ -11,7 +11,7 @@ is derived from the capability manifest and the candidate half from
 | Service | Area | API | Least privilege | Produces | Rules | Live |
 | --- | --- | --- | --- | --- | --- | --- |
 | Microsoft Entra ID | `conditional-access` | v1.0 | Policy.Read.All | `conditional-access-policy` | 3 | provider-only |
-| Microsoft Entra ID | `tenant-governance` | v1.0 | Policy.Read.All, RoleManagement.Read.Directory | `authorization-policy` | 10 | none |
+| Microsoft Entra ID | `tenant-governance` | v1.0 | Policy.Read.All, RoleManagement.Read.Directory, Policy.Read.AuthenticationMethod | `authorization-policy` | 13 | none |
 | Exchange Online | `forwarding` | powershell | Exchange.ManageAsApp | `tenant` | 2 | none |
 | Microsoft 365 | `licensing` | powershell + v1.0 | Organization.Read.All, User.Read.All, Reports.Read.All, ReportSettings.Read.All | `tenant` | 0 | partial |
 | SharePoint Online | `activity` | powershell | not-established | `site` | 1 | full |
@@ -49,8 +49,11 @@ Second surface: none named (`not-yet-established`).
 **`tenant-governance`** — Microsoft Entra ID, v1.0, proof `not-live-tested`
 
 - `GET /v1.0/policies/authorizationPolicy`
+- `GET /v1.0/policies/authenticationMethodsPolicy (the method configurations are expanded by the service, so this is one read and not one per method)`
 - `GET /v1.0/roleManagement/directory/roleAssignments ($filter on the Global Administrator template, $select only)`
 - `GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled (once per principal, so that no display name is ever received)`
+
+**Known limitation.** the authentication methods policy publishes what a tenant permits and never what anybody registered or used. A method disabled here can still be the only one a user holds, and a method enabled here can have nobody on it: registration is a separate surface with a separate permission and this does not read it. The policy can also target a method at named groups, so a tenant-wide state is not a statement about who is in scope.
 
 Second surface: roleManagement/directory/roleEligibilityScheduleInstances, for the assignments Privileged Identity Management holds as eligible rather than active (`not-yet-established`).
 

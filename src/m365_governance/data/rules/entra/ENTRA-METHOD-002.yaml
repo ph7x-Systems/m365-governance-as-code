@@ -1,0 +1,119 @@
+# A SECOND FACTOR THE VENDOR HAS PUT A DATE ON.
+#
+# Not a preference between methods. Microsoft has published a schedule for
+# withdrawing SMS and voice as methods it provides, and a tenant with them
+# enabled is depending on delivery that has an announced end.
+
+schema_version: "1.0"
+id: ENTRA-METHOD-002
+version: "1.0"
+title: Voice call is enabled as an authentication method
+description: >
+  The authentication methods policy has voice call enabled. Microsoft has
+  announced the retirement of the telecom delivery it provides for it, with
+  dates, and recommends phishing-resistant methods in its place.
+
+service: entra
+resource_type: authentication-methods-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/authentication/concept-sms-voice-retirement
+      title: >
+        Passkeys by default and retirement of Microsoft-provided SMS and voice
+        authentication
+      publisher: Microsoft
+      checked_at: "2026-08-24"
+    - url: https://learn.microsoft.com/entra/identity/authentication/concept-authentication-phone-options
+      title: Authentication methods in Microsoft Entra ID - Voice call
+      publisher: Microsoft
+      checked_at: "2026-08-24"
+  rationale: >
+    Microsoft states it plainly: "SMS and voice are no longer positioned as
+    secure authentication methods and will no longer be provided natively in
+    Entra ID." The schedule is published rather than implied -- passkeys become
+    the default experience from 1 September 2026, and Microsoft-provided
+    telecom delivery for SMS and voice is retired from 1 February 2027, after
+    which an organisation that still needs them configures a customer-managed
+    provider.
+
+    AN ANNOUNCED CHANGE IS A SOURCE OF A RULE, not an afterthought to one. This
+    engine's own source hierarchy says so: a reference page describes what the
+    product does today and says nothing about what it is about to stop doing,
+    and a tenant reading `enabled` here is reading a value whose meaning has an
+    expiry the page does not carry.
+
+    Separately and for longer, Microsoft has recommended moving away from these
+    methods -- "Microsoft recommends users move away from using text messages
+    or voice calls for multifactor authentication" -- so this is guidance with
+    a date attached rather than a threshold this engine invented.
+
+severity:
+  default: medium
+  rationale: >
+    Enabled is not the same as in use, and a tenant may have these switched on
+    with nobody registered for them. Not low, because the delivery behind them
+    has a published end date and a tenant that has not planned for it will meet
+    it as an outage. Not high, because the finding is about a method being
+    available, not about an account being exposed.
+  configurable: true
+
+evidence_requirements:
+  - path: authentication_methods_policy.method_voice
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: authentication_methods_policy.method_voice
+  value: enabled
+
+outcomes:
+  pass:
+    message: >
+      Voice call is not enabled in the authentication methods policy, so the
+      tenant does not depend on the voice delivery Microsoft has scheduled for
+      retirement.
+  fail:
+    message: >
+      Voice call is enabled in the authentication methods policy. Microsoft
+      has announced that the telecom delivery it provides for it is retired
+      from 1 February 2027, and recommends phishing-resistant methods instead.
+  unknown:
+    message: >
+      The state of voice call was not read, so whether the tenant depends on
+      it is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authentication methods policy.
+  invalid_evidence:
+    message: >
+      A method state was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Microsoft recommends the phishing-resistant methods -- passkeys, Windows
+  Hello for Business, or certificate-based authentication -- and publishes a
+  registration campaign that moves users onto stronger methods before the
+  telecom delivery is withdrawn. An organisation with a business, regulatory or
+  technical requirement for telephony configures a customer-managed provider
+  rather than disabling the method outright.
+
+limitations:
+  passes_without_resolving: >
+    A pass says the method is not enabled in the policy. It does not say what
+    anybody is registered for, which is a different surface and a different
+    read: a tenant may disable SMS here and still hold users whose only
+    registered method was voice call.
+  other:
+    - >
+      SMS is a separate method with a separate state and its own rule. A pass
+      here says nothing about it.
+    - >
+      This reads the tenant-wide state of the method. The policy can target a
+      method at named groups, and the state alone does not say who is in scope.
+    - >
+      An enabled method is not one anybody authenticates with. Whether anybody
+      does is established by the registration and sign-in surfaces, and neither
+      is read here.
