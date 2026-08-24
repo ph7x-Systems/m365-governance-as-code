@@ -1008,6 +1008,43 @@ def _graph_token_for(args) -> str:
     return _MINTED[key]
 
 
+def _capabilities_for(args) -> set[str] | None:
+    """Which collectors the selected rules need, or None for all of them.
+
+    THE JOIN IS THE CAPABILITY MANIFEST'S, not a guess from evidence paths. A
+    capability declares which rules consume it, so the collectors a selection
+    needs are the capabilities naming those rules -- the same answer a consumer
+    gets from the published manifest, which is what makes the plan it shows and
+    the run that happens the same thing.
+
+    None where no profile was given: a run with no selection is a run of
+    everything, and narrowing it would quietly change what `run` means.
+    """
+    profile = getattr(args, "profile", None)
+    if profile is None:
+        return None
+
+    try:
+        selected = load_profile(Path(profile)).get("rules")
+    except (DocumentError, OSError):
+        # A profile that cannot be read is refused further down, by the code
+        # that owns that message. Narrowing on a guess here would be worse.
+        return None
+
+    if not selected:
+        # A profile with no `rules` key selects every rule, so it needs every
+        # collector. Reading that as "none" would collect nothing at all.
+        return None
+
+    wanted = set(selected)
+    manifest = capabilities.manifest(getattr(args, "rules", None))
+    return {
+        capability["name"]
+        for capability in manifest["capabilities"]
+        if wanted & set(capability.get("consumed_by") or [])
+    }
+
+
 def _application_from(args) -> graph_token.Application:
     """The application registration named on the command line, if it is there.
 
@@ -1202,6 +1239,10 @@ def _cmd_run(args) -> int:
         # The same check runs below before anything reaches a tenant; what
         # changed is that a dry run no longer promises what it would refuse.
         has_powershell=not collecting.preflight(),
+        # WHAT THIS RUN'S SELECTION ACTUALLY NEEDS. Without it a profile naming
+        # one rule still read every surface the target reaches, which is a
+        # request against somebody's directory that they did not make.
+        needed=_capabilities_for(args),
     )
     doing = running.attempted(steps)
     sys.stderr.write(running.describe(steps))

@@ -43,6 +43,9 @@ class Planned(StrEnum):
     NO_POWERSHELL = "no-powershell"
     """It runs through PowerShell and this machine has none."""
 
+    NOT_NEEDED = "not-needed"
+    """No selected rule reads what it produces."""
+
 
 #: Why each refusal, in words a person can act on. Written here rather than
 #: at the point of printing, so that the plan and the report of the run cannot
@@ -57,6 +60,10 @@ BECAUSE: dict[Planned, str] = {
     Planned.NO_POWERSHELL: (
         "runs through PowerShell 7, and this machine has none: `doctor` "
         "gives the command for this system"
+    ),
+    Planned.NOT_NEEDED: (
+        "produces nothing any selected rule reads, and a run does not read a "
+        "tenant for a question nobody asked"
     ),
 }
 
@@ -83,6 +90,7 @@ def plan(
     tenant_url: str | None,
     has_graph_token: bool,
     has_powershell: bool = True,
+    needed: set[str] | None = None,
 ) -> list[Step]:
     """Every slice this engine holds, and whether the target reaches it.
 
@@ -97,6 +105,20 @@ def plan(
     steps = []
     for name in sorted(SLICES):
         chosen = SLICES[name]
+        # WHAT THE SELECTION NEEDS, AND NOTHING ELSE.
+        #
+        # A profile naming one Entra rule read the whole tenant -- SharePoint
+        # sites, Exchange forwarding, licensing -- because the plan was built
+        # from the TARGET and the profile was applied afterwards, at evaluation.
+        # So somebody asking one question authorised one read and got seven, and
+        # a consumer showing them the acquisition plan for their selection was
+        # showing them something smaller than what would actually happen.
+        #
+        # A larger read than the question needs is not a performance problem. It
+        # is a request against somebody's directory that they did not make.
+        if needed is not None and name not in needed:
+            steps.append(Step(slice=chosen, planned=Planned.NOT_NEEDED))
+            continue
         if chosen.source == "graph" and not has_graph_token:
             planned = Planned.NO_TOKEN
         elif chosen.source == "powershell" and not has_powershell:
