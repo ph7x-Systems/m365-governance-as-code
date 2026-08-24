@@ -454,6 +454,91 @@
         "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
         "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle; coverage and provenance on all 27 runs"
       }
+    },
+    {
+      "observed_at": "2026-08-24",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "application registration, certificate credential",
+      "engine_version": "1.0.0b8",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle"
+      },
+      "collector": "tenant-sharing",
+      "establishes": "full",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "proven"
+      },
+      "population": {
+        "documents": 1,
+        "rules_concluded": 2,
+        "outcomes": {
+          "fail": 2
+        }
+      },
+      "coverage": "the organisation's sharing settings, complete",
+      "result": "Collected in the same run as the rest and by the same application. Both rules that read it reported a finding, so the branch that reports one was taken. It establishes what the organisation's sharing settings ARE and not what any site does with them: a tenant default is the ceiling a site inherits, and which sites sit under it is a different read.",
+      "limitations": [
+        "no representation check was made: no setting's claimed effect was read against the effect",
+        "a tenant default is not a statement about any site's own sharing",
+        "one directory, one moment"
+      ]
+    },
+    {
+      "observed_at": "2026-08-24",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "application registration, certificate credential",
+      "engine_version": "1.0.0b8",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle"
+      },
+      "collector": "brand-center",
+      "establishes": "full",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "proven",
+        "consumer": "proven"
+      },
+      "population": {
+        "documents": 1,
+        "rules_concluded": 0
+      },
+      "coverage": "the tenant's brand centre settings, complete",
+      "result": "The first live acquisition of this surface. No rule reads it -- Microsoft publishes no basis for one -- so the consumer of this evidence is a report and any viewer, and that is what reaching the top of the ladder means here.",
+      "limitations": [
+        "no rule reads this evidence, so nothing about the tenant is concluded from it",
+        "no representation check was made",
+        "one directory, one moment"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

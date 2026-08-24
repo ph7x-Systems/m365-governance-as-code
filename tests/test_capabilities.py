@@ -173,8 +173,11 @@ def test_nothing_planned_appears_and_nothing_shipped_is_hidden():
     assert entry["collector"]["permissions"] == ["Policy.Read.All"]
 
     # And a capability with no record still says so, in the same field.
+    # `brand-center` was the control here until it ran on 2026-08-24; a control
+    # that has since been proved is not a control. `customization` is one:
+    # it needs a site address, none was given, and it has never been collected.
     never_run = next(
-        c for c in MANIFEST["capabilities"] if c["name"] == "brand-center"
+        c for c in MANIFEST["capabilities"] if c["name"] == "customization"
     )
     assert "not live-validated" in never_run["collector"]["live_validation"]
 

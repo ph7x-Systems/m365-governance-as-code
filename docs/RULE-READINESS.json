@@ -4,8 +4,8 @@
  "rule_ready": 39,
  "collectable": 39,
  "least_privilege_established": 32,
- "tenant_proven": 32,
- "product_path": 16,
+ "tenant_proven": 34,
+ "product_path": 18,
  "by_service": {
   "entra": 16,
   "exchange": 2,
@@ -1326,8 +1326,8 @@
     "observed_refusal": true
    },
    "rule_ready": true,
-   "tenant_proven": false,
-   "product_path": false
+   "tenant_proven": true,
+   "product_path": true
   },
   {
    "id": "SPO-SHARE-004",
@@ -1363,8 +1363,8 @@
     "observed_refusal": true
    },
    "rule_ready": true,
-   "tenant_proven": false,
-   "product_path": false
+   "tenant_proven": true,
+   "product_path": true
   },
   {
    "id": "SPO-SHARE-005",

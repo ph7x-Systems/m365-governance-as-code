@@ -230,7 +230,9 @@ def test_the_rehearsal_promoted_nothing_in_the_shipped_register():
     from m365_governance import live_proof
 
     assert live_proof.population()["vertical-path-proven"] == [
+        "brand-center",
         "conditional-access",
         "tenant-governance",
+        "tenant-sharing",
     ]
     assert live_proof.proof_state("owners") == "positive-acquisition-observed"

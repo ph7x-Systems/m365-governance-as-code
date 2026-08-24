@@ -16,7 +16,7 @@ is derived from the capability manifest and the candidate half from
 | Microsoft 365 | `licensing` | powershell + v1.0 | Organization.Read.All, User.Read.All, Reports.Read.All, ReportSettings.Read.All | `tenant` | 0 | partial |
 | SharePoint Online | `activity` | powershell | not-established | `site` | 1 | full |
 | SharePoint Online | `agents` | powershell | Sites.Read.All | `site` | 0 | full |
-| SharePoint Online | `brand-center` | powershell | Sites.FullControl.All | `tenant` | 0 | none |
+| SharePoint Online | `brand-center` | powershell | Sites.FullControl.All | `tenant` | 0 | full |
 | SharePoint Online | `classification` | powershell | Sites.Read.All | `site` | 4 | full |
 | SharePoint Online | `customization` | powershell | Sites.Read.All | `site` | 1 | none |
 | SharePoint Online | `modernity` | powershell | Sites.Read.All | `site` | 3 | full |
@@ -89,7 +89,7 @@ Second surface: the site usage report, a separate pipeline published behind live
 
 Second surface: none named (`not-yet-established`).
 
-**`brand-center`** — SharePoint Online, powershell, proof `not-live-tested`
+**`brand-center`** — SharePoint Online, powershell, proof `vertical-path-proven`
 
 - `Get-PnPOrgAssetsLibrary`
 - `Get-PnPTenantCdnEnabled -CdnType Public|Private`
@@ -156,7 +156,7 @@ Second surface: the same sites read individually rather than enumerated (`compar
 
 Second surface: none named (`not-yet-established`).
 
-**`tenant-sharing`** — SharePoint Online, powershell, proof `positive-acquisition-observed`
+**`tenant-sharing`** — SharePoint Online, powershell, proof `vertical-path-proven`
 
 - `Get-PnPTenant`
 

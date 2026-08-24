@@ -355,8 +355,10 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # without anybody deciding to; a name has to be typed by somebody who read
     # the record.
     assert grouped["vertical-path-proven"] == [
+        "brand-center",
         "conditional-access",
         "tenant-governance",
+        "tenant-sharing",
     ], (
         "a capability reached the top of the ladder; if a run proved it, this "
         "test is what tells the next person to check the record rather than "
@@ -371,8 +373,11 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # documents, thirteen and thirty rules concluding, and the branch that
     # reports a finding taken in both. Neither reached the top -- no consumer
     # has opened the bundle -- so the assertion above still holds.
+    # `brand-center` left on 2026-08-24 by running. `forwarding` is still here
+    # and that is a result rather than a gap: the run reached it and the
+    # collection FAILED, and a failure is not an acquisition. `customization`
+    # needs a site address and none was given.
     assert grouped["not-live-tested"] == [
-        "brand-center",
         "customization",
         "forwarding",
     ]
