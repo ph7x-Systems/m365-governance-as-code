@@ -220,8 +220,17 @@ def test_the_rehearsal_promoted_nothing_in_the_shipped_register():
     A rehearsal that left a capability higher than it was would be the exact
     thing the register exists to prevent, arriving through the test that was
     supposed to prove it could not.
+
+    WHAT IS ASSERTED IS THAT THE REHEARSAL CHANGED NOTHING, not that the top of
+    the ladder is empty. Two capabilities reached it on 2026-08-24 through real
+    records, so an emptiness check here would now be asserting the register is
+    wrong. `owners` is the control: it has an acquisition and no bundle, and a
+    rehearsal that promoted anything would move it first.
     """
     from m365_governance import live_proof
 
-    assert live_proof.population()["vertical-path-proven"] == []
+    assert live_proof.population()["vertical-path-proven"] == [
+        "conditional-access",
+        "tenant-governance",
+    ]
     assert live_proof.proof_state("owners") == "positive-acquisition-observed"

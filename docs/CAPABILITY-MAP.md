@@ -38,7 +38,7 @@ discoverable only by running the collector.
 
 ## Endpoints, by capability
 
-**`conditional-access`** — Microsoft Entra ID, v1.0, proof `positive-acquisition-observed`
+**`conditional-access`** — Microsoft Entra ID, v1.0, proof `vertical-path-proven`
 
 - `GET /v1.0/identity/conditionalAccess/policies`
 - `GET /v1.0/identity/conditionalAccess/namedLocations`
@@ -46,7 +46,7 @@ discoverable only by running the collector.
 
 Second surface: none named (`not-yet-established`).
 
-**`tenant-governance`** — Microsoft Entra ID, v1.0, proof `positive-acquisition-observed`
+**`tenant-governance`** — Microsoft Entra ID, v1.0, proof `vertical-path-proven`
 
 - `GET /v1.0/policies/authorizationPolicy`
 - `GET /v1.0/policies/authenticationMethodsPolicy (the method configurations are expanded by the service, so this is one read and not one per method)`

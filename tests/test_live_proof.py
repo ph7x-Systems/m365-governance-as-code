@@ -344,7 +344,20 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     """
     grouped = live_proof.population()
 
-    assert grouped["vertical-path-proven"] == [], (
+    # TWO REACHED THE TOP ON 2026-08-24, and this is the docstring's own
+    # prediction arriving: the number moved because a record moved it. One run
+    # by one application collected both from a real directory, the command line
+    # carried it to a bundle, and a program in another repository -- holding
+    # the contracts rather than the engine that wrote them -- opened all 27
+    # runs and lost nothing on the way.
+    #
+    # The list is named rather than counted. A count would let a third join it
+    # without anybody deciding to; a name has to be typed by somebody who read
+    # the record.
+    assert grouped["vertical-path-proven"] == [
+        "conditional-access",
+        "tenant-governance",
+    ], (
         "a capability reached the top of the ladder; if a run proved it, this "
         "test is what tells the next person to check the record rather than "
         "the claim"
@@ -975,9 +988,17 @@ def test_the_zero_is_printed_and_is_not_something_a_reader_has_to_derive():
     assert "Proof ladder" in text
     assert "vertical-path-proven" in text
     ladder = text.split("Proof ladder", 1)[1]
-    # The rung with nothing on it is printed WITH its zero rather than
-    # omitted. An absent line reads as an absent question.
-    assert any(
-        line.strip().startswith("vertical-path-proven") and line.strip().endswith("0")
-        for line in ladder.splitlines()
+    # THE RUNG IS PRINTED WHATEVER IS ON IT, which is the property, and the
+    # zero was only the case that made it worth asserting: an absent line reads
+    # as an absent question. It now carries two, so the assertion is that the
+    # line exists and states a number rather than that the number is nought.
+    rung = next(
+        (
+            line.strip()
+            for line in ladder.splitlines()
+            if line.strip().startswith("vertical-path-proven")
+        ),
+        None,
     )
+    assert rung is not None, "the rung is not printed at all"
+    assert rung.split()[-1].isdigit(), f"the rung states no number: {rung!r}"

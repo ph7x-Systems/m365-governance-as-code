@@ -5,7 +5,7 @@
  "collectable": 39,
  "least_privilege_established": 32,
  "tenant_proven": 32,
- "product_path": 0,
+ "product_path": 16,
  "by_service": {
   "entra": 16,
   "exchange": 2,
@@ -49,7 +49,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "CA-SCOPE-001",
@@ -88,7 +88,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "CA-STATE-001",
@@ -127,7 +127,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-AUTH-001",
@@ -169,7 +169,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-AUTH-002",
@@ -211,7 +211,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-AUTH-003",
@@ -253,7 +253,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-AUTH-004",
@@ -295,7 +295,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-AUTH-005",
@@ -337,7 +337,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-AUTH-006",
@@ -379,7 +379,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-GUEST-001",
@@ -421,7 +421,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-METHOD-001",
@@ -463,7 +463,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-METHOD-002",
@@ -505,7 +505,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-METHOD-003",
@@ -547,7 +547,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-ROLE-001",
@@ -589,7 +589,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-ROLE-002",
@@ -631,7 +631,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "ENTRA-ROLE-003",
@@ -673,7 +673,7 @@
    },
    "rule_ready": true,
    "tenant_proven": true,
-   "product_path": false
+   "product_path": true
   },
   {
    "id": "EXO-FORWARD-001",

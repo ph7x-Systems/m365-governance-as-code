@@ -369,7 +369,7 @@
         "evidence": "proven",
         "assessment": "proven",
         "bundle": "proven",
-        "consumer": "not-attempted"
+        "consumer": "proven"
       },
       "population": {
         "areas": {
@@ -386,14 +386,22 @@
         }
       },
       "coverage": "all three areas this slice covers, none refused",
-      "result": "The first positive live acquisition of the directory's own settings, and it exercised the branch that reports a finding: four of the thirteen rules failed and none answered unknown. Reaching it required fixing four faults that only a real directory could show -- the token script bound none of its parameters, the OData filter was never encoded, the one-command path skipped Graph entirely, and no Graph slice recorded a proof. IT ESTABLISHES THAT THE SURFACES WERE READ AND THAT THE RULES DECIDED FROM THEM. It does not establish that the fields mean what this engine says they mean: no representation check was made, and the second surface for privileged access -- eligible assignments under Privileged Identity Management -- was not read, so a count of standing Global Administrators may understate who can become one.",
+      "result": "The first positive live acquisition of the directory's own settings, and it exercised the branch that reports a finding: four of the thirteen rules failed and none answered unknown. Reaching it required fixing four faults that only a real directory could show -- the token script bound none of its parameters, the OData filter was never encoded, the one-command path skipped Graph entirely, and no Graph slice recorded a proof. IT ESTABLISHES THAT THE SURFACES WERE READ AND THAT THE RULES DECIDED FROM THEM. It does not establish that the fields mean what this engine says they mean: no representation check was made, and the second surface for privileged access -- eligible assignments under Privileged Identity Management -- was not read, so a count of standing Global Administrators may understate who can become one. THE CONSUMER STAGE WAS THEN PROVED ON THE SAME BUNDLE. Every one of the 56 results arrived carrying its basis, the facts it read with each fact's state, and what a pass does not settle; coverage and provenance arrived on all 27 runs. Eleven results carry no source and every one of them is a convention, which is the honest value rather than a loss in transit.",
       "limitations": [
         "no representation check was made: no field's claimed effect was read against the effect",
         "eligible assignments under Privileged Identity Management were not read, so a count of standing Global Administrators may understate who can become one",
         "the authentication methods policy publishes what the tenant permits and never what anybody registered or used",
         "one directory, one moment: nothing here establishes how another tenant's directory answers"
       ],
-      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c"
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle; coverage and provenance on all 27 runs"
+      }
     },
     {
       "observed_at": "2026-08-24",
@@ -414,7 +422,7 @@
         "evidence": "proven",
         "assessment": "proven",
         "bundle": "proven",
-        "consumer": "not-attempted"
+        "consumer": "proven"
       },
       "population": {
         "areas": {
@@ -431,13 +439,21 @@
         }
       },
       "coverage": "every area this slice covers, none refused",
-      "result": "Collected in the same run and by the same application. Six rules reported findings, so the reporting branch was taken here too. This slice had been published as `provider-only` -- the transport underneath had reached a tenant and its own path had not -- and that was accurate until this run. It establishes acquisition and assessment, and nothing about whether a policy's effect matches what its fields say: that is a representation check and none was made.",
+      "result": "Collected in the same run and by the same application. Six rules reported findings, so the reporting branch was taken here too. This slice had been published as `provider-only` -- the transport underneath had reached a tenant and its own path had not -- and that was accurate until this run. It establishes acquisition and assessment, and nothing about whether a policy's effect matches what its fields say: that is a representation check and none was made. THE CONSUMER STAGE WAS THEN PROVED ON THE SAME BUNDLE. Every one of the 56 results arrived carrying its basis, the facts it read with each fact's state, and what a pass does not settle; coverage and provenance arrived on all 27 runs. Eleven results carry no source and every one of them is a convention, which is the honest value rather than a loss in transit.",
       "limitations": [
         "no representation check was made: whether a policy's effect matches what its fields say was not observed",
         "report-only and disabled policies are read as configuration and their effect on a sign-in was not observed",
         "one directory, one moment: nothing here establishes how another tenant's directory answers"
       ],
-      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c"
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle; coverage and provenance on all 27 runs"
+      }
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."
