@@ -14,3 +14,6 @@ evidence/
 .coverage
 htmlcov/
 .DS_Store
+
+# Standalone engine builds. Made by tools/build-standalone.sh, never committed.
+/build/

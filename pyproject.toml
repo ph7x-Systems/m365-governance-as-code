@@ -34,6 +34,13 @@ dependencies = ["PyYAML>=6.0", "jsonschema>=4.20"]
 # release rather than after: the sidebar is most of what somebody deciding
 # whether to try this will read, and a version number is spent the moment it
 # is used, deleted or not.
+# THE STANDALONE BUILD, WHICH IS NOT A RUNTIME DEPENDENCY. A consumer that
+# ships this engine needs a build of it that runs without a Python
+# installation; nobody installing the command line from PyPI needs PyInstaller,
+# and putting it in `dependencies` would make every user carry a build tool.
+[project.optional-dependencies]
+packaging = ["pyinstaller>=6.22"]
+
 [project.urls]
 Homepage = "https://ph7x.com/tools/m365-governance-as-code/"
 Documentation = "https://ph7x.com/tools/m365-governance-as-code/docs/"
