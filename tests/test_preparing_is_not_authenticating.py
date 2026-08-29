@@ -126,7 +126,7 @@ def pwsh_that_refuses(tmp_path):
     rather than about the program. This is on PATH, which is where the real
     one is found.
     """
-    log = tmp_path / "pedido.jsonl"
+    log = tmp_path / "asked.jsonl"
     stand_in = tmp_path / "pwsh"
     stand_in.write_text(
         "#!/usr/bin/env python3\n"
