@@ -17,3 +17,8 @@ htmlcov/
 
 # Standalone engine builds. Made by tools/build-standalone.sh, never committed.
 /build/
+
+# The local run store. A runtime artefact of `m365g`, written beside the
+# package when a run is started from a checkout. Never committed: it is machine
+# state, and a populated one would carry a tenant.
+src/m365_governance/data/workspace.db
