@@ -143,3 +143,65 @@ def test_everything_the_runtime_reads_from_data_is_under_that_declaration():
         "the runtime holds a path to a file that is not in the source tree: "
         + ", ".join(missing)
     )
+
+
+def test_both_console_scripts_are_declared_and_resolve_to_one_entry_point():
+    """`m365g` is what a person types; `m365-governance` still has to work.
+
+    THE ALIAS IS THE HALF THAT ROTS. `m365g` is exercised by every gate and
+    every document, so it cannot quietly stop being installed. The alias is
+    exercised by scripts written before it existed, on machines this project
+    never sees, and the failure mode is silent: somebody tidies the entry
+    points, every gate stays green, and a runbook that has worked for months
+    reports `command not found`.
+
+    Both are asserted here, and asserted to be the SAME target rather than two
+    that happen to exist. Two entry points pointing at different callables is
+    how an alias drifts into a second, worse command.
+    """
+    scripts = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    scripts = scripts["project"]["scripts"]
+
+    assert scripts["m365g"] == "m365_governance.cli:main"
+    assert scripts["m365-governance"] == scripts["m365g"]
+
+
+def test_the_command_is_named_once_and_the_help_says_what_was_typed():
+    """`D87` renames a command, not a product, and the difference is testable.
+
+    The name a person types lives in one place. What must NOT have moved is
+    everything that identifies the product inside an artefact somebody already
+    has: the distribution, the Python package, and the `produced_by` string
+    that travels into every migration document.
+    """
+    from m365_governance import COMMAND
+    from m365_governance.cli import ALIASES
+
+    assert COMMAND == "m365g"
+    assert ALIASES == {"m365g", "m365-governance"}
+
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    assert project["project"]["name"] == "m365-governance-as-code"
+    assert (ROOT / "src" / "m365_governance").is_dir()
+
+    cli = (ROOT / "src" / "m365_governance" / "cli.py").read_text(encoding="utf-8")
+    assert 'produced_by": f"m365-governance {__version__}"' in cli
+
+
+def test_help_is_printed_under_the_name_the_reader_invoked(monkeypatch):
+    """Usage a reader can paste back into the shell they typed it in.
+
+    A hardcoded `prog` prints one name to everybody, so half the readers are
+    shown a usage line that does not match the command they ran -- and the half
+    it fails for is exactly the half still on the alias.
+    """
+    from m365_governance.cli import _build_parser
+
+    for invoked in ("m365g", "m365-governance"):
+        monkeypatch.setattr("sys.argv", [f"/somewhere/bin/{invoked}", "--help"])
+        assert _build_parser().format_usage().startswith(f"usage: {invoked}")
+
+    # Anything this project does not install falls back to the documented
+    # command rather than printing a path, a wrapper name or `__main__.py`.
+    monkeypatch.setattr("sys.argv", ["/usr/bin/python3", "-m", "m365_governance"])
+    assert _build_parser().format_usage().startswith("usage: m365g")

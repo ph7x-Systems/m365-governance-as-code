@@ -48,7 +48,19 @@ Repository = "https://github.com/ph7x-Systems/m365-governance-as-code"
 Issues = "https://github.com/ph7x-Systems/m365-governance-as-code/issues"
 Changelog = "https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/CHANGELOG.md"
 
+# TWO NAMES, ONE ENTRY POINT. `m365g` is the command a person is asked to
+# memorise and types dozens of times; an executable does not have to repeat the
+# product's name back at whoever is running it. `m365-governance` stays as a
+# compatibility alias, because scripts, runbooks and consumers that invoke this
+# engine as a subprocess already use it, and breaking those buys nothing.
+#
+# NOTHING ELSE IS RENAMED. Not the distribution, not the Python package, not
+# the schema `$id`s, not the `produced_by` provenance string, not the
+# repository. Those identify the product and appear inside artefacts that
+# already exist in the world; this line is about ergonomics at a prompt.
+# Charter `D87`.
 [project.scripts]
+m365g = "m365_governance.cli:main"
 m365-governance = "m365_governance.cli:main"
 
 [tool.setuptools]

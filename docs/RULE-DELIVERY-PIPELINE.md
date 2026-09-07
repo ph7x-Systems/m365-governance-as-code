@@ -70,7 +70,7 @@ call and looking at what came back.
 
 **The API working does not prove the product works.** This is the shortcut that
 costs most, because it is the most convincing: a script proves the endpoint, and
-`m365-governance run` is assumed to do the same thing. It does not. The product
+`m365g run` is assumed to do the same thing. It does not. The product
 path is authentication, collection, coverage, evidence, assessment and bundle,
 and each of those is code that can be wrong while the endpoint is right.
 

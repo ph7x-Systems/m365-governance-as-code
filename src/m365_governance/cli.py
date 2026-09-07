@@ -34,6 +34,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import (
+    COMMAND,
     __version__,
     assessment,
     bundling,
@@ -96,9 +97,28 @@ PROFILE_HELP = (
 DOCS = "Documentation: https://ph7x.com/tools/m365-governance-as-code/docs/"
 
 
+#: Every alias the entry points install, so help printed under an alias says the
+#: name that was actually invoked. A person following `--help` output should be
+#: able to paste it back into the same shell, and a hardcoded `prog` breaks that
+#: for exactly the readers the alias exists for.
+ALIASES = frozenset({COMMAND, "m365-governance"})
+
+
+def _invoked_as() -> str:
+    """The name this process was started with, when it is one we install.
+
+    `sys.argv[0]` is whatever the shell resolved: an absolute path, a wrapper,
+    `__main__.py` under `python -m`, or a PyInstaller binary. Only a name this
+    project actually installs is trusted; anything else falls back to the
+    documented command rather than printing a path into a usage line.
+    """
+    name = os.path.basename(sys.argv[0] or "")
+    return name if name in ALIASES else COMMAND
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="m365-governance",
+        prog=_invoked_as(),
         description="Microsoft 365 governance checks that show their work.",
         epilog=DOCS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -1120,7 +1140,7 @@ def _report_collection(args, chosen, outcome) -> int:
     # rules that read it is the difference between a report and a wall of
     # `unknown` for facts nobody requested.
     print(
-        f"Evaluate with:  m365-governance evaluate --profile "
+        f"Evaluate with:  {COMMAND} evaluate --profile "
         f"profiles/{chosen.profile}.yaml --evidence {args.output}"
     )
     return 0
@@ -1507,7 +1527,7 @@ def _cmd_setup(args) -> int:
             "  every run. In PowerShell, in your own tenant:\n\n"
             f"    {REGISTRATION}\n\n"
             "  It prints the id it registered. Then run this again with it:\n\n"
-            "    m365-governance setup --client-id <id> "
+            f"    {COMMAND} setup --client-id <id> "
             "--tenant-url https://<tenant>-admin.sharepoint.com\n"
         )
         # Not a failure. The environment is sound and the person has been told
@@ -1542,8 +1562,8 @@ def _cmd_setup(args) -> int:
     args.out.write_text(_project_text(args), encoding="utf-8")
     print(f"\nWrote {args.out}\n")
     print("Next:\n")
-    print("  m365-governance connect        # prove the identity can work here")
-    print("  m365-governance run            # collect, assess and report\n")
+    print(f"  {COMMAND} connect        # prove the identity can work here")
+    print(f"  {COMMAND} run            # collect, assess and report\n")
     return 0
 
 
@@ -1556,7 +1576,7 @@ def _project_text(args) -> str:
     one is not reading the manual at that moment.
     """
     lines = [
-        "# Written by `m365-governance setup`. Edit it freely.",
+        f"# Written by `{COMMAND} setup`. Edit it freely.",
         "#",
         "# NO SECRET BELONGS IN THIS FILE. It is committed, copied into tickets",
         "# and pasted into chats. A certificate password is named here by the",
@@ -1637,7 +1657,7 @@ def _rule_source(args) -> Source:
     """Where the rules come from, and a refusal that names the real problem.
 
     A `--rules` pointing at a directory that is not there used to arrive at the
-    caller as "the rules do not validate. Run `m365-governance validate`",
+    caller as "the rules do not validate. Run `m365g validate`",
     because a missing directory and a malformed rule both come back as a
     problem from the same function. That sends a person to inspect rules that
     are fine, and the one thing they will not check is the path they just
@@ -1792,7 +1812,7 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
     if problems:
         print(
             "refusing to evaluate: the rules do not validate. "
-            "Run `m365-governance validate`.",
+            f"Run `{COMMAND} validate`.",
             file=sys.stderr,
         )
         raise _Refused

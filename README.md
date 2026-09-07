@@ -95,19 +95,26 @@ Then, in a **new shell** on any of the three:
 
 ```bash
 pipx install m365-governance-as-code==1.0.0b6
-m365-governance doctor
-m365-governance --version
+m365g doctor
+m365g --version
 ```
 
 `doctor` exits `0` and reports the packaged content; the version is the one you
 installed.
 
+**The command is `m365g`.** `m365-governance` is installed too and does exactly
+the same thing, so anything already scripted against it keeps working; the
+short name is the one documented, because it is the one you type dozens of
+times in a session. The package, the schemas and the provenance recorded inside
+every artefact are unchanged — this is the name of a command, not a rename of
+anything else.
+
 `pipx ensurepath` is not optional, and the new shell is part of the step rather
 than a note beside it. pipx gives each application a directory of its own, and
 that directory is not on your PATH until `ensurepath` puts it there — and a
 shell already open never re-reads the profile it edits. Skip either and you get
-`command not found: m365-governance` after an installation that succeeded,
-which reads like a broken package.
+`command not found: m365g` after an installation that succeeded, which reads
+like a broken package.
 
 `pipx` and not `pip`, and it is not a preference either. This is a command-line
 application rather than a library you import, and a modern Python refuses to
@@ -156,7 +163,7 @@ The packaged set is what runs when you supply nothing. A path replaces it
 entirely:
 
 ```bash
-m365-governance evaluate --rules ./my-rules --evidence ./evidence
+m365g evaluate --rules ./my-rules --evidence ./evidence
 ```
 
 **It replaces; it never merges.** Either the set that shipped with this
@@ -174,9 +181,9 @@ which of the two it used.
 Three commands from an empty machine to a report about your own tenant.
 
 ```bash
-m365-governance setup     # 1. check this machine, and write the target down once
-m365-governance connect   # 2. prove the identity can reach the tenant, and read
-m365-governance run       # 3. collect, evaluate, and write the report
+m365g setup     # 1. check this machine, and write the target down once
+m365g connect   # 2. prove the identity can reach the tenant, and read
+m365g run       # 3. collect, evaluate, and write the report
 ```
 
 **`setup` reaches no tenant and registers nothing.** It runs the same checks as
@@ -195,7 +202,7 @@ It prints the id it registered. Give it to `setup` with an address, and the two
 are written to `m365-governance.toml` so that nothing is retyped again:
 
 ```bash
-m365-governance setup \
+m365g setup \
     --client-id <id> \
     --tenant-url https://<tenant>-admin.sharepoint.com
 ```
@@ -249,10 +256,10 @@ Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
 pipx install m365-governance-as-code==1.0.0b6  # 1. install (see Install)
-m365-governance doctor                # 2. is anything broken here
-m365-governance list-rules            # 3. what ships with this version
-m365-governance show-rule SPO-LIST-001
-m365-governance evaluate --evidence <an-evidence-file.json>
+m365g doctor                # 2. is anything broken here
+m365g list-rules            # 3. what ships with this version
+m365g show-rule SPO-LIST-001
+m365g evaluate --evidence <an-evidence-file.json>
 ```
 
 Example evidence ships with the package. `doctor` confirms it is there, in the
@@ -581,7 +588,7 @@ absent and never as compliant.
 
 ## What this engine can observe, and how far
 
-`m365-governance capabilities --domains` prints the coverage matrix, and
+`m365g capabilities --domains` prints the coverage matrix, and
 [docs/EVIDENCE-DOMAINS.md](https://github.com/ph7x-Systems/m365-governance-as-code/blob/main/docs/EVIDENCE-DOMAINS.md)
 explains what its states mean. It names every Microsoft 365 surface this engine
 claims to govern, **including the ones it cannot observe at all**, because a
@@ -608,7 +615,7 @@ Read [CONTRIBUTING.md](https://github.com/ph7x-Systems/m365-governance-as-code/b
 pull request:
 
 ```bash
-m365-governance validate
+m365g validate
 pytest
 python tools/examples.py --check
 ```

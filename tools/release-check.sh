@@ -50,7 +50,7 @@ command -v "$PY" >/dev/null || MISSING+=("python3")
 for m in ruff pytest coverage jsonschema yaml; do
   "$PY" -c "import $m" 2>/dev/null || MISSING+=("python -m $m: pip install -r requirements-dev.txt")
 done
-command -v m365-governance >/dev/null || MISSING+=("the console script: pip install -e .")
+command -v m365g >/dev/null || MISSING+=("the console script: pip install -e .")
 if [[ $INSTALL_GATES -eq 1 ]]; then
   "$PY" -c "import build" 2>/dev/null || MISSING+=("the build module: pip install build")
   command -v pwsh >/dev/null || MISSING+=("PowerShell: brew install --cask powershell, or apt install powershell")
@@ -83,8 +83,8 @@ ruff format --check src tools tests
 # No --rules: the packaged set is what an installed copy uses, so it is what
 # gets validated. Passing the checkout's directory here is how the examples
 # came to record an absolute local path in a public repository.
-step "m365-governance validate"
-m365-governance validate
+step "m365g validate"
+m365g validate
 
 # ── 3. the schemas are themselves valid ──────────────────────────────────────
 step "Schemas are valid JSON Schema"
@@ -137,7 +137,7 @@ step "Every fixture evaluates"
 FIXTURES=0
 for f in src/m365_governance/data/fixtures/{sharepoint,entra}/*.json; do
   note "$(basename "$(dirname "$f")")/$(basename "$f")"
-  m365-governance evaluate --evidence "$f" --format json > /dev/null
+  m365g evaluate --evidence "$f" --format json > /dev/null
   FIXTURES=$((FIXTURES + 1))
 done
 echo "  ✓ $FIXTURES fixtures evaluated"
@@ -330,7 +330,22 @@ PY
   mkdir -p "$TMP/empty"
   (
     cd "$TMP/empty"
-    G="$TMP/env/bin/m365-governance"
+    # BOTH ENTRY POINTS EXIST, AND THE DOCUMENTED ONE IS THE ONE EXERCISED.
+    #
+    # `m365g` is the command the README, the help and the site tell a person to
+    # type; `m365-governance` is the compatibility alias for scripts written
+    # before it. An alias that stops being installed breaks them silently, so
+    # its presence is asserted here rather than assumed from a line in
+    # pyproject.toml that nothing reads back.
+    for entry in m365g m365-governance; do
+      [[ -x "$TMP/env/bin/$entry" ]] || {
+        echo "  ✗ the wheel installs no \`$entry\` console script"
+        exit 1
+      }
+    done
+    "$TMP/env/bin/m365-governance" --version > /dev/null
+    note "both console scripts installed; the alias answers"
+    G="$TMP/env/bin/m365g"
     note "doctor"
     "$G" doctor > doctor.txt
     note "list-rules"
@@ -431,6 +446,6 @@ fi
 
 echo
 green "════════════════════════════════════════════════════"
-green " m365-governance passes the release contract."
+green " m365g passes the release contract."
 green "════════════════════════════════════════════════════"
 [[ $INSTALL_GATES -eq 1 ]] || red " (without the wheel and clean-install gates, which were skipped)"

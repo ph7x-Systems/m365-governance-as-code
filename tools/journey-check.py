@@ -30,7 +30,7 @@ import subprocess
 import sys
 import tempfile
 
-CONSOLE = "m365-governance"
+CONSOLE = "m365g"
 
 
 def _tree_version() -> str:

@@ -4,7 +4,7 @@
 two sentences and the difference between them is this document.
 
 The canonical matrix is not written here. It is published by
-`m365-governance capabilities --domains`, and as `domains` in
+`m365g capabilities --domains`, and as `domains` in
 `capability-manifest/1.2.0`, derived from the domain catalogue in
 `src/m365_governance/domains.py` and the slices that name each domain. Nothing
 below is a second copy of it: what is written here is the rule the matrix

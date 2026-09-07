@@ -30,7 +30,7 @@ stages `acquisition → evidence → assessment → bundle → consumer` belong 
 **product path assurance**. They are different fives.
 
 The per-capability state is published in the capability manifest and by
-`m365-governance capabilities`. This document defines the vocabulary those
+`m365g capabilities`. This document defines the vocabulary those
 values come from. **It is not a log of anybody's runs**: which tenant was read,
 when, and by whom is an operator's own record and does not belong in a source
 tree.

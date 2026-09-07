@@ -14,6 +14,33 @@ Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
 
+### The command is `m365g`, and nothing else is renamed
+
+`m365-governance` is fifteen characters somebody types dozens of times in a
+session, and an executable does not have to repeat the product's name back at
+whoever is running it. The wheel now installs `m365g` alongside it, resolving to
+the same entry point.
+
+**The old name is a compatibility alias and stays.** Scripts, runbooks and
+consumers that invoke this engine as a subprocess already use it, and breaking
+those buys nothing. Both console scripts are asserted in the suite and in the
+clean-install gate, because the alias is the half that rots: it is exercised on
+machines this project never sees, and its failure mode is a runbook reporting
+`command not found` months later under a green gate.
+
+**`--help` prints the name that was invoked**, rather than one hardcoded name
+for everybody. Usage a reader cannot paste back into the shell they typed it in
+is usage written for somebody else, and the readers it failed for were exactly
+the ones still on the alias.
+
+**Nothing else moved**, and that is the point of the change rather than a
+caveat on it: the distribution is still `m365-governance-as-code`, the Python
+package is still `m365_governance`, the schema `$id`s are unchanged, and the
+`produced_by` string that travels into every migration document still reads
+`m365-governance <version>`. Those identify the product inside artefacts that
+already exist in the world. Proved by producing the canonical bundle twice from
+one evidence file, once under each name: byte for byte identical.
+
 ---
 
 ## 1.0.0b8 — 2026-08-22

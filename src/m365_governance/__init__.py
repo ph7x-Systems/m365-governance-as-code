@@ -22,3 +22,17 @@ try:
     __version__ = _version("m365-governance-as-code")
 except PackageNotFoundError:  # pragma: no cover - only outside an installation
     __version__ = "0.0.0+unknown"
+
+# THE COMMAND A PERSON TYPES, WHICH IS NOT THE NAME OF ANYTHING ELSE.
+#
+# `m365-governance` is 15 characters somebody types dozens of times in a
+# session, and an executable does not have to repeat the product's name back at
+# whoever is running it. The entry points install both; this is the one the
+# documentation, the help, the generated instructions and the site use, and the
+# other is a compatibility alias so existing scripts keep working.
+#
+# IT RENAMES NOTHING ELSE. Not the distribution above, not the Python package,
+# not the schema `$id`s, not the `produced_by` provenance string, not the
+# repository. Those identify the product and are already inside artefacts in
+# the world; this identifies a thing to type. Charter `D87`.
+COMMAND = "m365g"
