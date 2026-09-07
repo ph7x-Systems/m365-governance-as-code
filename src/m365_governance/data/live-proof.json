@@ -318,7 +318,7 @@
         }
       },
       "coverage": "two of the four areas this slice covers",
-      "result": "The first positive live acquisition of Licensing, and it establishes exactly that. It does not establish license optimization: the report returned rows and named nobody, so usage cannot be attributed to a person, and dependency was never read at all. THERE WERE ENOUGH NUMBERS HERE TO FABRICATE A SAVING AND NOT ENOUGH EVIDENCE TO SUPPORT A RECOMMENDATION, which is the behaviour that distinguishes the product and is why this record is kept.",
+      "result": "POSITIVE LIVE ACQUISITION OBSERVED, AND NOT UNDER A CLEAN AUTHORIZATION BOUNDARY: the connection step was performed without explicit authorization for it. The facts below stand; the phrase `clean proof` does not apply to them. The first positive live acquisition of Licensing, and it establishes exactly that. It does not establish license optimization: the report returned rows and named nobody, so usage cannot be attributed to a person, and dependency was never read at all. THERE WERE ENOUGH NUMBERS HERE TO FABRICATE A SAVING AND NOT ENOUGH EVIDENCE TO SUPPORT A RECOMMENDATION, which is the behaviour that distinguishes the product and is why this record is kept.",
       "limitations": [
         "the usage report was read and names nobody: attribution is not available while this tenant conceals identifiable information, which is a tenant setting rather than a property of this read",
         "dependency is collected by nothing, so what a capability is required for is unknown rather than absent",
@@ -349,7 +349,8 @@
         "attribution": "the licensing fact block reached its acquisition",
         "results": "none, which is the expected shape of an observation-only family",
         "evidence": "fixture, not the live acquisition"
-      }
+      },
+      "authorization": "not-authorized-for-the-connection-step; the reads were read-only and the observation is preserved sanitized, and neither of those makes the crossing retroactively authorized"
     },
     {
       "observed_at": "2026-08-24",
