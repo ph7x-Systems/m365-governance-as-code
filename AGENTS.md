@@ -198,6 +198,10 @@ no tenant evidence anywhere. See `docs/TRUST-MODEL.md`.
 
 ### Containing a crossing of that line is not a reason to stop the work
 
+> **Crossing an authorization boundary is an incident. Containing the incident
+> is mandatory. Repeating the crossing is forbidden without authorization.
+> Continuing unrelated reversible work is not.**
+
 **The rule above was broken here, and the more common failure is the one that
 came after it**: the execution was contained, and everything else stopped with
 it — including work that required touching nothing.
