@@ -403,3 +403,13 @@ built next, in what order, or why. That is not a property of the software.
 Microsoft 365 surfaces this engine claims and how far each has been proved,
 including the ones it cannot observe at all. It publishes state, never
 sequence, and it carries no priority, blocker, estimate or date.
+
+## Design-review consumers
+
+The Site's isolated browser specification consumes Engine-owned synthetic
+reference artefacts. `src/m365_governance/data/reference/reference.json` owns
+the reference's purpose; a consumer must preserve that declaration and source
+provenance. A navigable mock does not change collector semantics, canonical
+bundles, live-proof state or published availability. Delivery strategy and
+execution priority remain in the existing private programme owner, not this
+public repository.
