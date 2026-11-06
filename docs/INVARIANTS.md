@@ -65,9 +65,12 @@ command had permission to run it.
 
 What it does enforce, at its own boundary:
 
-- it **acquires no credential**: an application registration is named, never
-  created, and the command that would create one is printed for a person to run;
-- it **writes nothing to a tenant**, and holds no write path under any flag;
+- it **acquires no credential**: every sign-in is the person's own, in a browser
+  PnP.PowerShell opens, and no token or secret is stored;
+- it **writes nothing to a tenant but one thing** (`D90`): the application
+  registration `setup` makes, only on a person's explicit agreement, under an
+  administrator's sign-in and consent, with only the permissions the collectors
+  read under. No other command holds a write path under any flag;
 - it **transmits no tenant evidence anywhere**, having no destination of its own;
 - it **refuses to sign in against an address whose directory it could not
   resolve**, in every mode, so an interactive sign-in cannot land in an

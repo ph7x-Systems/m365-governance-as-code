@@ -16,6 +16,48 @@ ships in a release of its own.
 
 ---
 
+## 1.0.0b9 — 2026-11-06
+
+### `setup` does the setting up (`D90`)
+
+A person who is not an administrator installs the command line, runs `setup`,
+and reaches a first report without knowing what Entra ID, PnP.PowerShell or an
+application registration is. In a terminal, `setup` now:
+
+- installs or updates PowerShell 7 and PnP.PowerShell to their latest stable
+  release when the person agrees, PnP for the current user only;
+- asks for the SharePoint address, and derives the admin centre, the root site
+  and the tenant's `onmicrosoft.com` domain;
+- obtains the application registration: it registers it when the person is an
+  administrator and agrees, takes the id of one that already exists, or writes
+  `m365-governance-admin-request.txt`, the request an administrator acts on,
+  when they are not one or the registration is refused;
+- writes the project file and offers `connect`.
+
+**The registration is this engine's one write to a tenant**, made only by
+`setup` and only on explicit agreement, under the person's own sign-in. No
+other command reaches it, and a test holds that. Without a terminal nothing is
+asked or agreed; `--install` and `--register` say yes in advance for scripts,
+and `--application-name` and `--device-login` shape the registration.
+
+### The registration asks only for what the collectors read
+
+It asks for SharePoint `AllSites.FullControl` and Microsoft Graph `User.Read`.
+Without named permissions PnP also asks for Group.ReadWrite.All,
+User.ReadWrite.All and TermStore.ReadWrite.All, which nothing here uses.
+
+### Fixed
+
+- The registration command `setup` printed was split over lines ending in a
+  backslash, which PowerShell does not continue: the first line ran alone. It
+  is printed on one line.
+- `connect`, `collect` and `run` refused a missing identity without saying how
+  to obtain one. They now point to `setup`.
+- `diff` printed each resource as a Python dictionary. It names the resource's
+  type and id.
+
+---
+
 ## 1.0.0b8 — 2026-08-22
 
 **Everything below was found by running this engine against a real tenant, or

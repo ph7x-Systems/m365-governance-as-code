@@ -64,6 +64,22 @@ _BASIS_GLOSS = {
 }
 
 
+def _resource_label(resource) -> str:
+    """A resource as a reader names it: its type, then its id in code.
+
+    The comparison keeps the resource as the record it was evaluated against,
+    and the report printed that record as a Python dictionary. The JSON
+    rendering still carries the whole record; this is only how it reads.
+    """
+    if isinstance(resource, dict):
+        native = resource.get("native_id")
+        if native:
+            kind = resource.get("type")
+            return f"{kind} `{native}`" if kind else f"`{native}`"
+        return "`" + ", ".join(f"{k}={v}" for k, v in sorted(resource.items())) + "`"
+    return f"`{resource}`"
+
+
 def to_json(run: Run) -> str:
     return json.dumps(run.to_dict(), indent=2, ensure_ascii=False) + "\n"
 
@@ -1011,7 +1027,8 @@ def comparison_to_markdown(document: dict) -> str:
                 else (change["after"] or change["before"])
             )
             lines.append(
-                f"- **{change['rule']}** on `{change['resource']}`: {movement}"
+                f"- **{change['rule']}** on "
+                f"{_resource_label(change['resource'])}: {movement}"
             )
             if change.get("changes"):
                 lines.append(f"  - observed to differ: {', '.join(change['changes'])}")
