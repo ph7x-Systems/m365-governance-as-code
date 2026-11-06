@@ -743,7 +743,9 @@ def _authentication(args) -> None:
             "no --client-id, and no identity in a project file. Every "
             "connection needs an Entra ID application registration: "
             "PnP.PowerShell has shipped no application of its own since "
-            f"2.12.0. Write it once in {project_file.NAME} to stop repeating it."
+            "2.12.0. `m365-governance setup` prints the one command that "
+            f"registers it, and writes the id to {project_file.NAME} so it is "
+            "not repeated."
         )
     _application_id(client_id, reaches_a_directory=not getattr(args, "dry_run", False))
 
@@ -1266,9 +1268,24 @@ def _exit_for(runs: list[Run], fail_on: str) -> int:
 #: it is documented by PnP, and until now this product named neither: the only
 #: instruction anywhere was "register an Entra ID app, or use one your tenant
 #: already has", which is the hardest step described as an aside.
-REGISTRATION = """Register-PnPEntraIDAppForInteractiveLogin \\
-    -ApplicationName "M365 Governance" \\
-    -Tenant <your-tenant>.onmicrosoft.com"""
+#:
+#: ONE LINE, BECAUSE IT IS PASTED INTO POWERSHELL. It was printed broken over
+#: lines ending in a backslash, which PowerShell does not read as a
+#: continuation: the first line ran alone and the parameters failed as
+#: commands of their own.
+#:
+#: THE PERMISSIONS ARE NAMED, BECAUSE THE DEFAULT IS NOT READ-ONLY. Without
+#: them PnP asks for AllSites.FullControl, Group.ReadWrite.All,
+#: User.ReadWrite.All and TermStore.ReadWrite.All. The collectors call only
+#: PnP `Get-` cmdlets: SharePoint's own permission and tenant reads need
+#: AllSites.FullControl (AllSites.Read fails them, docs/COLLECTOR-LIVE-MATRIX.md),
+#: and Microsoft Graph is needed only to sign in.
+REGISTRATION = (
+    'Register-PnPEntraIDAppForInteractiveLogin -ApplicationName "M365 Governance" '
+    "-Tenant <your-tenant>.onmicrosoft.com "
+    "-SharePointDelegatePermissions AllSites.FullControl "
+    "-GraphDelegatePermissions User.Read"
+)
 
 
 def _cmd_setup(args) -> int:

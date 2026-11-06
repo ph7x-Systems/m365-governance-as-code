@@ -97,6 +97,50 @@ def test_setup_names_the_command_that_produces_an_application(
     assert not (tmp_path / project.NAME).exists()
 
 
+def test_the_registration_command_pastes_into_powershell_and_names_its_permissions():
+    """It was printed over lines ending in a backslash, which PowerShell does
+    not continue: the first line ran alone and every parameter failed as a
+    command of its own. And with no permissions named, PnP asks for write
+    access to groups, users and the term store, which nothing here uses."""
+    from m365_governance.cli import REGISTRATION
+
+    assert "\n" not in REGISTRATION and "\\" not in REGISTRATION
+    assert "-SharePointDelegatePermissions AllSites.FullControl" in REGISTRATION
+    assert "-GraphDelegatePermissions User.Read" in REGISTRATION
+    assert "ReadWrite" not in REGISTRATION
+
+
+def test_a_missing_identity_says_how_to_obtain_one(capsys, tmp_path, monkeypatch):
+    """Naming what is missing is half a diagnosis; the first-run contract asks
+    every step that needs something the user does not have to say how to
+    obtain it."""
+    monkeypatch.chdir(tmp_path)
+
+    code, _out, err = run(capsys, "connect", "--tenant-url", TENANT, "--dry-run")
+
+    assert code == 2
+    assert "m365-governance setup" in err
+
+
+def test_the_assessment_diff_names_a_resource_the_way_a_reader_does(capsys, tmp_path):
+    """`diff` printed each resource as a Python dictionary. The comparison
+    document keeps the whole record; the report names its type and its id."""
+    from importlib.resources import files
+
+    fixtures = files("m365_governance") / "data" / "fixtures" / "sharepoint"
+    for name, out in (("list-within-limit", "before.json"), ("list-over-limit", "after.json")):
+        code, _out, err = run(
+            capsys, "assess", "--evidence", str(fixtures / f"{name}.json"),
+            "--created-at", "2026-08-08T09:00:00Z", "--out", str(tmp_path / out),
+        )
+        assert code == 0, err
+
+    _code, out, _err = run(capsys, "diff", str(tmp_path / "before.json"), str(tmp_path / "after.json"))
+
+    assert "{'" not in out
+    assert "on list `contoso,list,archive`" in out
+
+
 def test_setup_writes_a_project_file_and_never_a_secret(capsys, tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
 

@@ -183,13 +183,20 @@ m365-governance run       # 3. collect, evaluate, and write the report
 `doctor`, and then names the one thing nothing here works without: an Entra ID
 application registration. There is no default and no way around it —
 PnP.PowerShell has shipped no application of its own since 2.12.0 — and one
-registration serves every run. In PowerShell, in your own tenant:
+registration serves every run. In PowerShell 7 with PnP.PowerShell, both at
+their latest stable release, in your own tenant:
 
 ```powershell
-Register-PnPEntraIDAppForInteractiveLogin \
-    -ApplicationName "M365 Governance" \
-    -Tenant <your-tenant>.onmicrosoft.com
+Register-PnPEntraIDAppForInteractiveLogin -ApplicationName "M365 Governance" -Tenant <your-tenant>.onmicrosoft.com -SharePointDelegatePermissions AllSites.FullControl -GraphDelegatePermissions User.Read
 ```
+
+Name the permissions: without them PnP asks for AllSites.FullControl,
+Group.ReadWrite.All, User.ReadWrite.All and TermStore.ReadWrite.All. The
+collectors call only PnP `Get-` cmdlets. SharePoint's own permission and tenant
+reads need AllSites.FullControl, because AllSites.Read fails them
+([COLLECTOR-LIVE-MATRIX](docs/COLLECTOR-LIVE-MATRIX.md)), and Microsoft Graph is
+needed only to sign in. A browser opens for an administrator to sign in and
+consent.
 
 It prints the id it registered. Give it to `setup` with an address, and the two
 are written to `m365-governance.toml` so that nothing is retyped again:
