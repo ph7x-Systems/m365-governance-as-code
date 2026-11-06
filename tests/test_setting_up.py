@@ -3,6 +3,7 @@
 Every PowerShell call is stubbed: these tests never install anything, never
 open a browser and never reach a tenant.
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -38,7 +39,9 @@ def test_registration_is_refused_without_agreement():
 
 
 def test_registration_asks_for_the_least_permissions_and_returns_the_id(monkeypatch):
-    shell = Shell({"Register-PnPEntraIDAppForInteractiveLogin": (0, f"CLIENT_ID={GUID}\n")})
+    shell = Shell(
+        {"Register-PnPEntraIDAppForInteractiveLogin": (0, f"CLIENT_ID={GUID}\n")}
+    )
     monkeypatch.setattr(setting_up, "_run", shell)
 
     assert setting_up.register("pwsh", "contoso.onmicrosoft.com", agreed=True) == GUID
@@ -64,12 +67,22 @@ def test_a_failed_registration_says_what_to_do_next(monkeypatch, output, kind):
 
 
 def test_an_address_becomes_the_admin_centre_and_the_root_site():
-    expected = ("https://contoso-admin.sharepoint.com", "https://contoso.sharepoint.com")
-    for answer in ("contoso", "https://contoso.sharepoint.com", "https://contoso-admin.sharepoint.com/",
-                   "https://contoso.sharepoint.com/sites/finance"):
+    expected = (
+        "https://contoso-admin.sharepoint.com",
+        "https://contoso.sharepoint.com",
+    )
+    for answer in (
+        "contoso",
+        "https://contoso.sharepoint.com",
+        "https://contoso-admin.sharepoint.com/",
+        "https://contoso.sharepoint.com/sites/finance",
+    ):
         assert setting_up.target_from(answer) == expected
     assert setting_up.target_from("not an address!") is None
-    assert setting_up.tenant_domain("https://contoso-admin.sharepoint.com", None) == "contoso.onmicrosoft.com"
+    assert (
+        setting_up.tenant_domain("https://contoso-admin.sharepoint.com", None)
+        == "contoso.onmicrosoft.com"
+    )
 
 
 def test_pnp_is_installed_for_the_user_when_the_person_agrees(monkeypatch):
@@ -108,8 +121,12 @@ def _guided(monkeypatch, tmp_path, answers, shell):
     monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
 
 
-def test_an_administrator_is_set_up_from_an_address_alone(monkeypatch, tmp_path, capsys):
-    shell = Shell({"Register-PnPEntraIDAppForInteractiveLogin": (0, f"CLIENT_ID={GUID}")})
+def test_an_administrator_is_set_up_from_an_address_alone(
+    monkeypatch, tmp_path, capsys
+):
+    shell = Shell(
+        {"Register-PnPEntraIDAppForInteractiveLogin": (0, f"CLIENT_ID={GUID}")}
+    )
     # the address, option 1, yes to registering, no to connecting now
     _guided(monkeypatch, tmp_path, ["contoso", "1", "y", "n"], shell)
 
@@ -118,18 +135,162 @@ def test_an_administrator_is_set_up_from_an_address_alone(monkeypatch, tmp_path,
     assert GUID in written and "https://contoso-admin.sharepoint.com" in written
 
 
-def test_a_person_who_is_not_an_administrator_gets_the_request_to_send(monkeypatch, tmp_path, capsys):
+def test_a_person_who_is_not_an_administrator_gets_the_request_to_send(
+    monkeypatch, tmp_path, capsys
+):
     _guided(monkeypatch, tmp_path, ["contoso", "3"], Shell())
 
     assert main(["setup"]) == 0
-    request = (tmp_path / "m365-governance-admin-request.txt").read_text(encoding="utf-8")
+    request = (tmp_path / "m365-governance-admin-request.txt").read_text(
+        encoding="utf-8"
+    )
     assert "contoso.onmicrosoft.com" in request and "AllSites.FullControl" in request
     assert not (tmp_path / "m365-governance.toml").exists()
 
 
-def test_an_administrator_who_lacks_the_right_gets_the_request_instead(monkeypatch, tmp_path, capsys):
-    shell = Shell({"Register-PnP": (1, "Insufficient privileges to complete the operation.")})
+def test_an_administrator_who_lacks_the_right_gets_the_request_instead(
+    monkeypatch, tmp_path, capsys
+):
+    shell = Shell(
+        {"Register-PnP": (1, "Insufficient privileges to complete the operation.")}
+    )
     _guided(monkeypatch, tmp_path, ["contoso", "1", "y"], shell)
 
     assert main(["setup"]) == 0
     assert (tmp_path / "m365-governance-admin-request.txt").exists()
+
+
+def _which(present):
+    return lambda name: present.get(name)
+
+
+def test_powershell_is_installed_when_missing_and_agreed(monkeypatch):
+    present = {"brew": "/opt/homebrew/bin/brew"}
+    calls = []
+
+    def shell(command, *, capture=False, timeout=1800):
+        calls.append(command)
+        if command[:2] == ["brew", "install"]:
+            present["pwsh"] = "/opt/homebrew/bin/pwsh"
+        return subprocess.CompletedProcess(command, 0, "7.6.9", "")
+
+    monkeypatch.setattr(setting_up.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(setting_up.shutil, "which", _which(present))
+    monkeypatch.setattr(setting_up, "_run", shell)
+    monkeypatch.setattr(setting_up, "_latest_powershell", lambda: "7.6.9")
+
+    asker = setting_up.Asker(interactive=False, install=True)
+    assert setting_up.ensure_powershell(asker, print) == "/opt/homebrew/bin/pwsh"
+    assert ["brew", "install", "--cask", "powershell"] in calls
+
+
+def test_an_older_powershell_is_updated_through_the_package_that_holds_it(monkeypatch):
+    present = {"pwsh": "/opt/homebrew/bin/pwsh", "brew": "/opt/homebrew/bin/brew"}
+    calls = []
+
+    def shell(command, *, capture=False, timeout=1800):
+        calls.append(command)
+        if command[:3] == ["brew", "list", "--versions"]:
+            return subprocess.CompletedProcess(command, 0, "powershell 7.6.7_1", "")
+        return subprocess.CompletedProcess(command, 0, "7.6.7", "")
+
+    monkeypatch.setattr(setting_up.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(setting_up.shutil, "which", _which(present))
+    monkeypatch.setattr(setting_up, "_run", shell)
+    monkeypatch.setattr(setting_up, "_latest_powershell", lambda: "7.6.9")
+
+    asker = setting_up.Asker(interactive=False, install=True)
+    assert setting_up.ensure_powershell(asker, print) == "/opt/homebrew/bin/pwsh"
+    assert ["brew", "upgrade", "powershell"] in calls
+
+
+def test_without_an_installer_it_says_where_to_get_powershell(monkeypatch):
+    said = []
+    monkeypatch.setattr(setting_up.platform, "system", lambda: "Linux")
+    monkeypatch.setattr(setting_up.shutil, "which", _which({}))
+
+    asker = setting_up.Asker(interactive=False, install=True)
+    assert setting_up.ensure_powershell(asker, said.append) is None
+    assert setting_up.POWERSHELL_DOCS in said[-1]
+
+
+def test_the_latest_powershell_is_read_from_the_release_tag(monkeypatch):
+    class Response:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+        def geturl(self):
+            return "https://github.com/PowerShell/PowerShell/releases/tag/v7.6.9"
+
+    monkeypatch.setattr(
+        setting_up.urllib.request, "urlopen", lambda *a, **k: Response()
+    )
+    assert setting_up._latest_powershell() == "7.6.9"
+
+    def offline(*a, **k):
+        raise OSError("offline")
+
+    monkeypatch.setattr(setting_up.urllib.request, "urlopen", offline)
+    assert setting_up._latest_powershell() is None
+
+
+def test_a_person_is_asked_and_the_default_holds(monkeypatch):
+    replies = iter(["", "n", "joaolivio"])
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
+    asker = setting_up.Asker(interactive=True)
+    assert asker.agree("Install?") is True
+    assert asker.agree("Register?") is False
+    assert asker.ask("Address? ") == "joaolivio"
+    assert setting_up.interactive() is False
+
+
+def test_an_existing_registration_is_taken_by_its_id(monkeypatch, tmp_path, capsys):
+    _guided(monkeypatch, tmp_path, ["contoso", "2", GUID, "n"], Shell())
+    assert main(["setup"]) == 0
+    assert GUID in (tmp_path / "m365-governance.toml").read_text(encoding="utf-8")
+
+
+def test_an_id_that_is_not_one_is_refused(monkeypatch, tmp_path, capsys):
+    _guided(monkeypatch, tmp_path, ["contoso", "2", "not-an-id"], Shell())
+    assert main(["setup"]) == 2
+    assert "is not an application id" in capsys.readouterr().err
+
+
+def test_a_name_already_taken_points_to_its_id(monkeypatch, tmp_path, capsys):
+    shell = Shell({"Register-PnP": (1, "Application 'M365 Governance' already exists")})
+    _guided(monkeypatch, tmp_path, ["contoso", "1", "y"], shell)
+    assert main(["setup"]) == 2
+    assert "--client-id" in capsys.readouterr().err
+
+
+def test_a_registration_that_fails_otherwise_exits_one(monkeypatch, tmp_path, capsys):
+    shell = Shell({"Register-PnP": (1, "the network went away")})
+    _guided(monkeypatch, tmp_path, ["contoso", "1", "y"], shell)
+    assert main(["setup"]) == 1
+
+
+def test_without_an_address_nothing_can_be_obtained(monkeypatch, tmp_path, capsys):
+    _guided(monkeypatch, tmp_path, ["not an address!"], Shell())
+    assert main(["setup"]) == 2
+    err = capsys.readouterr().err
+    assert "is not a SharePoint address" in err and "--tenant-url" in err
+
+
+def test_registering_needs_powershell_first(monkeypatch, tmp_path, capsys):
+    _guided(monkeypatch, tmp_path, ["contoso", "1"], Shell())
+    monkeypatch.setattr(setting_up, "ensure_powershell", lambda asker, say: None)
+    assert main(["setup"]) == 2
+    assert "not ready yet" in capsys.readouterr().err
+
+
+def test_setup_offers_connect_once_the_file_is_written(monkeypatch, tmp_path, capsys):
+    from m365_governance import cli
+
+    reached = []
+    monkeypatch.setattr(cli, "main", lambda argv: reached.append(argv) or 0)
+    _guided(monkeypatch, tmp_path, ["contoso", "2", GUID, "y"], Shell())
+    assert cli._cmd_setup(cli._build_parser().parse_args(["setup"])) == 0
+    assert reached and reached[0][0] == "connect"

@@ -8,8 +8,6 @@ because a command was run twice.
 
 from __future__ import annotations
 
-import pytest
-
 from m365_governance import project, running
 from m365_governance.cli import main
 
@@ -128,14 +126,25 @@ def test_the_assessment_diff_names_a_resource_the_way_a_reader_does(capsys, tmp_
     from importlib.resources import files
 
     fixtures = files("m365_governance") / "data" / "fixtures" / "sharepoint"
-    for name, out in (("list-within-limit", "before.json"), ("list-over-limit", "after.json")):
+    for name, out in (
+        ("list-within-limit", "before.json"),
+        ("list-over-limit", "after.json"),
+    ):
         code, _out, err = run(
-            capsys, "assess", "--evidence", str(fixtures / f"{name}.json"),
-            "--created-at", "2026-08-08T09:00:00Z", "--out", str(tmp_path / out),
+            capsys,
+            "assess",
+            "--evidence",
+            str(fixtures / f"{name}.json"),
+            "--created-at",
+            "2026-08-08T09:00:00Z",
+            "--out",
+            str(tmp_path / out),
         )
         assert code == 0, err
 
-    _code, out, _err = run(capsys, "diff", str(tmp_path / "before.json"), str(tmp_path / "after.json"))
+    _code, out, _err = run(
+        capsys, "diff", str(tmp_path / "before.json"), str(tmp_path / "after.json")
+    )
 
     assert "{'" not in out
     assert "on list `contoso,list,archive`" in out
@@ -256,8 +265,10 @@ def test_the_registration_is_the_one_write_and_only_setup_makes_it():
     holders = {
         path.name
         for path in package.rglob("*")
-        if path.is_file() and path.suffix in (".py", ".ps1", ".psm1")
-        and "Register-PnPEntraIDApp" in path.read_text(encoding="utf-8", errors="ignore")
+        if path.is_file()
+        and path.suffix in (".py", ".ps1", ".psm1")
+        and "Register-PnPEntraIDApp"
+        in path.read_text(encoding="utf-8", errors="ignore")
     }
     assert holders == {"setting_up.py"}
 

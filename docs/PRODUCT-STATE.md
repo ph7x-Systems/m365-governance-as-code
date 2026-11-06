@@ -17,7 +17,7 @@ to point at it.
 | **Custom script** (`SCRIPT`) | 1 | 4 | 1 | 3 | 1 | — | — | — | — | **no** |
 | **Modernity** (`MODERN`) | 3 | 5 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
 | **Permissions** (`LIST`) | 3 | 6 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
-| **SPFx** (`SPFX`) | 1 | 5 | 2 | 2 | 1 | 1 | 1 | 2 | — | **no** |
+| **SPFx** (`SPFX`) | 1 | 5 | 2 | 2 | 1 | 1 | 1 | 1 | — | **no** |
 | **Sharing** (`SHARE`) | 5 | 6 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
 | **Sites and storage** (`SITE`) | 3 | 7 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
 

@@ -51,9 +51,9 @@ from . import (
     migration_graph,
     reporting,
     running,
+    setting_up,
 )
 from . import doctor as doctor_module
-from . import setting_up
 from . import inspect as inspect_module
 from . import project as project_file
 from .engine import evaluate
@@ -292,7 +292,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     setup = sub.add_parser(
         "setup",
-        help="set this machine up and write a project file; registers the application only when an administrator agrees",
+        help="set this machine up and write a project file; registers the "
+        "application only when an administrator agrees",
     )
     setup.add_argument("--client-id", help="an Entra ID application registration")
     setup.add_argument("--site-url")
@@ -1337,7 +1338,9 @@ def _cmd_setup(args) -> int:
         return 2
 
     asker = setting_up.Asker(
-        interactive=setting_up.interactive(), install=args.install, register=args.register
+        interactive=setting_up.interactive(),
+        install=args.install,
+        register=args.register,
     )
     guided = asker.interactive or args.install or args.register
 
@@ -1390,7 +1393,10 @@ def _cmd_setup(args) -> int:
         )
         target = " ".join(
             f"--{name} {value}"
-            for name, value in (("tenant-url", args.tenant_url), ("site-url", args.site_url))
+            for name, value in (
+                ("tenant-url", args.tenant_url),
+                ("site-url", args.site_url),
+            )
             if value
         )
         if not tenant:
@@ -1419,7 +1425,10 @@ def _cmd_setup(args) -> int:
                 return 2
         elif pick == "1":
             if not pwsh:
-                say("Registering needs PowerShell 7 and PnP.PowerShell, which are not ready yet.")
+                say(
+                    "Registering needs PowerShell 7 and PnP.PowerShell, which are "
+                    "not ready yet."
+                )
                 return 2
             agreed = asker.agree(
                 f'Register "{args.application_name}" in {tenant}, with SharePoint '
@@ -1428,14 +1437,19 @@ def _cmd_setup(args) -> int:
             )
             try:
                 args.client_id = setting_up.register(
-                    pwsh, tenant, agreed=agreed,
-                    name=args.application_name, device_login=args.device_login,
+                    pwsh,
+                    tenant,
+                    agreed=agreed,
+                    name=args.application_name,
+                    device_login=args.device_login,
                 )
                 print(f"\nRegistered {args.application_name}: {args.client_id}")
             except setting_up.RegistrationFailed as failure:
                 say(f"\nThe registration did not complete: {failure}.")
                 if failure.kind == "exists":
-                    say("Use its id: run setup again and choose 2, or pass --client-id.")
+                    say(
+                        "Use its id: run setup again and choose 2, or pass --client-id."
+                    )
                     return 2
                 if failure.kind != "not-administrator":
                     return 1
@@ -1443,7 +1457,9 @@ def _cmd_setup(args) -> int:
         if pick == "3" or not args.client_id:
             request = setting_up.administrator_request(
                 args.out.with_name("m365-governance-admin-request.txt"),
-                tenant, target, args.application_name,
+                tenant,
+                target,
+                args.application_name,
             )
             print(
                 f"\nWrote {request}. Send it to an administrator of your "

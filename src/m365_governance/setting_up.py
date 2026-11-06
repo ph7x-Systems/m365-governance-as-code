@@ -25,6 +25,7 @@ Nothing here runs without a terminal to ask in, unless a flag says so: a
 pipeline that ran `setup` used to get a report and a printed command, and that
 is still what it gets.
 """
+
 from __future__ import annotations
 
 import platform
@@ -49,7 +50,10 @@ APPLICATION_NAME = "M365 Governance"
 #: How PowerShell itself is installed and updated, where one command is right.
 #: Linux keeps Microsoft's page: the command differs by distribution.
 POWERSHELL_COMMANDS = {
-    "Darwin": (["brew", "install", "--cask", "powershell"], ["brew", "upgrade", "--cask", "powershell"]),
+    "Darwin": (
+        ["brew", "install", "--cask", "powershell"],
+        ["brew", "upgrade", "--cask", "powershell"],
+    ),
     "Windows": (
         ["winget", "install", "--id", "Microsoft.PowerShell", "--source", "winget"],
         ["winget", "upgrade", "--id", "Microsoft.PowerShell", "--source", "winget"],
@@ -60,7 +64,9 @@ POWERSHELL_DOCS = "https://aka.ms/powershell-release"
 #: tag, which names the version, so nothing else has to be asked.
 POWERSHELL_LATEST = POWERSHELL_DOCS + "?tag=stable"
 
-GUID = re.compile(r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")
+GUID = re.compile(
+    r"[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+)
 
 
 class RegistrationFailed(Exception):
@@ -106,7 +112,9 @@ def interactive() -> bool:
     return sys.stdin.isatty() and sys.stdout.isatty()
 
 
-def _run(command: list[str], *, capture: bool = False, timeout: int = 1800) -> subprocess.CompletedProcess:
+def _run(
+    command: list[str], *, capture: bool = False, timeout: int = 1800
+) -> subprocess.CompletedProcess:
     # The person sees an installer's own progress, so its output is not captured.
     return subprocess.run(command, capture_output=capture, text=True, timeout=timeout)
 
@@ -118,7 +126,9 @@ def _version_tuple(text: str) -> tuple[int, ...]:
 def _latest_powershell() -> str | None:
     """The latest stable PowerShell, or None when it cannot be asked."""
     try:
-        request = urllib.request.Request(POWERSHELL_LATEST, headers={"User-Agent": "m365-governance-setup"})
+        request = urllib.request.Request(
+            POWERSHELL_LATEST, headers={"User-Agent": "m365-governance-setup"}
+        )
         with urllib.request.urlopen(request, timeout=10) as response:
             found = re.search(r"/tag/v(\d+\.\d+\.\d+)$", response.geturl())
         return found.group(1) if found else None
@@ -127,7 +137,11 @@ def _latest_powershell() -> str | None:
 
 
 def _pwsh_version(pwsh: str) -> str:
-    done = _run([pwsh, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"], capture=True, timeout=90)
+    done = _run(
+        [pwsh, "-NoProfile", "-Command", "$PSVersionTable.PSVersion.ToString()"],
+        capture=True,
+        timeout=90,
+    )
     return done.stdout.strip()
 
 
@@ -137,8 +151,14 @@ def ensure_powershell(asker: Asker, say) -> str | None:
     commands = POWERSHELL_COMMANDS.get(system)
     pwsh = shutil.which("pwsh")
     if not pwsh:
-        if commands and shutil.which(commands[0][0]) and asker.agree(
-            "PowerShell 7 is not installed. The collectors run in it. Install it now?", flag=asker.install
+        if (
+            commands
+            and shutil.which(commands[0][0])
+            and asker.agree(
+                "PowerShell 7 is not installed. The collectors run in it. "
+                "Install it now?",
+                flag=asker.install,
+            )
         ):
             _run(commands[0])
             pwsh = shutil.which("pwsh")
@@ -150,32 +170,60 @@ def ensure_powershell(asker: Asker, say) -> str | None:
     current = _pwsh_version(pwsh)
     if latest and current and _version_tuple(current) < _version_tuple(latest):
         if system == "Darwin" and shutil.which("brew"):
-            # Homebrew holds PowerShell as a formula or as a cask; update the one that is there.
-            formula = _run(["brew", "list", "--versions", "powershell"], capture=True, timeout=120).stdout.strip()
-            commands = (commands[0], ["brew", "upgrade", "powershell"] if formula else commands[1])
-        if commands and shutil.which(commands[1][0]) and asker.agree(
-            f"PowerShell {current} is installed; the latest stable release is {latest}. Update it now?",
-            flag=asker.install,
+            # Homebrew holds PowerShell as a formula or as a cask; update the
+            # one that is there.
+            formula = _run(
+                ["brew", "list", "--versions", "powershell"], capture=True, timeout=120
+            ).stdout.strip()
+            commands = (
+                commands[0],
+                ["brew", "upgrade", "powershell"] if formula else commands[1],
+            )
+        if (
+            commands
+            and shutil.which(commands[1][0])
+            and asker.agree(
+                f"PowerShell {current} is installed; the latest stable release "
+                f"is {latest}. Update it now?",
+                flag=asker.install,
+            )
         ):
             _run(commands[1])
         else:
             where = " ".join(commands[1]) if commands else POWERSHELL_DOCS
-            say(f"PowerShell {current} is older than the latest stable release, {latest}. Update it: {where}")
+            say(
+                f"PowerShell {current} is older than the latest stable release, "
+                f"{latest}. Update it: {where}"
+            )
     return pwsh
 
 
 def _pnp_installed(pwsh: str) -> str:
     done = _run(
-        [pwsh, "-NoProfile", "-Command",
-         "(Get-Module -ListAvailable PnP.PowerShell | Sort-Object Version -Descending | Select-Object -First 1).Version.ToString()"],
-        capture=True, timeout=120,
+        [
+            pwsh,
+            "-NoProfile",
+            "-Command",
+            "(Get-Module -ListAvailable PnP.PowerShell | Sort-Object Version "
+            "-Descending | Select-Object -First 1).Version.ToString()",
+        ],
+        capture=True,
+        timeout=120,
     )
     return done.stdout.strip()
 
 
 def _pnp_latest(pwsh: str) -> str:
-    done = _run([pwsh, "-NoProfile", "-Command", "(Find-Module PnP.PowerShell -Repository PSGallery).Version.ToString()"],
-                capture=True, timeout=120)
+    done = _run(
+        [
+            pwsh,
+            "-NoProfile",
+            "-Command",
+            "(Find-Module PnP.PowerShell -Repository PSGallery).Version.ToString()",
+        ],
+        capture=True,
+        timeout=120,
+    )
     return done.stdout.strip()
 
 
@@ -187,27 +235,52 @@ def ensure_pnp(pwsh: str, asker: Asker, say) -> bool:
     """
     installed = _pnp_installed(pwsh)
     latest = _pnp_latest(pwsh)
-    install = f"Install-Module PnP.PowerShell -Scope CurrentUser -Force -Repository PSGallery"
-    if installed and (not latest or _version_tuple(installed) >= _version_tuple(latest)):
+    install = (
+        "Install-Module PnP.PowerShell -Scope CurrentUser -Force -Repository PSGallery"
+    )
+    if installed and (
+        not latest or _version_tuple(installed) >= _version_tuple(latest)
+    ):
         return True
     question = (
-        f"PnP.PowerShell {installed} is installed; the latest stable release is {latest}. Update it now?"
-        if installed else "PnP.PowerShell is not installed. The SharePoint collectors use it. Install it now?"
+        f"PnP.PowerShell {installed} is installed; the latest stable release is "
+        f"{latest}. Update it now?"
+        if installed
+        else "PnP.PowerShell is not installed. The SharePoint collectors use it. "
+        "Install it now?"
     )
     if asker.agree(question, flag=asker.install):
-        _run([pwsh, "-NoProfile", "-Command", install + (f" -RequiredVersion {latest}" if latest else "")])
+        _run(
+            [
+                pwsh,
+                "-NoProfile",
+                "-Command",
+                install + (f" -RequiredVersion {latest}" if latest else ""),
+            ]
+        )
         installed = _pnp_installed(pwsh)
     if not installed:
-        say(f"PnP.PowerShell is needed for the SharePoint collectors. In PowerShell: {install}")
+        say(
+            "PnP.PowerShell is needed for the SharePoint collectors. In "
+            f"PowerShell: {install}"
+        )
         return False
     if latest and _version_tuple(installed) < _version_tuple(latest):
-        say(f"PnP.PowerShell {installed} is older than the latest stable release, {latest}. In PowerShell: {install}")
+        say(
+            f"PnP.PowerShell {installed} is older than the latest stable release, "
+            f"{latest}. In PowerShell: {install}"
+        )
     return True
 
 
 def target_from(answer: str) -> tuple[str, str] | None:
-    """`contoso`, `contoso.sharepoint.com` or any address on it, to the admin centre and the root site."""
-    match = re.search(r"([a-z0-9][a-z0-9-]*?)(?:-admin|-my)?\.sharepoint\.com", answer.lower())
+    """`contoso`, `contoso.sharepoint.com` or any address on it.
+
+    Returns the admin centre and the root site.
+    """
+    match = re.search(
+        r"([a-z0-9][a-z0-9-]*?)(?:-admin|-my)?\.sharepoint\.com", answer.lower()
+    )
     name = match.group(1) if match else answer.strip().lower()
     if not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name or ""):
         return None
@@ -217,30 +290,44 @@ def target_from(answer: str) -> tuple[str, str] | None:
 def tenant_domain(tenant_url: str | None, site_url: str | None) -> str | None:
     """The `<tenant>.onmicrosoft.com` PnP registers in, from either address."""
     for url in (tenant_url, site_url):
-        match = re.search(r"https://([a-z0-9-]+?)(?:-admin)?\.sharepoint\.com", (url or "").lower())
+        match = re.search(
+            r"https://([a-z0-9-]+?)(?:-admin)?\.sharepoint\.com", (url or "").lower()
+        )
         if match:
             return f"{match.group(1)}.onmicrosoft.com"
     return None
 
 
-def registration_command(tenant: str, name: str = APPLICATION_NAME, device_login: bool = False) -> str:
+def registration_command(
+    tenant: str, name: str = APPLICATION_NAME, device_login: bool = False
+) -> str:
     """The one command, on one line, as a person or an administrator pastes it."""
     return (
-        f'Register-PnPEntraIDAppForInteractiveLogin -ApplicationName "{name}" -Tenant {tenant} '
+        "Register-PnPEntraIDAppForInteractiveLogin "
+        f'-ApplicationName "{name}" -Tenant {tenant} '
         f"-SharePointDelegatePermissions {','.join(SHAREPOINT_PERMISSIONS)} "
         f"-GraphDelegatePermissions {','.join(GRAPH_PERMISSIONS)}"
         + (" -DeviceLogin" if device_login else "")
     )
 
 
-def register(pwsh: str, tenant: str, *, agreed: bool, name: str = APPLICATION_NAME, device_login: bool = False) -> str:
+def register(
+    pwsh: str,
+    tenant: str,
+    *,
+    agreed: bool,
+    name: str = APPLICATION_NAME,
+    device_login: bool = False,
+) -> str:
     """Register the application, and return its id. THE ONE WRITE.
 
     Refused unless the person agreed: this is the only place the engine writes
     to a tenant, and it never does so by default or as a side effect.
     """
     if not agreed:
-        raise RegistrationFailed("failed", "the registration was not agreed to, so nothing was registered")
+        raise RegistrationFailed(
+            "failed", "the registration was not agreed to, so nothing was registered"
+        )
     script = (
         "$ErrorActionPreference = 'Stop'; Import-Module PnP.PowerShell; "
         f"$r = {registration_command(tenant, name, device_login)}; "
@@ -254,14 +341,32 @@ def register(pwsh: str, tenant: str, *, agreed: bool, name: str = APPLICATION_NA
         return found.group(1)
     lowered = output.lower()
     if "already exists" in lowered:
-        raise RegistrationFailed("exists", f'an application named "{name}" already exists in {tenant}')
-    if any(word in lowered for word in ("insufficient privileges", "authorization_requestdenied", "forbidden", "admin approval", "not authorized")):
-        raise RegistrationFailed("not-administrator", "this account cannot register applications or consent to them")
-    tail = output.strip().splitlines()[-1] if output.strip() else f"exit {done.returncode}"
+        raise RegistrationFailed(
+            "exists", f'an application named "{name}" already exists in {tenant}'
+        )
+    if any(
+        word in lowered
+        for word in (
+            "insufficient privileges",
+            "authorization_requestdenied",
+            "forbidden",
+            "admin approval",
+            "not authorized",
+        )
+    ):
+        raise RegistrationFailed(
+            "not-administrator",
+            "this account cannot register applications or consent to them",
+        )
+    tail = (
+        output.strip().splitlines()[-1] if output.strip() else f"exit {done.returncode}"
+    )
     raise RegistrationFailed("failed", tail)
 
 
-def administrator_request(path: Path, tenant: str | None, target: str, name: str = APPLICATION_NAME) -> Path:
+def administrator_request(
+    path: Path, tenant: str | None, target: str, name: str = APPLICATION_NAME
+) -> Path:
     """What an administrator reads and acts on, written where the person can send it."""
     tenant_text = tenant or "<your-tenant>.onmicrosoft.com"
     text = f"""\
