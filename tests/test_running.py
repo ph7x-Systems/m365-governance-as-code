@@ -238,24 +238,28 @@ def test_run_still_needs_an_identity(capsys, tmp_path, monkeypatch):
     assert "no --client-id" in err
 
 
-@pytest.mark.parametrize("command", ["setup", "run"])
-def test_neither_command_registers_anything(command):
-    """This engine reads and acquires nothing.
+def test_the_registration_is_the_one_write_and_only_setup_makes_it():
+    """D90: the engine's one write to a tenant is the application registration,
+    made in `setting_up.register`, only on explicit agreement. No other command
+    reaches it, and nothing else in the engine writes."""
+    import pathlib
 
-    A read-only product that quietly wrote to a directory during setup would
-    have a write path after all, and the gate that proves the collector never
-    mutates a tenant does not read this file.
-    """
-    from m365_governance import cli
+    from m365_governance import cli, setting_up
 
-    source = cli.__file__
-    with open(source, encoding="utf-8") as handle:
-        text = handle.read()
+    text = pathlib.Path(cli.__file__).read_text(encoding="utf-8")
+    for command in ("run", "connect", "collect", "evaluate", "assess"):
+        body = text[text.index(f"def _cmd_{command}(") :]
+        body = body[: body.index("\ndef _cmd_", 1)]
+        assert "setting_up.register" not in body and "Register-PnP" not in body, command
 
-    body = text[text.index(f"def _cmd_{command}(") :]
-    body = body[: body.index("\ndef _cmd_", 1)]
-    for forbidden in ("New-", "Register-PnPEntraIDApp", "Set-Pnp", "Remove-"):
-        assert f"{forbidden}(" not in body
+    package = pathlib.Path(setting_up.__file__).parent
+    holders = {
+        path.name
+        for path in package.rglob("*")
+        if path.is_file() and path.suffix in (".py", ".ps1", ".psm1")
+        and "Register-PnPEntraIDApp" in path.read_text(encoding="utf-8", errors="ignore")
+    }
+    assert holders == {"setting_up.py"}
 
 
 def test_the_plan_does_not_promise_what_the_machine_cannot_run():

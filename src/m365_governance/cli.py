@@ -1,7 +1,8 @@
 """Command line.
 
-Nothing here writes to a tenant. There is no write path in this system:
-remediation is text in a rule, addressed to a person.
+Nothing here writes to a tenant's content or settings: remediation is text in a
+rule, addressed to a person. The one write is the application registration
+`setup` makes when an administrator agrees (`D90`, `setting_up.register`).
 
 The commands split into three kinds, and the split is worth keeping:
 
@@ -52,6 +53,7 @@ from . import (
     running,
 )
 from . import doctor as doctor_module
+from . import setting_up
 from . import inspect as inspect_module
 from . import project as project_file
 from .engine import evaluate
@@ -290,7 +292,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     setup = sub.add_parser(
         "setup",
-        help="prepare a machine and write a project file. Reaches no tenant",
+        help="set this machine up and write a project file; registers the application only when an administrator agrees",
     )
     setup.add_argument("--client-id", help="an Entra ID application registration")
     setup.add_argument("--site-url")
@@ -308,6 +310,27 @@ def _build_parser() -> argparse.ArgumentParser:
         "--force",
         action="store_true",
         help="overwrite an existing project file",
+    )
+    setup.add_argument(
+        "--install",
+        action="store_true",
+        help="install or update PowerShell 7 and PnP.PowerShell without asking",
+    )
+    setup.add_argument(
+        "--register",
+        action="store_true",
+        help="register the application without asking: needs an administrator, "
+        "who signs in and consents in a browser. The only write this engine makes",
+    )
+    setup.add_argument(
+        "--application-name",
+        default=setting_up.APPLICATION_NAME,
+        help=f'what to call the registration. Default "{setting_up.APPLICATION_NAME}"',
+    )
+    setup.add_argument(
+        "--device-login",
+        action="store_true",
+        help="register with a device code, for hosts with no browser",
     )
 
     run_cmd = sub.add_parser(
@@ -1280,27 +1303,24 @@ def _exit_for(runs: list[Run], fail_on: str) -> int:
 #: PnP `Get-` cmdlets: SharePoint's own permission and tenant reads need
 #: AllSites.FullControl (AllSites.Read fails them, docs/COLLECTOR-LIVE-MATRIX.md),
 #: and Microsoft Graph is needed only to sign in.
-REGISTRATION = (
-    'Register-PnPEntraIDAppForInteractiveLogin -ApplicationName "M365 Governance" '
-    "-Tenant <your-tenant>.onmicrosoft.com "
-    "-SharePointDelegatePermissions AllSites.FullControl "
-    "-GraphDelegatePermissions User.Read"
-)
+REGISTRATION = setting_up.registration_command("<your-tenant>.onmicrosoft.com")
 
 
 def _cmd_setup(args) -> int:
-    """Prepare a machine, and write down the target once. Reaches no tenant.
+    """Set this machine up, and write down the target once.
 
-    THE HALF OF `doctor` THAT TOLD NOBODY WHAT TO DO. `doctor` says what is
-    missing, and for one dependency it says how to fix it; for the step that
-    actually stops people -- obtaining an application registration -- nothing
-    in this product said anything at all, and the answer is one documented
-    command.
+    `D90`: A PERSON WHO IS NOT AN ADMINISTRATOR INSTALLS THE COMMAND LINE AND
+    RUNS THIS, and reaches a first report without knowing what Entra ID,
+    PnP.PowerShell or an application registration is. In a terminal it does the
+    steps: it installs or updates PowerShell 7 and PnP.PowerShell when the
+    person agrees, asks for the SharePoint address, and obtains the application
+    registration, registering it when the person is an administrator and agrees,
+    or preparing the request an administrator acts on when they are not.
 
-    IT REGISTERS NOTHING ITSELF. This engine reads and acquires nothing:
-    creating a registration changes a directory, and a read-only product that
-    quietly wrote to a tenant during setup would have a write path after all.
-    It prints the command; a person runs it, in their own tenant, knowingly.
+    THE ONE WRITE is that registration, made in `setting_up.register` and
+    nowhere else, only on explicit agreement. Without a terminal nothing is
+    asked and nothing is agreed: a pipeline gets the report and the commands,
+    unless `--install` or `--register` says otherwise.
     """
     # `doctor`'s own report, whole. A second rendering of the same checks would
     # be a second thing to keep true, and the two would disagree the first time
@@ -1316,14 +1336,42 @@ def _cmd_setup(args) -> int:
         )
         return 2
 
-    if not args.client_id:
+    asker = setting_up.Asker(
+        interactive=setting_up.interactive(), install=args.install, register=args.register
+    )
+    guided = asker.interactive or args.install or args.register
+
+    def say(message: str) -> None:
+        print(message, file=sys.stderr)
+
+    pwsh = None
+    if guided:
+        pwsh = setting_up.ensure_powershell(asker, say)
+        if pwsh:
+            setting_up.ensure_pnp(pwsh, asker, say)
+
+    if not args.site_url and not args.tenant_url and asker.interactive:
+        answer = asker.ask(
+            "\nYour SharePoint address (for example contoso, or "
+            "https://contoso.sharepoint.com): "
+        )
+        found = setting_up.target_from(answer) if answer else None
+        if found:
+            args.tenant_url, args.site_url = found
+        elif answer:
+            say(f"{answer} is not a SharePoint address.")
+
+    if not args.client_id and not guided:
         print(
             "\nNext: an application registration.\n\n"
             "  Every connection needs one, and there is no default: "
             "PnP.PowerShell has\n"
             "  shipped no application of its own since 2.12.0. One "
             "registration serves\n"
-            "  every run. In PowerShell, in your own tenant:\n\n"
+            "  every run. Run setup in a terminal and it registers it for you "
+            "when you are\n"
+            "  an administrator, or prepares the request for one. Or, in "
+            "PowerShell:\n\n"
             f"    {REGISTRATION}\n\n"
             "  It prints the id it registered. Then run this again with it:\n\n"
             "    m365-governance setup --client-id <id> "
@@ -1333,6 +1381,77 @@ def _cmd_setup(args) -> int:
         # the one thing they did not have; exiting non-zero would report a
         # broken installation to a pipeline that has none.
         return 0
+
+    if not args.client_id:
+        tenant = (
+            args.tenant_id
+            if args.tenant_id and "." in args.tenant_id
+            else setting_up.tenant_domain(args.tenant_url, args.site_url)
+        )
+        target = " ".join(
+            f"--{name} {value}"
+            for name, value in (("tenant-url", args.tenant_url), ("site-url", args.site_url))
+            if value
+        )
+        if not tenant:
+            say(
+                "setup needs the SharePoint address to obtain a registration: "
+                "--tenant-url https://<tenant>-admin.sharepoint.com"
+            )
+            return 2
+        pick = "1"
+        if asker.interactive and not args.register:
+            print(
+                "\nAn application registration is needed, once for the whole "
+                "organisation:\n\n"
+                "  1  register it now: you are an administrator, and a browser "
+                "opens to sign in and consent\n"
+                "  2  it already exists: enter its id\n"
+                "  3  you are not an administrator: prepare the request for one\n"
+            )
+            pick = asker.ask("Choose 1, 2 or 3: ") or "3"
+        if pick == "2":
+            entered = asker.ask("Its id: ")
+            if setting_up.GUID.fullmatch(entered):
+                args.client_id = entered
+            else:
+                say(f"{entered or 'nothing'} is not an application id.")
+                return 2
+        elif pick == "1":
+            if not pwsh:
+                say("Registering needs PowerShell 7 and PnP.PowerShell, which are not ready yet.")
+                return 2
+            agreed = asker.agree(
+                f'Register "{args.application_name}" in {tenant}, with SharePoint '
+                "AllSites.FullControl and Microsoft Graph User.Read?",
+                flag=args.register,
+            )
+            try:
+                args.client_id = setting_up.register(
+                    pwsh, tenant, agreed=agreed,
+                    name=args.application_name, device_login=args.device_login,
+                )
+                print(f"\nRegistered {args.application_name}: {args.client_id}")
+            except setting_up.RegistrationFailed as failure:
+                say(f"\nThe registration did not complete: {failure}.")
+                if failure.kind == "exists":
+                    say("Use its id: run setup again and choose 2, or pass --client-id.")
+                    return 2
+                if failure.kind != "not-administrator":
+                    return 1
+                pick = "3"
+        if pick == "3" or not args.client_id:
+            request = setting_up.administrator_request(
+                args.out.with_name("m365-governance-admin-request.txt"),
+                tenant, target, args.application_name,
+            )
+            print(
+                f"\nWrote {request}. Send it to an administrator of your "
+                "organisation: it says what to run and why.\n"
+                "When they send back the id:\n\n"
+                f"    m365-governance setup --client-id <id> {target}\n"
+            )
+            return 0
 
     try:
         # `setup` writes a project file and reaches nothing.
@@ -1360,6 +1479,10 @@ def _cmd_setup(args) -> int:
 
     args.out.write_text(_project_text(args), encoding="utf-8")
     print(f"\nWrote {args.out}\n")
+    if asker.interactive and asker.agree(
+        "Check that this identity can reach the tenant now (m365-governance connect)?"
+    ):
+        return main(["connect", "--project", str(args.out)])
     print("Next:\n")
     print("  m365-governance connect        # prove the identity can work here")
     print("  m365-governance run            # collect, assess and report\n")

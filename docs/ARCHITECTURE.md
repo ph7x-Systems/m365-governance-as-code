@@ -172,8 +172,9 @@ rule needs to differ, not before.
 
 ## What this system does not do
 
-It does not change anything in a tenant. There is no write path, no
-remediation command, and no `--fix-all`. Remediation is text in a rule,
+It does not change anything in a tenant's content or settings. There is no
+remediation command and no `--fix-all`. Its one write is the application
+registration `setup` makes when an administrator agrees to it (`D90`). Remediation is text in a rule,
 addressed to a person.
 
 This is not caution about bugs. A tool that both judges and repairs stops
