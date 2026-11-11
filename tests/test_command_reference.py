@@ -40,7 +40,11 @@ def test_a_scenario_entry_says_it_reaches_no_tenant():
     entries = {e["command"]: e for e in reference.build()["commands"]}
     scenario = entries["m365g governance inspect external-access"]
     assert scenario["reaches_a_tenant"] is False
-    assert scenario["reads_collections"] == ["sites-sharing", "tenant-sharing"]
+    assert scenario["reads_collections"] == [
+        "sites-sharing",
+        "tenant-sharing",
+        "guests",
+    ]
 
 
 def test_the_written_reference_is_current():

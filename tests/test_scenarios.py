@@ -171,7 +171,8 @@ def test_the_inspection_says_what_it_did_not_establish_and_scores_nothing():
     inspection = scenarios.external_access(
         [_tenant("Disabled"), _site("a", "Disabled")]
     )
-    assert any("guests" in item for item in inspection["not_established"])
+    assert any("guests exist" in item for item in inspection["not_established"])
+    assert inspection["guests"] == {"state": "not-collected"}
     assert any("in fact shared" in item for item in inspection["not_established"])
     text = scenarios.as_text(inspection).lower()
     for word in ("score", "%", "compliant", "pass", "fail", "grade"):
@@ -237,3 +238,81 @@ def test_no_evidence_is_a_refusal_that_names_what_to_collect(tmp_path, capsys):
     assert "sites-sharing" in capsys.readouterr().err
     missing = tmp_path / "nowhere"
     assert main(["inspect", "external-access", "--evidence", str(missing)]) == 2
+
+
+def _guest(number, *, enabled=True, state="Accepted"):
+    return {
+        "resource": {
+            "workload": "entra",
+            "type": "user",
+            "native_id": f"00000000-0000-4000-8000-{number:012d}",
+            "tenant": {"id": None, "host": HOST},
+        },
+        "provenance": {"collected_at": "2026-11-11T10:00:00Z"},
+        "coverage": {"completed": ["guests"], "unavailable": {}},
+        "facts": {
+            "guest": {
+                "account_enabled": {"state": "observed", "value": enabled},
+                "invitation_state": {"state": "observed", "value": state},
+            }
+        },
+    }
+
+
+def _guest_tenant(count=None, state="observed"):
+    fact = (
+        {"state": "observed", "value": count}
+        if state == "observed"
+        else {"state": state, "detail": "ended early"}
+    )
+    return {
+        "resource": {"workload": "entra", "type": "tenant", "native_id": HOST},
+        "provenance": {"collected_at": "2026-11-11T10:00:00Z"},
+        "coverage": {"completed": [], "unavailable": {}},
+        "facts": {"guests": {"count": fact}},
+    }
+
+
+def test_guests_are_counted_by_condition_and_joined_to_no_site():
+    """Two facts side by side are not a relation. The inspection must say the
+    guests exist and must go on saying that who reaches what was not read."""
+    inspection = scenarios.external_access(
+        [
+            _tenant("ExternalUserSharingOnly"),
+            _site("a", "ExternalUserSharingOnly"),
+            _guest_tenant(3),
+            _guest(1),
+            _guest(2, state="PendingAcceptance"),
+            _guest(3, enabled=False),
+        ]
+    )
+    assert inspection["guests"] == {
+        "state": "observed",
+        "accounts_read": 3,
+        "accounts_enabled": 2,
+        "accounts_disabled": 1,
+        "invitations_accepted": 2,
+        "invitations_pending": 1,
+    }
+    assert not any("guests exist" in item for item in inspection["not_established"])
+    assert any("can reach which site" in item for item in inspection["not_established"])
+    assert any("NOT JOINED" in relation for relation in inspection["relations"])
+    assert all("guest" not in row for row in inspection["rows"])
+    assert inspection["sources"]["documents"] == 6
+
+
+def test_a_guest_read_that_ended_early_is_a_lower_bound_and_is_called_one():
+    inspection = scenarios.external_access(
+        [_site("a", "Disabled"), _guest_tenant(state="permission-denied"), _guest(1)]
+    )
+    assert inspection["guests"]["state"] == "permission-denied"
+    assert inspection["guests"]["accounts_read"] == 1
+    assert any("lower bound" in item for item in inspection["not_established"])
+    assert "read: permission-denied" in scenarios.as_text(inspection)
+
+
+def test_the_same_guest_read_twice_is_one_account():
+    inspection = scenarios.external_access(
+        [_guest_tenant(1), _guest(1), _guest(1, enabled=False)]
+    )
+    assert inspection["guests"]["accounts_read"] == 1

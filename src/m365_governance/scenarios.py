@@ -129,6 +129,55 @@ def _latest(documents: list[dict]) -> tuple[dict[str, dict], list[str]]:
     return chosen, sorted(duplicated)
 
 
+def _guests(documents: list[dict]) -> dict:
+    """What a guest collection in the evidence says, as counts of accounts.
+
+    Each number counts guest accounts in one stated condition. They are not
+    added to anything and nothing is concluded from them: an enabled guest
+    whose invitation was accepted is an account that can sign in, and where it
+    can go was not read.
+    """
+    tenants = [
+        d
+        for d in documents
+        if (d.get("resource") or {}).get("type") == "tenant"
+        and isinstance((d.get("facts") or {}).get("guests"), dict)
+    ]
+    accounts, _ = _latest(
+        [
+            d
+            for d in documents
+            if (d.get("resource") or {}).get("type") == "user"
+            and isinstance((d.get("facts") or {}).get("guest"), dict)
+        ]
+    )
+    if not tenants and not accounts:
+        return {"state": "not-collected", "_documents": []}
+    newest = max(
+        tenants,
+        key=lambda d: (d.get("provenance") or {}).get("collected_at") or "",
+        default={},
+    )
+    count = _fact(newest, "guests", "count")
+    state = "observed" if _observed(count) is not None else _why(count, "missing")
+
+    def holding(name: str, value: Any) -> int:
+        return sum(
+            1 for d in accounts.values() if _observed(_fact(d, "guest", name)) == value
+        )
+
+    return {
+        "state": state,
+        "accounts_read": len(accounts),
+        "accounts_enabled": holding("account_enabled", True),
+        "accounts_disabled": holding("account_enabled", False),
+        "invitations_accepted": holding("invitation_state", "Accepted"),
+        "invitations_pending": holding("invitation_state", "PendingAcceptance"),
+        "_documents": [accounts[key] for key in sorted(accounts)]
+        + ([newest] if newest else []),
+    }
+
+
 def external_access(documents: list[dict]) -> dict:
     """Which SharePoint sites permit sharing outside the organisation.
 
@@ -211,13 +260,38 @@ def external_access(documents: list[dict]) -> dict:
             row[name] = means.get(name, NOT_ESTABLISHED)
         rows.append(row)
 
+    directory = _guests(documents)
+
     by_state: dict[str, int] = {}
     for row in rows:
         by_state[row["external_sharing"]] = by_state.get(row["external_sharing"], 0) + 1
 
-    used = [chosen[key] for key in sorted(chosen)] + [
-        tenants[key] for key in sorted(tenants)
+    used = (
+        [chosen[key] for key in sorted(chosen)]
+        + [tenants[key] for key in sorted(tenants)]
+        + directory.pop("_documents")
+    )
+    not_established = [
+        "whether anything on a site is in fact shared: a setting says what "
+        "is permitted, and neither sharing links nor site membership were "
+        "read",
+        "which person outside the organisation can reach which site: that "
+        "needs site membership or sharing links joined to a guest's object "
+        "id, and neither was read",
+        "sites the collecting identity could not enumerate: they are absent "
+        "from the evidence and their number is not knowable from it",
     ]
+    if directory["state"] != "observed":
+        not_established.insert(
+            0,
+            "which guests exist in the directory: "
+            + (
+                "no guest collection is in this evidence"
+                if directory["state"] == "not-collected"
+                else f"the guest read ended as {directory['state']}, so what "
+                "was read is a lower bound"
+            ),
+        )
     return {
         "$schema": SCHEMA,
         "scenario": "external-access",
@@ -228,24 +302,18 @@ def external_access(documents: list[dict]) -> dict:
         ),
         "relations": [
             "site -> organisation, on the tenant host both documents carry",
+            "guest -> site: NOT JOINED. A guest account existing and a site "
+            "permitting guests are two facts side by side; nothing read here "
+            "connects one to the other",
         ],
+        "guests": directory,
         "rows": rows,
         "sites": {
             "in_the_evidence": len(rows),
             "by_external_sharing": dict(sorted(by_state.items())),
         },
         "duplicates": duplicated,
-        "not_established": [
-            "which guests exist in the directory: no directory collection is "
-            "part of this inspection",
-            "whether anything on a site is in fact shared: a setting says what "
-            "is permitted, and neither sharing links nor site membership were "
-            "read",
-            "which person outside the organisation can reach which site: that "
-            "needs both of the above, joined on a stable identity",
-            "sites the collecting identity could not enumerate: they are absent "
-            "from the evidence and their number is not knowable from it",
-        ],
+        "not_established": not_established,
         "sources": {
             "documents": len(used),
             "digest": _digest(used),
@@ -273,7 +341,7 @@ SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] 
     "external-access": (
         "which SharePoint sites permit sharing outside the organisation",
         external_access,
-        ("sites-sharing", "tenant-sharing"),
+        ("sites-sharing", "tenant-sharing", "guests"),
     ),
 }
 
@@ -323,6 +391,18 @@ def as_text(inspection: dict) -> str:
             f"  {len(inspection['duplicates'])} sites were in the evidence more "
             "than once; the latest read of each was used"
         )
+    directory = inspection.get("guests") or {}
+    if directory.get("state", "not-collected") != "not-collected":
+        lines += [
+            "",
+            f"Guest accounts in the directory (read: {directory['state']}):",
+            f"  accounts read {directory['accounts_read']} · enabled "
+            f"{directory['accounts_enabled']} · disabled "
+            f"{directory['accounts_disabled']}",
+            f"  invitations accepted {directory['invitations_accepted']} · "
+            f"pending {directory['invitations_pending']}",
+            "  These accounts exist. Which sites any of them can reach was not read.",
+        ]
     lines += ["", "Not established by this inspection:"]
     lines += [f"  - {item}" for item in inspection["not_established"]]
     sources = inspection["sources"]

@@ -269,7 +269,8 @@
    "describes": "which SharePoint sites permit sharing outside the organisation",
    "reads_collections": [
     "sites-sharing",
-    "tenant-sharing"
+    "tenant-sharing",
+    "guests"
    ],
    "reaches_a_tenant": false,
    "needs": [

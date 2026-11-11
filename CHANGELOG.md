@@ -42,6 +42,10 @@ ships in a release of its own.
   why. It reaches no tenant and no outcome, drops no site, and names what it
   does not establish: guests, what is in fact shared, and who can reach what.
   `--out FILE` keeps the inspection with the digest of the evidence it read.
+  When a guest collection is in the evidence it reports the guest accounts by
+  condition (enabled, disabled, invitation accepted or pending) and states that
+  they are joined to no site: a guest existing and a site permitting guests
+  are two facts, and nothing read connects them.
 
 - **`m365g spo hub list`, and the `hubs` collection behind it.** The sites
   registered as hubs and how each is set: whether joining needs approval,
