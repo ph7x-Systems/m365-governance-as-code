@@ -230,7 +230,7 @@ that storage cannot be established, `login` refuses rather than write a token
 to a plain file. `m365g status` says which connection is active without
 reaching the tenant, `m365g connection list` shows every stored one, and
 `m365g logout` removes the stored sign-in. Without `login` every command signs
-in for itself and leaves nothing behind. Four of the sixteen reads do not use a
+in for itself and leaves nothing behind. The reads outside SharePoint do not use a
 session; [docs/CLI.md](docs/CLI.md) names them and says why.
 
 **A read answers in the terminal, and the evidence is a separate thing.**

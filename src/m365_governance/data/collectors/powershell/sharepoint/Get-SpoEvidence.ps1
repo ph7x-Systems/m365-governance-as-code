@@ -39,6 +39,7 @@
       TenantSites        every site this identity can enumerate
       HubSites           the sites registered as hubs, and how each is set
       SiteSharingAll     what every enumerated site permits, read site by site
+      SiteOwnersAll      who administers every enumerated site, read site by site
       Modernity          how one site is built: template, branding, publishing
                          features, and how many of its pages are modern
       SpfxCatalog        what is in an app catalog. Cheap: one call
@@ -168,7 +169,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites', 'SiteSharingAll')]
+    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites', 'SiteSharingAll', 'SiteOwnersAll')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -647,6 +648,59 @@ switch ($Mode) {
                     -Unavailable ([ordered]@{ enumeration = $note }) `
                     -SourceApi 'PnP.PowerShell / SharePoint Admin')
         }
+    }
+
+    'SiteOwnersAll' {
+        # ENUMERATE THROUGH THE ADMINISTRATION SURFACE, THEN OPEN EACH SITE.
+        # Who administers a site is answered by the site and by nothing else,
+        # so each one is opened as the identity already signed in, by the same
+        # method (Connect-CollectorSite takes no identity of its own).
+        #
+        # NO SITE IS DROPPED AND NO REFUSAL IS AN EMPTY LIST. A site that will
+        # not open, or will not say who administers it, gets a document whose
+        # owners fact carries the state. Get-OwnerFacts already refuses to
+        # publish an empty answer as a site with no administrators.
+        $sites = @(Get-PnPTenantSite)
+        Write-Host "$($sites.Count) sites enumerated by this identity"
+        $note = New-Unavailable -State 'partial' -Detail (
+            "Enumerated $($sites.Count) sites with $(if ($identityKind -eq 'application') { 'an application' } else { 'a delegated' }) identity. Sites " +
+            'this identity cannot see are absent from this run, and their ' +
+            'number is not knowable from here.')
+        $read = 0
+        foreach ($listed in $sites) {
+            $url = [string] $listed.Url
+            $resource = [ordered]@{
+                workload = 'sharepoint'; type = 'site'
+                native_id = $url
+                tenant = (New-TenantIdentity)
+                scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                display_name = [string] $listed.Title
+                url = $url
+            }
+            try {
+                Connect-CollectorSite -Url $url
+                $result = Get-OwnerFacts
+            }
+            catch {
+                $state = Resolve-FailureState $_
+                $result = @{
+                    facts       = @{ owners = New-AbsentFact -State $state -Detail $_.Exception.Message }
+                    unavailable = New-Unavailable -State $state -Detail $_.Exception.Message
+                }
+            }
+            $unavailable = [ordered]@{ enumeration = $note }
+            $completed = @('owners')
+            if ($null -ne $result.unavailable) {
+                $unavailable['owners'] = $result.unavailable
+                $completed = @()
+            }
+            else { $read++ }
+            Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                    -Resource $resource `
+                    -Facts $result.facts -Requested @('owners', 'enumeration') `
+                    -Completed $completed -Unavailable $unavailable)
+        }
+        Write-Host "$read of $($sites.Count) sites said who administers them"
     }
 
     'SiteSharingAll' {

@@ -316,3 +316,110 @@ def test_the_same_guest_read_twice_is_one_account():
         [_guest_tenant(1), _guest(1), _guest(1, enabled=False)]
     )
     assert inspection["guests"]["accounts_read"] == 1
+
+
+# --- ownership -----------------------------------------------------------------
+
+
+def _owned(name, *, named=0, groups=0, state="observed", at="2026-11-11T10:00:00Z"):
+    document = _site(name, "Disabled", at=at)
+    if state == "observed":
+        owners = {
+            "state": "observed",
+            "direct": [{"principal_id": f"u{n}"} for n in range(named)],
+            "groups": [{"principal_id": f"g{n}"} for n in range(groups)],
+            "direct_count": {"state": "observed", "value": named},
+            "group_count": {"state": "observed", "value": groups},
+        }
+    else:
+        owners = {"state": state, "detail": "not said"}
+    document["facts"] = {"owners": owners}
+    return document
+
+
+def _standing(inspection, name):
+    return _row(inspection, name)["standing"]
+
+
+def test_a_site_is_compared_with_the_number_the_operator_chose():
+    documents = [
+        _owned("one", named=1),
+        _owned("two", named=2),
+        _owned("three", named=3),
+    ]
+    default = scenarios.ownership(documents)
+    assert [_standing(default, n) for n in ("one", "two", "three")] == [
+        "fewer",
+        "meets",
+        "meets",
+    ]
+    assert default["parameters"] == {"minimum_owners": 2}
+    stricter = scenarios.ownership(documents, minimum_owners=3)
+    assert [_standing(stricter, n) for n in ("one", "two", "three")] == [
+        "fewer",
+        "fewer",
+        "meets",
+    ]
+
+
+def test_a_group_is_never_counted_as_one_person_or_as_none():
+    """THE COUNTER-CHECK. Counting a group as one would call the first site
+    sufficient; ignoring it would call it short. Neither was observed."""
+    inspection = scenarios.ownership(
+        [_owned("mixed", named=1, groups=1), _owned("covered", named=2, groups=1)]
+    )
+    mixed = _row(inspection, "mixed")
+    assert mixed["standing"] == "not-established"
+    assert "members were not read" in mixed["because"]
+    assert _standing(inspection, "covered") == "at-least"
+
+
+def test_a_site_that_did_not_answer_is_not_a_site_without_administrators():
+    inspection = scenarios.ownership(
+        [
+            _owned("refused", state="permission-denied"),
+            _owned("silent", state="partial"),
+            _owned("named", named=1),
+        ]
+    )
+    for name, state in (("refused", "permission-denied"), ("silent", "partial")):
+        row = _row(inspection, name)
+        assert row["owners_read"] == f"[{state}]"
+        assert row["standing"] == "not-established"
+        assert row["named_administrators"] == ""
+    assert inspection["sites"]["by_standing"] == {"fewer": 1, "not-established": 2}
+
+
+def test_a_site_with_no_owner_read_is_kept_and_duplicates_use_the_later():
+    early = _owned("x", named=1, at="2026-11-10T10:00:00Z")
+    late = _owned("x", named=2, at="2026-11-11T10:00:00Z")
+    inspection = scenarios.ownership([_enumerated("ghost"), early, late])
+    assert inspection["sites"]["in_the_evidence"] == 2
+    assert _row(inspection, "ghost")["owners_read"] == "[not-collected]"
+    assert _standing(inspection, "x") == "meets"
+    assert inspection["duplicates"] == [f"https://{HOST}/sites/x"]
+
+
+def test_ownership_says_what_an_administrator_is_not_and_scores_nothing():
+    inspection = scenarios.ownership([_owned("a", named=2)])
+    said = " ".join(inspection["not_established"])
+    assert "group owner" in said and "team" in said
+    text = scenarios.as_text(inspection).lower()
+    for word in ("score", "%", "compliant", "pass", "fail", "grade", "orphan"):
+        assert word not in text
+    assert scenarios.as_text(scenarios.ownership([])).count("collected") == 0
+
+
+def test_the_ownership_command_takes_the_threshold_and_refuses_nonsense(
+    tmp_path, capsys
+):
+    folder = tmp_path / "ev"
+    folder.mkdir()
+    (folder / "a.json").write_text(json.dumps(_owned("a", named=1)), encoding="utf-8")
+    base = ["governance", "inspect", "ownership", "--evidence", str(folder)]
+    assert main([*base, "--output", "json"]) == 0
+    assert json.loads(capsys.readouterr().out)["rows"][0]["standing"] == "fewer"
+    assert main([*base, "--minimum-owners", "1", "--output", "csv"]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0].startswith("name,url,owners_read") and ",meets," in lines[1]
+    assert main([*base, "--minimum-owners", "0"]) == 2

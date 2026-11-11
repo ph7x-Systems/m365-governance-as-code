@@ -3,7 +3,7 @@
  "rules": 39,
  "rule_ready": 39,
  "collectable": 39,
- "least_privilege_established": 32,
+ "least_privilege_established": 30,
  "tenant_proven": 37,
  "product_path": 18,
  "by_service": {
@@ -1419,16 +1419,20 @@
    "service": "sharepoint",
    "basis": "convention",
    "capabilities": [
-    "owners"
+    "owners",
+    "sites-owners"
    ],
    "endpoints": [
     "Get-PnPWeb",
+    "Get-PnPSiteCollectionAdmin",
+    "Get-PnPTenantSite",
     "Get-PnPSiteCollectionAdmin"
    ],
    "permissions": [
-    "Sites.Read.All"
+    "Sites.Read.All",
+    "not-established"
    ],
-   "permission_established": true,
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,
@@ -1457,16 +1461,20 @@
    "service": "sharepoint",
    "basis": "convention",
    "capabilities": [
-    "owners"
+    "owners",
+    "sites-owners"
    ],
    "endpoints": [
     "Get-PnPWeb",
+    "Get-PnPSiteCollectionAdmin",
+    "Get-PnPTenantSite",
     "Get-PnPSiteCollectionAdmin"
    ],
    "permissions": [
-    "Sites.Read.All"
+    "Sites.Read.All",
+    "not-established"
    ],
-   "permission_established": true,
+   "permission_established": false,
    "checks": {
     "basis_explicit": true,
     "source_cited": true,

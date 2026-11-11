@@ -732,6 +732,42 @@
         "the sharing rules were not evaluated over this collection in this run, so the assessment stage is unattempted here",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused for every site opened",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "sites-owners",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-attempted",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 53,
+        "enumeration": "partial",
+        "sites_that_named_administrators": 30,
+        "sites_that_answered_nothing": 17,
+        "sites_that_refused": 6
+      },
+      "coverage": "every site the identity enumerated, each opened by its own address as the identity already signed in",
+      "result": "The first tenant-wide read of who administers each site. One sign-in opened every site with no further prompt. THE REFUSAL BRANCH RAN AGAINST A DIRECTORY: six sites refused and each has a document carrying the refusal, and seventeen returned an empty answer that the collector recorded as not established and did not publish as a site with no administrators. COUNTER-CHECKED: the addresses are exactly the ones a separate site enumeration returned, and the named and group administrator counts for one site equal what the single-site collection read for it in an earlier session.",
+      "limitations": [
+        "no group was expanded: a site administered by a group has an unknown number of administrators",
+        "the ownership rules were not evaluated over this collection in this run, so the assessment stage is unattempted here",
+        "throttling was not met at this size",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

@@ -16,6 +16,19 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g spo site admins`, and the `sites-owners` collection behind it.** Who
+  administers every enumerated site, read by opening each site as the identity
+  already signed in. A site that will not open or will not answer gets a
+  document saying so, and an empty answer is never published as a site with no
+  administrators. Proved against a tenant on 2026-11-11, where some sites
+  refused and some answered nothing.
+- **`m365g governance inspect ownership`, the second composed scenario.** It
+  compares the administrators a site names with a number the operator chooses
+  (`--minimum-owners`, default 2) and reports `meets`, `at-least`, `fewer` or
+  `not-established`. A group is never counted as one person or as none: a
+  site whose named administrators fall short and which also has a group is
+  `not-established`, because the group was not expanded.
+
 - **`m365g entra guest list`, and the `guests` collection behind it.
   Contract-tested; not yet run against a directory.** One document per guest
   account, keyed by the directory's object id, and one for the tenant with how
@@ -122,8 +135,8 @@ after the sign-in as well as before it.
 another tenant ignores the active connection and says so, and `login` reports
 what the identity may read separately from the fact that it signed in.
 
-**Twelve of the sixteen collections reuse it.** `docs/CLI.md` names the four
-that do not and why.
+**Every SharePoint collection reuses it.** `docs/CLI.md` names the ones that
+do not and why.
 
 ### The licensing collection no longer leaves a sign-in behind
 

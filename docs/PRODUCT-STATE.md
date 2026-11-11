@@ -19,7 +19,7 @@ to point at it.
 | **Permissions** (`LIST`) | 3 | 7 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
 | **SPFx** (`SPFX`) | 1 | 6 | 2 | 2 | 1 | 1 | 1 | 1 | — | **no** |
 | **Sharing** (`SHARE`) | 5 | 8 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
-| **Sites and storage** (`SITE`) | 3 | 8 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
+| **Sites and storage** (`SITE`) | 3 | 9 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
 
 **21 rules across 8 domains.** 4 complete, 4 not.
 

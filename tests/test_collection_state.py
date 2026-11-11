@@ -456,7 +456,7 @@ def test_a_slice_that_writes_many_refuses_a_file(tmp_path, capsys):
 
 
 def test_which_slices_write_many_is_declared_rather_than_guessed():
-    """Seven slices read many resources; the rest read one.
+    """Eight slices read many resources; the rest read one.
 
     Declared on the slice so the refusal above is a property of the contract
     rather than a heuristic over the slice's name. Frozen as a set so that a
@@ -475,6 +475,7 @@ def test_which_slices_write_many_is_declared_rather_than_guessed():
         "hubs",
         "sites-sharing",
         "guests",
+        "sites-owners",
     }
 
 

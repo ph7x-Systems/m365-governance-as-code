@@ -301,6 +301,7 @@
         "Customization",
         "Forwarding",
         "SiteOwners",
+        "SiteOwnersAll",
         "TenantGovernance",
         "TenantSites",
         "UniquePermissions"

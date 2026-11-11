@@ -78,6 +78,9 @@ def build() -> dict:
                             "output": FORMATS,
                             "evidence": "--out FILE keeps the inspection with the "
                             "digest of the evidence it read",
+                            "options": (
+                                ["--minimum-owners"] if name == "ownership" else []
+                            ),
                             "examples": [
                                 f"{full} --evidence ./evidence",
                                 f"{full} --evidence ./evidence --output csv",

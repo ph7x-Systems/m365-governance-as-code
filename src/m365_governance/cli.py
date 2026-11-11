@@ -639,6 +639,14 @@ def _build_parser() -> argparse.ArgumentParser:
         "--format", choices=presenting.FORMATS, default="text", dest="format"
     )
     inspecting.add_argument(
+        "--minimum-owners",
+        type=int,
+        default=2,
+        metavar="N",
+        help="ownership only: the number of administrators to compare each "
+        "site with. Yours to choose; the engine holds no view. Default 2",
+    )
+    inspecting.add_argument(
         "--out",
         type=Path,
         dest="inspection_out",
@@ -2210,7 +2218,13 @@ def _cmd_inspect(args) -> int:
             file=sys.stderr,
         )
         return 2
-    inspection = build(documents)
+    options = {}
+    if args.scenario == "ownership":
+        if args.minimum_owners < 1:
+            print("--minimum-owners must be at least 1.", file=sys.stderr)
+            return 2
+        options["minimum_owners"] = args.minimum_owners
+    inspection = build(documents, **options)
     if args.inspection_out:
         args.inspection_out.parent.mkdir(parents=True, exist_ok=True)
         args.inspection_out.write_text(

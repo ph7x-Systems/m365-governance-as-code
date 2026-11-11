@@ -20,7 +20,7 @@ $ErrorActionPreference = 'Stop'
 # tests that it does: `TenantSharing` was once added to the collector's switch
 # and not to this list, which made the mode demand a -SiteUrl its own slice
 # never passes. It would have failed on the first tenant run and on no test.
-$script:AdminModes = @('TenantSites', 'SiteSharing', 'TenantSharing', 'BrandCenter', 'HubSites', 'SiteSharingAll')
+$script:AdminModes = @('TenantSites', 'SiteSharing', 'TenantSharing', 'BrandCenter', 'HubSites', 'SiteSharingAll', 'SiteOwnersAll')
 
 function Get-TenantHost {
     <#
@@ -210,6 +210,19 @@ function Connect-Collector {
     # was guarded and the ten that write evidence were not.
     Assert-AddressIsResolvable -Url $connectUrl -CertificatePath $CertificatePath
 
+    # KEPT FOR THE MODES THAT VISIT EVERY SITE. A tenant-wide read of something
+    # only a site answers has to open that site, and it must open it as the
+    # same identity, by the same method, that opened the first connection.
+    # Holding the choice here means the second connection cannot make a
+    # different one.
+    $script:Reconnect = @{
+        ClientId            = $ClientId
+        DeviceLogin         = [bool] $DeviceLogin
+        CertificatePath     = $CertificatePath
+        TenantId            = $TenantId
+        CertificatePassword = $CertificatePassword
+    }
+
     if ($CertificatePath) {
         if (-not $TenantId) { throw '-CertificatePath needs -TenantId.' }
         if (-not (Test-Path -LiteralPath $CertificatePath)) {
@@ -236,6 +249,45 @@ function Connect-Collector {
     }
 
     return Get-TenantHost -Url $connectUrl
+}
+
+function Connect-CollectorSite {
+    <#
+        .SYNOPSIS
+        Opens one more site as the identity that is already signed in.
+
+        .DESCRIPTION
+        For the modes that read, site by site, something the administration
+        surface does not carry. The identity, the method and the application
+        are the ones Connect-Collector used and are not parameters here, so a
+        caller cannot open a site as anybody else. Nothing is persisted: a
+        collection never decides to keep a sign-in.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string] $Url)
+
+    if (-not $script:Reconnect) {
+        throw 'Connect-CollectorSite needs a connection opened by Connect-Collector first.'
+    }
+    $with = $script:Reconnect
+    if ($with.CertificatePath) {
+        $parameters = @{
+            Url             = $Url
+            ClientId        = $with.ClientId
+            Tenant          = $with.TenantId
+            CertificatePath = $with.CertificatePath
+        }
+        if ($with.CertificatePassword) {
+            $parameters['CertificatePassword'] = $with.CertificatePassword
+        }
+        Connect-PnPOnline @parameters
+    }
+    elseif ($with.DeviceLogin) {
+        Connect-PnPOnline -Url $Url -DeviceLogin -ClientId $with.ClientId
+    }
+    else {
+        Connect-PnPOnline -Url $Url -Interactive -ClientId $with.ClientId
+    }
 }
 
 function Resolve-TenantAddress {
@@ -424,4 +476,4 @@ function Test-CollectorAuthorization {
     }
 }
 
-Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization, Assert-AddressIsResolvable
+Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Connect-CollectorSite, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization, Assert-AddressIsResolvable

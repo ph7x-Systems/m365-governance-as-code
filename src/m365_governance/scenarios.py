@@ -129,6 +129,25 @@ def _latest(documents: list[dict]) -> tuple[dict[str, dict], list[str]]:
     return chosen, sorted(duplicated)
 
 
+def _sources(used: list[dict]) -> dict:
+    """What an inspection was made from: how many documents, and which."""
+    stamps = sorted(
+        stamp
+        for stamp in ((d.get("provenance") or {}).get("collected_at") for d in used)
+        if stamp
+    )
+    return {
+        "documents": len(used),
+        "digest": _digest(used),
+        "collected_from": stamps[0] if stamps else None,
+        "collected_to": stamps[-1] if stamps else None,
+        "identity_kinds": sorted(
+            {str((d.get("provenance") or {}).get("identity_kind") or "") for d in used}
+            - {""}
+        ),
+    }
+
+
 def _guests(documents: list[dict]) -> dict:
     """What a guest collection in the evidence says, as counts of accounts.
 
@@ -314,25 +333,136 @@ def external_access(documents: list[dict]) -> dict:
         },
         "duplicates": duplicated,
         "not_established": not_established,
-        "sources": {
-            "documents": len(used),
-            "digest": _digest(used),
-            "collected_from": min(
-                ((d.get("provenance") or {}).get("collected_at") or "" for d in used),
-                default="",
-            ),
-            "collected_to": max(
-                ((d.get("provenance") or {}).get("collected_at") or "" for d in used),
-                default="",
-            ),
-            "identity_kinds": sorted(
-                {
-                    str((d.get("provenance") or {}).get("identity_kind") or "")
-                    for d in used
-                }
-                - {""}
-            ),
+        "sources": _sources(used),
+    }
+
+
+def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
+    """Which SharePoint sites name enough administrators, and which cannot say.
+
+    Reads who administers each site (`owners`, read site by site) and compares
+    the number of administrators that can be counted with a number the
+    operator chose. The threshold is the operator's and is recorded in the
+    inspection; this engine holds no view on what it should be.
+
+    A GROUP IS NOT A NUMBER OF PEOPLE. An administrator that is a group was
+    not expanded, so a site with one named person and one group has at least
+    two administrators and possibly many: it is reported as `at-least` when
+    the named ones already reach the threshold and as `not-established` when
+    they do not, never as too few.
+    """
+    sites = [
+        d
+        for d in documents
+        if (d.get("resource") or {}).get("workload") == "sharepoint"
+        and (d.get("resource") or {}).get("type") == "site"
+    ]
+    with_read = [
+        d for d in sites if isinstance((d.get("facts") or {}).get("owners"), dict)
+    ]
+    chosen, duplicated = _latest(with_read)
+    for document in sites:
+        key = str((document.get("resource") or {}).get("native_id") or "")
+        if key and key not in chosen:
+            chosen[key] = document
+
+    rows = []
+    for key in sorted(chosen):
+        document = chosen[key]
+        resource = document.get("resource") or {}
+        owners = (document.get("facts") or {}).get("owners")
+        row: dict[str, Any] = {
+            "native_id": key,
+            "name": resource.get("display_name") or "",
+            "url": resource.get("url") or "",
+            "named_administrators": "",
+            "group_administrators": "",
+            "collected_at": (document.get("provenance") or {}).get("collected_at"),
+        }
+        if not isinstance(owners, dict):
+            row["owners_read"] = "[not-collected]"
+            row["standing"] = NOT_ESTABLISHED
+            row["because"] = "who administers this site was not read"
+        elif owners.get("state") != "observed":
+            row["owners_read"] = f"[{owners.get('state') or NOT_ESTABLISHED}]"
+            row["standing"] = NOT_ESTABLISHED
+            row["because"] = (
+                "the site did not say who administers it; that is not a site "
+                "with no administrators"
+            )
+        else:
+            named = _observed(owners.get("direct_count"))
+            groups = _observed(owners.get("group_count"))
+            if named is None:
+                named = len(owners.get("direct") or [])
+            if groups is None:
+                groups = len(owners.get("groups") or [])
+            row["owners_read"] = "observed"
+            row["named_administrators"] = named
+            row["group_administrators"] = groups
+            if named >= minimum_owners:
+                row["standing"] = "at-least" if groups else "meets"
+                row["because"] = f"{named} named administrators" + (
+                    ", and groups that were not expanded" if groups else ""
+                )
+            elif groups:
+                row["standing"] = NOT_ESTABLISHED
+                row["because"] = (
+                    f"{named} named administrators and {groups} groups whose "
+                    "members were not read, so the number of people cannot be "
+                    "compared with the threshold"
+                )
+            else:
+                row["standing"] = "fewer"
+                row["because"] = f"{named} named administrators and no group"
+        rows.append(row)
+
+    by_standing: dict[str, int] = {}
+    for row in rows:
+        by_standing[row["standing"]] = by_standing.get(row["standing"], 0) + 1
+
+    return {
+        "$schema": SCHEMA,
+        "scenario": "ownership",
+        "scope": "spo",
+        "question": (
+            f"Which SharePoint sites name at least {minimum_owners} "
+            "administrators, and which cannot say?"
+        ),
+        "parameters": {"minimum_owners": minimum_owners},
+        "columns": [
+            "name",
+            "url",
+            "owners_read",
+            "named_administrators",
+            "group_administrators",
+            "standing",
+            "because",
+        ],
+        "relations": [
+            "site -> its site collection administrators, read from the site itself",
+            "group administrator -> its members: NOT JOINED. A group was not "
+            "expanded into people",
+        ],
+        "rows": rows,
+        "sites": {
+            "in_the_evidence": len(rows),
+            "by_standing": dict(sorted(by_standing.items())),
         },
+        "duplicates": duplicated,
+        "not_established": [
+            "the people behind an administrator that is a group: no group was "
+            "expanded, so a site administered by a group has an unknown number "
+            "of administrators",
+            "the owners of the Microsoft 365 group or the team connected to a "
+            "site: a site collection administrator, a group owner and a team "
+            "owner are three different things and only the first was read",
+            "whether an administrator is active, reachable or still employed: "
+            "an account being named is not a person being responsible",
+            "sites the collecting identity could not enumerate or open: the "
+            "first are absent from the evidence, the second are rows that say so",
+        ],
+        "sources": _sources([chosen[key] for key in sorted(chosen)]),
     }
 
 
@@ -342,6 +472,11 @@ SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] 
         "which SharePoint sites permit sharing outside the organisation",
         external_access,
         ("sites-sharing", "tenant-sharing", "guests"),
+    ),
+    "ownership": (
+        "which SharePoint sites name enough administrators, and which cannot say",
+        ownership,
+        ("sites-owners",),
     ),
 }
 
@@ -359,10 +494,30 @@ COLUMNS = (
 
 
 def as_table(inspection: dict) -> tuple[list[str], list[list[str]]]:
+    columns = list(inspection.get("columns") or COLUMNS)
     rows = [
-        [str(row.get(column, "")) for column in COLUMNS] for row in inspection["rows"]
+        [str(row.get(column, "")) for column in columns] for row in inspection["rows"]
     ]
-    return list(COLUMNS), rows
+    return columns, rows
+
+
+def _row_lines(inspection: dict, row: dict) -> list[str]:
+    if inspection["scenario"] == "ownership":
+        named = row["named_administrators"]
+        groups = row["group_administrators"]
+        return [
+            f"  standing         {row['standing']}  ({row['because']})",
+            f"  administrators   read: {row['owners_read']} · named "
+            f"{'-' if named == '' else named} · groups "
+            f"{'-' if groups == '' else groups}",
+        ]
+    return [
+        f"  in force         {row['in_force']}  ({row['because']})",
+        f"  site / org       {row['site_capability']} / "
+        f"{row['organisation_capability']}",
+        f"  external sharing {row['external_sharing']} · new guests "
+        f"{row['new_guests']} · anonymous links {row['anonymous_links']}",
+    ]
 
 
 def as_text(inspection: dict) -> str:
@@ -372,20 +527,14 @@ def as_text(inspection: dict) -> str:
     for row in inspection["rows"]:
         title = row["name"] or row["native_id"]
         lines.append(f"{title}  {row['url']}".rstrip())
-        lines.append(f"  in force         {row['in_force']}  ({row['because']})")
-        lines.append(
-            f"  site / org       {row['site_capability']} / "
-            f"{row['organisation_capability']}"
-        )
-        lines.append(
-            f"  external sharing {row['external_sharing']} · new guests "
-            f"{row['new_guests']} · anonymous links {row['anonymous_links']}"
-        )
+        lines += _row_lines(inspection, row)
         lines.append("")
     counted = inspection["sites"]
     lines.append(f"{counted['in_the_evidence']} sites in the evidence:")
-    for state, number in counted["by_external_sharing"].items():
+    for state, number in (counted.get("by_external_sharing") or {}).items():
         lines.append(f"  external sharing {state}: {number}")
+    for state, number in (counted.get("by_standing") or {}).items():
+        lines.append(f"  {state}: {number}")
     if inspection["duplicates"]:
         lines.append(
             f"  {len(inspection['duplicates'])} sites were in the evidence more "
@@ -406,10 +555,11 @@ def as_text(inspection: dict) -> str:
     lines += ["", "Not established by this inspection:"]
     lines += [f"  - {item}" for item in inspection["not_established"]]
     sources = inspection["sources"]
-    lines += [
-        "",
-        f"From {sources['documents']} evidence documents, {sources['digest'][:19]}…, "
-        f"collected {sources['collected_from']} to {sources['collected_to']}.",
-        "",
-    ]
+    made_from = f"From {sources['documents']} evidence documents"
+    if sources["documents"]:
+        made_from += (
+            f", {sources['digest'][:19]}…, collected "
+            f"{sources['collected_from']} to {sources['collected_to']}"
+        )
+    lines += ["", made_from + ".", ""]
     return "\n".join(lines)

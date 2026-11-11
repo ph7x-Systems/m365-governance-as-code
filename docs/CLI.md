@@ -50,9 +50,10 @@ on the command line, then a project file, then the active connection.
 
 ## What a session does not cover
 
-Twelve of the sixteen collections sign in through PnP.PowerShell and reuse a
-persisted session. `conditional-access` and `tenant-governance` read Microsoft
-Graph with a certificate and never prompt. `licensing` signs in through the
+Every SharePoint collection signs in through PnP.PowerShell and reuses a
+persisted session; `m365g engine capabilities` lists them, and no count is
+kept here to go stale. `conditional-access`, `tenant-governance` and `guests`
+read Microsoft Graph with a token the operator supplies and never prompt. `licensing` signs in through the
 Microsoft Graph PowerShell SDK, whose own persisted context is shared with
 everything else the operator does with that SDK: the collector confines its
 sign-in to its own process, so it neither leaves that context behind nor uses
@@ -96,6 +97,7 @@ does, and takes the same `--output`.
 | `m365g entra guest list` | `m365g collect guests` |
 | `m365g spo site list` | `m365g collect sites` |
 | `m365g spo hub list` | `m365g collect hubs` |
+| `m365g spo site admins` | `m365g collect sites-owners` |
 | `m365g spo owner list` | `m365g collect owners` |
 | `m365g spo sharing get` | `m365g collect sharing` |
 | `m365g spo sharing list` | `m365g collect sites-sharing` |

@@ -283,10 +283,40 @@
     "md"
    ],
    "evidence": "--out FILE keeps the inspection with the digest of the evidence it read",
+   "options": [],
    "examples": [
     "m365g governance inspect external-access --evidence ./evidence",
     "m365g governance inspect external-access --evidence ./evidence --output csv",
     "m365g governance inspect external-access --evidence ./evidence --out external-access.json"
+   ]
+  },
+  {
+   "command": "m365g governance inspect ownership",
+   "earlier_name": "m365g inspect ownership",
+   "kind": "scenario",
+   "service": "governance",
+   "describes": "which SharePoint sites name enough administrators, and which cannot say",
+   "reads_collections": [
+    "sites-owners"
+   ],
+   "reaches_a_tenant": false,
+   "needs": [
+    "--evidence"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--out FILE keeps the inspection with the digest of the evidence it read",
+   "options": [
+    "--minimum-owners"
+   ],
+   "examples": [
+    "m365g governance inspect ownership --evidence ./evidence",
+    "m365g governance inspect ownership --evidence ./evidence --output csv",
+    "m365g governance inspect ownership --evidence ./evidence --out ownership.json"
    ]
   },
   {
@@ -745,6 +775,42 @@
     "m365g spo sharing list --tenant-url <address>",
     "m365g spo sharing list --output csv",
     "m365g spo sharing list --evidence-out ./evidence"
+   ]
+  },
+  {
+   "command": "m365g spo site admins",
+   "earlier_name": "m365g collect sites-owners",
+   "kind": "enumeration",
+   "service": "spo",
+   "describes": "who administers every enumerated site, read site by site",
+   "collection": "sites-owners",
+   "reads": [
+    "Get-PnPTenantSite",
+    "Get-PnPSiteCollectionAdmin"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "needs": [
+    "--tenant-url"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
+   "feeds_rules": [
+    "SPO-SITE-001",
+    "SPO-SITE-002"
+   ],
+   "consumed_by": "governance rules",
+   "live_validation_state": "full",
+   "examples": [
+    "m365g spo site admins --tenant-url <address>",
+    "m365g spo site admins --output csv",
+    "m365g spo site admins --evidence-out ./evidence"
    ]
   },
   {
