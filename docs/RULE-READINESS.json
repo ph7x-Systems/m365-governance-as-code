@@ -1219,12 +1219,15 @@
    "service": "sharepoint",
    "basis": "convention",
    "capabilities": [
-    "sharing"
+    "sharing",
+    "sites-sharing"
    ],
    "endpoints": [
     "Get-PnPWeb",
     "Get-PnPSite",
-    "Get-PnPTenantSite"
+    "Get-PnPTenantSite",
+    "Get-PnPTenantSite",
+    "Get-PnPTenantSite -Identity"
    ],
    "permissions": [
     "not-established"
@@ -1258,12 +1261,15 @@
    "service": "sharepoint",
    "basis": "documented-guidance",
    "capabilities": [
-    "sharing"
+    "sharing",
+    "sites-sharing"
    ],
    "endpoints": [
     "Get-PnPWeb",
     "Get-PnPSite",
-    "Get-PnPTenantSite"
+    "Get-PnPTenantSite",
+    "Get-PnPTenantSite",
+    "Get-PnPTenantSite -Identity"
    ],
    "permissions": [
     "not-established"
@@ -1371,12 +1377,15 @@
    "service": "sharepoint",
    "basis": "convention",
    "capabilities": [
-    "sharing"
+    "sharing",
+    "sites-sharing"
    ],
    "endpoints": [
     "Get-PnPWeb",
     "Get-PnPSite",
-    "Get-PnPTenantSite"
+    "Get-PnPTenantSite",
+    "Get-PnPTenantSite",
+    "Get-PnPTenantSite -Identity"
    ],
    "permissions": [
     "not-established"

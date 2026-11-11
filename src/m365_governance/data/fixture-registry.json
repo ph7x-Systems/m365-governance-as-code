@@ -715,6 +715,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-sharing-read-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one enumerated site whose own sharing read was refused, constructed so a refusal on one site is not a site missing from the list",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-spfx-behind-refused.json",
       "origin": "synthetic",
       "purpose": "the spfx area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",

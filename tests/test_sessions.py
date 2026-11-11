@@ -222,7 +222,7 @@ def test_every_collection_after_one_login_does_not_ask_again(machine):
         if s.source == "powershell" and s.collector.name == "Get-SpoEvidence.ps1"
     }
     collected = [a for a in asked[1:] if a["mode"] in sharepoint]
-    assert len(collected) == 13, sorted(a["mode"] for a in collected)
+    assert len(collected) == 14, sorted(a["mode"] for a in collected)
     assert not [a["mode"] for a in collected if a["interactive"]], (
         "a SharePoint collection asked again"
     )

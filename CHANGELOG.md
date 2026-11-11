@@ -16,6 +16,19 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g spo sharing list`, and the `sites-sharing` collection behind it.**
+  What every enumerated site permits, read site by site: the enumeration
+  supplies the addresses and every value comes from the site's own read,
+  because a filtered enumeration does not populate the setting. A site whose
+  read is refused still gets a document saying so. Proved against a tenant on
+  2026-11-11.
+- **`m365g governance inspect external-access`, the first composed scenario.**
+  It joins what each site permits to what the organisation permits, over
+  evidence already collected, and reports what is in force for each site and
+  why. It reaches no tenant and no outcome, drops no site, and names what it
+  does not establish: guests, what is in fact shared, and who can reach what.
+  `--out FILE` keeps the inspection with the digest of the evidence it read.
+
 - **`m365g spo hub list`, and the `hubs` collection behind it.** The sites
   registered as hubs and how each is set: whether joining needs approval,
   whether association is restricted and to how many principals, whether it has

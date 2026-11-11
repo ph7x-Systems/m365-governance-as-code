@@ -181,17 +181,17 @@ def _text(documents: list[dict]) -> str:
     return "\n".join(lines)
 
 
-def _csv(documents: list[dict]) -> str:
-    headers, rows = table(documents)
-    out = io.StringIO()
-    writer = csv.writer(out, lineterminator="\n")
-    writer.writerow(headers)
-    writer.writerows(rows)
-    return out.getvalue()
-
-
-def _md(documents: list[dict]) -> str:
-    headers, rows = table(documents)
+def tabulate(headers: list[str], rows: list[list[str]], view: str) -> str:
+    """Headers and rows as CSV or as a Markdown table. One writer for both
+    the evidence views and the composed scenarios, so they cannot drift."""
+    if view == "csv":
+        out = io.StringIO()
+        writer = csv.writer(out, lineterminator="\n")
+        writer.writerow(headers)
+        writer.writerows(rows)
+        return out.getvalue()
+    if view != "md":
+        raise ValueError(f"not a table view: {view}")
 
     def cell(value: str) -> str:
         return value.replace("|", "\\|").replace("\n", " ")
@@ -202,6 +202,14 @@ def _md(documents: list[dict]) -> str:
     ]
     lines += ["| " + " | ".join(cell(c) for c in row) + " |" for row in rows]
     return "\n".join(lines) + "\n"
+
+
+def _csv(documents: list[dict]) -> str:
+    return tabulate(*table(documents), "csv")
+
+
+def _md(documents: list[dict]) -> str:
+    return tabulate(*table(documents), "md")
 
 
 def render(documents: list[dict], view: str) -> str:

@@ -38,6 +38,7 @@
       UniquePermissions  every list on a site, hidden ones included
       TenantSites        every site this identity can enumerate
       HubSites           the sites registered as hubs, and how each is set
+      SiteSharingAll     what every enumerated site permits, read site by site
       Modernity          how one site is built: template, branding, publishing
                          features, and how many of its pages are modern
       SpfxCatalog        what is in an app catalog. Cheap: one call
@@ -167,7 +168,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites')]
+    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites', 'SiteSharingAll')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -646,6 +647,66 @@ switch ($Mode) {
                     -Unavailable ([ordered]@{ enumeration = $note }) `
                     -SourceApi 'PnP.PowerShell / SharePoint Admin')
         }
+    }
+
+    'SiteSharingAll' {
+        # ENUMERATE, THEN READ EACH SITE BY ITS ADDRESS. The enumeration cannot
+        # carry this: Microsoft documents that a filtered enumeration does not
+        # populate SharingCapability and may return a default, and it was
+        # reproduced here (Sites.psm1). So the enumeration supplies the
+        # addresses and nothing else, and every value comes from the identity
+        # path, one call per site.
+        #
+        # NO SITE IS DROPPED. A site whose own read fails still gets a document,
+        # with the area unavailable and the collector's state for why: a refusal
+        # on one site is a fact about that site, and a list that silently lost
+        # it would read as a tenant with one site fewer.
+        $sites = @(Get-PnPTenantSite)
+        Write-Host "$($sites.Count) sites enumerated by this identity"
+        $note = New-Unavailable -State 'partial' -Detail (
+            "Enumerated $($sites.Count) sites with $(if ($identityKind -eq 'application') { 'an application' } else { 'a delegated' }) identity. Sites " +
+            'this identity cannot see are absent from this run, and their ' +
+            'number is not knowable from here.')
+        $read = 0
+        foreach ($listed in $sites) {
+            $url = [string] $listed.Url
+            $resource = [ordered]@{
+                workload = 'sharepoint'; type = 'site'
+                native_id = $url
+                tenant = (New-TenantIdentity)
+                scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                display_name = [string] $listed.Title
+                url = $url
+            }
+            try {
+                $site = Get-PnPTenantSite -Identity $url
+                Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                        -Resource $resource `
+                        -Facts (Get-SharingFacts -Site $site) `
+                        -Requested @('sharing', 'enumeration') -Completed @('sharing') `
+                        -Unavailable ([ordered]@{ enumeration = $note }) `
+                        -SourceApi 'PnP.PowerShell / SharePoint Admin')
+                $read++
+            }
+            catch {
+                # The fact a rule reads is present and says why it has no
+                # value, so the rule answers `unknown` from the collector's own
+                # state instead of from an absence it would have to interpret.
+                $state = Resolve-FailureState $_
+                $why = New-Unavailable -State $state -Detail $_.Exception.Message
+                $absent = [ordered]@{ sharing = [ordered]@{
+                        capability = New-AbsentFact -State $state -Detail $_.Exception.Message
+                    }
+                }
+                Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                        -Resource $resource `
+                        -Facts $absent `
+                        -Requested @('sharing', 'enumeration') -Completed @() `
+                        -Unavailable ([ordered]@{ sharing = $why; enumeration = $note }) `
+                        -SourceApi 'PnP.PowerShell / SharePoint Admin')
+            }
+        }
+        Write-Host "$read of $($sites.Count) sites read by their own address"
     }
 
     'HubSites' {

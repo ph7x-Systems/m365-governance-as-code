@@ -40,6 +40,7 @@ GROUPS: tuple[Group, ...] = (
             ("hub", "list"): _collect("hubs"),
             ("owner", "list"): _collect("owners"),
             ("sharing", "get"): _collect("sharing"),
+            ("sharing", "list"): _collect("sites-sharing"),
             ("tenant", "sharing", "get"): _collect("tenant-sharing"),
             ("permission", "list"): _collect("permissions"),
             ("activity", "get"): _collect("activity"),
@@ -85,6 +86,7 @@ GROUPS: tuple[Group, ...] = (
             ("verify",): ("verify",),
             ("report",): ("report",),
             ("diff",): ("diff",),
+            ("inspect",): ("inspect",),
         },
     ),
     Group(

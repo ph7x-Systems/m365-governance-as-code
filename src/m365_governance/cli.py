@@ -60,6 +60,7 @@ from . import (
     presenting,
     reporting,
     running,
+    scenarios,
     sessions,
     setting_up,
     tenant_governance,
@@ -602,6 +603,47 @@ def _build_parser() -> argparse.ArgumentParser:
     report.add_argument("report", type=Path)
     report.add_argument(
         "--format", choices=("markdown", "json", "html"), default="markdown"
+    )
+
+    inspecting = sub.add_parser(
+        "inspect",
+        help="answer one question from several collections, over collected evidence",
+        description=(
+            "Relate evidence that was already collected. Reaches no tenant, so "
+            "the same evidence gives the same answer. It reports what the "
+            "collections establish together and names what they do not; it is "
+            "not an assessment and reaches no outcome."
+        ),
+        epilog=(
+            "Scenarios:\n"
+            + "\n".join(
+                f"  {name}  {says}. Reads: {', '.join(reads)}"
+                for name, (says, _, reads) in scenarios.SCENARIOS.items()
+            )
+            + "\n\nExample:\n"
+            f"  {COMMAND} spo sharing list --evidence-out ev/sharing\n"
+            f"  {COMMAND} spo tenant sharing get --evidence-out ev/tenant\n"
+            f"  {COMMAND} governance inspect external-access --evidence ev\n\n" + DOCS
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    inspecting.add_argument("scenario", choices=sorted(scenarios.SCENARIOS))
+    inspecting.add_argument(
+        "--evidence",
+        type=Path,
+        required=True,
+        help="a directory of collected evidence, searched recursively",
+    )
+    inspecting.add_argument(
+        "--format", choices=presenting.FORMATS, default="text", dest="format"
+    )
+    inspecting.add_argument(
+        "--out",
+        type=Path,
+        dest="inspection_out",
+        metavar="FILE",
+        help="also write the inspection as JSON here, with the digest of the "
+        "evidence it was made from",
     )
 
     diff = sub.add_parser(
@@ -2148,6 +2190,42 @@ def _cmd_doctor(args) -> int:
     return 0 if healthy else 1
 
 
+def _cmd_inspect(args) -> int:
+    """One composed scenario over evidence that was already collected."""
+    if not args.evidence.is_dir():
+        print(
+            f"{args.evidence} is not a directory of evidence. Collect first, "
+            f"with --evidence-out, and point --evidence at where it was kept.",
+            file=sys.stderr,
+        )
+        return 2
+    _says, build, reads = scenarios.SCENARIOS[args.scenario]
+    documents = scenarios.load(args.evidence)
+    if not documents:
+        print(
+            f"no evidence document was found under {args.evidence}. This "
+            f"scenario reads: {', '.join(reads)}.",
+            file=sys.stderr,
+        )
+        return 2
+    inspection = build(documents)
+    if args.inspection_out:
+        args.inspection_out.parent.mkdir(parents=True, exist_ok=True)
+        args.inspection_out.write_text(
+            json.dumps(inspection, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        print(f"inspection written to {args.inspection_out}", file=sys.stderr)
+    if args.format == "json":
+        sys.stdout.write(json.dumps(inspection, indent=2, ensure_ascii=False) + "\n")
+    elif args.format == "text":
+        sys.stdout.write(scenarios.as_text(inspection))
+    else:
+        headers, rows = scenarios.as_table(inspection)
+        sys.stdout.write(presenting.tabulate(headers, rows, args.format))
+    return 0
+
+
 def _cmd_stats(args) -> int:
     sys.stdout.write(inspect_module.stats(args.evidence))
     return 0
@@ -3392,6 +3470,7 @@ _COMMANDS = {
     "migration-verify": _cmd_migration_verify,
     "report": _cmd_report,
     "diff": _cmd_diff,
+    "inspect": _cmd_inspect,
     "contracts": _cmd_contracts,
     "login": _cmd_login,
     "status": _cmd_status,

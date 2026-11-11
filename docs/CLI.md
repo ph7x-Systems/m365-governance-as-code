@@ -97,6 +97,7 @@ does, and takes the same `--output`.
 | `m365g spo hub list` | `m365g collect hubs` |
 | `m365g spo owner list` | `m365g collect owners` |
 | `m365g spo sharing get` | `m365g collect sharing` |
+| `m365g spo sharing list` | `m365g collect sites-sharing` |
 | `m365g spo tenant sharing get` | `m365g collect tenant-sharing` |
 | `m365g spo permission list` | `m365g collect permissions` |
 | `m365g spo activity get` | `m365g collect activity` |
