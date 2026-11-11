@@ -70,7 +70,8 @@ def test_a_read_answers_in_the_terminal_as_text_by_default(run):
     out = run(*OWNERS)
     assert out.returncode == 0, out.stderr
     assert "Marketing" in out.stdout and SITE in out.stdout
-    assert "owners" in out.stdout and "observed" in out.stdout
+    assert "owners" in out.stdout and "effective_count=1" in out.stdout
+    assert "{raw" not in out.stdout, "a fact was printed as its own keys"
     assert "evidence NOT kept" in out.stderr and "--evidence-out" in out.stderr
 
 
@@ -204,8 +205,11 @@ def test_a_view_shows_the_collectors_words_and_concludes_nothing():
         },
     }
     assert presenting.fact(document["facts"]["sharing"]) == (
-        "unknown; by: {x}; links: 2 entries; value=null"
+        "[unknown]; by: {x}; links: 2 entries"
     )
+    assert presenting.fact({"state": "observed", "value": True, "raw": {}}) == "true"
+    assert presenting.fact({"state": "observed", "value": ["a", "b"]}) == "a, b"
+    assert presenting.fact({"state": "observed", "value": [{"a": 1}]}) == "1 entries"
     text = presenting.render([document], "text")
     assert "UNAVAILABLE: denied" in text and "unknown" in text
     headers, rows = presenting.table([document])

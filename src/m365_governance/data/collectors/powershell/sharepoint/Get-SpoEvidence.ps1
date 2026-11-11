@@ -37,6 +37,7 @@
       List               one list: item count and permission inheritance
       UniquePermissions  every list on a site, hidden ones included
       TenantSites        every site this identity can enumerate
+      HubSites           the sites registered as hubs, and how each is set
       Modernity          how one site is built: template, branding, publishing
                          features, and how many of its pages are modern
       SpfxCatalog        what is in an app catalog. Cheap: one call
@@ -166,7 +167,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter')]
+    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -239,7 +240,7 @@ $CollectorName = 'spo-collector'
 
 $Modules = Join-Path $PSScriptRoot 'modules'
 foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions',
-        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents', 'BrandCenter')) {
+        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents', 'BrandCenter', 'Hubs')) {
     Import-Module (Join-Path $Modules "$module.psm1") -Force
 }
 
@@ -643,6 +644,44 @@ switch ($Mode) {
                     -Facts (Get-SiteInventoryFacts -TenantSite $tenantSite) `
                     -Requested @('site', 'enumeration') -Completed @('site') `
                     -Unavailable ([ordered]@{ enumeration = $note }) `
+                    -SourceApi 'PnP.PowerShell / SharePoint Admin')
+        }
+    }
+
+    'HubSites' {
+        # THE TENANT FIRST, THEN ONE DOCUMENT PER HUB. A tenant with no hub
+        # would otherwise write nothing, and a run that wrote nothing cannot be
+        # told from a run that read nothing: the tenant document carries the
+        # count, so zero is an observation with a place to live.
+        $hubs = @(Get-PnPHubSite)
+        Write-Host "$($hubs.Count) hub sites registered in this tenant"
+        Write-Evidence -Path $OutputPath -Name $TenantUrl `
+            -Evidence (New-Evidence `
+                -Resource ([ordered]@{
+                    workload = 'sharepoint'; type = 'tenant'
+                    native_id = $TenantHost
+                    tenant = (New-TenantIdentity)
+                    scope = 'tenant'; parent = $null
+                    display_name = $TenantUrl; url = $TenantUrl
+                }) `
+                -Facts (Get-HubPopulationFacts -Count $hubs.Count) `
+                -Requested @('hubs') -Completed @('hubs') `
+                -Unavailable ([ordered]@{}) `
+                -SourceApi 'PnP.PowerShell / SharePoint Admin')
+        foreach ($hub in $hubs) {
+            Write-Evidence -Path $OutputPath -Name ([string] $hub.SiteUrl) `
+                -Evidence (New-Evidence `
+                    -Resource ([ordered]@{
+                        workload = 'sharepoint'; type = 'site'
+                        native_id = [string] $hub.SiteUrl
+                        tenant = (New-TenantIdentity)
+                        scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                        display_name = [string] $hub.Title
+                        url = [string] $hub.SiteUrl
+                    }) `
+                    -Facts (Get-HubFacts -Hub $hub) `
+                    -Requested @('hub') -Completed @('hub') `
+                    -Unavailable ([ordered]@{}) `
                     -SourceApi 'PnP.PowerShell / SharePoint Admin')
         }
     }

@@ -456,7 +456,7 @@ def test_a_slice_that_writes_many_refuses_a_file(tmp_path, capsys):
 
 
 def test_which_slices_write_many_is_declared_rather_than_guessed():
-    """Four slices read many resources; the rest read one.
+    """Five slices read many resources; the rest read one.
 
     Declared on the slice so the refusal above is a property of the contract
     rather than a heuristic over the slice's name. Frozen as a set so that a
@@ -467,7 +467,13 @@ def test_which_slices_write_many_is_declared_rather_than_guessed():
 
     many = {name for name, s in SLICES.items() if s.writes_many}
 
-    assert many == {"sites", "permissions", "conditional-access", "tenant-governance"}
+    assert many == {
+        "sites",
+        "permissions",
+        "conditional-access",
+        "tenant-governance",
+        "hubs",
+    }
 
 
 def test_the_suite_cannot_start_the_shipped_collector(tmp_path):

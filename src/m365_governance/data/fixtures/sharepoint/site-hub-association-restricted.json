@@ -1,0 +1,114 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "resource": {
+    "workload": "sharepoint",
+    "type": "site",
+    "native_id": "https://contoso.sharepoint.com/sites/intranet",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "sharepoint",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Intranet",
+    "url": "https://contoso.sharepoint.com/sites/intranet"
+  },
+  "provenance": {
+    "collected_at": "2026-11-11T10:00:00Z",
+    "collector": "spo-collector",
+    "collector_version": "0.3.0",
+    "source_system": "SharePoint Online",
+    "source_api": "PnP.PowerShell / SharePoint Admin",
+    "identity_kind": "delegated",
+    "acquisition": "collected",
+    "tenant": {
+      "id": null,
+      "host": "contoso.sharepoint.com",
+      "how": "requested"
+    },
+    "scopes": [
+      "AllSites.FullControl"
+    ]
+  },
+  "coverage": {
+    "requested": [
+      "hub"
+    ],
+    "completed": [
+      "hub"
+    ],
+    "unavailable": {}
+  },
+  "facts": {
+    "hub": {
+      "hub_site_id": {
+        "state": "observed",
+        "value": "11111111-2222-4333-8444-555555555555",
+        "raw": {
+          "field": "ID",
+          "value": "11111111-2222-4333-8444-555555555555"
+        }
+      },
+      "site_id": {
+        "state": "observed",
+        "value": "11111111-2222-4333-8444-555555555555",
+        "raw": {
+          "field": "SiteId",
+          "value": "11111111-2222-4333-8444-555555555555"
+        }
+      },
+      "requires_join_approval": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "RequiresJoinApproval",
+          "value": true
+        }
+      },
+      "permissions_sync_enabled": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "EnablePermissionsSync",
+          "value": false
+        }
+      },
+      "name_hidden_in_navigation": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "HideNameInNavigation",
+          "value": false
+        }
+      },
+      "has_parent_hub": {
+        "state": "observed",
+        "value": false,
+        "raw": {
+          "field": "ParentHubSiteId",
+          "value": false
+        }
+      },
+      "association_restricted": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "Permissions",
+          "value": true
+        }
+      },
+      "association_principals": {
+        "state": "observed",
+        "value": 2,
+        "raw": {
+          "field": "Permissions | Measure-Object",
+          "value": 2
+        }
+      }
+    }
+  }
+}

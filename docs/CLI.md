@@ -94,6 +94,7 @@ does, and takes the same `--output`.
 | Grouped | Earlier name |
 |---|---|
 | `m365g spo site list` | `m365g collect sites` |
+| `m365g spo hub list` | `m365g collect hubs` |
 | `m365g spo owner list` | `m365g collect owners` |
 | `m365g spo sharing get` | `m365g collect sharing` |
 | `m365g spo tenant sharing get` | `m365g collect tenant-sharing` |
@@ -143,10 +144,13 @@ has them.
   documents themselves, untouched; CSV and Markdown are one row per resource
   with stable leading columns (`resource_type`, `name`, `url`, `native_id`,
   `tenant`, `collected_at`, `completed`, `unavailable`) followed by one column
-  per fact, by name.
+  per fact, named `family.fact`: the path a rule uses for the same fact.
 - **A view is not the evidence.** It is rendered from the documents the
-  collection wrote and adds nothing to them. A fact is shown with the state the
-  collector gave it and nothing is concluded. Without `--evidence-out` the
+  collection wrote and adds nothing to them. An observed fact is shown as what was observed.
+  Any other state is shown as the state itself in square brackets, such as
+  `[permission-denied]`, and never as a value: that is the one translation a
+  view makes, and the contract value behind every cell is in the JSON view.
+  Nothing is concluded. Without `--evidence-out` the
   documents are not kept, and the command says so on every run.
 - **`--evidence-out DIRECTORY` keeps the evidence**: the documents, with their
   provenance and coverage, which is what rules evaluate.

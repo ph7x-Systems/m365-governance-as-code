@@ -37,6 +37,7 @@ GROUPS: tuple[Group, ...] = (
         "SharePoint Online: what a tenant and its sites are set to",
         {
             ("site", "list"): _collect("sites"),
+            ("hub", "list"): _collect("hubs"),
             ("owner", "list"): _collect("owners"),
             ("sharing", "get"): _collect("sharing"),
             ("tenant", "sharing", "get"): _collect("tenant-sharing"),

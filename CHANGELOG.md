@@ -14,6 +14,31 @@ Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
 
+### Added
+
+- **`m365g spo hub list`, and the `hubs` collection behind it.** The sites
+  registered as hubs and how each is set: whether joining needs approval,
+  whether association is restricted and to how many principals, whether it has
+  a parent hub. One tenant document carries the count, so a tenant with no hub
+  is an observation and not an empty directory. It feeds no rule, by decision:
+  Microsoft publishes no position on how hubs should be set, and the reader is
+  the operator and the report. Proved against a tenant on 2026-11-11 and
+  counter-checked against the site enumeration of the same session.
+
+### Fixed
+
+- **The terminal view printed a family of facts as the names of its own keys**,
+  `{raw, state, value}`, for every collection whose facts are grouped. It now
+  prints one line or column per fact, named `family.fact`, with the value that
+  was observed, and a state in square brackets where nothing was.
+
+- **`login` failed on PnP.PowerShell 3.4.1 after signing in.** The collector
+  read a property the connection object no longer has. The session's scopes
+  and directory are now read from its own token's claims.
+- **A login that failed after the session opened left the sign-in stored**
+  while reporting that nothing was kept. It is now removed before the failure
+  is reported.
+
 ### A run can be limited to some collections
 
 `run --only sites,owners` attempts those collections and no others, by the

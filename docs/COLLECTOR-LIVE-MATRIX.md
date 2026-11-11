@@ -41,6 +41,7 @@ to exercise.
 | `spfx` | ✓ | a tenant catalog of 10 solutions, 2026-11-11; no site catalog | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **partially live-validated** |
 | `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | `CA-STATE-001`, `CA-SCOPE-001`, `CA-RECOVERY-001` | **provider live-validated, slice not live-validated** |
 | `customization` | ✓ | `completed`, 1 doc, every fact observed, 2026-11-11 | — | n.a. | `SPO-SCRIPT-001` | **live-validated** |
+| `hubs` | ✓ | 2 hubs, every fact observed, 2026-11-11 | — | n.a. | **none**, by decision | **live-validated** |
 | `brand-center` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
 | `tenant-governance` | ✓ | not observed | not observed | n.a. | `ENTRA-ROLE-001/002/003`, `ENTRA-AUTH-001/002/003/004` | **not live-validated** |
 | `forwarding` | ✓ | not observed | not observed | n.a. | `EXO-FORWARD-001`, `EXO-FORWARD-002` | **not live-validated** |

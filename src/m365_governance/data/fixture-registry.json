@@ -571,6 +571,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-hub-association-restricted.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one hub whose association is restricted to two principals, constructed to exercise one path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-imported-inventory.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -778,6 +784,12 @@
       "path": "fixtures/sharepoint/tenant-brand-center-public-cdn.json",
       "origin": "synthetic",
       "purpose": "a tenant whose brand assets are published across a public CDN origin: two organisation asset libraries, public CDN on, private off, and the two documented consequences of a public origin carried as facts",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/tenant-hubs-two-registered.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document of a hub enumeration, constructed so a count has a place to live when it is zero",
       "may_be_presented_as_tenant_observation": false
     },
     {

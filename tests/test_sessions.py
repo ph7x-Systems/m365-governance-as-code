@@ -197,7 +197,7 @@ def test_without_a_login_every_collection_signs_in_for_itself(machine):
 
 
 @needs_protected_storage
-def test_sixteen_collections_after_one_login_do_not_ask_sixteen_times(machine):
+def test_every_collection_after_one_login_does_not_ask_again(machine):
     """One interactive sign-in at login; the collections that follow are silent.
 
     Every slice the engine has is collected once. The twelve that sign in
@@ -222,7 +222,7 @@ def test_sixteen_collections_after_one_login_do_not_ask_sixteen_times(machine):
         if s.source == "powershell" and s.collector.name == "Get-SpoEvidence.ps1"
     }
     collected = [a for a in asked[1:] if a["mode"] in sharepoint]
-    assert len(collected) == 12, sorted(a["mode"] for a in collected)
+    assert len(collected) == 13, sorted(a["mode"] for a in collected)
     assert not [a["mode"] for a in collected if a["interactive"]], (
         "a SharePoint collection asked again"
     )

@@ -721,6 +721,26 @@ SLICES = {
             permissions=("Sites.FullControl.All",),
         ),
         Slice(
+            "hubs",
+            "HubSites",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=False,
+            # AN ENUMERATION IS A READER (charter, collector expansion of
+            # 2026-11-11). Microsoft documents what a hub is and how to plan
+            # one and publishes no position on how many there should be or how
+            # each should be set, so there is no rule to write. The operator
+            # listing hubs is the consumer, and the report after them.
+            consumed_by="the hub list an operator enumerates, and a report",
+            describes="the sites registered as hubs, and how each is set",
+            shaped_like="tenant-hubs-two-registered",
+            also_shaped_like=("site-hub-association-restricted",),
+            writes_many=True,
+            reads=("Get-PnPHubSite",),
+            permissions=(),
+        ),
+        Slice(
             "customization",
             "Customization",
             needs_site=True,

@@ -661,6 +661,41 @@
         "the branch that reports a solution behind its catalog version has not run against a directory",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the collection",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "hubs",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 3,
+        "hubs": 2,
+        "facts_observed_per_hub": 8,
+        "facts_unavailable": 0
+      },
+      "coverage": "the slice's own path: the tenant document and one document per registered hub",
+      "result": "The first live enumeration of hub sites: two registered, every fact observed on both, and the two differ in whether joining needs approval. COUNTER-CHECKED against a separate enumeration of sites in the same session: every hub identifier a site referenced was a hub this read listed, and none was missing from it.",
+      "limitations": [
+        "a tenant with no hub has not been read: the zero the tenant document exists to carry is proved by a fixture only",
+        "neither hub has a parent hub and both restrict association, so the branches for a parent and for an unrestricted hub have not run against a directory",
+        "one listed hub was referenced by no enumerated site; whether it has no associated site or the delegated enumeration did not show one is not established",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."
