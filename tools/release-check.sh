@@ -194,9 +194,15 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   # grows in the direction of whatever nobody measures. The matrix above says
   # how much of Microsoft 365 the product reaches; this says whether a rule
   # that exists is finished -- basis, source, evidence, the boundary of a pass,
-  # and having been SEEN reaching every outcome it can reach. Live and product
-  # readiness are reported and never fail: a rule is not defective because
-  # nobody has pointed the product at a tenant yet.
+  # and having been SEEN reaching every outcome it can reach.
+  #
+  # A RULE THAT HAS NEVER BEEN RUN AGAINST A TENANT FAILS THIS STEP, and there
+  # is no exception list. The change that introduced the step says so and says
+  # why: a list of rules excused from it existed for about an hour and was
+  # removed, because that is how an absolute becomes a tolerance. This comment
+  # said the opposite until it was read beside the tool it describes. Product
+  # path readiness is the one that is reported and never enforced, because it
+  # depends on work outside the rule.
   step "Every rule is RULE-READY, and the table is current"
   "$PY" tools/rule-readiness.py --check
 
