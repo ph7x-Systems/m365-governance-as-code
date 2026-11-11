@@ -25,7 +25,7 @@ ships in a release of its own.
   definition is not a sign-in, and policies combine.
 
 - **`m365g entra app list`, and the `applications` collection behind it.
-  Contract-tested; not yet run against a directory.** One document per
+  Proved against a tenant on 2026-11-11.** One document per
   application registration: how many secrets and certificates it holds, when
   each ends, and how many permissions it asks for, by kind. A secret's value,
   its hint and a certificate's bytes or thumbprint are never written. A
@@ -51,7 +51,7 @@ ships in a release of its own.
   `not-established`, because the group was not expanded.
 
 - **`m365g entra guest list`, and the `guests` collection behind it.
-  Contract-tested; not yet run against a directory.** One document per guest
+  Proved against a tenant on 2026-11-11.** One document per guest
   account, keyed by the directory's object id, and one for the tenant with how
   many were read. Six properties are requested and none names a person. A
   refusal is never an empty directory, a read that stops part of the way keeps

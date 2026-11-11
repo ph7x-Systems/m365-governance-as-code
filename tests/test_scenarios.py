@@ -683,6 +683,10 @@ def test_one_policy_can_be_asked_for_and_a_wrong_id_is_said_so():
     wrong = scenarios.ca_coverage(documents, policy_id="policy-z")
     assert wrong["rows"] == []
     assert "no policy with that id" in wrong["not_established"][0]
+    text = scenarios.as_text(wrong)
+    assert "No Conditional Access policy is in this evidence." not in text
+    assert "Nothing in this evidence matches what was asked for." in text
+    assert "  id               policy-b" in scenarios.as_text(one)
 
 
 def test_a_refused_read_is_not_a_tenant_with_no_policy():
@@ -705,7 +709,7 @@ def test_a_refused_read_is_not_a_tenant_with_no_policy():
 def test_coverage_never_claims_who_a_policy_applies_to():
     inspection = scenarios.ca_coverage([_policy("a")])
     said = " ".join(inspection["not_established"])
-    assert "given sign-in" in said and "no policy at all" in said
+    assert "given sign-in" in said and "outside every policy" in said
     text = scenarios.as_text(inspection).lower()
     for word in ("score", "%", "compliant", "protected", "covered users", "grade"):
         assert word not in text

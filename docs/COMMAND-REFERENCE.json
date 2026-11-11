@@ -61,7 +61,7 @@
    "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
    "feeds_rules": [],
    "consumed_by": "the application list an operator enumerates, and the application exposure inspection",
-   "live_validation_state": "none",
+   "live_validation_state": "full",
    "examples": [
     "m365g entra app list --tenant-url <address>",
     "m365g entra app list --output csv",
@@ -131,7 +131,7 @@
    "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
    "feeds_rules": [],
    "consumed_by": "the guest list an operator enumerates, and the external access inspection",
-   "live_validation_state": "none",
+   "live_validation_state": "full",
    "examples": [
     "m365g entra guest list --tenant-url <address>",
     "m365g entra guest list --output csv",

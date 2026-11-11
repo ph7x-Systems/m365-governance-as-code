@@ -768,6 +768,82 @@
         "throttling was not met at this size",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, signing in interactively and consenting to the scope at that sign-in",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "establishes": "full",
+      "collector": "guests",
+      "population": {
+        "documents": 2,
+        "guest_accounts": 1,
+        "pages": 1
+      },
+      "coverage": "the slice's own path: the tenant document and one document per guest account",
+      "result": "The first live read of guest accounts: the filter returned one account and nothing that was not a guest, every fact on it observed, and no name, mail address or user principal name in what was written. The composed external-access inspection then read it beside the site evidence of the same day and reported the account without joining it to any site.",
+      "limitations": [
+        "a population of one: it proves the path and not the range, and neither a pending invitation nor a disabled account was observed",
+        "one page: paging is proved against a stand-in only",
+        "no refusal was met: the document a refused read writes is proved against a stand-in only",
+        "the token was obtained outside the engine, from the operator's own interactive session, and handed to the collection in memory: the engine has no delegated path to Microsoft Graph of its own yet",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, signing in interactively and consenting to the scope at that sign-in",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "establishes": "full",
+      "collector": "applications",
+      "population": {
+        "documents": 47,
+        "application_registrations": 46,
+        "pages": 1,
+        "credential_lists_returned": 46,
+        "inspection": {
+          "ended": 6,
+          "later": 9,
+          "no-credentials": 31
+        }
+      },
+      "coverage": "the slice's own path: the tenant document and one document per application registration",
+      "result": "The first live read of application registrations: every registration returned both credential lists, and no secret, hint, certificate or thumbprint is in what was written. The composed app-exposure inspection placed every credential relative to the collection time; the branch that reports a credential already ended ran against a directory.",
+      "limitations": [
+        "no credential ended inside the default window, so the `ending` branch has not run against a directory",
+        "one page: paging is proved against a stand-in only",
+        "no refusal was met, and no registration came back without a credential list",
+        "the token was obtained outside the engine, from the operator's own interactive session, and handed to the collection in memory: the engine has no delegated path to Microsoft Graph of its own yet",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

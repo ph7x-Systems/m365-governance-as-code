@@ -21,9 +21,9 @@ Source: `GET /users` with `$filter=userType eq 'Guest'`, Microsoft Graph v1.0.
 Least privilege as the reference records it: `User.Read.All`
 (docs/ENTRA-COLLECTOR-PERMISSIONS.md). Checked 11 November 2026.
 
-TENANT-VERIFICATION-PENDING. This slice is contract-tested: its paging, its
-refusals and its documents are proved against a stand-in transport. It has not
-read a directory, and the proof registry says so by holding no record of it.
+Contract-tested against a stand-in transport, and read from a directory
+once, on 11 November 2026: the proof registry holds that record and what it
+did not cover.
 """
 
 from __future__ import annotations

@@ -186,7 +186,7 @@ def test_the_command_the_slice_and_the_pending_verification_agree():
     chosen = collecting.SLICES["guests"]
     assert chosen.source == "graph" and chosen.permissions == ("User.Read.All",)
     assert chosen.produces_findings is False
-    # TENANT-VERIFICATION-PENDING is not a label somebody typed: it is the
-    # registry holding no record.
-    assert live_proof.records("guests") == []
-    assert live_proof.established_state("guests") == "none"
+    # Whether it has read a directory is not a label somebody typed: it is
+    # what the registry holds. One run on 2026-11-11 left a record.
+    assert live_proof.established_state("guests") == "full"
+    assert live_proof.stages("guests")["assessment"] == "not-applicable"

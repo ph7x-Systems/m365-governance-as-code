@@ -772,7 +772,7 @@ def ca_coverage(documents: list[dict], policy_id: str | None = None) -> dict:
         "was expanded, so a count of groups is not a count of people",
         "what several policies do together: they combine at sign-in, and this "
         "reads each on its own",
-        "whether anybody is covered by no policy at all: that needs every "
+        "whether anybody is left outside every policy: that needs every "
         "user and every membership, which were not read",
     ]
     if refused:
@@ -878,6 +878,7 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
         if row["static_scope"] == NOT_ESTABLISHED:
             return [f"  in force         {row['in_force']}  ({row['because']})"]
         return [
+            f"  id               {row['native_id']}",
             f"  in force         {row['in_force']}  (state: {row['policy_state']})",
             f"  static scope     {row['static_scope']}",
             f"  includes         users {row['includes_users']} · groups "
@@ -932,8 +933,10 @@ def as_text(inspection: dict) -> str:
         if "policies" in inspection
         else "SharePoint site"
     )
-    if not inspection["rows"]:
+    if not inspection["rows"] and not counted.get("in_the_evidence"):
         lines += [f"No {noun} is in this evidence.", ""]
+    elif not inspection["rows"]:
+        lines += ["Nothing in this evidence matches what was asked for.", ""]
     for row in inspection["rows"]:
         title = row["name"] or row["native_id"]
         lines.append(f"{title}  {row.get('url') or row.get('app_id') or ''}".rstrip())
