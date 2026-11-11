@@ -513,5 +513,8 @@ def test_a_refusal_names_the_permission_of_the_surface_that_refused():
     assert "Application.Read.All" in apps and "Policy.Read.All" not in apps
     users = Unavailable.of(403, "users?$filter=userType eq 'Guest'").detail
     assert "User.Read.All" in users and "Policy.Read.All" not in users
-    other = Unavailable.of(403, "policies/authorizationPolicy").detail
+    assert (
+        "Policy.Read.All" in Unavailable.of(403, "policies/authorizationPolicy").detail
+    )
+    other = Unavailable.of(403, "security/secureScores").detail
     assert "Policy.Read.All" not in other and "--help" in other
