@@ -79,7 +79,10 @@ def build() -> dict:
                             "evidence": "--out FILE keeps the inspection with the "
                             "digest of the evidence it read",
                             "options": (
-                                ["--minimum-owners"] if name == "ownership" else []
+                                {
+                                    "ownership": ["--minimum-owners"],
+                                    "app-exposure": ["--expires-within"],
+                                }.get(name, [])
                             ),
                             "examples": [
                                 f"{full} --evidence ./evidence",

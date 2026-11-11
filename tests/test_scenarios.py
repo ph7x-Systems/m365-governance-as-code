@@ -423,3 +423,137 @@ def test_the_ownership_command_takes_the_threshold_and_refuses_nonsense(
     lines = capsys.readouterr().out.splitlines()
     assert lines[0].startswith("name,url,owners_read") and ",meets," in lines[1]
     assert main([*base, "--minimum-owners", "0"]) == 2
+
+
+# --- application exposure --------------------------------------------------------
+
+
+def _registered(
+    number, ends=(), *, at="2026-11-11T10:00:00Z", listed=True, asks=(1, 2)
+):
+    credentials = (
+        {
+            "state": "observed",
+            "value": [
+                {"kind": "secret", "starts_at": None, "ends_at": e} for e in ends
+            ],
+        }
+        if listed
+        else {"state": "missing", "detail": "not returned"}
+    )
+    return {
+        "resource": {
+            "workload": "entra",
+            "type": "application",
+            "native_id": f"app-{number}",
+            "display_name": f"App {number}",
+        },
+        "provenance": {"collected_at": at, "identity_kind": "application"},
+        "coverage": {"completed": ["applications"], "unavailable": {}},
+        "facts": {
+            "application": {
+                "app_id": {"state": "observed", "value": f"client-{number}"},
+                "credentials": credentials,
+                "requested_application_permissions": {
+                    "state": "observed",
+                    "value": asks[0],
+                },
+                "requested_delegated_permissions": {
+                    "state": "observed",
+                    "value": asks[1],
+                },
+            }
+        },
+    }
+
+
+def _exposed(inspection, number):
+    return next(r for r in inspection["rows"] if r["native_id"] == f"app-{number}")
+
+
+def test_a_credential_is_placed_relative_to_when_the_evidence_was_collected():
+    inspection = scenarios.app_exposure(
+        [
+            _registered(1, ["2026-11-01T00:00:00Z"]),
+            _registered(2, ["2026-11-25T00:00:00Z"]),
+            _registered(3, ["2027-06-01T00:00:00Z"]),
+            _registered(4, []),
+        ]
+    )
+    assert [_exposed(inspection, n)["standing"] for n in (1, 2, 3, 4)] == [
+        "ended",
+        "ending",
+        "later",
+        "no-credentials",
+    ]
+    assert inspection["parameters"] == {"expires_within_days": 30}
+    assert _exposed(inspection, 2)["earliest_end"] == "2026-11-25T00:00:00Z"
+
+
+def test_the_answer_does_not_change_with_the_day_it_is_asked():
+    """THE COUNTER-CHECK. An implementation that measured from the clock would
+    call this credential ended; the evidence is from 2020 and it had a week
+    left when it was read."""
+    old = _registered(1, ["2020-01-08T00:00:00Z"], at="2020-01-01T00:00:00Z")
+    row = _exposed(scenarios.app_exposure([old]), 1)
+    assert row["standing"] == "ending"
+    assert row["collected_at"] == "2020-01-01T00:00:00Z"
+
+
+def test_the_window_is_the_operators():
+    documents = [_registered(1, ["2026-12-30T00:00:00Z"])]
+    assert _exposed(scenarios.app_exposure(documents), 1)["standing"] == "later"
+    wider = scenarios.app_exposure(documents, expires_within_days=60)
+    assert _exposed(wider, 1)["standing"] == "ending"
+
+
+def test_credentials_that_were_not_returned_are_not_an_application_with_none():
+    inspection = scenarios.app_exposure(
+        [_registered(1, listed=False), _registered(2, [])]
+    )
+    assert _exposed(inspection, 1)["standing"] == "not-established"
+    assert _exposed(inspection, 2)["standing"] == "no-credentials"
+    assert inspection["applications"]["by_standing"] == {
+        "no-credentials": 1,
+        "not-established": 1,
+    }
+
+
+def test_one_ended_credential_is_reported_even_beside_a_healthy_one():
+    row = _exposed(
+        scenarios.app_exposure(
+            [_registered(1, ["2026-01-01T00:00:00Z", "2028-01-01T00:00:00Z"])]
+        ),
+        1,
+    )
+    assert (row["standing"], row["ended"], row["ending"], row["later"]) == (
+        "ended",
+        1,
+        0,
+        1,
+    )
+
+
+def test_what_is_asked_for_is_shown_and_never_called_granted():
+    inspection = scenarios.app_exposure([_registered(1, [], asks=(3, 0))])
+    assert _exposed(inspection, 1)["requested_application_permissions"] == 3
+    assert any("NOT JOINED" in r for r in inspection["relations"])
+    assert any("in fact granted" in item for item in inspection["not_established"])
+    text = scenarios.as_text(inspection)
+    assert "asked, not granted" in text
+    for word in ("score", "%", "compliant", "risk level", "grade"):
+        assert word not in text.lower()
+
+
+def test_the_exposure_command_takes_a_window_in_days(tmp_path, capsys):
+    folder = tmp_path / "ev"
+    folder.mkdir()
+    (folder / "a.json").write_text(
+        json.dumps(_registered(1, ["2026-12-30T00:00:00Z"])), encoding="utf-8"
+    )
+    base = ["governance", "inspect", "app-exposure", "--evidence", str(folder)]
+    assert main([*base, "--output", "json"]) == 0
+    assert json.loads(capsys.readouterr().out)["rows"][0]["standing"] == "later"
+    assert main([*base, "--expires-within", "60d", "--output", "csv"]) == 0
+    assert ",ending," in capsys.readouterr().out
+    assert main([*base, "--expires-within", "soon"]) == 2

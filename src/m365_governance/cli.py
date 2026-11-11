@@ -40,6 +40,7 @@ from pathlib import Path
 from . import (
     COMMAND,
     __version__,
+    applications,
     assessment,
     bundling,
     canonical,
@@ -637,6 +638,14 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     inspecting.add_argument(
         "--format", choices=presenting.FORMATS, default="text", dest="format"
+    )
+    inspecting.add_argument(
+        "--expires-within",
+        default="30d",
+        metavar="DAYS",
+        help="app-exposure only: the window after the collection, in days "
+        "(30d). Measured from when the evidence was collected, so the same "
+        "evidence always gives the same answer. Default 30d",
     )
     inspecting.add_argument(
         "--minimum-owners",
@@ -1347,6 +1356,7 @@ GRAPH_SLICES = {
     conditional_access.NAME: conditional_access,
     tenant_governance.NAME: tenant_governance,
     guests.NAME: guests,
+    applications.NAME: applications,
 }
 
 
@@ -2219,6 +2229,15 @@ def _cmd_inspect(args) -> int:
         )
         return 2
     options = {}
+    if args.scenario == "app-exposure":
+        found = re.fullmatch(r"(\d+)d?", args.expires_within)
+        if not found or int(found.group(1)) < 1:
+            print(
+                "--expires-within takes a number of days, such as 30d.",
+                file=sys.stderr,
+            )
+            return 2
+        options["expires_within_days"] = int(found.group(1))
     if args.scenario == "ownership":
         if args.minimum_owners < 1:
             print("--minimum-owners must be at least 1.", file=sys.stderr)

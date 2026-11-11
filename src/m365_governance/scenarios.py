@@ -24,6 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -466,12 +467,168 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
     }
 
 
+def _moment(text: Any) -> datetime | None:
+    """A timestamp as the service or a collector wrote it, or nothing."""
+    if not isinstance(text, str) or not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
+def app_exposure(documents: list[dict], expires_within_days: int = 30) -> dict:
+    """Which applications hold a credential that has ended or is about to.
+
+    MEASURED FROM WHEN THE EVIDENCE WAS COLLECTED, NEVER FROM NOW. An
+    inspection run a month later over the same evidence gives the same rows:
+    `ending` means within the window after the collection, and the collection
+    time is on every row. Somebody reading old evidence is told how old.
+
+    The window is the operator's and is recorded. An application whose
+    credentials were not returned is `not-established`, never `no-credentials`:
+    only an observed empty list is an application with nothing to expire.
+    """
+    window = timedelta(days=expires_within_days)
+    applications, duplicated = _latest(
+        [
+            d
+            for d in documents
+            if (d.get("resource") or {}).get("type") == "application"
+            and isinstance((d.get("facts") or {}).get("application"), dict)
+        ]
+    )
+    rows = []
+    for key in sorted(applications):
+        document = applications[key]
+        resource = document.get("resource") or {}
+        collected = (document.get("provenance") or {}).get("collected_at")
+        at = _moment(collected)
+        credentials = _observed(_fact(document, "application", "credentials"))
+        row: dict[str, Any] = {
+            "native_id": key,
+            "name": resource.get("display_name") or "",
+            "app_id": _observed(_fact(document, "application", "app_id")) or "",
+            "collected_at": collected,
+            "ended": "",
+            "ending": "",
+            "later": "",
+            "earliest_end": "",
+            "requested_application_permissions": _observed(
+                _fact(document, "application", "requested_application_permissions")
+            ),
+            "requested_delegated_permissions": _observed(
+                _fact(document, "application", "requested_delegated_permissions")
+            ),
+        }
+        for name in (
+            "requested_application_permissions",
+            "requested_delegated_permissions",
+        ):
+            if row[name] is None:
+                row[name] = f"[{NOT_ESTABLISHED}]"
+        if not isinstance(credentials, list) or at is None:
+            row["standing"] = NOT_ESTABLISHED
+            row["because"] = (
+                "the credentials of this application were not returned"
+                if at is not None
+                else "the evidence does not say when it was collected"
+            )
+        else:
+            ends = [_moment(c.get("ends_at")) for c in credentials]
+            undated = sum(1 for end in ends if end is None)
+            dated = sorted(end for end in ends if end is not None)
+            ended = [end for end in dated if end <= at]
+            ending = [end for end in dated if at < end <= at + window]
+            row["ended"] = len(ended)
+            row["ending"] = len(ending)
+            row["later"] = len(dated) - len(ended) - len(ending)
+            if dated:
+                row["earliest_end"] = dated[0].strftime("%Y-%m-%dT%H:%M:%SZ")
+            if not credentials:
+                row["standing"] = "no-credentials"
+                row["because"] = "the application holds no secret and no certificate"
+            elif ended:
+                row["standing"] = "ended"
+                row["because"] = f"{len(ended)} credentials had ended at collection"
+            elif ending:
+                row["standing"] = "ending"
+                row["because"] = (
+                    f"{len(ending)} credentials end within "
+                    f"{expires_within_days} days of the collection"
+                )
+            elif undated:
+                row["standing"] = NOT_ESTABLISHED
+                row["because"] = f"{undated} credentials carry no end date"
+            else:
+                row["standing"] = "later"
+                row["because"] = "every credential ends after the window"
+        rows.append(row)
+
+    by_standing: dict[str, int] = {}
+    for row in rows:
+        by_standing[row["standing"]] = by_standing.get(row["standing"], 0) + 1
+
+    return {
+        "$schema": SCHEMA,
+        "scenario": "app-exposure",
+        "scope": "entra",
+        "question": (
+            "Which application registrations hold a credential that had ended, "
+            f"or ends within {expires_within_days} days, when the evidence was "
+            "collected?"
+        ),
+        "parameters": {"expires_within_days": expires_within_days},
+        "columns": [
+            "name",
+            "app_id",
+            "standing",
+            "ended",
+            "ending",
+            "later",
+            "earliest_end",
+            "requested_application_permissions",
+            "requested_delegated_permissions",
+            "collected_at",
+            "because",
+        ],
+        "relations": [
+            "application -> its own credentials, carried on the registration",
+            "application -> what was consented to: NOT JOINED. The permissions "
+            "shown are what the registration asks for",
+        ],
+        "rows": rows,
+        "applications": {
+            "in_the_evidence": len(rows),
+            "by_standing": dict(sorted(by_standing.items())),
+        },
+        "duplicates": duplicated,
+        "not_established": [
+            "what any application was in fact granted: consent lives on the "
+            "service principal and in the grants, which were not read",
+            "whether a credential is in use: one that ended may belong to an "
+            "application nobody runs, and one that ends later may be the only "
+            "thing keeping a service alive",
+            "who is responsible for an application: owners were not read",
+            "credentials held by service principals rather than by the "
+            "registration: a different object, not read",
+        ],
+        "sources": _sources([applications[key] for key in sorted(applications)]),
+    }
+
+
 #: Scenario name -> (what it answers, the function, the collections it reads).
 SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] = {
     "external-access": (
         "which SharePoint sites permit sharing outside the organisation",
         external_access,
         ("sites-sharing", "tenant-sharing", "guests"),
+    ),
+    "app-exposure": (
+        "which applications hold a credential that has ended or is about to",
+        app_exposure,
+        ("applications",),
     ),
     "ownership": (
         "which SharePoint sites name enough administrators, and which cannot say",
@@ -502,6 +659,17 @@ def as_table(inspection: dict) -> tuple[list[str], list[list[str]]]:
 
 
 def _row_lines(inspection: dict, row: dict) -> list[str]:
+    if inspection["scenario"] == "app-exposure":
+        return [
+            f"  standing         {row['standing']}  ({row['because']})",
+            f"  credentials      ended {row['ended'] if row['ended'] != '' else '-'}"
+            f" · ending {row['ending'] if row['ending'] != '' else '-'}"
+            f" · later {row['later'] if row['later'] != '' else '-'}"
+            f" · earliest end {row['earliest_end'] or '-'}",
+            f"  asks for         application "
+            f"{row['requested_application_permissions']} · delegated "
+            f"{row['requested_delegated_permissions']}  (asked, not granted)",
+        ]
     if inspection["scenario"] == "ownership":
         named = row["named_administrators"]
         groups = row["group_administrators"]
@@ -522,15 +690,16 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
 
 def as_text(inspection: dict) -> str:
     lines = [inspection["question"], ""]
+    counted = inspection.get("sites") or inspection.get("applications") or {}
+    noun = "application" if "applications" in inspection else "SharePoint site"
     if not inspection["rows"]:
-        lines += ["No SharePoint site is in this evidence.", ""]
+        lines += [f"No {noun} is in this evidence.", ""]
     for row in inspection["rows"]:
         title = row["name"] or row["native_id"]
-        lines.append(f"{title}  {row['url']}".rstrip())
+        lines.append(f"{title}  {row.get('url') or row.get('app_id') or ''}".rstrip())
         lines += _row_lines(inspection, row)
         lines.append("")
-    counted = inspection["sites"]
-    lines.append(f"{counted['in_the_evidence']} sites in the evidence:")
+    lines.append(f"{counted.get('in_the_evidence', 0)} {noun}s in the evidence:")
     for state, number in (counted.get("by_external_sharing") or {}).items():
         lines.append(f"  external sharing {state}: {number}")
     for state, number in (counted.get("by_standing") or {}).items():

@@ -296,6 +296,7 @@ def test_the_plan_does_not_promise_what_the_machine_cannot_run():
     # now, and the assertion is a list rather than a name for that reason: the
     # day a third ships, this is where the plan says so.
     assert [step.name for step in running.attempted(steps)] == [
+        "applications",
         "conditional-access",
         "guests",
         "tenant-governance",

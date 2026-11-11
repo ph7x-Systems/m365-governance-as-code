@@ -37,6 +37,38 @@
    "service": "engine"
   },
   {
+   "command": "m365g entra app list",
+   "earlier_name": "m365g collect applications",
+   "kind": "enumeration",
+   "service": "entra",
+   "describes": "the application registrations in the directory, when each credential ends, and what each asks for",
+   "collection": "applications",
+   "reads": [
+    "GET /v1.0/applications ($select of eight properties; a credential's hint and a certificate's bytes are never kept)"
+   ],
+   "permissions": [
+    "Application.Read.All"
+   ],
+   "needs": [
+    "--tenant-url"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
+   "feeds_rules": [],
+   "consumed_by": "the application list an operator enumerates, and the application exposure inspection",
+   "live_validation_state": "none",
+   "examples": [
+    "m365g entra app list --tenant-url <address>",
+    "m365g entra app list --output csv",
+    "m365g entra app list --evidence-out ./evidence"
+   ]
+  },
+  {
    "command": "m365g entra ca list",
    "earlier_name": "m365g collect conditional-access",
    "kind": "enumeration",
@@ -260,6 +292,35 @@
    "earlier_name": "m365g diff",
    "kind": "command",
    "service": "governance"
+  },
+  {
+   "command": "m365g governance inspect app-exposure",
+   "earlier_name": "m365g inspect app-exposure",
+   "kind": "scenario",
+   "service": "governance",
+   "describes": "which applications hold a credential that has ended or is about to",
+   "reads_collections": [
+    "applications"
+   ],
+   "reaches_a_tenant": false,
+   "needs": [
+    "--evidence"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--out FILE keeps the inspection with the digest of the evidence it read",
+   "options": [
+    "--expires-within"
+   ],
+   "examples": [
+    "m365g governance inspect app-exposure --evidence ./evidence",
+    "m365g governance inspect app-exposure --evidence ./evidence --output csv",
+    "m365g governance inspect app-exposure --evidence ./evidence --out app-exposure.json"
+   ]
   },
   {
    "command": "m365g governance inspect external-access",

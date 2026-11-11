@@ -238,6 +238,7 @@ def test_every_collection_after_one_login_does_not_ask_again(machine):
         if s.source != "powershell" or s.collector.name != "Get-SpoEvidence.ps1"
     )
     assert uncovered == [
+        "applications",
         "conditional-access",
         "forwarding",
         "guests",

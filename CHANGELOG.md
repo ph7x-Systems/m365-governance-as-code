@@ -16,6 +16,19 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g entra app list`, and the `applications` collection behind it.
+  Contract-tested; not yet run against a directory.** One document per
+  application registration: how many secrets and certificates it holds, when
+  each ends, and how many permissions it asks for, by kind. A secret's value,
+  its hint and a certificate's bytes or thumbprint are never written. A
+  credential list the service did not return is `missing`, never empty. Needs
+  `Application.Read.All`.
+- **`m365g governance inspect app-exposure`, the third composed scenario.**
+  Which applications hold a credential that had ended or ends within a window
+  (`--expires-within 30d`). It measures from when the evidence was collected
+  and never from the clock, so the same evidence always gives the same answer.
+  What an application asks for is shown as asked, not granted.
+
 - **`m365g spo site admins`, and the `sites-owners` collection behind it.** Who
   administers every enumerated site, read by opening each site as the identity
   already signed in. A site that will not open or will not answer gets a

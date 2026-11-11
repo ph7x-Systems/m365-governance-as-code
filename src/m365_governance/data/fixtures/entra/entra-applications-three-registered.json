@@ -1,0 +1,60 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-11-11T10:00:00Z",
+    "collector": "graph-applications",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Application.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "applications"
+    ],
+    "completed": [
+      "applications"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "tenant",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "contoso.sharepoint.com"
+  },
+  "facts": {
+    "applications": {
+      "population": {
+        "state": "observed",
+        "value": "entra-application-registrations"
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated"
+      },
+      "count": {
+        "state": "observed",
+        "value": 3,
+        "raw": {
+          "field": "GET /applications",
+          "value": 3
+        }
+      }
+    }
+  }
+}

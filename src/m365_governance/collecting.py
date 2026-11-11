@@ -578,6 +578,41 @@ SLICES = {
             permissions=("Policy.Read.All",),
         ),
         Slice(
+            "applications",
+            "Applications",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. Microsoft documents how long a
+            # credential may live and publishes no single position a rule
+            # could hold every tenant to, so this feeds the operator listing
+            # applications and the composed scenario about credentials that
+            # are ending, and no rule yet.
+            consumed_by=(
+                "the application list an operator enumerates, and the "
+                "application exposure inspection"
+            ),
+            describes=(
+                "the application registrations in the directory, when each "
+                "credential ends, and what each asks for"
+            ),
+            shaped_like="entra-applications-three-registered",
+            also_shaped_like=(
+                "entra-application-secret-ending",
+                "entra-applications-refused",
+            ),
+            reads=(
+                "GET /v1.0/applications"
+                " ($select of eight properties; a credential's hint and a"
+                " certificate's bytes are never kept)",
+            ),
+            permissions=("Application.Read.All",),
+        ),
+        Slice(
             "guests",
             "Guests",
             domain="entra",
