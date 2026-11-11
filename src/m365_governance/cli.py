@@ -54,6 +54,7 @@ from . import (
     graph_slice,
     graph_token,
     grouping,
+    guests,
     migration,
     migration_graph,
     presentation,
@@ -1337,6 +1338,7 @@ def _collect_evidence(args) -> int:
 GRAPH_SLICES = {
     conditional_access.NAME: conditional_access,
     tenant_governance.NAME: tenant_governance,
+    guests.NAME: guests,
 }
 
 

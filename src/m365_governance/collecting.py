@@ -578,6 +578,39 @@ SLICES = {
             permissions=("Policy.Read.All",),
         ),
         Slice(
+            "guests",
+            "Guests",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER (charter, collector expansion of
+            # 2026-11-11). Microsoft publishes no position on how many guests
+            # a directory should hold, so there is no rule to write. The
+            # operator listing guests is the consumer, and the composed
+            # scenario about access from outside the organisation after them.
+            consumed_by=(
+                "the guest list an operator enumerates, and the external "
+                "access inspection"
+            ),
+            describes=(
+                "the guest accounts in the directory, by object id and never by name"
+            ),
+            shaped_like="entra-guests-three-accounts",
+            also_shaped_like=(
+                "entra-guest-invitation-pending",
+                "entra-guests-refused",
+            ),
+            reads=(
+                "GET /v1.0/users?$filter=userType eq 'Guest'"
+                " ($select of six properties, none of which names a person)",
+            ),
+            permissions=("User.Read.All",),
+        ),
+        Slice(
             "tenant-governance",
             "TenantGovernance",
             domain="entra",

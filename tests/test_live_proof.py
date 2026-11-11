@@ -379,7 +379,7 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # collection FAILED, and a failure is not an acquisition. `customization`
     # and `spfx` left on 2026-11-11 by running: one kept delegated session
     # collected both from a real tenant and their rules consumed the evidence.
-    assert grouped["not-live-tested"] == ["forwarding"]
+    assert grouped["not-live-tested"] == ["forwarding", "guests"]
     assert grouped["acquisition-attempted"] == []
 
 

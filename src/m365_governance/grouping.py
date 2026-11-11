@@ -57,6 +57,7 @@ GROUPS: tuple[Group, ...] = (
         "Microsoft Entra: sign-in policy, tenant defaults and licences",
         {
             ("ca", "list"): _collect("conditional-access"),
+            ("guest", "list"): _collect("guests"),
             ("tenant", "governance", "get"): _collect("tenant-governance"),
             ("license", "list"): _collect("licensing"),
         },

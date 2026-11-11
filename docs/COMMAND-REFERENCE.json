@@ -75,6 +75,38 @@
    ]
   },
   {
+   "command": "m365g entra guest list",
+   "earlier_name": "m365g collect guests",
+   "kind": "enumeration",
+   "service": "entra",
+   "describes": "the guest accounts in the directory, by object id and never by name",
+   "collection": "guests",
+   "reads": [
+    "GET /v1.0/users?$filter=userType eq 'Guest' ($select of six properties, none of which names a person)"
+   ],
+   "permissions": [
+    "User.Read.All"
+   ],
+   "needs": [
+    "--tenant-url"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
+   "feeds_rules": [],
+   "consumed_by": "the guest list an operator enumerates, and the external access inspection",
+   "live_validation_state": "none",
+   "examples": [
+    "m365g entra guest list --tenant-url <address>",
+    "m365g entra guest list --output csv",
+    "m365g entra guest list --evidence-out ./evidence"
+   ]
+  },
+  {
    "command": "m365g entra license list",
    "earlier_name": "m365g collect licensing",
    "kind": "read",

@@ -297,6 +297,7 @@ def test_the_plan_does_not_promise_what_the_machine_cannot_run():
     # day a third ships, this is where the plan says so.
     assert [step.name for step in running.attempted(steps)] == [
         "conditional-access",
+        "guests",
         "tenant-governance",
     ]
     assert "doctor" in running.describe(steps)

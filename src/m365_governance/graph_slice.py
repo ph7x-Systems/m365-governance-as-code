@@ -231,8 +231,17 @@ def write(documents: list[dict[str, Any]], directory: Path) -> list[Path]:
     written = []
     for doc in documents:
         resource = doc["resource"]
-        if resource["type"] == "tenant":
+        refused = all(
+            isinstance(family, dict) and "state" in family
+            for family in doc["facts"].values()
+        )
+        if resource["type"] == "tenant" and refused:
             stem = f"unavailable-{'-'.join(doc['facts'])}"
+        elif resource["type"] == "tenant":
+            # A tenant document that carries facts is an observation about the
+            # tenant, and a name saying `unavailable` would describe the
+            # opposite of what is in it.
+            stem = f"tenant-{'-'.join(doc['facts'])}"
         else:
             stem = f"{resource['type']}-{resource['native_id']}"
         path = directory / (safe(stem) + ".json")

@@ -240,6 +240,7 @@ def test_every_collection_after_one_login_does_not_ask_again(machine):
     assert uncovered == [
         "conditional-access",
         "forwarding",
+        "guests",
         "licensing",
         "tenant-governance",
     ]

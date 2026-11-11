@@ -16,6 +16,14 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g entra guest list`, and the `guests` collection behind it.
+  Contract-tested; not yet run against a directory.** One document per guest
+  account, keyed by the directory's object id, and one for the tenant with how
+  many were read. Six properties are requested and none names a person. A
+  refusal is never an empty directory, a read that stops part of the way keeps
+  what it read and publishes no total, and an account the service returns
+  that is not a guest is not written as one. Needs `User.Read.All`.
+
 - **`docs/COMMAND-REFERENCE.json`, a derived reference of every command.** One
   entry per command with what it reads, the permissions recorded for it, the
   rules it feeds, how far it was proved and examples, generated from the

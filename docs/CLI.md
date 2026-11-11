@@ -93,6 +93,7 @@ does, and takes the same `--output`.
 
 | Grouped | Earlier name |
 |---|---|
+| `m365g entra guest list` | `m365g collect guests` |
 | `m365g spo site list` | `m365g collect sites` |
 | `m365g spo hub list` | `m365g collect hubs` |
 | `m365g spo owner list` | `m365g collect owners` |

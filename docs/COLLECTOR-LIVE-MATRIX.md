@@ -42,6 +42,7 @@ to exercise.
 | `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | `CA-STATE-001`, `CA-SCOPE-001`, `CA-RECOVERY-001` | **provider live-validated, slice not live-validated** |
 | `customization` | ✓ | `completed`, 1 doc, every fact observed, 2026-11-11 | — | n.a. | `SPO-SCRIPT-001` | **live-validated** |
 | `sites-sharing` | ✓ | `partial` enumeration, 53 docs, each site read by its own address, 2026-11-11 | — | none at 53 sites | `SPO-SHARE-001/002/005` | **live-validated** |
+| `guests` | ✓ | not observed | not observed | paging proved against a stand-in only | **none**, by decision | **not live-validated** |
 | `hubs` | ✓ | 2 hubs, every fact observed, 2026-11-11 | — | n.a. | **none**, by decision | **live-validated** |
 | `brand-center` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
 | `tenant-governance` | ✓ | not observed | not observed | n.a. | `ENTRA-ROLE-001/002/003`, `ENTRA-AUTH-001/002/003/004` | **not live-validated** |
