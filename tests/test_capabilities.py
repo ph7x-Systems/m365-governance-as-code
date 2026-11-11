@@ -174,11 +174,10 @@ def test_nothing_planned_appears_and_nothing_shipped_is_hidden():
 
     # And a capability with no record still says so, in the same field.
     # `brand-center` was the control here until it ran on 2026-08-24; a control
-    # that has since been proved is not a control. `customization` is one:
-    # it needs a site address, none was given, and it has never been collected.
-    never_run = next(
-        c for c in MANIFEST["capabilities"] if c["name"] == "customization"
-    )
+    # that has since been proved is not a control, and `customization` stopped
+    # being one the same way on 2026-11-11. `forwarding` is one: its collection
+    # was attempted and failed, and a failure is not an acquisition.
+    never_run = next(c for c in MANIFEST["capabilities"] if c["name"] == "forwarding")
     assert "not live-validated" in never_run["collector"]["live_validation"]
 
 

@@ -541,6 +541,126 @@
         "no representation check was made",
         "one directory, one moment"
       ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the run",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:70170300a869968b3f811ebc1cc63af0a248d471c6752cb1dab924e4ed7ae210",
+      "establishes": "full",
+      "collector": "customization",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 1,
+        "facts_observed": 8,
+        "facts_unavailable": 0,
+        "rules_concluded": 1,
+        "outcomes": {
+          "pass": 1,
+          "fail": 0,
+          "unknown": 0
+        }
+      },
+      "coverage": "the slice's own path on one site: every fact it publishes came back observed",
+      "result": "The first recorded live read of the customization surface. The custom script rule read `customization.custom_script_denied` as observed and passed. It establishes that the surface was read and that the rule decided from it.",
+      "limitations": [
+        "one site, and the state it holds is custom script blocked: the branch that reports a site permitting custom script has not run against a directory",
+        "no representation check was made: the setting's effect was not read against the effect",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the run",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:70170300a869968b3f811ebc1cc63af0a248d471c6752cb1dab924e4ed7ae210",
+      "establishes": "full",
+      "collector": "sites",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 53,
+        "enumeration": "partial",
+        "rules_concluded": 1,
+        "outcomes": {
+          "pass": 0,
+          "fail": 0,
+          "unknown": 0,
+          "not-applicable": 53
+        }
+      },
+      "coverage": "the enumeration a delegated identity is given: sites it cannot see are absent and their number is not knowable from the run",
+      "result": "The storage rule read four observed storage facts on every enumerated site and answered not-applicable on all of them, because no site carries a storage limit of its own: each holds the per-site maximum a pooled organisation writes. It establishes that the rule consumes what the enumeration publishes and reaches its applicability decision from observed facts.",
+      "limitations": [
+        "the rule's deciding branches did not run: no enumerated site has a storage limit set, so neither a pass nor a fail was reached against a directory",
+        "a delegated enumeration: it establishes what this identity was shown and never what the tenant contains",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the run",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:70170300a869968b3f811ebc1cc63af0a248d471c6752cb1dab924e4ed7ae210",
+      "establishes": "partial",
+      "collector": "spfx",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 1,
+        "catalog_scope": "tenant",
+        "solutions": 10,
+        "rules_concluded": 1,
+        "outcomes": {
+          "pass": 0,
+          "fail": 0,
+          "unknown": 1
+        }
+      },
+      "coverage": "the tenant catalog was read; a site catalog, where an installed version is recorded, was not",
+      "result": "The first positive live read of an app catalog: ten solutions in a tenant catalog. None reports an installed version, because a tenant catalog records installation per site, so the fact the version rule reads came back not-supported and the rule answered unknown. It establishes that the catalog is read and that the rule consumes the fact and refuses to conclude without it.",
+      "limitations": [
+        "the rule did not decide: a comparison of installed and available versions needs a site catalog, which this run did not read",
+        "the branch that reports a solution behind its catalog version has not run against a directory",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

@@ -59,9 +59,8 @@ fully exercised.
 
 | Collector | Live state | What is still unproved |
 |---|---|---|
-| `customization` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
 | `forwarding` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
-| `spfx` | `negative_only` | the branch that reports something. Only the empty or absent surface was seen |
+| `spfx` | `partial` | the areas that never ran. Some of this slice's areas were observed and others have not been |
 
 **This queue takes precedence over opening a capability.** Not because
 it is more valuable, but because it is a debt already incurred: the

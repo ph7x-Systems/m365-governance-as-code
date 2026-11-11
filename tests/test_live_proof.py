@@ -35,13 +35,14 @@ def registry():
 def test_a_collector_without_a_record_is_none(monkeypatch):
     """The absence of a record is the answer, not a gap to be filled in later.
 
-    `customization` is the live case and it is why this registry exists: the
-    collector's own source says a defect was found by provoking the state in a
-    directory, and no record of that run survives. The state is `none`, and it
-    stays `none` until something runs and leaves a record.
+    `customization` was the live case and it is why this registry exists: the
+    collector's own source said a defect was found by provoking the state in a
+    directory, and no record of that run survived. It stayed `none` until a run
+    on 2026-11-11 left a record. `forwarding` is the case now: a collection
+    was attempted and failed, and a failure is not an acquisition.
     """
-    assert live_proof.established_state("customization") == "none"
-    assert SLICES["customization"].live is Live.NONE
+    assert live_proof.established_state("forwarding") == "none"
+    assert SLICES["forwarding"].live is Live.NONE
 
 
 def test_removing_the_proof_removes_the_claim(monkeypatch):
@@ -242,11 +243,11 @@ def test_a_run_does_not_write_its_own_verdict():
     this registry was built to remove.
     """
     draft = live_proof.draft_from_run(
-        _FakeOutcome(), collector="customization", acquisition_method="pnp-powershell"
+        _FakeOutcome(), collector="forwarding", acquisition_method="pnp-powershell"
     )
 
     assert draft["establishes"] is None
-    assert live_proof.established_state("customization") == "none"
+    assert live_proof.established_state("forwarding") == "none"
 
 
 def test_a_collection_writes_its_draft_beside_the_evidence(tmp_path, monkeypatch):
@@ -376,15 +377,15 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # `brand-center` left on 2026-08-24 by running. `forwarding` is still here
     # and that is a result rather than a gap: the run reached it and the
     # collection FAILED, and a failure is not an acquisition. `customization`
-    # needs a site address and none was given.
-    assert grouped["not-live-tested"] == [
-        "customization",
-        "forwarding",
-    ]
-    assert set(grouped["acquisition-attempted"]) == {"spfx"}
+    # and `spfx` left on 2026-11-11 by running: one kept delegated session
+    # collected both from a real tenant and their rules consumed the evidence.
+    assert grouped["not-live-tested"] == ["forwarding"]
+    assert grouped["acquisition-attempted"] == []
 
 
-def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment():
+def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment(
+    monkeypatch,
+):
     """`not-applicable` is a stage not existing, not a stage skipped.
 
     `agents` and `licensing` feed no rule by a recorded decision, so demanding
@@ -397,17 +398,31 @@ def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment():
 
     # And the reverse: a collector that DOES feed a rule may not reach the top
     # by leaving its assessment unattempted.
+    kept = live_proof._registry()["records"]
+    monkeypatch.setitem(
+        live_proof._registry(),
+        "records",
+        [r for r in kept if r.get("provenance") == live_proof.MIGRATED],
+    )
     assert live_proof.stages("sites")["assessment"] == "not-attempted"
     assert live_proof.proof_state("sites") == "positive-acquisition-observed"
 
 
-def test_a_refusal_proves_the_failure_path_and_never_the_acquisition():
+def test_a_refusal_proves_the_failure_path_and_never_the_acquisition(monkeypatch):
     """`spfx` was refused with a 403, which is a real observation.
 
     Collapsing it into `not-attempted` would discard it; promoting it to an
     acquisition would claim a read that never happened. It is its own state,
     and it leaves the capability on the second rung rather than the third.
+    Held against the refusal record alone: a later run read a catalog, and
+    that record is what moved the capability, not this one.
     """
+    kept = live_proof._registry()["records"]
+    monkeypatch.setitem(
+        live_proof._registry(),
+        "records",
+        [r for r in kept if r.get("provenance") == live_proof.MIGRATED],
+    )
     assert live_proof.stages("spfx")["acquisition"] == "refused"
     assert live_proof.proof_state("spfx") == "acquisition-attempted"
 

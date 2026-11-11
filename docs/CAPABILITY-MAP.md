@@ -18,13 +18,13 @@ is derived from the capability manifest and the candidate half from
 | SharePoint Online | `agents` | powershell | Sites.Read.All | `site` | 0 | full |
 | SharePoint Online | `brand-center` | powershell | Sites.FullControl.All | `tenant` | 0 | full |
 | SharePoint Online | `classification` | powershell | Sites.Read.All | `site` | 4 | full |
-| SharePoint Online | `customization` | powershell | Sites.Read.All | `site` | 1 | none |
+| SharePoint Online | `customization` | powershell | Sites.Read.All | `site` | 1 | full |
 | SharePoint Online | `modernity` | powershell | Sites.Read.All | `site` | 3 | full |
 | SharePoint Online | `owners` | powershell | Sites.Read.All | `site` | 2 | full |
 | SharePoint Online | `permissions` | powershell | Sites.Read.All | `list` | 3 | full |
 | SharePoint Online | `sharing` | powershell | not-established | `site` | 3 | full |
 | SharePoint Online | `sites` | powershell | not-established | `site` | 1 | full |
-| SharePoint Online | `spfx` | powershell | Sites.Read.All | `site` | 1 | negative-only |
+| SharePoint Online | `spfx` | powershell | Sites.Read.All | `site` | 1 | partial |
 | SharePoint Online | `tenant-sharing` | powershell | not-established | `tenant` | 2 | full |
 
 ### What the manifest does not record
@@ -105,7 +105,7 @@ Second surface: none named (`not-yet-established`).
 
 Second surface: none named (`not-yet-established`).
 
-**`customization`** — SharePoint Online, powershell, proof `not-live-tested`
+**`customization`** — SharePoint Online, powershell, proof `positive-acquisition-observed`
 
 - `Get-PnPWeb -Includes EffectiveBasePermissions`
 - `Get-PnPFeature -Scope Web`
@@ -150,7 +150,7 @@ Second surface: none named (`not-yet-established`).
 
 Second surface: the same sites read individually rather than enumerated (`compared`).
 
-**`spfx`** — SharePoint Online, powershell, proof `acquisition-attempted`
+**`spfx`** — SharePoint Online, powershell, proof `positive-acquisition-observed`
 
 - `Get-PnPApp`
 
