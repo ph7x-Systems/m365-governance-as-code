@@ -1,0 +1,35 @@
+# Permissions for the Microsoft Entra collectors that do not exist yet
+
+**Nothing here is granted, requested or consented.** This is the preparation an
+owner reads before deciding whether a collector may be pointed at a tenant. A
+permission appearing in a catalogue is not a reason to ask for it, and holding
+one is not authorization to audit a service.
+
+Checked against the Microsoft Graph v1.0 reference on 11 November 2026. A cell
+that was not read from the reference says so.
+
+| Operation | Least privileged scope | Delegated / application | Role the signed-in person needs | Consent | Alternative |
+|---|---|---|---|---|---|
+| Guests: `GET /users?$filter=userType eq 'Guest'` | `User.Read.All`. `User.ReadBasic.All` is listed first for `GET /users`, and whether it returns `userType` is not established | both; `User.Read.All` is the least application permission | not established for this filter | administrator | none found |
+| Applications: `GET /applications`, with `passwordCredentials` and `keyCredentials` | `Application.Read.All` | both | Directory Readers or Global Reader read standard properties; a member with default permissions is also listed | administrator | none needed |
+| Service principals: `GET /servicePrincipals` | not yet established: next measurement is the `serviceprincipal-list` reference. Its owners relationship takes `Application.Read.All` | — | — | — | — |
+| Delegated grants: `GET /oauth2PermissionGrants` | `Directory.Read.All`, which is the least the reference offers and is broad | both | Global Reader or Directory Readers | administrator | none: no narrower read scope is documented |
+| Groups and memberships | not yet established: next measurement is the `group-list` and `group-list-members` references | — | — | — | — |
+| Role assignments | not yet established: next measurement is the `rbacapplication-list-roleassignments` reference | — | — | — | — |
+| Conditional Access policies | `Policy.Read.All`, already used by the `conditional-access` collector | application in the recorded run | recorded with that collector | administrator | — |
+
+## What this means for the composed scenarios
+
+- **External access** needs guests, so `User.Read.All`. Until it is granted the
+  scenario reports what sites permit and says that guests were not read.
+- **Application exposure** needs `Application.Read.All` and, for what was
+  consented, `Directory.Read.All`. The second is the widest read in this table
+  and is the one to decide on deliberately.
+- **Ownership** across Teams and groups waits on the group rows above.
+
+## How a decision is asked for
+
+One collector, one scope, one tenant, named in the request, immediately before
+the consent. The application registered for the command line today holds
+SharePoint `AllSites.FullControl` and Microsoft Graph `User.Read`, delegated,
+and nothing in this table.
