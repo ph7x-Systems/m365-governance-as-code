@@ -47,7 +47,7 @@
       "repository": "https://github.com/pnp/powershell",
       "publisher": "PnP community, copyright .NET Foundation",
       "license": "MIT",
-      "license_source": "https://github.com/pnp/powershell/blob/v3.3.0/LICENSE",
+      "license_source": "https://github.com/pnp/powershell/blob/v3.4.1/LICENSE",
       "code_reuse": true,
       "modification": true,
       "redistribution": true,
@@ -58,13 +58,13 @@
         "runtime-dependency",
         "reference-only"
       ],
-      "use_note": "The collector calls PnP.PowerShell 3.3.0, which the operator installs. No source is vendored, copied or redistributed here, and nothing from it enters the wheel, any installer built from this project, or this repository. The licence is read at the tag that matches the version the collector requires: `dev` moves, and a licence read from a branch is a licence for whatever that branch says tomorrow.",
-      "contribution_terms": "https://github.com/pnp/powershell/blob/v3.3.0/CONTRIBUTING.md",
-      "verified": "2026-08-10",
-      "pinned_version": "3.3.0",
-      "pinned_tag": "v3.3.0",
-      "pinned_commit": "e84e7c3",
-      "package": "https://www.powershellgallery.com/packages/PnP.PowerShell/3.3.0",
+      "use_note": "The collectors run on the latest stable PnP.PowerShell release, which setup installs or updates from 1.0.0b9. No source is vendored, copied or redistributed here, and nothing from it enters the wheel, any installer built from this project, or this repository. The licence is read at the tag that matches the version the collector requires: `dev` moves, and a licence read from a branch is a licence for whatever that branch says tomorrow.",
+      "contribution_terms": "https://github.com/pnp/powershell/blob/v3.4.1/CONTRIBUTING.md",
+      "verified": "2026-11-07",
+      "pinned_version": "3.4.1",
+      "pinned_tag": "v3.4.1",
+      "pinned_commit": "abf1f49",
+      "package": "https://www.powershellgallery.com/packages/PnP.PowerShell/3.4.1",
       "installed_by": "operator",
       "shipped": false,
       "authoritative_for": [
@@ -78,8 +78,8 @@
         "Graph permissions",
         "what a real tenant returns"
       ],
-      "documentation_path": "https://github.com/pnp/powershell/tree/v3.3.0/documentation — canonical documentation fixed to the version used by the Engine; one page per cmdlet. Microsoft Learn does not document this module.",
-      "verified_cmdlet_documentation": "https://github.com/pnp/powershell/blob/v3.3.0/documentation/Get-PnPTenantId.md"
+      "documentation_path": "https://github.com/pnp/powershell/tree/v3.4.1/documentation — canonical documentation fixed to the version used by the Engine; one page per cmdlet. Microsoft Learn does not document this module.",
+      "verified_cmdlet_documentation": "https://github.com/pnp/powershell/blob/v3.4.1/documentation/Get-PnPTenantId.md"
     },
     {
       "id": "pnp/script-samples",
