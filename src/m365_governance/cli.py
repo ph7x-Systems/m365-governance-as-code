@@ -987,6 +987,26 @@ def _session(args) -> None:
     )
 
 
+#: What somebody with nothing configured is told, once, with the two things
+#: they can do about it. The reason an application registration is needed at
+#: all is in the documentation; what a person needs here is the next command.
+_NOT_SIGNED_IN = (
+    "not signed in: there is no active connection, no --client-id, and no "
+    "identity in a project file.\n"
+    "  Sign in once, and later commands use it:\n"
+    "      {command} login --client-id ID "
+    "--tenant-url https://TENANT-admin.sharepoint.com\n"
+    "  No application registration yet? One serves every run. In PowerShell, "
+    "in your own tenant:\n"
+    "      Register-PnPEntraIDAppForInteractiveLogin "
+    '-ApplicationName "M365 Governance" -Tenant TENANT.onmicrosoft.com\n'
+    "  It prints the id to pass as --client-id. This engine registers "
+    "nothing and writes nothing to a tenant.\n"
+    f"  Or write the identity once in {project_file.NAME}: "
+    "{command} engine setup --client-id ID --tenant-url ADMIN"
+)
+
+
 def _authentication(args) -> None:
     """Two modes, and the caller has to have chosen exactly one.
 
@@ -1002,12 +1022,7 @@ def _authentication(args) -> None:
     """
     client_id = getattr(args, "client_id", None)
     if client_id is None:
-        raise AmbiguousIdentity(
-            "no --client-id, and no identity in a project file. Every "
-            "connection needs an Entra ID application registration: "
-            "PnP.PowerShell has shipped no application of its own since "
-            f"2.12.0. Write it once in {project_file.NAME} to stop repeating it."
-        )
+        raise AmbiguousIdentity(_NOT_SIGNED_IN.format(command=COMMAND))
     _application_id(client_id, reaches_a_directory=not getattr(args, "dry_run", False))
 
     certificate = getattr(args, "certificate_path", None)
@@ -1093,6 +1108,11 @@ def _cmd_collect(args) -> int:
         # JSON gets JSON.
         with contextlib.redirect_stdout(sys.stderr):
             code = _collect_evidence(args)
+        if code == 2:
+            # A refusal read nothing and has already said why. A view of
+            # nothing, and a note about evidence, would bury the one sentence
+            # the caller needs.
+            return code
         written = (
             [
                 found
@@ -1138,7 +1158,11 @@ def _collect_evidence(args) -> int:
             return 2
 
     if chosen.needs_site and not args.site_url:
-        print(f"collect {args.slice} needs --site-url", file=sys.stderr)
+        print(
+            f"collect {args.slice} needs --site-url: the site to read, for "
+            f"example --site-url https://TENANT.sharepoint.com/sites/NAME",
+            file=sys.stderr,
+        )
         return 2
     # `--output` IS A DIRECTORY. ALWAYS. FOR EVERY SLICE.
     #
@@ -2661,7 +2685,9 @@ def _cmd_login(args) -> int:
     _project(args)
     if not args.site_url and not args.tenant_url:
         print(
-            "login needs --tenant-url or --site-url: a tenant to sign in to.",
+            "login needs --tenant-url or --site-url: a tenant to sign in to. "
+            f"For example:\n  {COMMAND} login --client-id ID "
+            "--tenant-url https://TENANT-admin.sharepoint.com",
             file=sys.stderr,
         )
         return 2
@@ -3109,6 +3135,22 @@ def _explain_failure(outcome) -> None:
         print(f"  the collector's last words: {lines[-1][:300]}", file=sys.stderr)
 
 
+def _what_can_be_read() -> str:
+    """Every read, by group, for somebody who asked to collect and not what."""
+    lines = ["Say what to read. Each of these reads one thing:", ""]
+    for group in grouping.GROUPS:
+        reads = [
+            (path, flat[1])
+            for path, flat in group.paths.items()
+            if flat[0] == "collect" and len(flat) == 2
+        ]
+        for path, name in reads:
+            command = f"{_invoked_as()} {group.name} {' '.join(path)}"
+            lines.append(f"  {command.ljust(36)}  {collecting.SLICES[name].describes}")
+    lines += ["", "Add --help to any of them for what it needs."]
+    return "\n".join(lines)
+
+
 def _cmd_group(args) -> int:
     """Say what a group contains. Reaches nothing and decides nothing."""
     group = grouping.BY_NAME[args.command]
@@ -3270,6 +3312,20 @@ def main(argv: list[str] | None = None) -> int:
         print(read_help)
         return 0
     parser = _build_parser()
+    if not given:
+        # Nothing was asked. The overview is the answer, not a usage error.
+        parser.print_help()
+        return 0
+    flat = grouping.regroup(given)
+    if flat[:1] == ["collect"] and (len(flat) == 1 or flat[1].startswith("-")):
+        print(_what_can_be_read(), file=sys.stderr)
+        return 2
+    if flat != given and flat[0] != "collect":
+        # A mistake made under a grouped name is reported under that name.
+        subs = argparse._SubParsersAction
+        action = next(a for a in parser._actions if isinstance(a, subs))
+        path = given[: len(given) - len(flat) + 1]
+        action.choices[flat[0]].prog = f"{_invoked_as()} {' '.join(path)}"
     try:
         given = _uniform_output(parser, grouping.regroup(given))
     except _Refused as refusal:
