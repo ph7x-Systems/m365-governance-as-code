@@ -100,6 +100,16 @@ HOW_TO_RUN = {
     # there.
     "status": [],
     "connection": ["list"],
+    # A group named on its own says what it holds and reaches nothing. Its
+    # complete paths are the flat commands above and below, by another name.
+    "spo": [],
+    "entra": [],
+    "exo": [],
+    "evidence": [],
+    "governance": [],
+    "rule": [],
+    "migration": [],
+    "engine": [],
 }
 
 

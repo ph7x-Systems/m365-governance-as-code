@@ -14,6 +14,14 @@ Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
 
+### Commands are grouped, and every earlier name still works
+
+`m365g spo site list`, `m365g entra ca list`, `m365g rule list`,
+`m365g governance run`: a command is found by its service, then the thing, then
+what to do with it. Each is the earlier command by another name and behaves
+identically; `docs/CLI.md` holds the table. A group named on its own lists what
+it holds.
+
 ### A session can be kept, and only because somebody logged in
 
 `m365g login` signs in to one tenant and keeps the session, so the collections

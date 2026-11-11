@@ -49,6 +49,7 @@ from . import (
     graph,
     graph_slice,
     graph_token,
+    grouping,
     migration,
     migration_graph,
     presentation,
@@ -658,6 +659,15 @@ def _build_parser() -> argparse.ArgumentParser:
     contracts.add_argument(
         "--out", required=True, type=Path, help="a directory to write into"
     )
+
+    # THE GROUPS. A complete grouped path never reaches these: `main` rewrites it
+    # to the flat command first (grouping.py). What arrives here is a group
+    # named on its own, asked for help, or followed by something it does not
+    # contain, and each of those is answered with what the group holds.
+    for group in grouping.GROUPS:
+        named = sub.add_parser(group.name, help=group.says, add_help=False)
+        named.add_argument("-h", "--help", action="store_true", dest="group_help")
+        named.add_argument("rest", nargs="*")
 
     return parser
 
@@ -2827,6 +2837,32 @@ def _cmd_connection(args) -> int:
     return 0 if _remove_connection(store, found) else 1
 
 
+def _cmd_group(args) -> int:
+    """Say what a group contains. Reaches nothing and decides nothing."""
+    group = grouping.BY_NAME[args.command]
+    parser = _build_parser()
+    action = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    )
+    said = {choice.dest: choice.help or "" for choice in action._choices_actions}
+
+    def describe(flat: tuple[str, ...]) -> str:
+        if flat[0] == "collect" and len(flat) == 2:
+            return collecting.SLICES[flat[1]].describes
+        return said.get(flat[0], "")
+
+    text = grouping.listing(group, _invoked_as(), describe)
+    asked = list(args.rest)
+    if not asked:
+        print(f"{text}\n\n{DOCS}")
+        return 0
+    print(
+        f"{_invoked_as()} {group.name} has no `{' '.join(asked)}`.\n\n{text}",
+        file=sys.stderr,
+    )
+    return 2
+
+
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
@@ -2851,6 +2887,7 @@ _COMMANDS = {
     "status": _cmd_status,
     "logout": _cmd_logout,
     "connection": _cmd_connection,
+    **{group.name: _cmd_group for group in grouping.GROUPS},
 }
 
 
@@ -2887,7 +2924,9 @@ UI = presentation.Presentation()
 
 def main(argv: list[str] | None = None) -> int:
     _readable_output()
-    args = _build_parser().parse_args(argv)
+    # A grouped path is the flat command by another name (grouping.py).
+    given = list(sys.argv[1:] if argv is None else argv)
+    args = _build_parser().parse_args(grouping.regroup(given))
     try:
         return _COMMANDS[args.command](args)
     except DuplicateResource as exc:
