@@ -54,6 +54,7 @@ from . import (
     presentation,
     reporting,
     running,
+    sessions,
     tenant_governance,
 )
 from . import doctor as doctor_module
@@ -173,6 +174,12 @@ def _build_parser() -> argparse.ArgumentParser:
             f"from here upwards, if there is one"
         ),
     )
+    collect.add_argument(
+        "--connection",
+        metavar="NAME",
+        help="use this stored connection, from `login`. Omit to use the active "
+        "one, if it is for the tenant this command is aimed at",
+    )
     collect.add_argument("--site-url")
     collect.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
     collect.add_argument(
@@ -262,6 +269,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="an Entra ID app registration. Required: PnP.PowerShell has "
         "shipped no application of its own since 2.12.0",
     )
+    connect.add_argument(
+        "--connection",
+        metavar="NAME",
+        help="use this stored connection, from `login`. Omit to use the active "
+        "one, if it is for the tenant this command is aimed at",
+    )
     connect.add_argument("--site-url")
     connect.add_argument(
         "--project",
@@ -343,6 +356,12 @@ def _build_parser() -> argparse.ArgumentParser:
         type=Path,
         help=f"a project file. Omit to use the nearest {project_file.NAME} "
         f"from here upwards, if there is one",
+    )
+    run_cmd.add_argument(
+        "--connection",
+        metavar="NAME",
+        help="use this stored connection, from `login`. Omit to use the active "
+        "one, if it is for the tenant this command is aimed at",
     )
     run_cmd.add_argument("--client-id")
     run_cmd.add_argument("--site-url")
@@ -559,6 +578,78 @@ def _build_parser() -> argparse.ArgumentParser:
         "other",
     )
 
+    login = sub.add_parser(
+        "login",
+        help="sign in and keep the session for later commands. The only "
+        "command that keeps one",
+        description="Sign in to one tenant and keep the session, so later "
+        "commands do not ask again. The token goes into the operating "
+        "system's protected storage; where that cannot be established, "
+        "nothing is kept and the login is refused. A certificate signs in by "
+        "itself: its connection is recorded and nothing is persisted.",
+    )
+    login.add_argument(
+        "--name", help="what to call this connection. Default: the tenant's name"
+    )
+    login.add_argument("--client-id", help="an Entra ID app registration")
+    login.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
+    login.add_argument("--site-url")
+    login.add_argument(
+        "--project",
+        type=Path,
+        default=None,
+        help=(
+            f"a project file. Omit to use the nearest {project_file.NAME} "
+            f"from here upwards, if there is one"
+        ),
+    )
+    login.add_argument(
+        "--device-login", action="store_true", help="sign in with a device code"
+    )
+    login.add_argument("--tenant-id")
+    login.add_argument("--certificate-path", type=Path)
+    login.add_argument("--certificate-password-env", metavar="NAME")
+    login.add_argument(
+        "--dry-run", action="store_true", help="print the command and reach no tenant"
+    )
+    login.add_argument("--format", choices=("text", "json"), default="text")
+
+    status = sub.add_parser(
+        "status",
+        help="which connection later commands will use. Reaches no tenant",
+        description="Read the local record of connections and say which one "
+        "is active. Reaches no tenant, so it says what was recorded at login "
+        "and not whether the session still works: `connect` asks the tenant.",
+    )
+    status.add_argument("--format", choices=("text", "json"), default="text")
+
+    logout = sub.add_parser(
+        "logout",
+        help="remove a stored session and its record",
+    )
+    logout.add_argument(
+        "--name", help="the connection to remove. Default: the active one"
+    )
+    logout.add_argument("--all", action="store_true", help="every stored connection")
+
+    connection = sub.add_parser(
+        "connection",
+        help="the stored connections: list them, choose one, remove one",
+    )
+    connection_sub = connection.add_subparsers(dest="connection_command", required=True)
+    connection_list = connection_sub.add_parser(
+        "list", help="every stored connection. Reaches no tenant"
+    )
+    connection_list.add_argument("--format", choices=("text", "json"), default="text")
+    connection_use = connection_sub.add_parser(
+        "use", help="make a stored connection the active one. Reaches no tenant"
+    )
+    connection_use.add_argument("name", metavar="NAME")
+    connection_remove = connection_sub.add_parser(
+        "remove", help="remove a stored session and its record, as `logout --name`"
+    )
+    connection_remove.add_argument("name", metavar="NAME")
+
     contracts = sub.add_parser(
         "contracts",
         help="write the contract bundle a consumer vendors: schemas, models, "
@@ -748,6 +839,85 @@ def _project(args) -> None:
         print(f"{path}: {', '.join(filled)}", file=sys.stderr)
 
 
+def _session(args) -> None:
+    """Fill the identity and the tenant from a stored connection, and say so.
+
+    AFTER THE COMMAND LINE AND THE PROJECT FILE, NEVER BEFORE. A connection
+    fills what neither of them said. It is used only for the tenant it was
+    opened for: a command aimed elsewhere, by an option or by a project file,
+    runs without it and is told why, because a session applied to another
+    tenant's address is the wrong identity reading the wrong organisation.
+
+    Named explicitly (`--connection`), a mismatch is a refusal instead: the
+    caller asked for that connection and silently not using it would run the
+    command as somebody else.
+    """
+    named = getattr(args, "connection", None)
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        raise AmbiguousIdentity(str(problem)) from problem
+    chosen = store.get(named) if named else store.current()
+    if named and chosen is None:
+        raise AmbiguousIdentity(
+            f"no connection named {named}. "
+            f"`{COMMAND} connection list` shows what is stored."
+        )
+    if chosen is None:
+        return
+
+    mismatch = None
+    for address in (getattr(args, "tenant_url", None), getattr(args, "site_url", None)):
+        if address and not chosen.covers(address):
+            mismatch = (
+                f"it is for {chosen.tenant} and this command is aimed at "
+                f"{sessions.tenant_key(address)}"
+            )
+    given = getattr(args, "client_id", None)
+    if given and given.lower() != chosen.client_id.lower():
+        mismatch = "this command names a different application registration"
+    explicit = getattr(args, "certificate_path", None) or getattr(
+        args, "device_login", False
+    )
+    if mismatch is None and explicit and chosen.method == "interactive":
+        mismatch = "this command chose its own sign-in method"
+    if mismatch:
+        if named:
+            raise AmbiguousIdentity(
+                f"connection {chosen.name} cannot be used: {mismatch}."
+            )
+        print(f"connection {chosen.name}: not used, {mismatch}", file=sys.stderr)
+        return
+
+    filled = []
+
+    def fill(destination: str, value) -> None:
+        if value in (None, False) or not hasattr(args, destination):
+            return
+        if getattr(args, destination) in (None, False):
+            setattr(args, destination, value)
+            filled.append(destination)
+
+    fill("client_id", chosen.client_id)
+    fill("tenant_url", chosen.tenant_url)
+    if chosen.method == "device-code":
+        fill("device_login", True)
+    if chosen.method == "certificate":
+        fill(
+            "certificate_path",
+            Path(chosen.certificate_path) if chosen.certificate_path else None,
+        )
+        fill("tenant_id", chosen.tenant_id)
+        fill("certificate_password_env", chosen.certificate_password_env)
+    # ALWAYS, AND ON STDERR, as a project file is announced: an identity that
+    # arrived from somewhere the caller did not type is said out loud.
+    print(
+        f"connection {chosen.name}: "
+        f"{', '.join(sorted(filled)) or 'matches what was given'}",
+        file=sys.stderr,
+    )
+
+
 def _authentication(args) -> None:
     """Two modes, and the caller has to have chosen exactly one.
 
@@ -813,6 +983,7 @@ def _cmd_collect(args) -> int:
     # tested first.
     try:
         _project(args)
+        _session(args)
         _authentication(args)
     except AmbiguousIdentity as refusal:
         print(f"refusing to run: {refusal}", file=sys.stderr)
@@ -1160,6 +1331,11 @@ def _cmd_connect(args) -> int:
     # who omitted the address is told about the address, not about the identity
     # they also passed.
     _project(args)
+    try:
+        _session(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
     if not args.site_url and not args.tenant_url:
         print(
             "connect needs --tenant-url or --site-url: an address to reach.",
@@ -1236,6 +1412,7 @@ def _cmd_run(args) -> int:
     """
     try:
         _project(args)
+        _session(args)
         _authentication(args)
     except AmbiguousIdentity as refusal:
         print(f"refusing to run: {refusal}", file=sys.stderr)
@@ -1373,7 +1550,10 @@ def _cmd_run(args) -> int:
     if args.bundle:
         try:
             written = bundling.write(
-                args.bundle, runs, documents, args.format,
+                args.bundle,
+                runs,
+                documents,
+                args.format,
                 run_set=RunSet(runs, documents=documents).to_dict(),
             )
         except bundling.BundleError as refusal:
@@ -1905,7 +2085,10 @@ def _cmd_evaluate(args) -> int:
     if getattr(args, "bundle", None):
         try:
             written = bundling.write(
-                args.bundle, runs, documents, args.format,
+                args.bundle,
+                runs,
+                documents,
+                args.format,
                 run_set=RunSet(runs, documents=documents).to_dict(),
             )
         except bundling.BundleError as refusal:
@@ -2292,6 +2475,358 @@ def _cmd_contracts(args) -> int:
     return 0
 
 
+def _connection_row(found: sessions.Connection, active: str | None) -> dict:
+    return {
+        "name": found.name,
+        "active": found.name == active,
+        "tenant": found.tenant,
+        "tenant_url": found.tenant_url,
+        "tenant_id": found.tenant_id,
+        "client_id": found.client_id,
+        "method": found.method,
+        "identity_kind": found.identity_kind,
+        "identity": found.identity,
+        "persisted": found.persisted,
+        "logged_in_at": found.logged_in_at,
+    }
+
+
+def _describe_connection(row: dict) -> str:
+    kept = (
+        "kept in the operating system's protected storage"
+        if row["persisted"]
+        else "nothing kept: the certificate signs in on every run"
+    )
+    who = row["identity"] or "not reported by the session"
+    return (
+        f"{row['name']}{' (active)' if row['active'] else ''}\n"
+        f"  tenant      {row['tenant']}  ({row['tenant_url']})\n"
+        f"  directory   {row['tenant_id'] or 'not established'}\n"
+        f"  application {row['client_id']}\n"
+        f"  signs in as {row['identity_kind']}, by {row['method']}; who: {who}\n"
+        f"  session     {kept}\n"
+        f"  recorded    {row['logged_in_at']}\n"
+    )
+
+
+def _cmd_login(args) -> int:
+    """Sign in once, and keep the session because the operator asked.
+
+    THE ONLY COMMAND THAT KEEPS ONE. Everything else authenticates for itself
+    and leaves nothing behind, unless a session this command stored is there
+    to be used. Three refusals come before any sign-in: an identity that is
+    ambiguous, a machine that cannot run the collector, and storage that would
+    not protect the token. One check comes after it, because what was believed
+    about storage beforehand is not what is on disk afterwards.
+    """
+    _project(args)
+    if not args.site_url and not args.tenant_url:
+        print(
+            "login needs --tenant-url or --site-url: a tenant to sign in to.",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        _authentication(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
+    for problem in collecting.preflight():
+        print(problem, file=sys.stderr)
+        return 2
+
+    delegated = not args.certificate_path
+    where = sessions.storage()
+    if delegated and not where.protected and not args.dry_run:
+        print(
+            f"refusing to keep a session: {where.detail}. A sign-in kept here "
+            f"would be written to an unprotected file. Run commands without "
+            f"`login` (each signs in for itself), or use a certificate.",
+            file=sys.stderr,
+        )
+        return 2
+
+    def report(line: str) -> None:
+        if args.format != "text":
+            return
+        shown = connecting.readable(line)
+        if shown is not None:
+            UI.progress(shown)
+
+    established = connecting.connect(
+        client_id=args.client_id,
+        site_url=args.site_url,
+        tenant_url=args.tenant_url,
+        device_login=args.device_login,
+        dry_run=args.dry_run,
+        certificate_path=str(args.certificate_path) if args.certificate_path else None,
+        tenant_id=args.tenant_id,
+        certificate_password_env=args.certificate_password_env,
+        persist_login=delegated,
+        on_progress=None if args.dry_run else report,
+    )
+    if args.dry_run:
+        print(established.output[0])
+        return 0
+
+    address = args.tenant_url or args.site_url
+    if established.reach is not connecting.Reach.ESTABLISHED:
+        # NOTHING IS RECORDED. A connection that did not open is not a
+        # connection, and a record of one would be used by the next command.
+        # AND THE LIBRARY IS TOLD TO KEEP NOTHING. It records the decision to
+        # keep sign-ins before anybody signs in, so a login that was cancelled
+        # or refused would otherwise leave the next ordinary sign-in for this
+        # tenant to be kept without anybody asking. Found on the first live
+        # attempt, which was cancelled.
+        if delegated:
+            sessions.forget_registration(address, args.client_id)
+        if args.format == "json":
+            print(
+                json.dumps(
+                    {
+                        "logged_in": False,
+                        "connection": connecting.document(established),
+                    },
+                    indent=2,
+                )
+            )
+        else:
+            print()
+            sys.stdout.write(connecting.describe(established))
+            print("Not logged in: no session was established, so nothing was kept.")
+        return 1
+
+    exposed = sessions.readable_token_cache() if delegated else None
+    if exposed is not None:
+        cleared, _why = connecting.logout(
+            client_id=args.client_id, tenant_url=address, device_login=args.device_login
+        )
+        print(
+            f"refusing to keep this session: the sign-in was written to {exposed} "
+            f"in plain text. "
+            + (
+                "It has been removed."
+                if cleared
+                else f"It could NOT be removed: delete {exposed}."
+            ),
+            file=sys.stderr,
+        )
+        return 1
+
+    store = sessions.load()
+    record = sessions.Connection(
+        name=args.name or sessions.default_name(address),
+        tenant_url=address,
+        client_id=args.client_id,
+        method=established.method,
+        persisted=delegated,
+        logged_in_at=established.attempted_at,
+        identity_kind=established.identity,
+        identity=None,
+        tenant_id=established.observed_tenant_id
+        or established.resolved_tenant_id
+        or args.tenant_id,
+        certificate_path=str(args.certificate_path) if args.certificate_path else None,
+        certificate_password_env=args.certificate_password_env,
+    )
+    replaced = store.add(record)
+    store.save()
+    row = _connection_row(record, store.active)
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "logged_in": True,
+                    "replaced": replaced,
+                    "storage": where.detail if delegated else None,
+                    "record": row,
+                    "connection": connecting.document(established),
+                },
+                indent=2,
+            )
+        )
+        return 0
+    print()
+    sys.stdout.write(connecting.describe(established))
+    print()
+    print(f"Logged in. Later commands for {record.tenant} use this connection.")
+    sys.stdout.write(_describe_connection(row))
+    if delegated:
+        print(f"  stored in   {where.detail}")
+    for name in replaced:
+        print(
+            f"  replaced    {name}: one identity per tenant and "
+            f"application registration"
+        )
+    print(f"`{COMMAND} logout` removes it.")
+    return 0
+
+
+def _unrecorded(store: sessions.Store) -> list[str]:
+    """Sign-ins the library is set to keep that no connection here accounts for."""
+    known = {(c.tenant, c.client_id.lower()) for c in store.connections if c.persisted}
+    return sorted(
+        {
+            tenant
+            for tenant, client in sessions.kept_registrations()
+            if (tenant, client) not in known
+        }
+    )
+
+
+def _cmd_status(args) -> int:
+    """Which connection later commands will use. Reaches no tenant."""
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        print(str(problem), file=sys.stderr)
+        return 2
+    current = store.current()
+    unrecorded = _unrecorded(store)
+    for tenant in unrecorded if args.format != "json" else []:
+        print(
+            f"note: the sign-in library is set to keep sign-ins for {tenant}, and no "
+            f"connection here records one. `{COMMAND} login` for that tenant records "
+            f"it; `{COMMAND} logout` then removes it.",
+            file=sys.stderr,
+        )
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "unrecorded": unrecorded,
+                    "logged_in": current is not None,
+                    "active": _connection_row(current, store.active)
+                    if current
+                    else None,
+                    "stored": len(store.connections),
+                    "verified_now": False,
+                },
+                indent=2,
+            )
+        )
+        return 0 if current else 1
+    if current is None:
+        stored = len(store.connections)
+        print(
+            "Logged out: no active connection."
+            + (
+                f" {stored} stored; `{COMMAND} connection use NAME` selects one."
+                if stored
+                else f" `{COMMAND} login` keeps one; without it every command "
+                f"signs in for itself."
+            )
+        )
+        return 1
+    sys.stdout.write(_describe_connection(_connection_row(current, store.active)))
+    print(
+        f"This is the local record, not a check: `{COMMAND} connect` asks the tenant "
+        f"whether the session still signs in and what it may read."
+    )
+    return 0
+
+
+def _remove_connection(store: sessions.Store, found: sessions.Connection) -> bool:
+    """Clear what was persisted for one connection, then drop its record."""
+    if found.persisted:
+        for problem in collecting.preflight():
+            print(problem, file=sys.stderr)
+            return False
+
+        def report(line: str) -> None:
+            shown = connecting.readable(line)
+            if shown is not None:
+                UI.progress(shown)
+
+        cleared, why = connecting.logout(
+            client_id=found.client_id,
+            tenant_url=found.tenant_url,
+            device_login=found.method == "device-code",
+            on_progress=report,
+        )
+        if not cleared:
+            # THE RECORD STAYS. Dropping it would report a logout while the
+            # token is still in storage, usable by anything that signs in for
+            # this tenant and application registration.
+            print(
+                f"{found.name}: the stored sign-in was NOT removed ({'; '.join(why)}). "
+                f"The record is kept so this is not mistaken for a logout.",
+                file=sys.stderr,
+            )
+            return False
+    store.remove(found.name)
+    store.save()
+    print(
+        f"{found.name}: logged out"
+        + (
+            ", stored sign-in removed."
+            if found.persisted
+            else "; a certificate keeps no session, the record is removed."
+        )
+    )
+    return True
+
+
+def _cmd_logout(args) -> int:
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        print(str(problem), file=sys.stderr)
+        return 2
+    if args.all and args.name:
+        print("logout takes --name or --all, not both.", file=sys.stderr)
+        return 2
+    if args.all:
+        targets = list(store.connections)
+    else:
+        found = store.get(args.name) if args.name else store.current()
+        if found is None:
+            print(
+                f"no connection named {args.name}."
+                if args.name
+                else "Already logged out: no active connection.",
+                file=sys.stderr if args.name else sys.stdout,
+            )
+            return 2 if args.name else 0
+        targets = [found]
+    done = [_remove_connection(store, found) for found in targets]
+    return 0 if all(done) else 1
+
+
+def _cmd_connection(args) -> int:
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        print(str(problem), file=sys.stderr)
+        return 2
+    if args.connection_command == "list":
+        rows = [_connection_row(c, store.active) for c in store.connections]
+        if args.format == "json":
+            print(json.dumps(rows, indent=2))
+        elif not rows:
+            print(f"No stored connections. `{COMMAND} login` keeps one.")
+        else:
+            for row in rows:
+                sys.stdout.write(_describe_connection(row))
+        return 0
+    try:
+        if args.connection_command == "use":
+            chosen = store.use(args.name)
+            store.save()
+            print(f"{chosen.name} is the active connection, for {chosen.tenant}.")
+            return 0
+        found = store.get(args.name)
+        if found is None:
+            raise sessions.SessionError(f"no connection named {args.name}")
+    except sessions.SessionError as problem:
+        print(
+            f"{problem}. `{COMMAND} connection list` shows what is stored.",
+            file=sys.stderr,
+        )
+        return 2
+    return 0 if _remove_connection(store, found) else 1
+
+
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
@@ -2312,6 +2847,10 @@ _COMMANDS = {
     "report": _cmd_report,
     "diff": _cmd_diff,
     "contracts": _cmd_contracts,
+    "login": _cmd_login,
+    "status": _cmd_status,
+    "logout": _cmd_logout,
+    "connection": _cmd_connection,
 }
 
 

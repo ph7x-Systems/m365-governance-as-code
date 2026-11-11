@@ -14,6 +14,33 @@ Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
 
+### A session can be kept, and only because somebody logged in
+
+`m365g login` signs in to one tenant and keeps the session, so the collections
+that follow do not ask again. `status`, `logout` and `connection list`, `use`
+and `remove` manage what was kept. Nothing else changed its behaviour: without
+a login every command still signs in for itself and leaves nothing behind.
+
+**The token is never held by this engine.** It is written by the sign-in
+library into the operating system's protected storage. Where that cannot be
+established, which is Linux with no keyring, `login` refuses rather than let
+the library fall back to an unprotected file, and it checks what is on disk
+after the sign-in as well as before it.
+
+**A session is for one tenant and is not an authorization.** A command aimed at
+another tenant ignores the active connection and says so, and `login` reports
+what the identity may read separately from the fact that it signed in.
+
+**Twelve of the sixteen collections reuse it.** `docs/CLI.md` names the four
+that do not and why.
+
+### The licensing collection no longer leaves a sign-in behind
+
+The Microsoft Graph PowerShell SDK keeps a delegated sign-in for every later
+session of the same user unless told otherwise, and reuses one that is already
+there. The licensing collector did not tell it otherwise. It now confines its
+sign-in to its own process.
+
 ### The command is `m365g`, and nothing else is renamed
 
 `m365-governance` is fifteen characters somebody types dozens of times in a

@@ -16,3 +16,65 @@ every value an option accepted, both executable names (`m365g` and
 `m365-governance`, charter `D87`), and the meaning of the exit codes — `0` a
 result, `1` a negative result, `2` a refusal. Consumers invoke this engine as a
 subprocess by those names. A new name is an addition and never a replacement.
+
+## Sessions
+
+A session is kept between commands **only after `m365g login`**, which is the
+operator's explicit choice. Without it every command authenticates for itself
+and leaves nothing behind, exactly as before.
+
+- **Where the token is.** In the operating system's protected storage, written
+  by the sign-in library and never by this engine: the macOS Keychain, Windows
+  data protection, or the Linux keyring. This engine holds no token, prints
+  none and writes none into evidence.
+- **Plain text is refused.** On Linux the library falls back to an unprotected
+  file when no keyring answers. `login` refuses to persist where it cannot
+  establish protected storage, and checks the result afterwards: a readable
+  token cache is cleared and the login fails.
+- **What this engine records.** A connection's name, tenant address, directory,
+  application registration, sign-in method, the identity the session reported
+  and when — in `connections.json` under the user's configuration directory
+  (`M365G_HOME` overrides it). It refuses to hold a secret.
+- **One identity per tenant and application registration.** The library keys a
+  persisted sign-in by those two; which account it would choose among several
+  is not established, so a second `login` for the same pair replaces the first.
+- **A session is not an authorization.** `login` and `connect` report the two
+  separately, as the first-run contract requires. `status` reads the local
+  record and reaches no tenant; `connect` is the command that asks the tenant.
+- **A session is used only for its own tenant.** A command aimed at another
+  tenant, by an option or a project file, ignores the active connection and
+  says so.
+
+Precedence, for the application registration and the tenant address: an option
+on the command line, then a project file, then the active connection.
+
+## What a session does not cover
+
+Twelve of the sixteen collections sign in through PnP.PowerShell and reuse a
+persisted session. `conditional-access` and `tenant-governance` read Microsoft
+Graph with a certificate and never prompt. `licensing` signs in through the
+Microsoft Graph PowerShell SDK, whose own persisted context is shared with
+everything else the operator does with that SDK: the collector confines its
+sign-in to its own process, so it neither leaves that context behind nor uses
+one that was already there, and it prompts on every delegated run.
+`forwarding` signs in through Exchange Online PowerShell, which keeps no
+session between processes, and prompts on every delegated run.
+
+## The commands
+
+| Command | What it does | Reaches a tenant |
+|---|---|---|
+| `login` | signs in, reports authentication and authorization apart, keeps the session | yes |
+| `status` | the active connection, from the local record | no |
+| `logout` | removes the stored sign-in and its record (`--name`, `--all`) | yes, to clear a persisted sign-in |
+| `connection list` | every stored connection | no |
+| `connection use NAME` | makes one the active connection | no |
+| `connection remove NAME` | as `logout --name NAME` | as `logout` |
+
+`connect`, `collect` and `run` take `--connection NAME`; without it they use
+the active connection when it is for the tenant they are aimed at.
+
+Who signed in is not in the record: the session reports the kind of identity
+and the method, and no collection path for the person's name is established.
+A logout that cannot clear the stored sign-in keeps the record and exits `1`,
+so that it is not mistaken for a logout.

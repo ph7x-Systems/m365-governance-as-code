@@ -120,11 +120,16 @@ function Connect-Directory {
         Connect-MgGraph -TenantId $Tenant -ClientId $App `
             -CertificateThumbprint $Thumbprint -NoWelcome
     }
+    # THIS PROCESS ONLY. The SDK's default scope, CurrentUser, keeps the
+    # delegated sign-in for every later PowerShell session of this user and
+    # reuses one the operator opened for other work: a token left on disk
+    # nobody asked for, and a session used that nobody selected. A collection
+    # signs in for itself and leaves nothing behind.
     elseif ($Device) {
-        Connect-MgGraph -Scopes $scopes -UseDeviceCode -NoWelcome
+        Connect-MgGraph -Scopes $scopes -UseDeviceCode -NoWelcome -ContextScope Process
     }
     else {
-        Connect-MgGraph -Scopes $scopes -NoWelcome
+        Connect-MgGraph -Scopes $scopes -NoWelcome -ContextScope Process
     }
 }
 

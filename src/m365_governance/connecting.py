@@ -314,6 +314,7 @@ def connect(
     certificate_path: str | None = None,
     tenant_id: str | None = None,
     certificate_password_env: str | None = None,
+    persist_login: bool = False,
     on_progress: Callable[[str], None] | None = None,
     engine: Callable[..., tuple[int, str, str, bool]] | None = None,
 ) -> Connection:
@@ -340,6 +341,10 @@ def connect(
         argv += ["-TenantUrl", tenant_url]
     if device_login:
         argv.append("-DeviceLogin")
+    if persist_login:
+        # ONLY `login` PASSES THIS. Keeping a sign-in is the operator's
+        # decision and no other command may make it for them (docs/CLI.md).
+        argv.append("-PersistLogin")
     # APP-ONLY, AND IT REACHES THE COLLECTOR. These were accepted on the command
     # line, validated against each other, and then dropped: `connect` signed in
     # as a person while the caller had asked for the application. The one
@@ -486,12 +491,16 @@ def _because(
         # other.
         kind = established.get("identity_kind") or "not-established"
         article = "an" if kind[:1] in "aeiou" else "a"
-        opened = "a session" if kind == "not-established" else f"{article} {kind} session"
+        opened = (
+            "a session" if kind == "not-established" else f"{article} {kind} session"
+        )
         reasons.append(f"{opened} opened against {established.get('url')}")
         # THE SAME FILTER THE RECORD USES, so the count and the list cannot
         # disagree. It said `1 scopes granted` beside `scopes none reported`,
         # because this counted a null the other had dropped.
-        scopes = [s for s in (established.get("scopes") or []) if isinstance(s, str) and s]
+        scopes = [
+            s for s in (established.get("scopes") or []) if isinstance(s, str) and s
+        ]
         reasons.append(
             f"{len(scopes)} scopes granted" if scopes else "no scopes were reported"
         )
@@ -519,6 +528,55 @@ def _because(
         ]
         reasons.extend(named[:2] if named else spoken[-3:])
     return reasons
+
+
+#: What the collector prints when a persisted sign-in has been removed.
+LOGGED_OUT = re.compile(r"^LOGOUT (\{.*\})\s*$")
+
+
+def logout(
+    *,
+    client_id: str,
+    tenant_url: str,
+    device_login: bool = False,
+    on_progress: Callable[[str], None] | None = None,
+    engine: Callable[..., tuple[int, str, str, bool]] | None = None,
+) -> tuple[bool, list[str]]:
+    """Remove a persisted sign-in. Returns whether it was cleared, and why not.
+
+    The sign-in library clears a persisted sign-in only through a connection it
+    holds, so this opens one from what was stored and closes it clearing it.
+    When the stored sign-in has expired or been revoked the library asks the
+    person to sign in again before it can clear anything, which is why the
+    output is passed on as it arrives.
+    """
+    argv = [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        str(COLLECTOR),
+        "-Mode",
+        "Logout",
+        "-ClientId",
+        client_id,
+        "-TenantUrl",
+        tenant_url,
+    ]
+    if device_login:
+        argv.append("-DeviceLogin")
+    run = engine or _run
+    returncode, out, err, cancelled = run(argv, on_progress)
+    lines = [ANSI.sub("", line) for line in out.splitlines()]
+    if (
+        not cancelled
+        and returncode == 0
+        and _one(lines, LOGGED_OUT).get("cleared") is True
+    ):
+        return True, []
+    if cancelled:
+        return False, ["cancelled before the stored sign-in was removed"]
+    reason = [ANSI.sub("", line) for line in err.splitlines() if line.strip()][-3:]
+    return False, reason or ["the collector ended without confirming the removal"]
 
 
 def document(connection: Connection) -> dict[str, Any]:
@@ -583,7 +641,9 @@ def document(connection: Connection) -> dict[str, Any]:
             #
             # Dropping it here rather than guarding the render keeps the record
             # and the sentence agreeing, since both read this field.
-            "scopes": [s for s in (session.get("scopes") or []) if isinstance(s, str) and s],
+            "scopes": [
+                s for s in (session.get("scopes") or []) if isinstance(s, str) and s
+            ],
             # NEVER `resolved_tenant_id`. That one is a lookup anybody can
             # perform without reaching this tenant, and copying it here would
             # make a public resolution indistinguishable from an observation, in

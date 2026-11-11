@@ -29,7 +29,6 @@ rather than a hope about it.
 
 from __future__ import annotations
 
-import json
 import os
 import subprocess
 import sys
@@ -65,7 +64,9 @@ LOCAL_QUESTIONS = (
 #: Named, deliberately and shortly. Everything not here is preparation and is
 #: held to the boundary below; a command that reaches a tenant and is not
 #: listed fails, and so does a command listed here that nobody needed.
-REACH_A_TENANT = frozenset({"collect", "connect", "run", "migration-read"})
+REACH_A_TENANT = frozenset(
+    {"collect", "connect", "run", "migration-read", "login", "logout"}
+)
 
 #: How each preparing command is exercised.
 #:
@@ -94,6 +95,11 @@ HOW_TO_RUN = {
     "report": ["--help"],
     "diff": ["--help"],
     "migration-verify": ["--help"],
+    # The local record of connections. Reading, choosing and listing reach no
+    # tenant; `connection remove` is `logout` by another name and is exercised
+    # there.
+    "status": [],
+    "connection": ["list"],
 }
 
 
@@ -105,11 +111,13 @@ def preparing_commands():
     fails -- which is the only way this file keeps being true.
     """
     import argparse
+
     import m365_governance.cli as cli
 
     parser = cli._build_parser()
-    action = next(a for a in parser._actions
-                 if isinstance(a, argparse._SubParsersAction))
+    action = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    )
     every = set(action.choices)
     return sorted(every - REACH_A_TENANT), sorted(every)
 
@@ -182,7 +190,9 @@ def test_preparing_only_asks_about_this_machine(command, pwsh_that_refuses, tmp_
 
     subprocess.run(
         [sys.executable, "-m", "m365_governance.cli", command, *HOW_TO_RUN[command]],
-        capture_output=True, text=True, env=environment,
+        capture_output=True,
+        text=True,
+        env=environment,
         cwd=tmp_path,  # away from any project file in this checkout
         timeout=120,
     )
@@ -224,7 +234,9 @@ def test_every_command_is_classified():
     preparing, every = preparing_commands()
 
     invented = REACH_A_TENANT - set(every)
-    assert not invented, f"REACH_A_TENANT names commands the CLI does not have: {invented}"
+    assert not invented, (
+        f"REACH_A_TENANT names commands the CLI does not have: {invented}"
+    )
 
     unclassified = set(preparing) - set(HOW_TO_RUN)
     assert not unclassified, (
@@ -245,7 +257,11 @@ def test_the_stand_in_would_catch_a_connection(pwsh_that_refuses, tmp_path):
 
     subprocess.run(
         ["pwsh", "-NoProfile", "-Command", "Connect-MgGraph -Scopes X"],
-        capture_output=True, text=True, env=environment, cwd=tmp_path, timeout=60,
+        capture_output=True,
+        text=True,
+        env=environment,
+        cwd=tmp_path,
+        timeout=60,
     )
 
     asked = _asked(log)
@@ -271,7 +287,9 @@ def test_doctor_cannot_reach_a_session():
         if isinstance(node, ast.ImportFrom) and node.module
     } | {
         a.name.split(".")[-1]
-        for node in ast.walk(tree) if isinstance(node, ast.Import) for a in node.names
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Import)
+        for a in node.names
     }
 
     can_authenticate = {"connecting", "graph_token", "graph_slice"}

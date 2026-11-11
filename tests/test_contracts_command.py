@@ -190,3 +190,14 @@ def test_every_sample_the_bundle_ships_declares_the_current_contract():
         f"sample assessments declaring an older contract than {current}: "
         f"{stale}. Run `python tools/examples.py`."
     )
+
+
+def test_the_command_itself_writes_the_bundle_and_says_what_it_wrote(tmp_path, capsys):
+    """In this process, so the command's own lines are measured and not only
+    the function it calls."""
+    import m365_governance.cli as cli
+
+    out = tmp_path / "bundle"
+    assert cli.main(["contracts", "--out", str(out)]) == 0
+    assert (out / "manifest.json").is_file() or any(out.rglob("*.json"))
+    assert "schemas" in capsys.readouterr().out

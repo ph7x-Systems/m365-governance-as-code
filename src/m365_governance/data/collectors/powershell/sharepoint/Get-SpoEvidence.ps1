@@ -141,10 +141,14 @@
     enumerates what the identity can enumerate, which for a delegated run is
     not the tenant, and every document it writes says so in its coverage.
 
-    The token is not persisted between runs. -PersistLogin exists and is not
-    used: a collector that leaves a reusable token on disk has widened the
-    blast radius of the machine it runs on, and that is a decision for whoever
-    operates it, not a default.
+    The token is not persisted between runs unless the operator asked: a
+    collector that leaves a reusable token on disk has widened the blast
+    radius of the machine it runs on, and that is a decision for whoever
+    operates it, not a default. -PersistLogin is that decision, it is accepted
+    only in the Connect mode, and `m365g login` is the one caller that passes
+    it. A later delegated run for the same tenant and application registration
+    then signs in from the operating system's protected storage. The Logout
+    mode removes it again.
 
     Group expansion is NOT attempted. A group owner is one principal and may
     be forty people, so the script emits expansion_complete = false and a
@@ -162,7 +166,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter')]
+    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -185,6 +189,12 @@ param(
 
     [Parameter()]
     [switch] $DeviceLogin,
+
+    # KEEP THE DELEGATED SIGN-IN FOR LATER RUNS. The operator's explicit choice
+    # and never a default; refused outside the Connect mode and with a
+    # certificate, which signs in by itself and leaves nothing to keep.
+    [Parameter()]
+    [switch] $PersistLogin,
 
     # APP-ONLY WITH A CERTIFICATE. The other authentication mode, and the one
     # an unattended run needs. Exclusive with -DeviceLogin; see Connection.psm1.
@@ -261,10 +271,28 @@ else { 'interactive' }
 
 $certificatePassword = Read-CertificatePassword -VariableName $CertificatePasswordEnv
 
+if ($PersistLogin -and $Mode -ne 'Connect') {
+    throw "-PersistLogin is accepted in the Connect mode only: a collection never decides to keep a sign-in."
+}
+if (($PersistLogin -or $Mode -eq 'Logout') -and $CertificatePath) {
+    throw 'A certificate signs in by itself: there is no persisted sign-in to keep or to remove.'
+}
+
 $TenantHost = Connect-Collector -Mode $Mode -ClientId $ClientId -SiteUrl $SiteUrl `
-    -TenantUrl $TenantUrl -DeviceLogin:$DeviceLogin `
+    -TenantUrl $TenantUrl -DeviceLogin:$DeviceLogin -PersistLogin:$PersistLogin `
     -CertificatePath $CertificatePath -TenantId $TenantId `
     -CertificatePassword $certificatePassword
+
+# --- log out ------------------------------------------------------------------
+#
+# The sign-in library removes a persisted sign-in only through a connection it
+# holds, so this mode opens one from the stored sign-in and closes it clearing
+# what was kept. It reads nothing from the tenant and writes no evidence.
+if ($Mode -eq 'Logout') {
+    Disconnect-PnPOnline -ClearPersistedLogin
+    Write-Host ('LOGOUT ' + ([ordered]@{ cleared = $true; host = $TenantHost } | ConvertTo-Json -Compress))
+    return
+}
 
 # --- connect only ------------------------------------------------------------
 #

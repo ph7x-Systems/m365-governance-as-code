@@ -160,6 +160,9 @@ function Connect-Collector {
         [Parameter()] [string] $SiteUrl,
         [Parameter()] [string] $TenantUrl,
         [Parameter()] [switch] $DeviceLogin,
+        # Keep the delegated sign-in in the operating system's protected
+        # storage. Passed by `login` alone; see Get-SpoEvidence.ps1.
+        [Parameter()] [switch] $PersistLogin,
         # APP-ONLY, AND IT IS A DIFFERENT IDENTITY RATHER THAN A DIFFERENT
         # PROMPT. Interactive and device login are both delegated: the run sees
         # what one person sees. A certificate authenticates the APPLICATION,
@@ -179,9 +182,9 @@ function Connect-Collector {
     # centre. It is a reachability check rather than a slice, so it has no
     # opinion about which endpoint the caller intends to collect from -- and
     # refusing it for the wrong one would answer a question nobody asked.
-    if ($Mode -eq 'Connect') {
+    if ($Mode -in @('Connect', 'Logout')) {
         $connectUrl = if ($TenantUrl) { $TenantUrl } else { $SiteUrl }
-        if (-not $connectUrl) { throw 'Mode Connect needs -TenantUrl or -SiteUrl.' }
+        if (-not $connectUrl) { throw "Mode $Mode needs -TenantUrl or -SiteUrl." }
     }
     else {
         $connectUrl = if ($script:AdminModes -contains $Mode) { $TenantUrl } else { $SiteUrl }
@@ -226,10 +229,10 @@ function Connect-Collector {
         Connect-PnPOnline @parameters
     }
     elseif ($DeviceLogin) {
-        Connect-PnPOnline -Url $connectUrl -DeviceLogin -ClientId $ClientId
+        Connect-PnPOnline -Url $connectUrl -DeviceLogin -ClientId $ClientId -PersistLogin:$PersistLogin
     }
     else {
-        Connect-PnPOnline -Url $connectUrl -Interactive -ClientId $ClientId
+        Connect-PnPOnline -Url $connectUrl -Interactive -ClientId $ClientId -PersistLogin:$PersistLogin
     }
 
     return Get-TenantHost -Url $connectUrl
