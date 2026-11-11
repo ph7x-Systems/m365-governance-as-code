@@ -208,6 +208,12 @@ def test_a_view_shows_the_collectors_words_and_concludes_nothing():
         "[unknown]; by: {x}; links: 2 entries"
     )
     assert presenting.fact({"state": "observed", "value": True, "raw": {}}) == "true"
+    nested = {
+        "state": "observed",
+        "direct_count": {"state": "observed", "value": 2, "raw": {}},
+        "group_count": {"state": "missing", "detail": "not read"},
+    }
+    assert presenting.fact(nested) == "direct_count=2; group_count=[missing]"
     assert presenting.fact({"state": "observed", "value": ["a", "b"]}) == "a, b"
     assert presenting.fact({"state": "observed", "value": [{"a": 1}]}) == "1 entries"
     text = presenting.render([document], "text")

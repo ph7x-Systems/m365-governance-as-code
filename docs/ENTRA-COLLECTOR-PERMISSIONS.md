@@ -1,7 +1,9 @@
-# Permissions for the Microsoft Entra collectors that do not exist yet
+# Permissions for the Microsoft Entra collectors
 
 **Nothing here is granted, requested or consented.** This is the preparation an
-owner reads before deciding whether a collector may be pointed at a tenant. A
+owner reads before deciding whether a collector may be pointed at a tenant.
+The `guests` and `applications` collectors now exist and are contract-tested;
+neither has read a directory, because neither scope below has been granted. A
 permission appearing in a catalogue is not a reason to ask for it, and holding
 one is not authorization to audit a service.
 
@@ -20,7 +22,8 @@ that was not read from the reference says so.
 
 ## What this means for the composed scenarios
 
-- **External access** needs guests, so `User.Read.All`. Until it is granted the
+- **External access** needs guests, so `User.Read.All`. The collector exists.
+  Until the scope is granted no guest evidence can be collected, and the
   scenario reports what sites permit and says that guests were not read.
 - **Application exposure** needs `Application.Read.All` and, for what was
   consented, `Directory.Read.All`. The second is the widest read in this table

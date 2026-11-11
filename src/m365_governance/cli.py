@@ -3343,7 +3343,10 @@ def _read_help(given: list[str]) -> str | None:
     example = f"{name} {address}".strip()
     rules = ", ".join(entry.get("consumed_by") or []) or "none yet"
     if chosen.source == "graph":
-        signs_in = "with a certificate (application permissions); it never prompts"
+        signs_in = (
+            "with a Microsoft Graph token the operator supplies, or a "
+            "certificate; it never prompts"
+        )
     elif chosen.collector.name == collecting.COLLECTOR.name:
         signs_in = "as the active connection (`login`), or with --client-id"
     else:

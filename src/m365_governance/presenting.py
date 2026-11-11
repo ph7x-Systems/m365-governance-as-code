@@ -93,6 +93,11 @@ def fact(value: Any) -> str:
             continue
         if isinstance(inner, list):
             parts.append(f"{key}: {len(inner)} entries")
+        elif _is_fact(inner):
+            # A fact that holds facts of its own: `owners` carries its two
+            # counts this way. Each is shown by the same rule as any fact,
+            # never as the names of its keys.
+            parts.append(f"{key}={fact(inner)}")
         elif isinstance(inner, dict):
             parts.append(f"{key}: {_value(inner)}")
         else:
