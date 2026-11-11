@@ -172,7 +172,8 @@ def test_on_run_output_is_still_the_evidence_directory_unless_it_is_a_format(tmp
     assert cli._uniform_output(parser, ["run", "--output", "json"]) == [
         "run", "--format", "json",
     ]  # fmt: skip
-    assert cli._uniform_output(parser, ["run", "--evidence-out", "e", "--output", "md"]) == [
+    both = ["run", "--evidence-out", "e", "--output", "md"]
+    assert cli._uniform_output(parser, both) == [
         "run", "--output", "e", "--format", "markdown",
     ]  # fmt: skip
 

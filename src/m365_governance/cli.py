@@ -122,15 +122,55 @@ def _invoked_as() -> str:
     return name if name in ALIASES else COMMAND
 
 
+def _overview(command: str) -> str:
+    """What `--help` says first: where to start, then the commands by group."""
+    width = max(len(group.name) for group in grouping.GROUPS)
+    groups = "\n".join(
+        f"  {group.name.ljust(width)}  {group.says}" for group in grouping.GROUPS
+    )
+    return f"""Microsoft 365 governance checks that show their work.
+
+Start here
+  {command} engine doctor                      what this machine still needs
+  {command} login --client-id ID --tenant-url https://TENANT-admin.sharepoint.com
+  {command} status                             which connection is active
+  {command} spo site list                      read, and see it in the terminal
+  {command} spo site list --evidence-out DIR   read, and keep the evidence
+  {command} governance run --site-url URL      from a target to a report
+
+Session
+  login       sign in and keep the session for later commands
+  status      the active connection, from the local record. Reaches no tenant
+  logout      remove a stored session and its record
+  connection  the stored connections: list, use NAME, remove NAME
+  connect     ask the tenant: does this identity sign in, and what may it read
+
+Commands, by group ({command} GROUP lists what a group holds)
+{groups}
+
+Reading and collecting are one act with two outcomes: what is printed is a
+view, and the evidence (the documents with their provenance, which is what
+rules evaluate) is kept only where --evidence-out says.
+
+--output text|json|csv|md chooses how a result is shown. --help works on every
+command. The earlier flat names (collect, list-rules, run, ...) still work."""
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog=_invoked_as(),
-        description="Microsoft 365 governance checks that show their work.",
+        usage="%(prog)s [--version] COMMAND ...",
+        description=_overview(_invoked_as()),
         epilog=DOCS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=__version__)
-    sub = parser.add_subparsers(dest="command", required=True)
+    # The overview above is the listing: by group, in the order somebody meets
+    # the commands. The parser's own flat listing would repeat every name
+    # after it, so it is not printed; `--help` on any command still is.
+    sub = parser.add_subparsers(
+        dest="command", required=True, metavar="COMMAND", help=argparse.SUPPRESS
+    )
 
     # Wrapped so that every parser created below carries the manual without
     # each of sixteen call sites remembering to. One that forgot would be the
@@ -1367,6 +1407,7 @@ def _report_collection(args, chosen, outcome) -> int:
             f"written to the tenant; a collector has no write path.",
             file=sys.stderr,
         )
+        _explain_failure(outcome)
         _report_manifest(outcome)
         return 1
 
@@ -2925,6 +2966,149 @@ def _cmd_connection(args) -> int:
     return 0 if _remove_connection(store, found) else 1
 
 
+def _read_help(given: list[str]) -> str | None:
+    """Help for a grouped read, when that is what was asked for.
+
+    `m365g spo owner list --help` is answered here rather than by the flat
+    command's parser, because what a person needs before reading is not a list
+    of sixteen collections: it is what THIS one reads, what it needs to be
+    allowed to, and which rules use it. All of it comes from the capability
+    manifest, which is derived from the collectors themselves.
+    """
+    if not given or given[0] not in grouping.BY_NAME:
+        return None
+    if not {"-h", "--help"} & set(given):
+        return None
+    group = grouping.BY_NAME[given[0]]
+    words = [word for word in given[1:] if word not in ("-h", "--help")]
+    for path, flat in group.paths.items():
+        if (
+            tuple(words[: len(path)]) == path
+            and flat[0] == "collect"
+            and len(flat) == 2
+        ):
+            break
+    else:
+        return None
+    chosen = collecting.SLICES[flat[1]]
+    entry = next(
+        (
+            c
+            for c in capabilities.manifest(None)["capabilities"]
+            if c["name"] == flat[1]
+        ),
+        {},
+    )
+    collector = entry.get("collector", {})
+    permissions = collector.get("permissions") or ["not-established"]
+    name = f"{_invoked_as()} {group.name} {' '.join(path)}"
+    address = "--site-url SITE" if chosen.needs_site else ""
+    if chosen.needs_tenant:
+        address = f"{address} --tenant-url ADMIN".strip()
+    example = f"{name} {address}".strip()
+    rules = ", ".join(entry.get("consumed_by") or []) or "none yet"
+    if chosen.source == "graph":
+        signs_in = "with a certificate (application permissions); it never prompts"
+    elif chosen.collector.name == collecting.COLLECTOR.name:
+        signs_in = "as the active connection (`login`), or with --client-id"
+    else:
+        signs_in = (
+            "for itself on every delegated run: a kept session is not reused "
+            "by this read"
+        )
+    return "\n".join(
+        [
+            f"{name}",
+            f"  {chosen.describes}.",
+            "",
+            f"  Reads        {', '.join(collector.get('reads') or ['not recorded'])}",
+            f"  Permissions  {', '.join(permissions)}",
+            f"  Needs        {address or 'no address beyond the connection'}",
+            f"  Signs in     {signs_in}",
+            f"  Feeds rules  {rules}",
+            f"  Proved live  {collector.get('live_validation_state', 'not recorded')}",
+            "",
+            "Examples",
+            f"  {example}",
+            f"  {example} --output csv",
+            f"  {example} --evidence-out ./evidence",
+            "",
+            "What is printed is a view. --evidence-out keeps the evidence, which",
+            "is what rules evaluate. `not-established` under Permissions means",
+            "no least-privilege set has been proved for this read, not that it",
+            "needs none.",
+            "",
+            f"Every option: {_invoked_as()} collect {flat[1]} --help",
+            "(the same command)",
+            "",
+            DOCS,
+        ]
+    )
+
+
+#: What to do about a sign-in that was refused, by the reason this engine gives it.
+_NEXT_STEP = {
+    connecting.Reason.CONSENT_REQUIRED: "An administrator has to consent to the "
+    "application's permissions in Microsoft Entra; then run this again.",
+    connecting.Reason.APPLICATION_NOT_IN_DIRECTORY: "--client-id names an "
+    "application this directory does not have. Use the id of an app "
+    "registration in the tenant being read.",
+    connecting.Reason.DIRECTORY_NOT_FOUND: "The directory was not found. Check "
+    "the tenant address or --tenant-id.",
+    connecting.Reason.BLOCKED_BY_POLICY: "A sign-in policy refused this "
+    "sign-in (Conditional Access, or Security Defaults). The sign-in log in "
+    "Microsoft Entra names the policy.",
+    connecting.Reason.CERTIFICATE_REJECTED: "The certificate was not accepted. "
+    "Check that its public key is on the app registration and that the "
+    "password variable holds the right password.",
+    connecting.Reason.ADDRESS_NOT_RESOLVED: "The address did not resolve. Check "
+    "the tenant name in the URL.",
+}
+
+_NOT_PERMITTED = re.compile(
+    r"access.{0,3}denied|\b403\b|forbidden|unauthorized|insufficient privileges"
+    r"|not have permission|Authorization_RequestDenied",
+    re.IGNORECASE,
+)
+
+
+def _explain_failure(outcome) -> None:
+    """Say why a collection failed, where this engine can tell, and what to do.
+
+    AUTHENTICATION AND AUTHORIZATION ARE KEPT APART HERE TOO. An identity that
+    could not sign in and one that signed in and was not allowed to read send
+    a person to different places, and one message for both sends them to the
+    wrong one half the time. Where the cause is not recognised nothing is
+    guessed: the collector's own last words are shown as they arrived.
+    """
+    text = "\n".join(part for part in (outcome.stderr, outcome.stdout) if part)
+    lines = [
+        connecting.ANSI.sub("", line) for line in text.splitlines() if line.strip()
+    ]
+    # Only the directory's own error codes classify here. Whether the address
+    # resolved is not this function's question: a collection got further than
+    # that, so the absence of a code is `not classified` and never an address.
+    reason = connecting._reason(
+        connecting.Reach.REFUSED, {"resolved_tenant_id": "not-asked"}, lines
+    )
+    if reason in _NEXT_STEP:
+        print(f"  why: the sign-in was refused ({reason}).", file=sys.stderr)
+        print(f"  next: {_NEXT_STEP[reason]}", file=sys.stderr)
+    elif _NOT_PERMITTED.search(text):
+        print(
+            "  why: the identity signed in and was NOT permitted to read this. "
+            "That is authorization, not authentication.",
+            file=sys.stderr,
+        )
+        print(
+            f"  next: `{COMMAND} connect` says what this identity may read; "
+            f"--help on the grouped command names the permissions it needs.",
+            file=sys.stderr,
+        )
+    elif lines:
+        print(f"  the collector's last words: {lines[-1][:300]}", file=sys.stderr)
+
+
 def _cmd_group(args) -> int:
     """Say what a group contains. Reaches nothing and decides nothing."""
     group = grouping.BY_NAME[args.command]
@@ -3081,6 +3265,10 @@ def main(argv: list[str] | None = None) -> int:
     _readable_output()
     # A grouped path is the flat command by another name (grouping.py).
     given = list(sys.argv[1:] if argv is None else argv)
+    read_help = _read_help(given)
+    if read_help is not None:
+        print(read_help)
+        return 0
     parser = _build_parser()
     try:
         given = _uniform_output(parser, grouping.regroup(given))

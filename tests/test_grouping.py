@@ -165,3 +165,69 @@ def test_the_top_level_help_names_the_groups(capsys):
     out = capsys.readouterr().out
     for group in grouping.GROUPS:
         assert group.name in out
+
+
+# --- help: where to start, what a read needs, and why something failed ---------
+
+
+def test_the_overview_says_where_to_start_and_what_a_view_is(capsys):
+    with pytest.raises(SystemExit):
+        cli.main(["--help"])
+    out = capsys.readouterr().out
+    needed = ["Start here", "m365g login", "m365g status", "Session"]
+    needed += ["--evidence-out", "--output text|json|csv|md", "still work"]
+    for words in needed:
+        assert words in out, words
+    assert "list-rules           " not in out, "the flat listing is printed twice"
+
+
+@pytest.mark.parametrize(
+    ("group", "path", "flat"),
+    [p for p in PATHS if p[2][0] == "collect" and len(p[2]) == 2],
+    ids=lambda v: v.name if isinstance(v, grouping.Group) else " ".join(v),
+)
+def test_every_read_says_what_it_reads_needs_and_feeds(group, path, flat, capsys):
+    assert cli.main([group.name, *path, "--help"]) == 0
+    out = capsys.readouterr().out
+    for label in (
+        "Reads",
+        "Permissions",
+        "Needs",
+        "Signs in",
+        "Feeds rules",
+        "Examples",
+    ):
+        assert label in out, label
+    assert collecting.SLICES[flat[1]].describes in out
+    assert f"m365g collect {flat[1]} --help" in out
+
+
+def test_a_read_a_session_does_not_cover_says_so_in_its_help(capsys):
+    cli.main(["exo", "forwarding", "get", "--help"])
+    assert "a kept session is not reused" in capsys.readouterr().out
+    cli.main(["spo", "site", "list", "--help"])
+    assert "active connection" in capsys.readouterr().out
+    cli.main(["entra", "ca", "list", "-h"])
+    assert "never prompts" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("said", "expected"),
+    [
+        (
+            "AADSTS65001: The user or administrator has not consented",
+            "consent",
+        ),
+        (
+            "Access denied. You do not have permission to perform this action.",
+            "authorization, not authentication",
+        ),
+        ("something this engine has never seen", "the collector's last words"),
+    ],
+    ids=["consent", "denied", "unrecognised"],
+)
+def test_a_failed_collection_says_why_where_it_can_tell(said, expected, capsys):
+    from types import SimpleNamespace
+
+    cli._explain_failure(SimpleNamespace(stderr=said, stdout=""))
+    assert expected in capsys.readouterr().err

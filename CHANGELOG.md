@@ -14,6 +14,16 @@ Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
 
+### Help says where to start, and a failure says why
+
+`m365g --help` opens with the first commands somebody needs and lists the
+commands by group. `--help` on a grouped read says what it reads, the
+permissions it needs, how it signs in, which rules it feeds and whether it has
+been proved against a tenant, from the capability manifest. A collection that
+fails says whether the sign-in was refused or the identity was not permitted to
+read, and what to do next; where the cause is not recognised it shows the
+collector's own last words and guesses nothing.
+
 ### A read answers in the terminal, and `--output` means the same everywhere
 
 `m365g spo site list` prints what was read: as text, or as `json`, `csv` or
