@@ -23,17 +23,52 @@ import pytest
 import m365_governance.cli as cli
 
 FROZEN = json.loads(
-    (Path(__file__).parent / "frozen" / "cli-v1-surface.json").read_text(encoding="utf-8")
+    (Path(__file__).parent / "frozen" / "cli-v1-surface.json").read_text(
+        encoding="utf-8"
+    )
 )["commands"]
 
 #: How the desktop product invokes the engine today, read from its source
 #: (EngineProcess callers). Each must still parse, word for word.
 CONSUMER_INVOCATIONS = (
     ["connect", "--project", "p.toml", "--format", "json"],
-    ["connect", "--client-id", "c", "--tenant-url", "https://t-admin.sharepoint.com", "--device-login", "--format", "json"],
+    [
+        "connect",
+        "--client-id",
+        "c",
+        "--tenant-url",
+        "https://t-admin.sharepoint.com",
+        "--device-login",
+        "--format",
+        "json",
+    ],
     ["collect", "sites", "--project", "p.toml", "--output", "evidence"],
-    ["collect", "owners", "--client-id", "c", "--site-url", "https://t.sharepoint.com/sites/a", "--output", "evidence", "--device-login"],
-    ["run", "--project", "p.toml", "--output", "evidence", "--format", "json", "--out", "report.json", "--bundle", "runs", "--fail-on", "nothing"],
+    [
+        "collect",
+        "owners",
+        "--client-id",
+        "c",
+        "--site-url",
+        "https://t.sharepoint.com/sites/a",
+        "--output",
+        "evidence",
+        "--device-login",
+    ],
+    [
+        "run",
+        "--project",
+        "p.toml",
+        "--output",
+        "evidence",
+        "--format",
+        "json",
+        "--out",
+        "report.json",
+        "--bundle",
+        "runs",
+        "--fail-on",
+        "nothing",
+    ],
     ["run", "--project", "p.toml", "--profile", "profile.yaml", "--device-login"],
     ["verify", "assessment.json"],
     ["report", "run.json", "--format", "html"],
@@ -45,7 +80,9 @@ CONSUMER_INVOCATIONS = (
 
 def _commands() -> dict[str, argparse.ArgumentParser]:
     parser = cli._build_parser()
-    action = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
+    action = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    )
     return dict(action.choices)
 
 
@@ -62,10 +99,14 @@ def test_a_frozen_command_still_exists_with_everything_it_took(name):
     missing = set(FROZEN[name]["options"]) - options
     assert not missing, f"`{name}` no longer takes {sorted(missing)}"
     positionals = [a.dest for a in sub._actions if not a.option_strings]
-    assert positionals[: len(FROZEN[name]["positionals"])] == FROZEN[name]["positionals"]
+    assert (
+        positionals[: len(FROZEN[name]["positionals"])] == FROZEN[name]["positionals"]
+    )
     for dest, values in FROZEN[name]["choices"].items():
         now = next(a for a in sub._actions if a.dest == dest and a.option_strings)
-        assert set(values) <= {str(c) for c in now.choices}, f"`{name} --{dest}` lost a value"
+        assert set(values) <= {str(c) for c in now.choices}, (
+            f"`{name} --{dest}` lost a value"
+        )
 
 
 @pytest.mark.parametrize("argv", CONSUMER_INVOCATIONS, ids=lambda a: " ".join(a[:2]))

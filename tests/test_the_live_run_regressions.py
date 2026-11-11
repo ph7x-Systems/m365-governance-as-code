@@ -22,7 +22,6 @@ The three the owner named as the ones that must never regress:
 
 from __future__ import annotations
 
-import json
 import sys
 from pathlib import Path
 
@@ -37,7 +36,6 @@ from m365_governance import (  # noqa: E402
     graph_token,
     running,
 )
-
 
 # ── 1. run must collect the directory whenever collect could ────────────────
 

@@ -186,9 +186,7 @@ def test_this_module_never_writes_a_token_anywhere():
     not written; what proves it is that nothing here can write one.
     """
     source = (
-        __import__("pathlib")
-        .Path(graph_token.__file__)
-        .read_text(encoding="utf-8")
+        __import__("pathlib").Path(graph_token.__file__).read_text(encoding="utf-8")
     )
 
     for forbidden in ("write_text", "open(", "json.dump", "environ["):

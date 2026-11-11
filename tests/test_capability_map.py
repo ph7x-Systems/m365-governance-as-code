@@ -7,6 +7,7 @@ So the checks here are the ones that would otherwise be nobody's job -- every
 endpoint carries an authority, every Graph row has been put to the schema, and
 no surface is claimed by both halves at once.
 """
+
 from __future__ import annotations
 
 import json
@@ -79,7 +80,10 @@ def test_no_surface_is_claimed_by_both_halves(register, manifest):
     to `which version do we call`, and they had already diverged.
     """
     collected = {
-        read.split("?")[0].replace("GET /v1.0/", "").replace("GET /beta/", "").rstrip("/")
+        read.split("?")[0]
+        .replace("GET /v1.0/", "")
+        .replace("GET /beta/", "")
+        .rstrip("/")
         for c in manifest["capabilities"]
         for read in c["collector"]["reads"]
         if read.startswith("GET /")
@@ -116,7 +120,8 @@ def test_no_candidate_row_carries_a_write(register):
     a different product, and the readiness gate would refuse the rule anyway."""
     for s in surfaces(register):
         head = s["endpoint"].split()[0]
-        assert head in {"GET"} or head.startswith(("Get-", "Test-", "Measure-", "Export-")), (
+        verbs = ("Get-", "Test-", "Measure-", "Export-")
+        assert head in {"GET"} or head.startswith(verbs), (
             f"{s['id']} names something that is not a read: {s['endpoint']}"
         )
 
@@ -125,6 +130,8 @@ def test_the_written_map_is_current():
     """The document is generated, so a stale one is a lie with a timestamp."""
     done = subprocess.run(
         [sys.executable, str(ROOT / "tools" / "capability-map.py"), "--check"],
-        capture_output=True, text=True, cwd=ROOT,
+        capture_output=True,
+        text=True,
+        cwd=ROOT,
     )
     assert done.returncode == 0, done.stdout + done.stderr

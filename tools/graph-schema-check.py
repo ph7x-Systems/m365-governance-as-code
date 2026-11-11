@@ -18,6 +18,7 @@ the check says so and exits non-zero on `--check`. A verification that quietly
 succeeds when it could not run is worse than no verification, because the row
 keeps its claim and gains a tick.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -39,7 +40,8 @@ class Unreachable(Exception):
 
 def metadata(version: str, timeout: int) -> str:
     try:
-        with urllib.request.urlopen(METADATA.format(version=version), timeout=timeout) as r:
+        address = METADATA.format(version=version)
+        with urllib.request.urlopen(address, timeout=timeout) as r:
             return r.read().decode("utf-8", "replace")
     except (urllib.error.URLError, TimeoutError, OSError) as exc:
         raise Unreachable(f"{version}: {exc}") from exc
@@ -63,14 +65,17 @@ def check(surface: dict, schemas: dict[str, str]) -> tuple[bool, str]:
         return True, ", ".join(found)
     if not found:
         return False, "in neither v1.0 nor beta"
-    return False, f'recorded as {", ".join(claimed)} and found in {", ".join(found)}'
+    return False, f"recorded as {', '.join(claimed)} and found in {', '.join(found)}"
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true",
-                    help="exit non-zero when a row disagrees with the schema, "
-                         "or when the schema could not be read at all")
+    ap.add_argument(
+        "--check",
+        action="store_true",
+        help="exit non-zero when a row disagrees with the schema, "
+        "or when the schema could not be read at all",
+    )
     ap.add_argument("--timeout", type=int, default=60)
     args = ap.parse_args()
 
@@ -89,7 +94,10 @@ def main() -> int:
         print(f"  {mark} {surface['id']:<44} {detail}")
         bad += not ok
     print()
-    print(f"{len(rows(register))} recorded Graph surfaces, {bad} disagreeing with the schema")
+    print(
+        f"{len(rows(register))} recorded Graph surfaces, "
+        f"{bad} disagreeing with the schema"
+    )
     return 1 if (bad and args.check) else 0
 
 

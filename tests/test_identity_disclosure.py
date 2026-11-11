@@ -152,8 +152,7 @@ def test_a_mixed_run_set_discloses_every_identity_it_holds():
     bounded by any person at all.
     """
     mixed = RunSet(
-        runs=[_run("delegated", 0)]
-        + [_run("application", n) for n in range(1, 10)]
+        runs=[_run("delegated", 0)] + [_run("application", n) for n in range(1, 10)]
     )
 
     for rendered in (
@@ -205,9 +204,9 @@ MARKERS = ("<!-- identity-modes:start -->", "<!-- identity-modes:end -->")
 def _normative_block() -> str:
     import pathlib
 
-    security = (
-        pathlib.Path(__file__).resolve().parents[1] / "SECURITY.md"
-    ).read_text(encoding="utf-8")
+    security = (pathlib.Path(__file__).resolve().parents[1] / "SECURITY.md").read_text(
+        encoding="utf-8"
+    )
     start, end = MARKERS
     assert start in security and end in security, (
         "SECURITY.md no longer carries the marked identity block. Without it "
@@ -262,9 +261,9 @@ def test_read_only_and_least_privilege_are_kept_apart():
     """
     import pathlib
 
-    security = (
-        pathlib.Path(__file__).resolve().parents[1] / "SECURITY.md"
-    ).read_text(encoding="utf-8")
+    security = (pathlib.Path(__file__).resolve().parents[1] / "SECURITY.md").read_text(
+        encoding="utf-8"
+    )
 
     assert "least privilege" in security
     assert "read-only" in security.lower()

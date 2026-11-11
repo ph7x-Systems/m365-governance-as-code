@@ -31,9 +31,7 @@ from m365_governance.presentation import symbols
 
 def _streams(**kwargs):
     out, err = io.StringIO(), io.StringIO()
-    ui = presentation.Presentation(
-        output=out, status=err, interactive=False, **kwargs
-    )
+    ui = presentation.Presentation(output=out, status=err, interactive=False, **kwargs)
     return ui, out, err
 
 
@@ -228,9 +226,11 @@ def test_no_dependency_was_taken_while_making_this_boundary():
     import pathlib
 
     for name in ("__init__", "console", "symbols"):
-        source = pathlib.Path(
-            presentation.__file__
-        ).parent.joinpath(f"{name}.py").read_text(encoding="utf-8")
+        source = (
+            pathlib.Path(presentation.__file__)
+            .parent.joinpath(f"{name}.py")
+            .read_text(encoding="utf-8")
+        )
         for library in ("import rich", "from rich", "import click", "import typer"):
             assert library not in source, f"{name}.py took a dependency: {library}"
 
@@ -249,7 +249,8 @@ def test_the_installed_command_keeps_its_streams_apart(tmp_path):
         [
             sys.executable,
             "-c",
-            "from m365_governance import cli; cli.main(['capabilities','--format','json'])",
+            "from m365_governance import cli; "
+            "cli.main(['capabilities','--format','json'])",
         ],
         capture_output=True,
         text=True,

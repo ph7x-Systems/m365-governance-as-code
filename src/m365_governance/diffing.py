@@ -191,8 +191,7 @@ def to_markdown(before: Run, after: Run) -> str:
 #: already meant, in the words somebody acting on it needs.
 MOVEMENT = {
     "finding-appeared": (
-        "This is a finding that was not there before. It is answered in the "
-        "tenant."
+        "This is a finding that was not there before. It is answered in the tenant."
     ),
     "finding-resolved": "A finding that was there before is no longer reported.",
     "evidence-lost": (

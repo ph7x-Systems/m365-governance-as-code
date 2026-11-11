@@ -644,8 +644,7 @@ def _ladder_summary(document: dict[str, Any]) -> list[str]:
     lines = [
         "Proof ladder",
         f"  stages     {' '.join(ORDER)}",
-        "  legend     "
-        + "  ".join(f"{mark} {name}" for name, mark in STAGE.items()),
+        "  legend     " + "  ".join(f"{mark} {name}" for name, mark in STAGE.items()),
         "",
     ]
     for rung in rungs:

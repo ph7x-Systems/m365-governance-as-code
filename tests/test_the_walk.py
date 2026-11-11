@@ -135,7 +135,7 @@ def test_the_walk_uses_no_prose_from_the_human_report(tmp_path):
 
 def _moved(before, after, *, version_changed=False):
     from m365_governance.diffing import RuleChange
-    from m365_governance.results import Outcome, Result
+    from m365_governance.results import Result
 
     def result(outcome):
         if outcome is None:
@@ -215,9 +215,7 @@ def test_every_movement_maps_back_to_the_two_contract_values_it_came_from():
 
     from m365_governance.results import Outcome
 
-    names = {
-        _moved(was, now) for was, now in product(list(Outcome), list(Outcome))
-    }
+    names = {_moved(was, now) for was, now in product(list(Outcome), list(Outcome))}
     names |= {_moved(None, Outcome.PASS), _moved(Outcome.PASS, None)}
 
     assert names <= {

@@ -41,6 +41,7 @@ OBSERVED_AT = "2026-08-23T09:00:00Z"
 ROLES = "roleAssignments"
 POLICY = "authorizationPolicy"
 
+
 #: The authorization policy as Microsoft's reference documents it, with the
 #: default-user-role block filled in. Two variants differ only in values.
 def policy(**over):
@@ -59,7 +60,9 @@ def policy(**over):
         "@odata.context": "https://graph.microsoft.com/v1.0/$metadata#policies/authorizationPolicy/$entity",
         "id": "authorizationPolicy",
         "displayName": "Authorization Policy",
-        "description": "Used to manage authorization related settings across the company.",
+        "description": (
+            "Used to manage authorization related settings across the company."
+        ),
         "allowInvitesFrom": "everyone",
         "allowUserConsentForRiskyApps": False,
         "allowEmailVerifiedUsersToJoinOrganization": True,
@@ -116,7 +119,8 @@ def routed(*, roles, authorization):
         if "/users/" in url:
             principal = url.split("/users/")[1].split("?")[0]
             if not principal.startswith("user-"):
-                return (404, json.dumps({"error": {"code": "Request_ResourceNotFound"}}), {})
+                missing = {"error": {"code": "Request_ResourceNotFound"}}
+                return (404, json.dumps(missing), {})
             body = {"id": principal}
             if accounts[principal] is not ...:
                 body["onPremisesSyncEnabled"] = accounts[principal]

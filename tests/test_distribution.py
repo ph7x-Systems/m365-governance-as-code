@@ -178,7 +178,7 @@ def test_the_command_is_named_once_and_the_help_says_what_was_typed():
     from m365_governance.cli import ALIASES
 
     assert COMMAND == "m365g"
-    assert ALIASES == {"m365g", "m365-governance"}
+    assert {"m365g", "m365-governance"} == ALIASES
 
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     assert project["project"]["name"] == "m365-governance-as-code"

@@ -33,9 +33,9 @@ from m365_governance.results import Run
 def produced(tmp_path) -> Path:
     """A bundle, made the way `run --bundle` makes one."""
     document = json.loads(
-        (resources.packaged("fixtures") / "sharepoint" / "site-one-owner.json").read_text(
-            encoding="utf-8"
-        )
+        (
+            resources.packaged("fixtures") / "sharepoint" / "site-one-owner.json"
+        ).read_text(encoding="utf-8")
     )
     rules = [r.data for r in loader.load_rules(resources.packaged("rules"))]
     run: Run = engine.evaluate(rules, document)
@@ -112,10 +112,7 @@ def test_changing_canonical_content_makes_the_old_identity_refuse(produced):
     editing one must move the digest away from what was declared.
     """
     declared = _declared(produced)
-    run = next(
-        path
-        for path in (produced / "runs").rglob("run.json")
-    )
+    run = next(path for path in (produced / "runs").rglob("run.json"))
     document = json.loads(run.read_text(encoding="utf-8"))
     document["results"][0]["message"] = "something else entirely"
     run.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")

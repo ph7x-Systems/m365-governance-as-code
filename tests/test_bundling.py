@@ -219,7 +219,9 @@ def test_evidence_that_already_exists_produces_the_same_folder(
     from m365_governance.results import RunSet
 
     through_the_writer = bundling.write(
-        tmp_path / "by-writer", runs, documents,
+        tmp_path / "by-writer",
+        runs,
+        documents,
         run_set=RunSet(runs, documents=documents).to_dict(),
     )
 

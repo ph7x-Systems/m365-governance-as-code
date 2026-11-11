@@ -49,7 +49,8 @@ def test_every_authored_rule_is_finished_as_a_rule(table):
     """Authorship is entirely in our hands on the day a rule is written."""
     missing = {
         r["id"]: [k for k, v in r["checks"].items() if not v]
-        for r in table["detail"] if not r["rule_ready"]
+        for r in table["detail"]
+        if not r["rule_ready"]
     }
     assert not missing, f"unfinished rules: {json.dumps(missing, indent=1)}"
 
@@ -68,7 +69,10 @@ def _rule(**changed) -> dict:
     base = {
         "id": "TEST-READY-001",
         "service": "sharepoint",
-        "basis": {"type": "documented-limit", "sources": [{"url": "https://example.invalid"}]},
+        "basis": {
+            "type": "documented-limit",
+            "sources": [{"url": "https://example.invalid"}],
+        },
         "evidence_requirements": [{"path": "a.b", "type": "string", "required": True}],
         "outcomes": {"unknown": {"message": "it was not read"}},
         "limitations": {"passes_without_resolving": "a pass does not settle this"},
@@ -97,7 +101,9 @@ def test_a_rule_no_collector_feeds_is_refused(manifest):
     """A rule with no acquisition path is a question nobody can ask, and with
     no capability there is no endpoint, no API version and no permission
     either: four conditions fall together because they are one fact."""
-    verdict = readiness.readiness(_rule(), {"pass", "fail", "unknown"}, [], manifest, True)
+    verdict = readiness.readiness(
+        _rule(), {"pass", "fail", "unknown"}, [], manifest, True
+    )
     assert not verdict["rule_ready"]
     assert not verdict["checks"]["capability_known"]
 

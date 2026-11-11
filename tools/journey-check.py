@@ -45,6 +45,8 @@ def _tree_version() -> str:
     text = (root / "pyproject.toml").read_text(encoding="utf-8")
     found = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
     return found.group(1) if found else ""
+
+
 GUID = "11111111-2222-3333-4444-555555555555"
 TENANT = "https://contoso-admin.sharepoint.com"
 

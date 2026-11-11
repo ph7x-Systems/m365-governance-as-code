@@ -1096,9 +1096,7 @@ def test_a_remote_domain_block_does_not_reach_what_an_admin_configured(
         ("entra-global-administrators-single-account", Outcome.PASS),
     ],
 )
-def test_five_or_more_global_administrators_is_microsofts_own_number(
-    fixture, outcome
-):
+def test_five_or_more_global_administrators_is_microsofts_own_number(fixture, outcome):
     """`ENTRA-ROLE-001`, and the reason it is a `documented-limit` and not a
     convention.
 
@@ -1193,9 +1191,7 @@ def test_everyone_includes_the_guests_who_were_already_invited(fixture, outcome)
         ("entra-authorization-policy-restrained", Outcome.PASS),
     ],
 )
-def test_consent_to_risky_apps_is_microsofts_recommendation_not_ours(
-    fixture, outcome
-):
+def test_consent_to_risky_apps_is_microsofts_recommendation_not_ours(fixture, outcome):
     """`ENTRA-AUTH-002`, whose position is written into the API reference itself.
 
     "We recommend keeping allowUserConsentForRiskyApps as `false`. Default

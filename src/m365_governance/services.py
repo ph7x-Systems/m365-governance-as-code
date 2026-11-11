@@ -105,7 +105,8 @@ def observed(runs: list[Any], documents: list[dict]) -> dict[str, Any]:
             # describes the tenant of the day it was read, and an area fed by
             # four documents is as current as the newest of them.
             when = provenance.get("collected_at")
-            if when and (area["observed_at"] is None or str(when) > area["observed_at"]):
+            seen = area["observed_at"]
+            if when and (seen is None or str(when) > seen):
                 area["observed_at"] = str(when)
             if state != "not-observed":
                 area["population"] += 1

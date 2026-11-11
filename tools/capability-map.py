@@ -26,6 +26,7 @@ what a surface could be asked, not what the answer would mean; a candidate
 question is not a rule until it has crossed the readiness gate with a basis, an
 authority and fixtures.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -61,8 +62,13 @@ def api_version(collector: dict) -> str:
     behind a label the collector had chosen for itself. A capability is on beta
     if it calls beta, whatever it is called.
     """
-    versions = sorted({"beta" if "/beta/" in r else "v1.0"
-                       for r in collector["reads"] if r.startswith("GET /")})
+    versions = sorted(
+        {
+            "beta" if "/beta/" in r else "v1.0"
+            for r in collector["reads"]
+            if r.startswith("GET /")
+        }
+    )
     if collector["kind"] != "graph" or not versions:
         versions = ["powershell"] + versions
     return " + ".join(versions) or "not recorded"
@@ -76,26 +82,30 @@ def collected(manifest: dict) -> list[dict]:
     out = []
     for c in manifest["capabilities"]:
         col = c["collector"]
-        out.append({
-            "service": c["produces"]["workload"],
-            "area": c["name"],
-            "endpoints": col["reads"],
-            "api_version": api_version(col),
-            "permissions": col["permissions"],
-            "resource": c["produces"]["resource_type"],
-            "rules": c.get("consumed_by", []),
-            "live": col["live_validation_state"],
-            "proof": col["proof"]["state"],
-            "limitation": col["validation"]["limitation"],
-            "second_surface": col["validation"]["second_surface"],
-            "second_surface_state": col["validation"]["second_surface_state"],
-        })
+        out.append(
+            {
+                "service": c["produces"]["workload"],
+                "area": c["name"],
+                "endpoints": col["reads"],
+                "api_version": api_version(col),
+                "permissions": col["permissions"],
+                "resource": c["produces"]["resource_type"],
+                "rules": c.get("consumed_by", []),
+                "live": col["live_validation_state"],
+                "proof": col["proof"]["state"],
+                "limitation": col["validation"]["limitation"],
+                "second_surface": col["validation"]["second_surface"],
+                "second_surface_state": col["validation"]["second_surface_state"],
+            }
+        )
     return sorted(out, key=lambda r: (r["service"], r["area"]))
 
 
 def render(manifest: dict, register: dict) -> str:
     have = collected(manifest)
-    want = sorted(register["surfaces"], key=lambda s: (s["service"], s["area"], s["id"]))
+    want = sorted(
+        register["surfaces"], key=lambda s: (s["service"], s["area"], s["id"])
+    )
     L: list[str] = []
     add = L.append
 
@@ -105,10 +115,12 @@ def render(manifest: dict, register: dict) -> str:
     add("is derived from the capability manifest and the candidate half from")
     add("`src/m365_governance/data/candidate-surfaces.json`.")
     add("")
-    add(f"{len(have)} capabilities collected today, across "
+    add(
+        f"{len(have)} capabilities collected today, across "
         f"{len({r['service'] for r in have})} services. "
         f"{len(want)} surfaces recorded as candidates, across "
-        f"{len({s['service'] for s in want})}.")
+        f"{len({s['service'] for s in want})}."
+    )
     add("")
 
     add("## Collected today")
@@ -117,9 +129,11 @@ def render(manifest: dict, register: dict) -> str:
     add("| --- | --- | --- | --- | --- | --- | --- |")
     for r in have:
         perms = ", ".join(r["permissions"])
-        add(f"| {SERVICE.get(r['service'], r['service'])} | `{r['area']}` | "
+        add(
+            f"| {SERVICE.get(r['service'], r['service'])} | `{r['area']}` | "
             f"{r['api_version']} | {cell(perms)} | `{r['resource']}` | "
-            f"{len(r['rules'])} | {r['live']} |")
+            f"{len(r['rules'])} | {r['live']} |"
+        )
     add("")
     add("### What the manifest does not record")
     add("")
@@ -134,8 +148,10 @@ def render(manifest: dict, register: dict) -> str:
     add("## Endpoints, by capability")
     add("")
     for r in have:
-        add(f"**`{r['area']}`** — {SERVICE.get(r['service'], r['service'])}, "
-            f"{r['api_version']}, proof `{r['proof']}`")
+        add(
+            f"**`{r['area']}`** — {SERVICE.get(r['service'], r['service'])}, "
+            f"{r['api_version']}, proof `{r['proof']}`"
+        )
         add("")
         for endpoint in r["endpoints"]:
             add(f"- `{endpoint}`")
@@ -143,8 +159,10 @@ def render(manifest: dict, register: dict) -> str:
         if r["limitation"]:
             add(f"**Known limitation.** {r['limitation']}.")
             add("")
-        add(f"Second surface: {r['second_surface'] or 'none named'} "
-            f"(`{r['second_surface_state']}`).")
+        add(
+            f"Second surface: {r['second_surface'] or 'none named'} "
+            f"(`{r['second_surface_state']}`)."
+        )
         add("")
 
     add("## Candidates, in commercial priority")
@@ -152,9 +170,11 @@ def render(manifest: dict, register: dict) -> str:
     add("| Service | Area | Endpoint | API | Least privilege | Identity | Cost |")
     add("| --- | --- | --- | --- | --- | --- | --- |")
     for s in want:
-        add(f"| {SERVICE.get(s['service'], s['service'])} | {s['area']} | "
+        add(
+            f"| {SERVICE.get(s['service'], s['service'])} | {s['area']} | "
             f"`{cell(s['endpoint'])}` | {s['api_version']} | "
-            f"{s['least_privilege']} | {s['identity']} | {s['cost']} |")
+            f"{s['least_privilege']} | {s['identity']} | {s['cost']} |"
+        )
     add("")
 
     for s in want:
@@ -171,8 +191,10 @@ def render(manifest: dict, register: dict) -> str:
         add("")
         schema = s.get("schema_check")
         if schema:
-            add(f"Schema: present in {', '.join(schema['present_in'])}, checked "
-                f"{schema['checked_on']}.")
+            add(
+                f"Schema: present in {', '.join(schema['present_in'])}, checked "
+                f"{schema['checked_on']}."
+            )
             add("")
         add(f"Authority: <{s['authority']['url']}>, read {s['authority']['read_on']}.")
         add("")
@@ -182,8 +204,11 @@ def render(manifest: dict, register: dict) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--check", action="store_true",
-                    help="exit non-zero when the written map is not current")
+    ap.add_argument(
+        "--check",
+        action="store_true",
+        help="exit non-zero when the written map is not current",
+    )
     args = ap.parse_args()
 
     manifest = capabilities.manifest(RULES)

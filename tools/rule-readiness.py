@@ -82,6 +82,7 @@ PUBLISHED = ROOT / "docs" / "RULE-READINESS.json"
 #: the catalogue.
 OBSERVED = ("pass", "fail", "unknown")
 
+
 def fixtures() -> list[dict]:
     """Every packaged evidence document, and only those.
 
@@ -162,7 +163,8 @@ def endpoints(caps: list[str], by_name: dict) -> list[tuple[str, str]]:
     exists to catch, aimed at itself."""
     return [
         (by_name[c]["collector"]["kind"], read)
-        for c in caps if c in by_name
+        for c in caps
+        if c in by_name
         for read in by_name[c]["collector"]["reads"]
     ]
 
@@ -174,11 +176,14 @@ def permissions(caps: list[str], by_name: dict) -> list[str]:
     the manifest's own comment says least privilege is written where a source
     establishes it and invented nowhere, and a gate that demanded a scope here
     would be asking somebody to make one up."""
-    return [p for c in caps if c in by_name for p in by_name[c]["collector"]["permissions"]]
+    return [
+        p for c in caps if c in by_name for p in by_name[c]["collector"]["permissions"]
+    ]
 
 
-def readiness(rule: dict, seen: set[str], caps: list[str], manifest: dict,
-              refused: bool = False) -> dict:
+def readiness(
+    rule: dict, seen: set[str], caps: list[str], manifest: dict, refused: bool = False
+) -> dict:
     basis = rule.get("basis", {})
     limits = rule.get("limitations", {})
     outcomes = rule.get("outcomes", {})
@@ -188,7 +193,9 @@ def readiness(rule: dict, seen: set[str], caps: list[str], manifest: dict,
     reads = endpoints(caps, by_name)
     scopes = permissions(caps, by_name)
     stages = [by_name[c]["collector"]["proof"]["stages"] for c in caps if c in by_name]
-    states = [by_name[c]["collector"]["live_validation_state"] for c in caps if c in by_name]
+    states = [
+        by_name[c]["collector"]["live_validation_state"] for c in caps if c in by_name
+    ]
 
     checks = {
         # ── what the rule says of itself ──────────────────────────────────
@@ -203,15 +210,17 @@ def readiness(rule: dict, seen: set[str], caps: list[str], manifest: dict,
         # names, which is how `unknown` quietly becomes `pass`. The schema
         # already refuses it; this says so where the ladder is read.
         "unknown_cannot_pass": all(f.get("required") for f in evidence),
-
         # ── what the acquisition path says, derived from the manifest ─────
         "capability_known": bool(caps),
         "endpoint_named": bool(reads),
         # A Graph surface names its version in the path; a cmdlet has no
         # version to name, and the module it belongs to is the collector's
         # fact rather than the rule's.
-        "api_version_named": bool(reads) and all(
-            re.search(r"/(v1\.0|beta)/", read) for kind, read in reads if kind == "graph"
+        "api_version_named": bool(reads)
+        and all(
+            re.search(r"/(v1\.0|beta)/", read)
+            for kind, read in reads
+            if kind == "graph"
         ),
         # DECLARED, not necessarily known. An empty list is an omission; a list
         # saying `not-established` is an answer, and the count of rules resting
@@ -220,13 +229,17 @@ def readiness(rule: dict, seen: set[str], caps: list[str], manifest: dict,
         # READ ONLY IS A CONSTRUCTION PROPERTY, not a promise in prose. Every
         # surface a rule rests on is fetched, and a collector that ever needed
         # a write would show up here rather than in a paragraph nobody runs.
-        "no_write_path": bool(reads) and all(
-            read.strip().startswith("GET") if kind == "graph"
+        "no_write_path": bool(reads)
+        and all(
+            read.strip().startswith("GET")
+            if kind == "graph"
             else read.strip().startswith(("Get-", "Test-", "Measure-", "Export-"))
             for kind, read in reads
         ),
-        "acquisition_declared": bool(states) and all(
-            s in {"none", "negative-only", "provider-only", "partial", "full"} for s in states
+        "acquisition_declared": bool(states)
+        and all(
+            s in {"none", "negative-only", "provider-only", "partial", "full"}
+            for s in states
         ),
     }
     for outcome in OBSERVED:
@@ -273,8 +286,13 @@ def build() -> dict:
     feeding = feeds(manifest)
 
     lines = [
-        readiness(rule, seen[rule["id"]], feeding.get(rule["id"], []), manifest,
-                  refused[rule["id"]])
+        readiness(
+            rule,
+            seen[rule["id"]],
+            feeding.get(rule["id"], []),
+            manifest,
+            refused[rule["id"]],
+        )
         for rule in sorted(authored, key=lambda r: r["id"])
     ]
     return {
@@ -288,7 +306,9 @@ def build() -> dict:
         "rules": len(lines),
         "rule_ready": sum(1 for r in lines if r["rule_ready"]),
         "collectable": sum(1 for r in lines if r["checks"]["capability_known"]),
-        "least_privilege_established": sum(1 for r in lines if r["permission_established"]),
+        "least_privilege_established": sum(
+            1 for r in lines if r["permission_established"]
+        ),
         "tenant_proven": sum(1 for r in lines if r["tenant_proven"]),
         "product_path": sum(1 for r in lines if r["product_path"]),
         "by_service": dict(sorted(Counter(r["service"] for r in lines).items())),
@@ -335,8 +355,11 @@ def as_text(table: dict) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true",
-                        help="also fail when docs/RULE-READINESS.json differs")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="also fail when docs/RULE-READINESS.json differs",
+    )
     parser.add_argument("--json", action="store_true", help="print the table")
     args = parser.parse_args()
 
@@ -355,8 +378,9 @@ def main() -> int:
             failed = True
     else:
         PUBLISHED.parent.mkdir(parents=True, exist_ok=True)
-        PUBLISHED.write_text(json.dumps(table, indent=1, ensure_ascii=False) + "\n",
-                             encoding="utf-8")
+        PUBLISHED.write_text(
+            json.dumps(table, indent=1, ensure_ascii=False) + "\n", encoding="utf-8"
+        )
 
     if table["rule_ready"] != table["rules"]:
         print(f"\n  ✗ {table['rules'] - table['rule_ready']} rules are not RULE-READY")
@@ -364,8 +388,10 @@ def main() -> int:
 
     new = unproven(table)
     if new:
-        print(f"\n  ✗ {len(new)} rules have never been run against a tenant. "
-              "No rule passes without that.")
+        print(
+            f"\n  ✗ {len(new)} rules have never been run against a tenant. "
+            "No rule passes without that."
+        )
         for rule in new:
             caps = ", ".join(rule["capabilities"]) or "no collector"
             print(f"      {rule['id']:<20} {caps}")

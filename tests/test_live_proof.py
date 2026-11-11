@@ -618,6 +618,8 @@ def test_running_the_pipeline_offline_did_not_raise_the_live_stages(registry):
     assert licensing["stages"]["bundle"] == "not-attempted"
     assert licensing["stages"]["consumer"] == "not-attempted"
     assert "SETTLED LESS THAN THE CLAIM" in licensing["contradiction"]
+
+
 # ---------------------------------------------------------------------------
 # a stage is never promoted, in either direction
 # ---------------------------------------------------------------------------
@@ -858,7 +860,9 @@ def test_the_digest_must_be_the_artefact_whose_bundle_stage_was_proven(
     """
     from m365_governance import live_proof
 
-    _claiming(monkeypatch, _proof(artifact_digest="sha256:bbbb"), produced="sha256:aaaa")
+    _claiming(
+        monkeypatch, _proof(artifact_digest="sha256:bbbb"), produced="sha256:aaaa"
+    )
 
     problems = live_proof.incoherent("customization")
 
