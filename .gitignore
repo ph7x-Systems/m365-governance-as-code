@@ -22,3 +22,4 @@ htmlcov/
 # package when a run is started from a checkout. Never committed: it is machine
 # state, and a populated one would carry a tenant.
 src/m365_governance/data/workspace.db
+examples/workspace.db
