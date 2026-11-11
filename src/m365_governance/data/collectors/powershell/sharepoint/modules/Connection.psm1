@@ -300,13 +300,10 @@ function Get-ConnectionFacts {
         and none may ever be: a command that printed a credential would put one
         into a terminal, a log and whatever captured that log.
 
-        THE DIRECTORY IDENTITY IS NOT HERE EITHER, and that is the honest
-        answer rather than an omission. `tenant.id` is null throughout this
-        engine because no collection path for it is proven on a real tenant.
-        A documented candidate exists -- Get-PnPTenantId -TenantUrl -- and it
-        is recorded in docs/COLLECTION-PATH-AUDIT.md as needs-tenant-validation.
-        Until a run settles it, a host is an address and nothing establishes
-        which directory it belongs to.
+        THE DIRECTORY THE SESSION OPERATES IN is the `tid` claim of the
+        session's own token, and it is a statement about this sign-in only.
+        The evidence documents' `tenant.id` is a separate field with its own
+        collection path (docs/COLLECTION-PATH-AUDIT.md) and is not set here.
     #>
     [CmdletBinding()]
     param(
@@ -329,6 +326,32 @@ function Get-ConnectionFacts {
 
     $connection = Get-PnPConnection
 
+    # WHAT THE SESSION WAS GRANTED AND WHERE, read from the claims of its own
+    # SharePoint token. The connection object carried a Scopes property once
+    # and has none in PnP.PowerShell 3.4.1: reading it under strict mode ended
+    # the first live login on that version. Three claims are read by name --
+    # `scp`, `roles`, `tid` -- and the token itself is never written, returned
+    # or logged. When the token cannot be decoded both stay unestablished,
+    # which is a true answer and never a reason to fail a sign-in that worked.
+    $scopes = @()
+    $observedTenantId = $null
+    try {
+        $token = Get-PnPAccessToken -ResourceTypeName SharePoint -Decoded -ErrorAction Stop
+        $claims = @($token.Claims)
+        $delegated = @($claims | Where-Object { $_.Type -eq 'scp' } |
+                ForEach-Object { ([string] $_.Value) -split ' ' })
+        $application = @($claims | Where-Object { $_.Type -eq 'roles' } |
+                ForEach-Object { [string] $_.Value })
+        $scopes = @(@($delegated) + @($application) | Where-Object { $_ } | Sort-Object -Unique)
+        $tid = @($claims | Where-Object { $_.Type -eq 'tid' } | Select-Object -First 1)
+        if ($tid.Count -gt 0 -and $tid[0].Value) { $observedTenantId = [string] $tid[0].Value }
+    }
+    catch {
+        $scopes = @()
+        $observedTenantId = $null
+    }
+    $token = $null
+
     # Interactive and device sign-in are both delegated: the session sees what
     # one person sees. Recording the flow separately from the identity kind
     # keeps two different questions apart.
@@ -340,12 +363,13 @@ function Get-ConnectionFacts {
         identity_kind    = $IdentityKind
         identity_method  = $IdentityMethod
         connection_type  = [string] $connection.ConnectionType
-        scopes           = @($connection.Scopes)
-        # WHICH DIRECTORY THIS SESSION IS OPERATING IN, and null until something
-        # reads it from the session itself. Deliberately NOT the value that
-        # resolving the address returns: that one is authoritative about the
-        # address and says nothing about who signed in.
-        observed_tenant_id = $null
+        scopes           = @($scopes)
+        # WHICH DIRECTORY THIS SESSION IS OPERATING IN: the `tid` claim of the
+        # session's own token, and null when that could not be read.
+        # Deliberately NOT the value that resolving the address returns: that
+        # one is authoritative about the address and says nothing about who
+        # signed in.
+        observed_tenant_id = $observedTenantId
     }
 }
 

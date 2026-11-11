@@ -166,6 +166,21 @@ def test_the_report_says_the_session_directory_is_not_established():
     assert "IS NOT ESTABLISHED" in text
 
 
+def test_a_session_that_names_its_directory_is_reported_as_observed():
+    """The session's own token says where it operated. When the collector
+    read that, the report says so and stops saying it is not established."""
+    directory = "d1ec7001-0000-4000-8000-000000000002"
+    attempt = _attempt(
+        engine=_engine([_resolved(), _established(observed_tenant_id=directory)])
+    )
+
+    assert attempt.observed_tenant_id == directory
+    assert not any("directory identity was not read" in r for r in attempt.because)
+    text = describe(attempt)
+    assert f"observed   {directory}" in text
+    assert "IS NOT ESTABLISHED" not in text
+
+
 def test_a_failed_attempt_reports_not_established_rather_than_nothing():
     attempt = _attempt(engine=_engine(["nope"], returncode=1))
 

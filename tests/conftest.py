@@ -96,6 +96,19 @@ def site_rule() -> dict:
 # A test that needs the collector patches `_run` for itself, which is what the
 # ones that mean to already do.
 @pytest.fixture(autouse=True)
+def _no_test_reads_this_machines_connections(monkeypatch, tmp_path_factory):
+    """Give every test an empty connection store of its own.
+
+    The store lives in the home of whoever runs the suite. A developer who has
+    logged in has an active connection there, and every command a test invokes
+    in this process would then consult it: the suite passed on a machine that
+    had never logged in and failed on the first one that had. A test that
+    needs a store sets `M365G_HOME` itself, after this.
+    """
+    monkeypatch.setenv("M365G_HOME", str(tmp_path_factory.mktemp("m365g-home")))
+
+
+@pytest.fixture(autouse=True)
 def _no_test_reaches_a_tenant(monkeypatch, request):
     """Refuse to start the shipped collector from inside the suite."""
     from m365_governance import collecting

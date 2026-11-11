@@ -505,9 +505,11 @@ def _because(
             f"{len(scopes)} scopes granted" if scopes else "no scopes were reported"
         )
         reasons.append(
-            "the directory identity was not read: no collection path for it is "
-            "proven on a tenant, so this says which address answered and not "
-            "which organisation it belongs to"
+            "the session's own token names the directory it operated in"
+            if established.get("observed_tenant_id")
+            else "the directory identity was not read: the session did not "
+            "report it, so this says which address answered and not which "
+            "organisation it belongs to"
         )
     else:
         if returncode != 0 and not cancelled:
@@ -707,12 +709,20 @@ def describe(connection: Connection) -> str:
             # about the grant: it is what the transport said. Saying so beats an
             # absent line, which reads as a section nobody filled in.
             out.append("  scopes     none reported by the connection")
-        out += [
-            "",
-            "  WHICH DIRECTORY THIS SESSION OPERATED IN IS NOT ESTABLISHED, and",
-            "  the resolved id above does not stand in for it: that one is a",
-            "  lookup anybody can perform without reaching this tenant.",
-        ]
+        if connection.observed_tenant_id:
+            out += [
+                "",
+                "  `observed` is the directory this session operated in, read from",
+                "  the session's own token. The resolved id above is a different",
+                "  fact: a lookup anybody can perform without reaching this tenant.",
+            ]
+        else:
+            out += [
+                "",
+                "  WHICH DIRECTORY THIS SESSION OPERATED IN IS NOT ESTABLISHED, and",
+                "  the resolved id above does not stand in for it: that one is a",
+                "  lookup anybody can perform without reaching this tenant.",
+            ]
     else:
         out.append("  none. Nothing was collected and nothing was written.")
 

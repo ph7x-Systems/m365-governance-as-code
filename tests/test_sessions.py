@@ -766,3 +766,34 @@ def test_a_login_that_did_not_open_says_so_to_a_consumer_too(machine):
     said = json.loads(out.stdout)
     assert out.returncode == 1 and said["logged_in"] is False
     assert said["connection"]["reach"] != "established"
+
+
+def test_a_connect_that_fails_after_signing_in_removes_the_kept_sign_in():
+    """The library stores the sign-in when the session opens. A failure after
+    that reports no session, so it may not leave a stored one behind."""
+    script = (collecting.COLLECTOR).read_text(encoding="utf-8")
+    connect = script.rsplit("\nif ($Mode -eq 'Connect') {", 1)[1].split("\nif (", 1)[0]
+    caught = connect.split("catch {", 1)[1]
+    assert "if ($PersistLogin)" in caught
+    assert "Disconnect-PnPOnline -ClearPersistedLogin" in caught
+    assert "throw" in caught
+
+
+def test_the_session_facts_read_claims_and_no_property_the_library_dropped():
+    """PnP.PowerShell 3.4.1 has no Scopes property on its connection: reading
+    it under strict mode ended the first live login on that version."""
+    module = (collecting.COLLECTOR.parent / "modules" / "Connection.psm1").read_text(
+        encoding="utf-8"
+    )
+    facts = module.split("function Get-ConnectionFacts", 1)[1].split("\nfunction ", 1)[
+        0
+    ]
+    code = "\n".join(
+        line for line in facts.splitlines() if not line.strip().startswith("#")
+    )
+    assert "$connection.Scopes" not in code
+    assert "Get-PnPAccessToken -ResourceTypeName SharePoint -Decoded" in code
+    for claim in ("'scp'", "'roles'", "'tid'"):
+        assert claim in code
+    # The token is read for three claims and is never written anywhere.
+    assert "Write-Host" not in code and "Write-Output" not in code

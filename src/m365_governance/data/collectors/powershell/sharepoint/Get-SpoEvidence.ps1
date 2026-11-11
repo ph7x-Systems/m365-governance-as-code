@@ -308,12 +308,27 @@ if ($Mode -eq 'Connect') {
     # proves who you are; one read proves what you may see. Emitted on its own
     # line so that a session which opened and then could not read anything
     # cannot be reported as a working connection.
-    $access = Test-CollectorAuthorization -SiteUrl $SiteUrl
-    Write-Host ('AUTHORIZATION ' + ($access | ConvertTo-Json -Depth 4 -Compress))
+    #
+    # A SIGN-IN THAT IS NOT REPORTED IS NOT KEPT. With -PersistLogin the library
+    # stores the sign-in the moment it opens, before anything below has run. If
+    # this mode then fails, the caller records no session and says nothing was
+    # kept, so the stored sign-in is removed here, through the session that
+    # still holds it, before the failure is passed on. Found on the first live
+    # login on PnP.PowerShell 3.4.1, which signed in and then failed below.
+    try {
+        $access = Test-CollectorAuthorization -SiteUrl $SiteUrl
+        Write-Host ('AUTHORIZATION ' + ($access | ConvertTo-Json -Depth 4 -Compress))
 
-    $facts = Get-ConnectionFacts -TenantHost $TenantHost `
-        -IdentityKind $identityKind -IdentityMethod $identityMethod
-    Write-Host ('CONNECTION ' + ($facts | ConvertTo-Json -Depth 4 -Compress))
+        $facts = Get-ConnectionFacts -TenantHost $TenantHost `
+            -IdentityKind $identityKind -IdentityMethod $identityMethod
+        Write-Host ('CONNECTION ' + ($facts | ConvertTo-Json -Depth 4 -Compress))
+    }
+    catch {
+        if ($PersistLogin) {
+            try { Disconnect-PnPOnline -ClearPersistedLogin } catch { Write-Verbose 'no session to clear' }
+        }
+        throw
+    }
     return
 }
 
