@@ -24,8 +24,9 @@ Governance checks that show their work. PowerShell collects facts. Python
 evaluates declarative rules. Every finding says what kind of claim it is,
 which evidence it came from, and what it does not establish.
 
-Nothing here changes anything in a tenant. There is no write path, no
-remediation command, and no `--fix-all`.
+Nothing here changes anything in a tenant's content or settings. There is no
+remediation command and no `--fix-all`. The one write is the application
+registration `setup` makes, once, when an administrator agrees to it.
 
 **Where this sits.** `m365-governance-as-code` is the engine, and it is MIT.
 A commercial operator experience is being built on top of it, and saying so
@@ -186,26 +187,30 @@ m365g connect   # 2. prove the identity can reach the tenant, and read
 m365g run       # 3. collect, evaluate, and write the report
 ```
 
-**`setup` reaches no tenant and registers nothing.** It runs the same checks as
-`doctor`, and then names the one thing nothing here works without: an Entra ID
-application registration. There is no default and no way around it —
-PnP.PowerShell has shipped no application of its own since 2.12.0 — and one
-registration serves every run. In PowerShell, in your own tenant:
+**`setup` does the setting up.** In a terminal it checks this machine, installs
+or updates PowerShell 7 and PnP.PowerShell to their latest stable release when
+you agree, asks for your SharePoint address, and obtains the one thing nothing
+here works without: an Entra ID application registration. PnP.PowerShell has
+shipped no application of its own since 2.12.0, and one registration serves
+every run.
 
-```powershell
-Register-PnPEntraIDAppForInteractiveLogin \
-    -ApplicationName "M365 Governance" \
-    -Tenant <your-tenant>.onmicrosoft.com
-```
+- **You are an administrator:** `setup` registers it, after you agree. A browser
+  opens; you sign in and consent. It asks for SharePoint `AllSites.FullControl`
+  and Microsoft Graph `User.Read` and nothing else, where PnP's default would
+  also ask for Group.ReadWrite.All, User.ReadWrite.All and
+  TermStore.ReadWrite.All. The collectors call only PnP `Get-` cmdlets;
+  SharePoint answers its permission and tenant-setting reads only under
+  AllSites.FullControl ([COLLECTOR-LIVE-MATRIX](docs/COLLECTOR-LIVE-MATRIX.md)).
+- **It already exists:** give `setup` its id.
+- **You are not an administrator:** `setup` writes
+  `m365-governance-admin-request.txt`, which says what an administrator runs and
+  why. When they send the id back, run `setup --client-id <id>`.
 
-It prints the id it registered. Give it to `setup` with an address, and the two
-are written to `m365-governance.toml` so that nothing is retyped again:
-
-```bash
-m365g setup \
-    --client-id <id> \
-    --tenant-url https://<tenant>-admin.sharepoint.com
-```
+The id and the address are written to `m365-governance.toml`, so that nothing is
+retyped again. **That registration is the only write this engine makes**
+(`D90`): only by `setup`, only on your explicit agreement, under your own
+sign-in. Without a terminal `setup` asks nothing and agrees to nothing;
+`--install` and `--register` say yes in advance, for scripts.
 
 **No secret ever goes in that file.** A certificate password is named there by
 the environment variable that holds it, never by its value: the file is
@@ -285,7 +290,7 @@ the source, and how the rule can pass while the problem survives.
 
 | | |
 |---|---|
-| `setup` | Check this machine, name what is missing, and write the target down. Reaches no tenant and registers nothing |
+| `setup` | Set this machine up: install what is missing, obtain the application registration (registering it when an administrator agrees), and write the target down |
 | `connect` | Reach a tenant and say what was established: whether the sign-in worked, whether the identity may read, and why not where it did not. Collects nothing |
 | `run` | A configured target to a report. Plans, collects what the target reaches, evaluates and renders — and says which collections it did not attempt |
 | `collect SLICE` | One collection against a tenant, for a caller who wants the parts. Evaluates nothing, and writes a manifest saying whether it was `completed`, `partial`, `failed` or `cancelled` |

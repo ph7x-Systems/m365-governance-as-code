@@ -35,7 +35,7 @@ yet.
 | | Step | The question it answers | Surface |
 |---|---|---|---|
 | 1 | **Prerequisites** | What must exist on this machine before anything runs? | `doctor` |
-| 2 | **Identity** | Which application registration will observe the tenant, and where does it come from? | `setup` |
+| 2 | **Identity** | Which application registration will observe the tenant, and where does it come from? `setup` registers it when an administrator agrees, or prepares the request for one (`D90`) | `setup` |
 | 3 | **Authentication** | Can this identity sign in? | `connect` |
 | 4 | **Authorization** | Can this identity *read what the rules need*? | `connect` |
 | 5 | **Target** | Which tenant, which sites, and where is that recorded? | `setup`, project file |

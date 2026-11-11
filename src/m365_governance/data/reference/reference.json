@@ -1,7 +1,7 @@
 {
   "reference": "1.0.0",
   "purpose": "the canonical artefact a consumer opens to establish that it can read what this engine publishes. Not a fixture, not tenant evidence: every document in it is fabricated",
-  "engine_version": "1.0.0b8",
+  "engine_version": "1.0.0b9",
   "created_at": "2026-01-01T00:00:00Z",
   "runs": 4,
   "contracts": {
