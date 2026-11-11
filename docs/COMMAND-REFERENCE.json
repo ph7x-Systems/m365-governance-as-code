@@ -323,6 +323,35 @@
    ]
   },
   {
+   "command": "m365g governance inspect ca-coverage",
+   "earlier_name": "m365g inspect ca-coverage",
+   "kind": "scenario",
+   "service": "governance",
+   "describes": "whom each Conditional Access policy names, leaves out, and whether it is enforced",
+   "reads_collections": [
+    "conditional-access"
+   ],
+   "reaches_a_tenant": false,
+   "needs": [
+    "--evidence"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--out FILE keeps the inspection with the digest of the evidence it read",
+   "options": [
+    "--policy-id"
+   ],
+   "examples": [
+    "m365g governance inspect ca-coverage --evidence ./evidence",
+    "m365g governance inspect ca-coverage --evidence ./evidence --output csv",
+    "m365g governance inspect ca-coverage --evidence ./evidence --out ca-coverage.json"
+   ]
+  },
+  {
    "command": "m365g governance inspect external-access",
    "earlier_name": "m365g inspect external-access",
    "kind": "scenario",

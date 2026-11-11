@@ -618,6 +618,215 @@ def app_exposure(documents: list[dict], expires_within_days: int = 30) -> dict:
     }
 
 
+#: How Microsoft Graph names the three states of a policy, and what each means
+#: for a sign-in. Source: the `state` property of conditionalAccessPolicy.
+CA_STATES = {
+    "enabled": "enforced",
+    "enabledForReportingButNotEnforced": "report-only",
+    "disabled": "off",
+}
+
+#: Conditions other than who, by the property that carries each. A policy that
+#: sets one applies to fewer sign-ins than its user scope suggests.
+CA_NARROWING = (
+    "applications",
+    "locations",
+    "platforms",
+    "clientAppTypes",
+    "signInRiskLevels",
+    "userRiskLevels",
+    "devices",
+    "servicePrincipalRiskLevels",
+    "authenticationFlows",
+    "insiderRiskLevels",
+)
+
+
+def _narrowing(conditions: dict) -> list[str]:
+    """Which conditions besides the user scope this policy actually sets.
+
+    `applications` set to All and `clientAppTypes` set to all narrow nothing
+    and are not listed; anything else that carries a value is.
+    """
+    found = []
+    for name in CA_NARROWING:
+        value = conditions.get(name)
+        if value in (None, [], {}):
+            continue
+        if name == "clientAppTypes" and value == ["all"]:
+            continue
+        if name == "applications" and isinstance(value, dict):
+            include = value.get("includeApplications") or []
+            rest = any(value.get(key) for key in value if key != "includeApplications")
+            if include == ["All"] and not rest:
+                continue
+        found.append(name)
+    return found
+
+
+def ca_coverage(documents: list[dict], policy_id: str | None = None) -> dict:
+    """Who each Conditional Access policy names, read from its own definition.
+
+    THIS IS THE STATIC SCOPE, AND IT IS NOT WHO A POLICY APPLIES TO. A policy
+    reaches a sign-in only when every condition holds at that moment, groups
+    are resolved by the service at sign-in, and several policies combine.
+    None of that is in a definition. What is: whether the policy is enforced,
+    whom it names, whom it leaves out, and which other conditions narrow it.
+    """
+    policies, duplicated = _latest(
+        [
+            d
+            for d in documents
+            if (d.get("resource") or {}).get("type") == "conditional-access-policy"
+        ]
+    )
+    refused = [
+        d
+        for d in documents
+        if (d.get("resource") or {}).get("type") == "tenant"
+        and isinstance((d.get("facts") or {}).get("conditional_access_policies"), dict)
+        and "state" in d["facts"]["conditional_access_policies"]
+    ]
+    rows = []
+    for key in sorted(policies):
+        if policy_id and key != policy_id:
+            continue
+        document = policies[key]
+        policy = _observed(_fact(document, "conditional_access_policies", "policy"))
+        row: dict[str, Any] = {
+            "native_id": key,
+            "name": (document.get("resource") or {}).get("display_name") or "",
+            "collected_at": (document.get("provenance") or {}).get("collected_at"),
+        }
+        if not isinstance(policy, dict):
+            row.update(
+                in_force=NOT_ESTABLISHED,
+                static_scope=NOT_ESTABLISHED,
+                because="the definition of this policy was not read",
+            )
+            rows.append(row)
+            continue
+        state = policy.get("state")
+        conditions = policy.get("conditions") or {}
+        users = conditions.get("users") or {}
+        include = users.get("includeUsers") or []
+        everyone = "All" in include
+        named = [
+            u for u in include if u not in ("All", "None", "GuestsOrExternalUsers")
+        ]
+        excluded = {
+            "users": len(users.get("excludeUsers") or []),
+            "groups": len(users.get("excludeGroups") or []),
+            "roles": len(users.get("excludeRoles") or []),
+        }
+        included = {
+            "users": len(named),
+            "groups": len(users.get("includeGroups") or []),
+            "roles": len(users.get("includeRoles") or []),
+        }
+        guests = "GuestsOrExternalUsers" in include or bool(
+            users.get("includeGuestsOrExternalUsers")
+        )
+        narrowing = _narrowing(conditions)
+        if everyone:
+            scope = "every user"
+        elif any(included.values()) or guests:
+            scope = "named principals"
+        else:
+            scope = "nobody"
+        if any(excluded.values()):
+            scope += ", with exclusions"
+        row.update(
+            in_force=CA_STATES.get(str(state), NOT_ESTABLISHED),
+            policy_state=state,
+            static_scope=scope,
+            includes_users=included["users"],
+            includes_groups=included["groups"],
+            includes_roles=included["roles"],
+            includes_guests=guests,
+            excludes_users=excluded["users"],
+            excludes_groups=excluded["groups"],
+            excludes_roles=excluded["roles"],
+            narrowed_by=", ".join(narrowing) or "nothing else",
+            controls=", ".join(
+                (policy.get("grantControls") or {}).get("builtInControls") or []
+            )
+            or "none listed",
+        )
+        row["because"] = (
+            "the policy's own definition"
+            if row["in_force"] != NOT_ESTABLISHED
+            else f"{state!r} is not a policy state this engine has a documented "
+            "meaning for"
+        )
+        rows.append(row)
+
+    by_force: dict[str, int] = {}
+    for row in rows:
+        by_force[row["in_force"]] = by_force.get(row["in_force"], 0) + 1
+
+    not_established = [
+        "whether a policy applies to a given sign-in: that depends on every "
+        "condition at that moment, and a definition is not a sign-in",
+        "who is in a group or holds a role a policy names: no group or role "
+        "was expanded, so a count of groups is not a count of people",
+        "what several policies do together: they combine at sign-in, and this "
+        "reads each on its own",
+        "whether anybody is covered by no policy at all: that needs every "
+        "user and every membership, which were not read",
+    ]
+    if refused:
+        not_established.insert(
+            0,
+            "the policies themselves: the read was refused, so an empty list "
+            "here is not a tenant with no policy",
+        )
+    if policy_id and not rows:
+        not_established.insert(
+            0, f"policy {policy_id}: no policy with that id is in this evidence"
+        )
+    used = [policies[key] for key in sorted(policies)] + refused
+    return {
+        "$schema": SCHEMA,
+        "scenario": "ca-coverage",
+        "scope": "entra",
+        "question": (
+            "Whom does each Conditional Access policy name, whom does it leave "
+            "out, and is it enforced?"
+        ),
+        "parameters": {"policy_id": policy_id},
+        "columns": [
+            "name",
+            "native_id",
+            "in_force",
+            "static_scope",
+            "includes_users",
+            "includes_groups",
+            "includes_roles",
+            "includes_guests",
+            "excludes_users",
+            "excludes_groups",
+            "excludes_roles",
+            "narrowed_by",
+            "controls",
+        ],
+        "relations": [
+            "policy -> the principals its definition names, by identifier",
+            "group or role -> its members: NOT JOINED. Nothing was expanded",
+        ],
+        "rows": rows,
+        "policies": {
+            "in_the_evidence": len(policies),
+            "shown": len(rows),
+            "by_in_force": dict(sorted(by_force.items())),
+            "read_refused": bool(refused),
+        },
+        "duplicates": duplicated,
+        "not_established": not_established,
+        "sources": _sources(used),
+    }
+
+
 #: Scenario name -> (what it answers, the function, the collections it reads).
 SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] = {
     "external-access": (
@@ -629,6 +838,12 @@ SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] 
         "which applications hold a credential that has ended or is about to",
         app_exposure,
         ("applications",),
+    ),
+    "ca-coverage": (
+        "whom each Conditional Access policy names, leaves out, and whether "
+        "it is enforced",
+        ca_coverage,
+        ("conditional-access",),
     ),
     "ownership": (
         "which SharePoint sites name enough administrators, and which cannot say",
@@ -659,6 +874,20 @@ def as_table(inspection: dict) -> tuple[list[str], list[list[str]]]:
 
 
 def _row_lines(inspection: dict, row: dict) -> list[str]:
+    if inspection["scenario"] == "ca-coverage":
+        if row["static_scope"] == NOT_ESTABLISHED:
+            return [f"  in force         {row['in_force']}  ({row['because']})"]
+        return [
+            f"  in force         {row['in_force']}  (state: {row['policy_state']})",
+            f"  static scope     {row['static_scope']}",
+            f"  includes         users {row['includes_users']} · groups "
+            f"{row['includes_groups']} · roles {row['includes_roles']} · guests "
+            f"{'yes' if row['includes_guests'] else 'no'}",
+            f"  excludes         users {row['excludes_users']} · groups "
+            f"{row['excludes_groups']} · roles {row['excludes_roles']}",
+            f"  narrowed by      {row['narrowed_by']}",
+            f"  controls         {row['controls']}",
+        ]
     if inspection["scenario"] == "app-exposure":
         return [
             f"  standing         {row['standing']}  ({row['because']})",
@@ -690,8 +919,19 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
 
 def as_text(inspection: dict) -> str:
     lines = [inspection["question"], ""]
-    counted = inspection.get("sites") or inspection.get("applications") or {}
-    noun = "application" if "applications" in inspection else "SharePoint site"
+    counted = (
+        inspection.get("sites")
+        or inspection.get("applications")
+        or inspection.get("policies")
+        or {}
+    )
+    noun = (
+        "application"
+        if "applications" in inspection
+        else "Conditional Access policy"
+        if "policies" in inspection
+        else "SharePoint site"
+    )
     if not inspection["rows"]:
         lines += [f"No {noun} is in this evidence.", ""]
     for row in inspection["rows"]:
@@ -699,7 +939,10 @@ def as_text(inspection: dict) -> str:
         lines.append(f"{title}  {row.get('url') or row.get('app_id') or ''}".rstrip())
         lines += _row_lines(inspection, row)
         lines.append("")
-    lines.append(f"{counted.get('in_the_evidence', 0)} {noun}s in the evidence:")
+    plural = "Conditional Access policies" if noun.endswith("policy") else f"{noun}s"
+    lines.append(f"{counted.get('in_the_evidence', 0)} {plural} in the evidence:")
+    for state, number in (counted.get("by_in_force") or {}).items():
+        lines.append(f"  {state}: {number}")
     for state, number in (counted.get("by_external_sharing") or {}).items():
         lines.append(f"  external sharing {state}: {number}")
     for state, number in (counted.get("by_standing") or {}).items():

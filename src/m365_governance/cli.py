@@ -648,6 +648,11 @@ def _build_parser() -> argparse.ArgumentParser:
         "evidence always gives the same answer. Default 30d",
     )
     inspecting.add_argument(
+        "--policy-id",
+        metavar="ID",
+        help="ca-coverage only: show one policy, by its identifier",
+    )
+    inspecting.add_argument(
         "--minimum-owners",
         type=int,
         default=2,
@@ -2238,6 +2243,8 @@ def _cmd_inspect(args) -> int:
             )
             return 2
         options["expires_within_days"] = int(found.group(1))
+    if args.scenario == "ca-coverage" and args.policy_id:
+        options["policy_id"] = args.policy_id
     if args.scenario == "ownership":
         if args.minimum_owners < 1:
             print("--minimum-owners must be at least 1.", file=sys.stderr)

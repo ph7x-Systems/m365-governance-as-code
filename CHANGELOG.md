@@ -16,6 +16,14 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g governance inspect ca-coverage`, the fourth composed scenario.**
+  Whom each Conditional Access policy names, whom it leaves out, which other
+  conditions narrow it, and whether it is enforced, reporting only, or off,
+  read from the policy's own definition in evidence the existing collector
+  already produces. `--policy-id` shows one. It states that this is the
+  static scope and not who a policy applies to: no group was expanded, a
+  definition is not a sign-in, and policies combine.
+
 - **`m365g entra app list`, and the `applications` collection behind it.
   Contract-tested; not yet run against a directory.** One document per
   application registration: how many secrets and certificates it holds, when

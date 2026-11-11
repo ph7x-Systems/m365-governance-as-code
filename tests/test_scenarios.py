@@ -557,3 +557,182 @@ def test_the_exposure_command_takes_a_window_in_days(tmp_path, capsys):
     assert main([*base, "--expires-within", "60d", "--output", "csv"]) == 0
     assert ",ending," in capsys.readouterr().out
     assert main([*base, "--expires-within", "soon"]) == 2
+
+
+# --- conditional access coverage --------------------------------------------------
+
+
+def _policy(name, *, state="enabled", users=None, extra=None, controls=("mfa",)):
+    definition = {
+        "id": f"policy-{name}",
+        "displayName": name,
+        "state": state,
+        "conditions": {
+            "users": users or {"includeUsers": ["All"]},
+            "applications": {"includeApplications": ["All"]},
+            "clientAppTypes": ["all"],
+            **(extra or {}),
+        },
+        "grantControls": {"operator": "OR", "builtInControls": list(controls)},
+    }
+    return {
+        "resource": {
+            "workload": "entra",
+            "type": "conditional-access-policy",
+            "native_id": f"policy-{name}",
+            "display_name": name,
+        },
+        "provenance": {"collected_at": "2026-11-11T10:00:00Z"},
+        "coverage": {"completed": ["conditional_access_policies"], "unavailable": {}},
+        "facts": {
+            "conditional_access_policies": {
+                "policy": {"state": "observed", "value": definition}
+            }
+        },
+    }
+
+
+def _covered(inspection, name):
+    return next(r for r in inspection["rows"] if r["name"] == name)
+
+
+def test_a_policy_that_only_reports_is_never_shown_as_enforced():
+    """THE COUNTER-CHECK. Three policies name every user; one of them does
+    something at sign-in."""
+    inspection = scenarios.ca_coverage(
+        [
+            _policy("on"),
+            _policy("report", state="enabledForReportingButNotEnforced"),
+            _policy("off", state="disabled"),
+            _policy("odd", state="somethingNew"),
+        ]
+    )
+    assert {r["name"]: r["in_force"] for r in inspection["rows"]} == {
+        "on": "enforced",
+        "report": "report-only",
+        "off": "off",
+        "odd": "not-established",
+    }
+    assert inspection["policies"]["by_in_force"]["enforced"] == 1
+
+
+def test_the_scope_is_what_the_definition_names_and_exclusions_are_counted():
+    inspection = scenarios.ca_coverage(
+        [
+            _policy(
+                "all",
+                users={
+                    "includeUsers": ["All"],
+                    "excludeUsers": ["u1"],
+                    "excludeGroups": ["g1", "g2"],
+                },
+            ),
+            _policy(
+                "some",
+                users={
+                    "includeUsers": ["None"],
+                    "includeGroups": ["g1"],
+                    "includeRoles": ["r1"],
+                },
+            ),
+            _policy("none", users={"includeUsers": ["None"]}),
+            _policy("guests", users={"includeUsers": ["GuestsOrExternalUsers"]}),
+        ]
+    )
+    everyone = _covered(inspection, "all")
+    assert everyone["static_scope"] == "every user, with exclusions"
+    assert (everyone["excludes_users"], everyone["excludes_groups"]) == (1, 2)
+    some = _covered(inspection, "some")
+    assert some["static_scope"] == "named principals"
+    assert (some["includes_groups"], some["includes_roles"]) == (1, 1)
+    assert _covered(inspection, "none")["static_scope"] == "nobody"
+    assert _covered(inspection, "guests")["includes_guests"] is True
+
+
+def test_a_condition_that_narrows_a_policy_is_named_and_one_that_does_not_is_not():
+    inspection = scenarios.ca_coverage(
+        [
+            _policy("plain"),
+            _policy(
+                "narrow",
+                extra={
+                    "locations": {"includeLocations": ["AllTrusted"]},
+                    "platforms": {"includePlatforms": ["iOS"]},
+                    "applications": {"includeApplications": ["one-app"]},
+                    "clientAppTypes": ["browser"],
+                },
+            ),
+        ]
+    )
+    assert _covered(inspection, "plain")["narrowed_by"] == "nothing else"
+    assert _covered(inspection, "narrow")["narrowed_by"] == (
+        "applications, locations, platforms, clientAppTypes"
+    )
+
+
+def test_one_policy_can_be_asked_for_and_a_wrong_id_is_said_so():
+    documents = [_policy("a"), _policy("b")]
+    one = scenarios.ca_coverage(documents, policy_id="policy-b")
+    assert [r["name"] for r in one["rows"]] == ["b"]
+    assert one["policies"] == {
+        "in_the_evidence": 2,
+        "shown": 1,
+        "by_in_force": {"enforced": 1},
+        "read_refused": False,
+    }
+    wrong = scenarios.ca_coverage(documents, policy_id="policy-z")
+    assert wrong["rows"] == []
+    assert "no policy with that id" in wrong["not_established"][0]
+
+
+def test_a_refused_read_is_not_a_tenant_with_no_policy():
+    refusal = {
+        "resource": {"workload": "entra", "type": "tenant", "native_id": HOST},
+        "provenance": {"collected_at": "2026-11-11T10:00:00Z"},
+        "coverage": {"completed": [], "unavailable": {}},
+        "facts": {
+            "conditional_access_policies": {
+                "state": "permission-denied",
+                "detail": "denied",
+            }
+        },
+    }
+    inspection = scenarios.ca_coverage([refusal])
+    assert inspection["rows"] == [] and inspection["policies"]["read_refused"]
+    assert "not a tenant with no policy" in inspection["not_established"][0]
+
+
+def test_coverage_never_claims_who_a_policy_applies_to():
+    inspection = scenarios.ca_coverage([_policy("a")])
+    said = " ".join(inspection["not_established"])
+    assert "given sign-in" in said and "no policy at all" in said
+    text = scenarios.as_text(inspection).lower()
+    for word in ("score", "%", "compliant", "protected", "covered users", "grade"):
+        assert word not in text
+
+
+def test_the_packaged_policy_fixtures_are_read_as_they_are(capsys):
+    from m365_governance import collecting
+
+    fixtures = collecting.COLLECTOR.parents[3] / "fixtures" / "entra"
+    assert (
+        main(
+            [
+                "governance",
+                "inspect",
+                "ca-coverage",
+                "--evidence",
+                str(fixtures),
+                "--output",
+                "json",
+            ]
+        )
+        == 0
+    )
+    inspection = json.loads(capsys.readouterr().out)
+    # The packaged fixtures are five shapes of ONE policy id, so they are one
+    # policy read five times: one row, and the duplicate is reported.
+    assert len(inspection["rows"]) == 1
+    assert inspection["rows"][0]["in_force"] in ("enforced", "report-only")
+    assert len(inspection["duplicates"]) == 1
+    assert inspection["policies"]["read_refused"] is True

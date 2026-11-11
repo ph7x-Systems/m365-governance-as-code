@@ -82,6 +82,7 @@ def build() -> dict:
                                 {
                                     "ownership": ["--minimum-owners"],
                                     "app-exposure": ["--expires-within"],
+                                    "ca-coverage": ["--policy-id"],
                                 }.get(name, [])
                             ),
                             "examples": [
