@@ -14,6 +14,16 @@ Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
 
+### A read answers in the terminal, and `--output` means the same everywhere
+
+`m365g spo site list` prints what was read: as text, or as `json`, `csv` or
+`md` with `--output`. The JSON view is the evidence documents themselves.
+`--evidence-out` keeps the evidence; without it what is shown is a view, the
+documents are not kept, and the command says so. `--output` is also accepted
+wherever a command took `--format`. Every earlier spelling still works
+unchanged, `collect --output <directory>` included; `docs/CLI.md` holds the
+table and the precedence.
+
 ### Commands are grouped, and every earlier name still works
 
 `m365g spo site list`, `m365g entra ca list`, `m365g rule list`,

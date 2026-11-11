@@ -25,11 +25,14 @@ not require the thing that made it.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
 import shutil
 import sys
+import tempfile
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -53,6 +56,7 @@ from . import (
     migration,
     migration_graph,
     presentation,
+    presenting,
     reporting,
     running,
     sessions,
@@ -166,7 +170,22 @@ def _build_parser() -> argparse.ArgumentParser:
         help="an Entra ID app registration. Required: PnP.PowerShell has "
         "shipped no application of its own since 2.12.0",
     )
-    collect.add_argument("--output", type=Path, required=True)
+    collect.add_argument(
+        "--output",
+        type=Path,
+        metavar="FORMAT|DIRECTORY",
+        help="how to show what was read: text (the default), json, csv or md. "
+        "A directory here is the earlier spelling of --evidence-out and still "
+        "works, with the earlier report",
+    )
+    collect.add_argument(
+        "--evidence-out",
+        type=Path,
+        metavar="DIRECTORY",
+        help="keep the evidence here: the documents with their provenance, "
+        "which is what rules evaluate. Without it what is shown is a view and "
+        "the evidence is not kept",
+    )
     collect.add_argument(
         "--project",
         type=Path,
@@ -987,6 +1006,75 @@ def _authentication(args) -> None:
 
 
 def _cmd_collect(args) -> int:
+    """Read, show what was read, and keep the evidence if asked to.
+
+    TWO SPELLINGS, AND THE EARLIER ONE IS UNCHANGED. `--output <directory>` is
+    how this command was always called: it writes evidence there and prints
+    the collection's own report, exactly as before. Anything else is the newer
+    spelling: what was read is shown on stdout in the format asked for, and
+    the evidence is kept only where `--evidence-out` says.
+
+    THE VIEW IS NOT THE EVIDENCE. It is rendered from the documents the
+    collection wrote and adds nothing to them; the documents carry the
+    provenance and the coverage, and without `--evidence-out` they are not
+    kept, which is said every time.
+    """
+    given, kept = args.output, args.evidence_out
+    as_view = given is not None and str(given) in presenting.FORMATS
+    if given is not None and not as_view:
+        if kept is not None:
+            print(
+                "collect was given a directory twice: --output "
+                f"{given} and --evidence-out {kept}. They mean the same thing; "
+                "pass --evidence-out, and --output for the format.",
+                file=sys.stderr,
+            )
+            return 2
+        return _collect_evidence(args)
+
+    view = str(given) if as_view else "text"
+    if args.dry_run:
+        args.output = kept or Path("<a temporary directory>")
+        return _collect_evidence(args)
+    if kept is not None and kept.is_file():
+        print(f"--evidence-out is a directory, and {kept} is a file.", file=sys.stderr)
+        return 2
+
+    holder = (
+        contextlib.nullcontext(kept)
+        if kept
+        else tempfile.TemporaryDirectory(prefix="m365g-")
+    )
+    with holder as where:
+        args.output = Path(where)
+        started = time.time() - 1
+        # The collection's own report is for a person and goes to stderr here,
+        # so that stdout is the view and nothing else: a consumer asking for
+        # JSON gets JSON.
+        with contextlib.redirect_stdout(sys.stderr):
+            code = _collect_evidence(args)
+        written = (
+            [
+                found
+                for found in _evidence_documents(args.output)
+                if found.stat().st_mtime >= started
+            ]
+            if args.output.is_dir()
+            else []
+        )
+        documents = [json.loads(found.read_text(encoding="utf-8")) for found in written]
+        sys.stdout.write(presenting.render(documents, view))
+    print(
+        f"evidence kept in {kept}: the documents this view was made from."
+        if kept
+        else "evidence NOT kept: this is a view. --evidence-out DIRECTORY keeps "
+        "what was read, with its provenance.",
+        file=sys.stderr,
+    )
+    return code
+
+
+def _collect_evidence(args) -> int:
     # BEFORE ANYTHING REACHES A TENANT. Which identity a run authenticates as
     # decides what an empty result means, and a command line naming two of
     # them, or half of one, used to be settled by whichever branch the script
@@ -2922,11 +3010,84 @@ def _readable_output() -> None:
 UI = presentation.Presentation()
 
 
+#: What `--output` may say as a format, across the commands.
+_OUTPUT_WORDS = {"text", "json", "csv", "md", "markdown", "html"}
+
+
+def _format_option(parser: argparse.ArgumentParser, argv: list[str]):
+    """The command's `--format` option and whether it takes a directory too."""
+    subs = argparse._SubParsersAction
+    action = next(a for a in parser._actions if isinstance(a, subs))
+    sub = action.choices.get(argv[0])
+    if sub is None:
+        return None, False
+    if argv[0] == "connection" and len(argv) > 1:
+        nested = next((a for a in sub._actions if isinstance(a, subs)), None)
+        sub = (nested.choices.get(argv[1]) if nested else None) or sub
+    fmt = next((a for a in sub._actions if "--format" in a.option_strings), None)
+    directory = any("--output" in a.option_strings for a in sub._actions)
+    return fmt, directory
+
+
+def _uniform_output(parser: argparse.ArgumentParser, argv: list[str]) -> list[str]:
+    """Let `--output FORMAT` mean the same thing on every command.
+
+    Commands that already chose a format with `--format` keep it; `--output`
+    is the same option under the name every command shares, and `md` is
+    `markdown` where that is what the command calls it. On `run`, `--output`
+    was always the evidence directory: a format word is read as a format, any
+    other value is still the directory, and `--evidence-out` is its new name.
+    `collect` reads both spellings itself.
+    """
+    if not argv or argv[0] == "collect":
+        return argv
+    fmt, has_directory = _format_option(parser, argv)
+    if fmt is None and not has_directory:
+        return argv
+    said_format = any(w == "--format" or w.startswith("--format=") for w in argv)
+    out: list[str] = []
+    index = 0
+    while index < len(argv):
+        word = argv[index]
+        name, _, attached = word.partition("=")
+        joined = "=" in word
+        value = attached if joined else None
+        if not joined and index + 1 < len(argv):
+            value = argv[index + 1]
+        step = 1 if joined else 2
+        if name == "--evidence-out" and has_directory and value is not None:
+            out += ["--output", value]
+            index += step
+            continue
+        as_format = value in _OUTPUT_WORDS or not has_directory
+        if name == "--output" and fmt is not None and value is not None and as_format:
+            if said_format:
+                raise _Refused(
+                    f"{argv[0]} was given a format twice: --format and "
+                    f"--output {value}. They are one option; pass one."
+                )
+            choices = {str(c) for c in (fmt.choices or [])}
+            if value == "md" and "markdown" in choices:
+                value = "markdown"
+            out += ["--format", value]
+            index += step
+            continue
+        out.append(word)
+        index += 1
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     _readable_output()
     # A grouped path is the flat command by another name (grouping.py).
     given = list(sys.argv[1:] if argv is None else argv)
-    args = _build_parser().parse_args(grouping.regroup(given))
+    parser = _build_parser()
+    try:
+        given = _uniform_output(parser, grouping.regroup(given))
+    except _Refused as refusal:
+        print(f"{refusal}", file=sys.stderr)
+        return 2
+    args = parser.parse_args(given)
     try:
         return _COMMANDS[args.command](args)
     except DuplicateResource as exc:

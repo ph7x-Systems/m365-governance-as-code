@@ -131,3 +131,41 @@ does, and takes the same `--output`.
 
 `login`, `status`, `logout`, `connection` and `connect` stay at the top level:
 signing in and asking the tenant come before choosing a service.
+
+## Output
+
+`--output` says how a result is shown, and it is the same option on every
+command that shows one: `text`, `json`, `csv` or `md`, as far as the command
+has them.
+
+- **A read answers in the terminal.** `m365g spo site list` prints what was
+  read, as text unless `--output` says otherwise. The JSON view is the evidence
+  documents themselves, untouched; CSV and Markdown are one row per resource
+  with stable leading columns (`resource_type`, `name`, `url`, `native_id`,
+  `tenant`, `collected_at`, `completed`, `unavailable`) followed by one column
+  per fact, by name.
+- **A view is not the evidence.** It is rendered from the documents the
+  collection wrote and adds nothing to them. A fact is shown with the state the
+  collector gave it and nothing is concluded. Without `--evidence-out` the
+  documents are not kept, and the command says so on every run.
+- **`--evidence-out DIRECTORY` keeps the evidence**: the documents, with their
+  provenance and coverage, which is what rules evaluate.
+- **Only the view is on stdout.** The collection's own report, progress and
+  notes go to stderr, so `--output json` can be piped.
+
+### The earlier spellings, which still work
+
+| Earlier | Now | What happens to the earlier one |
+|---|---|---|
+| `collect SLICE --output DIRECTORY` | `--evidence-out DIRECTORY` | unchanged: evidence is written there and the earlier report is printed |
+| `run --output DIRECTORY` | `run --evidence-out DIRECTORY` | unchanged |
+| `--format F` on `connect`, `capabilities`, `run`, `evaluate`, `assess`, `report`, `diff` | `--output F` | unchanged; `md` is accepted for `markdown` |
+| `run --out FILE`, `migration-read --out`, `contracts --out` | the same | unchanged: `--out` names a file or folder a command writes |
+
+Precedence where a value could be read two ways: on `collect` and `run`,
+`--output` followed by `text`, `json`, `csv`, `md`, `markdown` or `html` is a
+format, and any other value is the evidence directory. A directory with one of
+those names is written `./json`. A format given twice (`--format` and
+`--output`), or a directory given twice (`--output DIRECTORY` and
+`--evidence-out`), is refused with exit `2`.
+
