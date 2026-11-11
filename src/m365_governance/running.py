@@ -46,6 +46,9 @@ class Planned(StrEnum):
     NOT_NEEDED = "not-needed"
     """No selected rule reads what it produces."""
 
+    LEFT_OUT = "left-out"
+    """The caller named the collections to attempt, and this is not one."""
+
 
 #: Why each refusal, in words a person can act on. Written here rather than
 #: at the point of printing, so that the plan and the report of the run cannot
@@ -65,6 +68,7 @@ BECAUSE: dict[Planned, str] = {
         "produces nothing any selected rule reads, and a run does not read a "
         "tenant for a question nobody asked"
     ),
+    Planned.LEFT_OUT: ("left out by --only"),
 }
 
 
@@ -91,6 +95,7 @@ def plan(
     has_graph_token: bool,
     has_powershell: bool = True,
     needed: set[str] | None = None,
+    only: set[str] | None = None,
 ) -> list[Step]:
     """Every slice this engine holds, and whether the target reaches it.
 
@@ -116,6 +121,12 @@ def plan(
         #
         # A larger read than the question needs is not a performance problem. It
         # is a request against somebody's directory that they did not make.
+        if only is not None and name not in only:
+            # THE CALLER'S OWN LIMIT, AND IT IS SHOWN. A collection left out is
+            # listed as left out, never dropped from the plan: what a run did
+            # not read is part of what its report means.
+            steps.append(Step(slice=chosen, planned=Planned.LEFT_OUT))
+            continue
         if needed is not None and name not in needed:
             steps.append(Step(slice=chosen, planned=Planned.NOT_NEEDED))
             continue

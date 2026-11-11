@@ -14,6 +14,13 @@ Work merged after `1.0.0b8` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
 
+### A run can be limited to some collections
+
+`run --only sites,owners` attempts those collections and no others, by the
+names `collect` uses. The plan still lists every collection: the ones left out
+are shown as left out, because what a run did not read is part of what its
+report means.
+
 ### Help says where to start, and a failure says why
 
 `m365g --help` opens with the first commands somebody needs and lists the

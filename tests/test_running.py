@@ -300,3 +300,45 @@ def test_the_plan_does_not_promise_what_the_machine_cannot_run():
         "tenant-governance",
     ]
     assert "doctor" in running.describe(steps)
+
+
+def test_only_limits_the_plan_and_shows_what_was_left_out():
+    """`--only` names the collections to attempt; the rest stay in the plan."""
+    from m365_governance import running
+
+    steps = running.plan(
+        site_url="https://contoso.sharepoint.com/sites/a",
+        tenant_url="https://contoso-admin.sharepoint.com",
+        has_graph_token=True,
+        only={"sites", "owners"},
+    )
+    by_name = {step.slice.name: step.planned for step in steps}
+    assert len(by_name) == len(running.SLICES), "a collection left the plan"
+    assert [n for n, p in by_name.items() if p is running.Planned.ATTEMPT] == [
+        "owners",
+        "sites",
+    ]
+    left = {n for n, p in by_name.items() if p is running.Planned.LEFT_OUT}
+    assert left == set(running.SLICES) - {"sites", "owners"}
+    assert "--only" in running.BECAUSE[running.Planned.LEFT_OUT]
+
+
+def test_only_refuses_a_name_that_is_not_a_collection(capsys, monkeypatch, tmp_path):
+    import m365_governance.cli as cli
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("M365G_HOME", str(tmp_path / "home"))
+    code = cli.main(
+        [
+            "run",
+            "--client-id",
+            "3f6c1d9a-7b24-4e58-9a01-c2d47be8f615",
+            "--tenant-url",
+            "https://contoso-admin.sharepoint.com",
+            "--only",
+            "sites,nonsense",
+            "--dry-run",
+        ]
+    )
+    err = capsys.readouterr().err
+    assert code == 2 and "nonsense" in err and "tenant-sharing" in err

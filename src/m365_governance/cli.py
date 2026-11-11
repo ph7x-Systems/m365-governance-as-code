@@ -133,7 +133,7 @@ def _overview(command: str) -> str:
     return f"""Microsoft 365 governance checks that show their work.
 
 Start here
-  {command} engine doctor                      what this machine still needs
+  {command} engine setup                       this machine, and the app registration
   {command} login --client-id ID --tenant-url https://TENANT-admin.sharepoint.com
   {command} status                             which connection is active
   {command} spo site list                      read, and see it in the terminal
@@ -384,7 +384,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--format",
         choices=("text", "json"),
         default="text",
-        help="json for a consumer. Not a contract: a session is not a document",
+        help="json for a consumer: the published `connection` contract",
     )
 
     setup = sub.add_parser(
@@ -451,11 +451,22 @@ def _build_parser() -> argparse.ArgumentParser:
     run_cmd.add_argument("--site-url")
     run_cmd.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
     run_cmd.add_argument(
+        "--evidence-out",
         "--output",
+        dest="output",
         type=Path,
         default=Path("./evidence"),
+        metavar="DIRECTORY",
         help="where the evidence is written. Kept: it is what the conclusions "
-        "were decided from, and a report without it cannot be checked",
+        "were decided from, and a report without it cannot be checked. "
+        "--output followed by a format word chooses the report format instead",
+    )
+    run_cmd.add_argument(
+        "--only",
+        action="append",
+        metavar="NAME[,NAME]",
+        help="attempt only these collections, by the names `collect` uses "
+        "(sites, owners, sharing, ...). The plan lists the rest as left out",
     )
     run_cmd.add_argument(
         "--device-login",
@@ -742,6 +753,27 @@ def _build_parser() -> argparse.ArgumentParser:
     contracts.add_argument(
         "--out", required=True, type=Path, help="a directory to write into"
     )
+
+    # ONE NAME FOR THE FORMAT, ON EVERY COMMAND THAT HAS ONE. `--format` stays;
+    # `--output` is the same option, so that it is in each command's own help
+    # and not only in the documentation. A command where `--output` already
+    # names a directory keeps that meaning (`_uniform_output` reads a format
+    # word there).
+    def _share_format(command: argparse.ArgumentParser) -> None:
+        for known in list(command._actions):
+            if isinstance(known, argparse._SubParsersAction):
+                for nested in known.choices.values():
+                    _share_format(nested)
+        chosen = next(
+            (a for a in command._actions if "--format" in a.option_strings), None
+        )
+        if chosen is None or "--output" in command._option_string_actions:
+            return
+        chosen.option_strings.append("--output")
+        command._option_string_actions["--output"] = chosen
+
+    for command in list(sub.choices.values()):
+        _share_format(command)
 
     # THE GROUPS. A complete grouped path never reaches these: `main` rewrites it
     # to the flat command first (grouping.py). What arrives here is a group
@@ -1601,6 +1633,19 @@ def _cmd_run(args) -> int:
         print(f"refusing to run: {refusal}", file=sys.stderr)
         return 2
 
+    only = None
+    if args.only:
+        only = {name.strip() for given in args.only for name in given.split(",")}
+        only.discard("")
+        unknown = sorted(only - set(collecting.SLICES))
+        if unknown:
+            print(
+                f"--only names no collection called {', '.join(unknown)}. "
+                f"The names are: {', '.join(sorted(collecting.SLICES))}",
+                file=sys.stderr,
+            )
+            return 2
+
     steps = running.plan(
         site_url=args.site_url,
         tenant_url=args.tenant_url,
@@ -1623,6 +1668,7 @@ def _cmd_run(args) -> int:
         # one rule still read every surface the target reaches, which is a
         # request against somebody's directory that they did not make.
         needed=_capabilities_for(args),
+        only=only,
     )
     doing = running.attempted(steps)
     sys.stderr.write(running.describe(steps))

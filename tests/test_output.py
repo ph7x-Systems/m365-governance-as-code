@@ -215,3 +215,21 @@ def test_a_view_shows_the_collectors_words_and_concludes_nothing():
         assert word not in text.lower()
     with pytest.raises(ValueError):
         presenting.render([document], "yaml")
+
+
+def test_output_is_in_the_help_of_every_command_that_has_a_format():
+    import argparse
+
+    parser = cli._build_parser()
+    subs = argparse._SubParsersAction
+    action = next(a for a in parser._actions if isinstance(a, subs))
+    with_format = [
+        name
+        for name, sub in action.choices.items()
+        if any("--format" in a.option_strings for a in sub._actions)
+    ]
+    assert {"connect", "capabilities", "report", "diff", "status", "login"} <= set(
+        with_format
+    )
+    for name in with_format:
+        assert "--output" in action.choices[name].format_help(), name
