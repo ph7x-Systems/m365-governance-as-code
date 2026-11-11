@@ -16,6 +16,12 @@ ships in a release of its own.
 
 ### Added
 
+- **`docs/COMMAND-REFERENCE.json`, a derived reference of every command.** One
+  entry per command with what it reads, the permissions recorded for it, the
+  rules it feeds, how far it was proved and examples, generated from the
+  capability manifest and the grouping and scenario tables and checked by the
+  release gate. It is what a documentation site reads instead of retyping.
+
 - **`m365g spo sharing list`, and the `sites-sharing` collection behind it.**
   What every enumerated site permits, read site by site: the enumeration
   supplies the addresses and every value comes from the site's own read,

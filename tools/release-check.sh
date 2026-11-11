@@ -206,6 +206,12 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   step "The capability map is current"
   "$PY" tools/capability-map.py --check
 
+  # EVERY COMMAND, DESCRIBED FROM THE CONTRACTS IT IS MADE OF. A documentation
+  # site reads this file instead of retyping it, so a stale one publishes a
+  # command line that no longer exists.
+  step "The command reference is current"
+  "$PY" tools/command-reference.py --check
+
   # The register's Graph claims, put to the service's own schema. Anonymous, no
   # tenant, no identity. Offline it reports `not established` and fails rather
   # than passing quietly, because a check that could not run must never leave a
