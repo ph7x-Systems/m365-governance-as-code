@@ -179,13 +179,19 @@ which of the two it used.
 
 ## Start here
 
-Three commands from an empty machine to a report about your own tenant.
+Four commands from an empty machine to a report about your own tenant.
 
 ```bash
-m365g setup     # 1. check this machine, and write the target down once
-m365g connect   # 2. prove the identity can reach the tenant, and read
-m365g run       # 3. collect, evaluate, and write the report
+m365g engine setup      # 1. this machine, the application registration, the target
+m365g login             # 2. sign in once; later commands use the session
+m365g spo site list     # 3. read something, and see it in the terminal
+m365g governance run    # 4. collect, evaluate, and write the report
 ```
+
+`m365g` on its own prints where to start, and `m365g spo` (or `entra`, `exo`,
+`rule`, `governance`, `evidence`, `migration`, `engine`) lists what a group
+holds. Every earlier name still works: `m365g collect sites` and
+`m365g spo site list` are one command.
 
 **`setup` does the setting up.** In a terminal it checks this machine, installs
 or updates PowerShell 7 and PnP.PowerShell to their latest stable release when
@@ -215,6 +221,25 @@ sign-in. Without a terminal `setup` asks nothing and agrees to nothing;
 **No secret ever goes in that file.** A certificate password is named there by
 the environment variable that holds it, never by its value: the file is
 committed, copied into tickets and pasted into chats.
+
+**`login` keeps a session, and only because you asked.** After it, the
+SharePoint reads do not ask again. The token is written by the sign-in library
+into the operating system's protected storage (the macOS Keychain, Windows data
+protection, or the Linux keyring) and never passes through this engine; where
+that storage cannot be established, `login` refuses rather than write a token
+to a plain file. `m365g status` says which connection is active without
+reaching the tenant, `m365g connection list` shows every stored one, and
+`m365g logout` removes the stored sign-in. Without `login` every command signs
+in for itself and leaves nothing behind. Four of the sixteen reads do not use a
+session; [docs/CLI.md](docs/CLI.md) names them and says why.
+
+**A read answers in the terminal, and the evidence is a separate thing.**
+`m365g spo site list` prints what was read; `--output json|csv|md` chooses the
+form. What is printed is a view. The evidence — the documents with their
+provenance and coverage, which is what rules evaluate — is kept only where
+`--evidence-out DIRECTORY` says, and the command says so every time.
+`--help` on any read names what it reads, the permissions it needs, and the
+rules it feeds.
 
 **`connect` answers two questions and not one.** `Connect-PnPOnline` succeeds
 with zero permissions granted, so signing in and being allowed to read are
@@ -260,11 +285,11 @@ ship inside the package.
 Five commands. All of them run offline, against fixtures. No tenant required.
 
 ```bash
-pipx install m365-governance-as-code==1.0.0b6  # 1. install (see Install)
-m365g doctor                # 2. is anything broken here
-m365g list-rules            # 3. what ships with this version
-m365g show-rule SPO-LIST-001
-m365g evaluate --evidence <an-evidence-file.json>
+#                             1. install (see Install)
+m365g engine doctor         # 2. is anything broken here
+m365g rule list             # 3. what ships with this version
+m365g rule show SPO-LIST-001
+m365g evidence evaluate --evidence <an-evidence-file.json>
 ```
 
 Example evidence ships with the package. `doctor` confirms it is there, in the
@@ -288,24 +313,55 @@ the source, and how the rule can pass while the problem survives.
 
 ## The commands
 
+Signing in, at the top level:
+
 | | |
 |---|---|
-| `setup` | Set this machine up: install what is missing, obtain the application registration (registering it when an administrator agrees), and write the target down |
-| `connect` | Reach a tenant and say what was established: whether the sign-in worked, whether the identity may read, and why not where it did not. Collects nothing |
-| `run` | A configured target to a report. Plans, collects what the target reaches, evaluates and renders — and says which collections it did not attempt |
-| `collect SLICE` | One collection against a tenant, for a caller who wants the parts. Evaluates nothing, and writes a manifest saying whether it was `completed`, `partial`, `failed` or `cancelled` |
-| `evaluate` | Rules against evidence: one document or a directory of them. Markdown, JSON or self-contained HTML |
-| `assess` | Evaluate, and package the result so somebody else can check it without this engine |
-| `verify` | Check an assessment that arrived, without the engine that made it |
-| `report RUN.json` | Re-render a stored run in another format, without evaluating again |
-| `diff BEFORE AFTER` | What moved between two assessments, and what that does not establish |
-| `stats EVIDENCE` | What a collector managed to see, before anything is evaluated |
-| `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around. Says what it found, not only whether it liked it |
-| `explain OUTCOME` | What `pass`, `fail`, `unknown`, `not-applicable`, `invalid-evidence` and `error` mean, and what each is not. `explain all` for the six |
-| `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
-| `show-rule ID` | One rule in full, including what it does not establish |
-| `validate` | Every rule against the schemas and the invariants |
-| `contracts` | The contract bundle a consumer vendors: schemas, models, samples and a manifest |
+| `login` | Sign in to one tenant and keep the session for later commands. The only command that keeps one |
+| `status` | Which connection later commands will use, from the local record. Reaches no tenant |
+| `logout` | Remove a stored sign-in and its record (`--name`, `--all`) |
+| `connection list` · `use NAME` · `remove NAME` | The stored connections |
+| `connect` | Ask the tenant: whether the sign-in works, whether the identity may read, and why not where it does not. Collects nothing |
+
+By group. The earlier name of each is in the second column and still works:
+
+| | Earlier name | |
+|---|---|---|
+| `engine setup` | `setup` | Set this machine up: install what is missing, obtain the application registration (registering it when an administrator agrees), and write the target down |
+| `engine doctor` | `doctor` | Python, dependencies, schemas, rules, profiles, and whether PowerShell is around |
+| `engine capabilities` | `capabilities` | What this engine collects, decides and promises, and how far each read has been proved against a tenant |
+| `engine contracts` | `contracts` | The contract bundle a consumer vendors: schemas, models, samples and a manifest |
+| `spo …` · `entra …` · `exo …` | `collect SLICE` | One read against a tenant, shown in the terminal; `--evidence-out` keeps the evidence. `m365g spo` lists them |
+| `evidence collect SLICE` | `collect SLICE` | The same read by its collection name |
+| `evidence stats EVIDENCE` | `stats` | What a collector managed to see, before anything is evaluated |
+| `evidence evaluate` | `evaluate` | Rules against evidence: one document or a directory of them |
+| `governance run` | `run` | A configured target to a report. Plans, collects what the target reaches, evaluates and renders, and says which collections it did not attempt. `--only` limits it to named collections |
+| `governance assess` | `assess` | Evaluate, and package the result so somebody else can check it without this engine |
+| `governance verify` | `verify` | Check an assessment that arrived, without the engine that made it |
+| `governance report RUN.json` | `report` | Re-render a stored run in another format, without evaluating again |
+| `governance diff BEFORE AFTER` | `diff` | What moved between two assessments, and what that does not establish |
+| `rule list` | `list-rules` | Every rule with the kind of claim it makes, strongest claim first |
+| `rule show ID` | `show-rule` | One rule in full, including what it does not establish |
+| `rule explain OUTCOME` | `explain` | What `pass`, `fail`, `unknown`, `not-applicable`, `invalid-evidence` and `error` mean, and what each is not |
+| `rule validate` | `validate` | Every rule against the schemas and the invariants |
+| `migration read` · `migration verify` | `migration-read` · `migration-verify` | What a move actually moved, from a read before it and one after |
+
+`--output text|json|csv|md` chooses how a result is shown wherever a command
+has those forms; [docs/CLI.md](docs/CLI.md) holds the full table of names, the
+session rules and the precedence of the earlier spellings.
+
+### When something does not work
+
+| What you see | What it means | What to do |
+|---|---|---|
+| `not signed in` | No active connection, no `--client-id`, no project file | `m365g login`, or `m365g engine setup` if there is no application registration yet |
+| `why: the sign-in was refused (consent-required)` | The directory knows the application and nobody consented | An administrator consents to its permissions in Microsoft Entra |
+| `… (application-not-in-directory)` | That id is not an application in this tenant | Use the id of a registration in the tenant being read |
+| `… (blocked-by-policy)` | A sign-in policy refused it | The Entra sign-in log names the policy |
+| `signed in and was NOT permitted to read this` | Authorization, not authentication | `m365g connect` shows what the identity may read; `--help` on the read names its permissions |
+| `refusing to keep a session` | No protected storage on this machine | Run without `login`, or use a certificate |
+| `connection NAME: not used, it is for …` | The command is aimed at another tenant | `m365g connection use`, or `--connection NAME` |
+| `the stored sign-in was NOT removed` | `logout` could not clear it; the record is kept on purpose | Run `logout` again; it may ask you to sign in first |
 
 `diff` is the one a periodic audit needs:
 
