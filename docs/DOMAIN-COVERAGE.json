@@ -350,8 +350,7 @@
     },
     "SPFX": {
       "analysis": [
-        "spfx-1-23-2-upgrading-is-not-changing-a-number",
-        "why-sharepoint-framework-still-runs-on-react-17"
+        "spfx-1-23-2-upgrading-is-not-changing-a-number"
       ],
       "collector_modes": [
         "Classification",
