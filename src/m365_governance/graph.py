@@ -121,6 +121,39 @@ class Identity:
         )
 
 
+#: What a refused surface needs, by the start of its path: the least
+#: privileged scope the reference records and a directory role that may read
+#: it for a delegated identity.
+#:
+#: BY SURFACE, BECAUSE ONE SENTENCE FOR EVERY PATH WAS WRONG FOR MOST OF THEM.
+#: The refusal named the Conditional Access scope whatever was asked for, so a
+#: refused read of applications told its operator to request a policy
+#: permission. A surface with no entry is told where the answer is recorded
+#: rather than given somebody else's.
+NEEDS = {
+    "identity/conditionalAccess": (
+        "Policy.Read.All",
+        "Global Reader or Conditional Access Administrator",
+    ),
+    "applications": ("Application.Read.All", "Global Reader or Directory Readers"),
+    "users": ("User.Read.All", "Global Reader or Directory Readers"),
+}
+
+
+def _needs(path: str) -> str:
+    for start, (scope, role) in NEEDS.items():
+        if path.lstrip("/").startswith(start):
+            return (
+                f"Least privilege for this surface is {scope}, and a delegated "
+                f"identity additionally needs a directory role such as {role}."
+            )
+    return (
+        "The least privilege this surface needs is recorded with its collector "
+        "(the Permissions line of the command's --help); a delegated identity "
+        "additionally needs a directory role that may read it."
+    )
+
+
 @dataclass
 class Unavailable:
     """Why an area could not be read. Never an empty tenant."""
@@ -167,9 +200,7 @@ class Unavailable:
             return Unavailable(
                 "permission-denied",
                 "authenticated and not permitted to read "
-                f"{path}. Least privilege for this surface is Policy.Read.All, "
-                "and a delegated identity additionally needs a directory role "
-                "such as Global Reader or Conditional Access Administrator. " + detail,
+                f"{path}. {_needs(path)} " + detail,
             )
         if status == 404:
             return Unavailable(

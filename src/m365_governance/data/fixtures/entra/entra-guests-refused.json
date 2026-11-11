@@ -24,7 +24,7 @@
     "unavailable": {
       "guests": {
         "state": "permission-denied",
-        "detail": "authenticated and not permitted to read users?$filter=userType eq 'Guest'&$select=id,userType,accountEnabled,externalUserState,externalUserStateChangeDateTime,createdDateTime&$top=999. Least privilege for this surface is Policy.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Conditional Access Administrator. {\"error\": {\"code\": \"Authorization_RequestDenied\", \"message\": \"Insufficient privileges to complete the operation.\"}}"
+        "detail": "authenticated and not permitted to read users?$filter=userType eq 'Guest'&$select=id,userType,accountEnabled,externalUserState,externalUserStateChangeDateTime,createdDateTime&$top=999. Least privilege for this surface is User.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Directory Readers. {\"error\": {\"code\": \"Authorization_RequestDenied\", \"message\": \"Insufficient privileges to complete the operation.\"}}"
       }
     }
   },
@@ -52,7 +52,7 @@
       },
       "count": {
         "state": "permission-denied",
-        "detail": "0 guest accounts were read before the read ended: authenticated and not permitted to read users?$filter=userType eq 'Guest'&$select=id,userType,accountEnabled,externalUserState,externalUserStateChangeDateTime,createdDateTime&$top=999. Least privilege for this surface is Policy.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Conditional Access Administrator. {\"error\": {\"code\": \"Authorization_RequestDenied\", \"message\": \"Insufficient privileges to complete the operation.\"}} That is a lower bound and not the number of guests."
+        "detail": "0 guest accounts were read before the read ended: authenticated and not permitted to read users?$filter=userType eq 'Guest'&$select=id,userType,accountEnabled,externalUserState,externalUserStateChangeDateTime,createdDateTime&$top=999. Least privilege for this surface is User.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Directory Readers. {\"error\": {\"code\": \"Authorization_RequestDenied\", \"message\": \"Insufficient privileges to complete the operation.\"}} That is a lower bound and not the number of guests."
       }
     }
   }
