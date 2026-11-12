@@ -232,3 +232,14 @@ def test_a_failed_collection_says_why_where_it_can_tell(said, expected, capsys):
 
     cli._explain_failure(SimpleNamespace(stderr=said, stdout=""))
     assert expected in capsys.readouterr().err
+
+
+def test_a_team_list_is_the_groups_read_through_a_filter_and_no_second_read():
+    assert grouping.regroup(["teams", "team", "list", "--output", "csv"]) == [
+        "collect",
+        "groups",
+        "--where",
+        "group.is_team=true",
+        "--output",
+        "csv",
+    ]

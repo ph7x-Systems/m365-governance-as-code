@@ -16,6 +16,10 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g teams team list`.** The teams of the directory, which are the
+  Microsoft 365 groups provisioned as teams: the groups read shown through a
+  filter, and no second call to anything.
+
 - **`--where COLUMN=VALUE` and `--sort COLUMN` on every read.** A view can be
   narrowed to the resources whose column prints a value, and ordered by a
   column, with numbers before text. A refusal is found by its state in

@@ -68,6 +68,21 @@ GROUPS: tuple[Group, ...] = (
         },
     ),
     Group(
+        "teams",
+        "Microsoft Teams: the teams, which are Microsoft 365 groups that say so",
+        {
+            # ONE COLLECTOR, A SECOND COMMAND. A team is a Microsoft 365 group
+            # provisioned as one, so this is the groups read shown through a
+            # filter and not a second call to anything.
+            ("team", "list"): (
+                "collect",
+                "groups",
+                "--where",
+                "group.is_team=true",
+            ),
+        },
+    ),
+    Group(
         "exo",
         "Exchange Online: whether mail can leave automatically",
         {

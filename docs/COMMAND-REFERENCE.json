@@ -4,6 +4,7 @@
  "groups": {
   "spo": "SharePoint Online: what a tenant and its sites are set to",
   "entra": "Microsoft Entra: sign-in policy, tenant defaults and licences",
+  "teams": "Microsoft Teams: the teams, which are Microsoft 365 groups that say so",
   "exo": "Exchange Online: whether mail can leave automatically",
   "evidence": "collect evidence, and look at what a collection managed to see",
   "governance": "from a target to a result somebody else can check",
@@ -1184,6 +1185,12 @@
    "kind": "command",
    "service": "session",
    "describes": "which connection later commands will use. Reaches no tenant"
+  },
+  {
+   "command": "m365g teams team list",
+   "earlier_name": "m365g collect groups --where group.is_team=true",
+   "kind": "command",
+   "service": "teams"
   }
  ]
 }

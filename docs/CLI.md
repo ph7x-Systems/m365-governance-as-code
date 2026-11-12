@@ -100,6 +100,7 @@ does, and takes the same `--output`.
 | `m365g entra app list` | `m365g collect applications` |
 | `m365g entra serviceprincipal list` | `m365g collect service-principals` |
 | `m365g entra group list` | `m365g collect groups` |
+| `m365g teams team list` | `m365g collect groups --where group.is_team=true` |
 | `m365g spo site list` | `m365g collect sites` |
 | `m365g spo hub list` | `m365g collect hubs` |
 | `m365g spo site admins` | `m365g collect sites-owners` |

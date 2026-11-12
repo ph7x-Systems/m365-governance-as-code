@@ -109,6 +109,7 @@ HOW_TO_RUN = {
     "spo": [],
     "entra": [],
     "exo": [],
+    "teams": [],
     "evidence": [],
     "governance": [],
     "rule": [],
