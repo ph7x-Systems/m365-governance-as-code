@@ -13,6 +13,34 @@
  },
  "commands": [
   {
+   "command": "m365g connect",
+   "earlier_name": "m365g connect",
+   "kind": "command",
+   "service": "session",
+   "describes": "reach a tenant and say what was established. Collects nothing"
+  },
+  {
+   "command": "m365g connection list",
+   "earlier_name": "m365g connection list",
+   "kind": "command",
+   "service": "session",
+   "describes": "every stored connection. Reaches no tenant"
+  },
+  {
+   "command": "m365g connection remove",
+   "earlier_name": "m365g connection remove",
+   "kind": "command",
+   "service": "session",
+   "describes": "remove a stored session and its record, as `logout --name`"
+  },
+  {
+   "command": "m365g connection use",
+   "earlier_name": "m365g connection use",
+   "kind": "command",
+   "service": "session",
+   "describes": "make a stored connection the active one. Reaches no tenant"
+  },
+  {
    "command": "m365g engine capabilities",
    "earlier_name": "m365g capabilities",
    "kind": "command",
@@ -468,6 +496,20 @@
    "earlier_name": "m365g verify",
    "kind": "command",
    "service": "governance"
+  },
+  {
+   "command": "m365g login",
+   "earlier_name": "m365g login",
+   "kind": "command",
+   "service": "session",
+   "describes": "sign in and keep the session for later commands. The only command that keeps one"
+  },
+  {
+   "command": "m365g logout",
+   "earlier_name": "m365g logout",
+   "kind": "command",
+   "service": "session",
+   "describes": "remove a stored session and its record"
   },
   {
    "command": "m365g migration read",
@@ -1047,6 +1089,13 @@
     "m365g spo tenant sharing get --output csv",
     "m365g spo tenant sharing get --evidence-out ./evidence"
    ]
+  },
+  {
+   "command": "m365g status",
+   "earlier_name": "m365g status",
+   "kind": "command",
+   "service": "session",
+   "describes": "which connection later commands will use. Reaches no tenant"
   }
  ]
 }

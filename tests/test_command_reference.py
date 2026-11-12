@@ -21,7 +21,21 @@ def test_every_grouped_path_has_an_entry_and_nothing_else_does():
                 }
             else:
                 expected.add(f"m365g {group.name} {' '.join(path)}")
-    assert built == expected
+    # Every grouped path is listed, and so is every command the parser has
+    # that no group leads to: a reference without `login` describes a command
+    # line nobody could start using.
+    assert expected <= built
+    for needed in (
+        "m365g login",
+        "m365g status",
+        "m365g logout",
+        "m365g connection list",
+        "m365g connection use",
+        "m365g connection remove",
+    ):
+        assert needed in built, needed
+    rest = built - expected
+    assert all(name.count(" ") <= 2 for name in rest), rest
 
 
 def test_a_collection_entry_says_what_the_collector_says():
@@ -56,3 +70,22 @@ def test_the_written_reference_is_current():
     assert done.returncode == 0, done.stdout
     written = json.loads((ROOT / "docs" / "COMMAND-REFERENCE.json").read_text())
     assert written == reference.build()
+
+
+def test_no_command_the_parser_has_is_missing_from_the_reference():
+    import argparse
+
+    from m365_governance import cli
+
+    parser = cli._build_parser()
+    top = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
+    entries = reference.build()["commands"]
+    listed = {e["command"] for e in entries} | {e["earlier_name"] for e in entries}
+    groups = {group.name for group in grouping.GROUPS}
+    for name in top.choices:
+        if name in groups:
+            continue
+        assert any(
+            known == f"m365g {name}" or known.startswith(f"m365g {name} ")
+            for known in listed
+        ), f"`{name}` is implemented and not in the reference"

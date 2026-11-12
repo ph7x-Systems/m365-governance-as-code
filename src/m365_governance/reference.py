@@ -54,6 +54,69 @@ def _collection(group: str, path: tuple[str, ...], name: str, by_name: dict) -> 
     }
 
 
+def _ungrouped(covered: set[str]) -> list[dict]:
+    """Every command the parser has that no group leads to.
+
+    Read from the parser itself, so a command cannot exist without being
+    listed: `login`, `status`, `logout` and the `connection` commands are how
+    a person signs in, and a reference that left them out described a command
+    line nobody could start using.
+    """
+    import argparse
+
+    from . import cli
+
+    parser = cli._build_parser()
+    top = next(
+        action
+        for action in parser._actions
+        if isinstance(action, argparse._SubParsersAction)
+    )
+    says = {choice.dest: choice.help or "" for choice in top._choices_actions}
+    groups = {group.name for group in grouping.GROUPS}
+    found = []
+    for name, command in top.choices.items():
+        if name in groups:
+            continue
+        nested = next(
+            (
+                action
+                for action in command._actions
+                if isinstance(action, argparse._SubParsersAction)
+            ),
+            None,
+        )
+        names = (
+            [
+                (f"{name} {inner}", choice.help or "")
+                for inner, choice in zip(
+                    nested.choices, nested._choices_actions, strict=True
+                )
+            ]
+            if nested
+            else [(name, says.get(name, ""))]
+        )
+        for full, describes in names:
+            if f"{COMMAND} {full}" in covered or any(
+                earlier.startswith(f"{COMMAND} {full} ") for earlier in covered
+            ):
+                continue
+            found.append(
+                {
+                    "command": f"{COMMAND} {full}",
+                    "earlier_name": f"{COMMAND} {full}",
+                    "kind": "command",
+                    "service": "session" if name in SESSION else "engine",
+                    "describes": describes,
+                }
+            )
+    return found
+
+
+#: The commands a person signs in and out with.
+SESSION = ("login", "status", "logout", "connection", "connect")
+
+
 def build() -> dict:
     """The reference, in a stable order."""
     by_name = {c["name"]: c for c in capabilities.manifest(None)["capabilities"]}
@@ -101,6 +164,7 @@ def build() -> dict:
                         "service": group.name,
                     }
                 )
+    commands += _ungrouped({entry["earlier_name"] for entry in commands})
     commands.sort(key=lambda entry: entry["command"])
     return {
         "$schema": SCHEMA,
