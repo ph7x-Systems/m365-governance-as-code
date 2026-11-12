@@ -172,6 +172,13 @@ ships in a release of its own.
 
 ### Fixed
 
+- **The Exchange forwarding collector could not write evidence.** It built its
+  envelope without declaring who was collecting, and the envelope refuses to
+  exist without a provenance, so the first run against a directory signed in,
+  read and ended with nothing. It declares it now and closes its session when
+  it is done. `EXO-FORWARD-001` and `EXO-FORWARD-002` were then run against a
+  tenant for the first time, on 2026-11-12, and both decided.
+
 - **SharePoint's own refusal was recorded as an absence.** `Access is denied`
   (E_ACCESSDENIED) did not match the pattern for a denial and was written as
   `missing`. It is `permission-denied`. Found on the first tenant-wide read of

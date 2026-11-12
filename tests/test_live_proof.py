@@ -32,13 +32,14 @@ def registry():
 # ---------------------------------------------------------------------------
 
 
-def test_a_collector_without_a_record_is_none(monkeypatch):
+def test_a_collector_without_a_record_is_none(forwarding_never_ran):
     """The absence of a record is the answer, not a gap to be filled in later.
 
     `customization` was the live case and it is why this registry exists: the
     collector's own source said a defect was found by provoking the state in a
     directory, and no record of that run survived. It stayed `none` until a run
-    on 2026-11-11 left a record. `forwarding` is the case now: a collection
+    on 2026-11-11 left a record, and `forwarding` on 2026-11-12. The property
+    is held with its records withdrawn: a collection
     was attempted and failed, and a failure is not an acquisition.
     """
     assert live_proof.established_state("forwarding") == "none"
@@ -233,7 +234,7 @@ def test_a_run_leaves_a_record_that_carries_no_tenant():
     assert draft["provenance"] == live_proof.EMITTED
 
 
-def test_a_run_does_not_write_its_own_verdict():
+def test_a_run_does_not_write_its_own_verdict(forwarding_never_ran):
     """A successful call is not a proved interpretation, and it may not say so.
 
     `establishes` is left empty on purpose. A run proves an acquisition; it
@@ -379,7 +380,8 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # collection FAILED, and a failure is not an acquisition. `customization`
     # and `spfx` left on 2026-11-11 by running: one kept delegated session
     # collected both from a real tenant and their rules consumed the evidence.
-    assert grouped["not-live-tested"] == ["forwarding"]
+    # `forwarding` left on 2026-11-12 by running, and nothing is left here.
+    assert grouped["not-live-tested"] == []
     assert grouped["acquisition-attempted"] == []
 
 

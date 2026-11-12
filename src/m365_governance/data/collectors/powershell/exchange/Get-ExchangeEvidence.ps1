@@ -79,6 +79,20 @@ $Modules = Join-Path $PSScriptRoot 'modules'
 Import-Module (Join-Path (Split-Path $PSScriptRoot -Parent) 'sharepoint/modules/Evidence.psm1') -Force
 Import-Module (Join-Path $Modules 'Forwarding.psm1') -Force
 
+# WHO IS COLLECTING, SAID BEFORE ANY ENVELOPE IS BUILT. This script built its
+# envelopes without ever saying so, and the envelope refuses to exist without
+# a provenance: the first run against a directory signed in, read, and ended
+# on `Initialize-Evidence was not called`. No fixture could show it, because
+# the fixtures are written by hand and carry a provenance already.
+$identityKind = if ($CertificatePath) { 'application' } else { 'delegated' }
+$identityMethod = if ($CertificatePath) { 'certificate' } elseif ($DeviceLogin) { 'device-code' } else { 'interactive' }
+if (-not $TenantHost) {
+    throw 'Get-ExchangeEvidence needs -TenantHost: evidence that does not say which organisation it is about is not evidence.'
+}
+Initialize-Evidence -CollectorName 'exo-collector' -CollectorVersion '0.1.0' `
+    -TenantHost $TenantHost -IdentityKind $identityKind `
+    -IdentityMethod $identityMethod -ClientId $ClientId
+
 # THE MODULE IS A FACT ABOUT THIS MACHINE, NOT ABOUT THE TENANT. Reported as
 # `not-supported` naming what is missing, so a caller can tell an absent
 # dependency from an organisation that has nothing to report.
@@ -117,9 +131,6 @@ if ($missing.Count -gt 0) {
 
 Import-Module ExchangeOnlineManagement -ErrorAction Stop
 
-$identityKind = if ($CertificatePath) { 'application' } else { 'delegated' }
-$identityMethod = if ($CertificatePath) { 'certificate' } elseif ($DeviceLogin) { 'device-code' } else { 'interactive' }
-
 if ($CertificatePath) {
     $password = if ($CertificatePasswordEnv) {
         ConvertTo-SecureString ([Environment]::GetEnvironmentVariable($CertificatePasswordEnv)) -AsPlainText -Force
@@ -137,22 +148,31 @@ else {
     Connect-ExchangeOnline -ShowBanner:$false
 }
 
-if ($Mode -eq 'Connect') {
-    # The address and the identity, and nothing about the organisation. Same
-    # contract as every other collector's Connect: it proves a session opened.
-    Write-Output "connected: $TenantHost as $identityKind/$identityMethod"
-    return
-}
+# THE SESSION IS CLOSED WHATEVER HAPPENS BELOW. It belongs to this process and
+# to this read; nothing is kept for a later command.
+try {
+    if ($Mode -eq 'Connect') {
+        # The address and the identity, and nothing about the organisation.
+        # Same contract as every other collector's Connect: it proves a
+        # session opened.
+        Write-Output "connected: $TenantHost as $identityKind/$identityMethod"
+        return
+    }
 
-Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
-        -Resource ([ordered]@{
-            workload = 'exchange'; type = 'tenant'
-            native_id = $TenantHost
-            tenant = [ordered]@{ id = $null; host = $TenantHost; how = 'requested' }
-            scope = 'tenant'; parent = $null
-            display_name = $TenantHost; url = 'https://admin.exchange.microsoft.com'
-        }) `
-        -Facts (Get-ForwardingFact) `
-        -Requested @('forwarding') -Completed @('forwarding') `
-        -Unavailable ([ordered]@{}) `
-        -SourceApi 'ExchangeOnlineManagement')
+    Write-Evidence -Path $OutputPath -Evidence (New-Evidence `
+            -Resource ([ordered]@{
+                workload = 'exchange'; type = 'tenant'
+                native_id = $TenantHost
+                tenant = [ordered]@{ id = $null; host = $TenantHost; how = 'requested' }
+                scope = 'tenant'; parent = $null
+                display_name = $TenantHost; url = 'https://admin.exchange.microsoft.com'
+            }) `
+            -Facts (Get-ForwardingFact) `
+            -Requested @('forwarding') -Completed @('forwarding') `
+            -Unavailable ([ordered]@{}) `
+            -SourceApi 'ExchangeOnlineManagement')
+}
+finally {
+    try { Disconnect-ExchangeOnline -Confirm:$false -ErrorAction SilentlyContinue | Out-Null }
+    catch { Write-Verbose 'no Exchange session to close' }
+}

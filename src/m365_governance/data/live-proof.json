@@ -959,6 +959,49 @@
         "what any service principal was granted was not read: that needs a scope that has not been decided",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "exchange-online-powershell",
+      "identity_kind": "delegated: one administrator, signing in interactively for this read; the session is not kept",
+      "engine_version": "1.0.0b9 development tree, with the collector correction this run required",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "forwarding",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 1,
+        "outbound_policies": 1,
+        "remote_domains": 1,
+        "areas_read": 2,
+        "areas_named_and_not_read": 1,
+        "rules_concluded": 2,
+        "outcomes": {
+          "pass": 0,
+          "fail": 2,
+          "unknown": 0
+        }
+      },
+      "coverage": "the outbound spam filter policies and the remote domains; mail flow rules are named by the collector as a route it does not read",
+      "result": "The first read of an organisation's automatic forwarding controls, and it took two runs. The first signed in, read, and ended without evidence: the collector built its envelope without ever declaring who was collecting, which no hand-written fixture could show. With that corrected the second run wrote one document with every fact it reads observed. Both forwarding rules then decided from observed facts, and both took the branch that reports a finding.",
+      "limitations": [
+        "mail flow rules, the third route by which mail leaves automatically, are not read: a tenant can forward through one while both of these controls say otherwise",
+        "the branch that passes has not run against a directory: it is proved by fixtures only",
+        "one policy and one remote domain: it proves the path and not the range, and an organisation with several of either has not been read",
+        "the rules were evaluated over the collected document; the whole run to a bundle was not made, so the bundle and consumer stages are unattempted",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

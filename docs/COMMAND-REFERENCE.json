@@ -390,7 +390,7 @@
     "EXO-FORWARD-002"
    ],
    "consumed_by": "governance rules",
-   "live_validation_state": "none",
+   "live_validation_state": "full",
    "examples": [
     "m365g exo forwarding get --tenant-url <address>",
     "m365g exo forwarding get --output csv",

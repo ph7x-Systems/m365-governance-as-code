@@ -108,6 +108,26 @@ def _no_test_reads_this_machines_connections(monkeypatch, tmp_path_factory):
     monkeypatch.setenv("M365G_HOME", str(tmp_path_factory.mktemp("m365g-home")))
 
 
+@pytest.fixture
+def forwarding_never_ran(monkeypatch):
+    """The proof registry with the forwarding records withdrawn.
+
+    EVERY COLLECTOR HAS READ A DIRECTORY NOW, so no collector is left to stand
+    for one that has not. The properties that were held against such a
+    collector are held against this instead: take a collector's records away
+    and it is `none` again, which is the same statement and the stronger
+    proof, because it shows the state is derived and not remembered.
+    """
+    from m365_governance import live_proof
+
+    kept = live_proof._registry()["records"]
+    monkeypatch.setitem(
+        live_proof._registry(),
+        "records",
+        [r for r in kept if r.get("collector") != "forwarding"],
+    )
+
+
 @pytest.fixture(autouse=True)
 def _no_test_signs_in_for_a_graph_token(monkeypatch):
     """Refuse to start the real sign-in that mints a Microsoft Graph token.

@@ -16,7 +16,7 @@ is derived from the capability manifest and the candidate half from
 | Microsoft Entra ID | `guests` | v1.0 | User.Read.All | `tenant` | 0 | full |
 | Microsoft Entra ID | `service-principals` | v1.0 | Application.Read.All | `tenant` | 0 | full |
 | Microsoft Entra ID | `tenant-governance` | v1.0 | Policy.Read.All, RoleManagement.Read.Directory, Policy.Read.AuthenticationMethod | `authorization-policy` | 13 | full |
-| Exchange Online | `forwarding` | powershell | Exchange.ManageAsApp | `tenant` | 2 | none |
+| Exchange Online | `forwarding` | powershell | Exchange.ManageAsApp | `tenant` | 2 | full |
 | Microsoft 365 | `licensing` | powershell + v1.0 | Organization.Read.All, User.Read.All, Reports.Read.All, ReportSettings.Read.All | `tenant` | 0 | partial |
 | SharePoint Online | `activity` | powershell | not-established | `site` | 1 | full |
 | SharePoint Online | `agents` | powershell | Sites.Read.All | `site` | 0 | full |
@@ -91,7 +91,7 @@ Second surface: none named (`not-yet-established`).
 
 Second surface: roleManagement/directory/roleEligibilityScheduleInstances, for the assignments Privileged Identity Management holds as eligible rather than active (`not-yet-established`).
 
-**`forwarding`** — Exchange Online, powershell, proof `not-live-tested`
+**`forwarding`** — Exchange Online, powershell, proof `positive-acquisition-observed`
 
 - `Get-HostedOutboundSpamFilterPolicy`
 - `Get-RemoteDomain`

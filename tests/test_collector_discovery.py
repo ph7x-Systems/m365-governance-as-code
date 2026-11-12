@@ -20,7 +20,9 @@ def test_every_collector_is_listed_with_a_command_that_runs_it(capsys):
     assert all(c["permissions"] for c in listed.values())
 
 
-def test_tenant_verified_is_what_the_registry_holds_and_nothing_typed(capsys):
+def test_tenant_verified_is_what_the_registry_holds_and_nothing_typed(
+    capsys, forwarding_never_ran
+):
     """THE COUNTER-CHECK. A collector is verified exactly when the proof
     registry derives a positive state for it; no list here says so."""
     listed = _listed(capsys)
@@ -41,7 +43,7 @@ def test_removing_the_proof_removes_the_claim_from_the_listing(capsys, monkeypat
     assert _listed(capsys)["hubs"]["tenant_verified"] is False
 
 
-def test_describe_says_what_the_proof_did_not_cover(capsys):
+def test_describe_says_what_the_proof_did_not_cover(capsys, forwarding_never_ran):
     assert main(["collector", "describe", "groups"]) == 0
     text = capsys.readouterr().out
     assert "GroupMember.Read.All" in text and "m365g entra group list" in text
@@ -61,7 +63,7 @@ def test_the_text_listing_counts_the_two_states_apart_and_adds_nothing(capsys):
 
 
 def test_the_contract_test_names_its_fixtures_and_keeps_the_tenant_line_apart(
-    capsys,
+    capsys, forwarding_never_ran
 ):
     """A pass here is about the shape of the evidence. It must never read as a
     directory having answered."""

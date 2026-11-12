@@ -151,7 +151,7 @@ def test_the_versions_come_from_the_engine_and_the_bundle():
     assert MANIFEST["contract_version"] == collecting._contract_version()
 
 
-def test_nothing_planned_appears_and_nothing_shipped_is_hidden():
+def test_nothing_planned_appears_and_nothing_shipped_is_hidden(forwarding_never_ran):
     """The manifest describes what is, and a gap says so out loud.
 
     The conditional-access slice was the live case for years: its provider had
@@ -177,7 +177,11 @@ def test_nothing_planned_appears_and_nothing_shipped_is_hidden():
     # that has since been proved is not a control, and `customization` stopped
     # being one the same way on 2026-11-11. `forwarding` is one: its collection
     # was attempted and failed, and a failure is not an acquisition.
-    never_run = next(c for c in MANIFEST["capabilities"] if c["name"] == "forwarding")
+    # Every collector has a record now, so the control is one with its
+    # records withdrawn, in a manifest built after they were.
+    never_run = next(
+        c for c in capabilities.manifest()["capabilities"] if c["name"] == "forwarding"
+    )
     assert "not live-validated" in never_run["collector"]["live_validation"]
 
 

@@ -51,7 +51,7 @@ to exercise.
 | `hubs` | ✓ | 2 hubs, every fact observed, 2026-11-11 | — | n.a. | **none**, by decision | **live-validated** |
 | `brand-center` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
 | `tenant-governance` | ✓ | not observed | not observed | n.a. | `ENTRA-ROLE-001/002/003`, `ENTRA-AUTH-001/002/003/004` | **not live-validated** |
-| `forwarding` | ✓ | not observed | not observed | n.a. | `EXO-FORWARD-001`, `EXO-FORWARD-002` | **not live-validated** |
+| `forwarding` | ✓ | 1 outbound policy and 1 remote domain, every fact it reads observed, 2026-11-12; both rules decided | not observed | n.a. | `EXO-FORWARD-001`, `EXO-FORWARD-002` | **live-validated** |
 | `licensing` | ✓ | assignment, report identifiability and one usage report, 2026-08-22 — the report returned rows and named nobody | Graph modules absent → `not-supported` naming them; a concealed report is a positive read, not a refusal | one reporting window | **none**, by decision | **partially live-validated** |
 
 ### The row that was under investigation was settled by running it

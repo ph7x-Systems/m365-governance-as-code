@@ -122,19 +122,27 @@ def test_there_is_no_exception_list(table):
     assert all("awaiting_tenant" not in r for r in table["detail"])
 
 
-def test_a_rule_that_never_met_a_tenant_does_not_pass(table):
+def test_a_rule_that_never_met_a_tenant_does_not_pass(forwarding_never_ran):
     """The standing rule, enforced rather than reported.
 
-    This test is EXPECTED TO NAME RULES until the live verticals are run. It is
-    the register, and it lives here rather than in a list the gate consults:
-    the difference is that this one cannot be edited to make the build green.
+    This test named the rules still waiting for a tenant until none was: the
+    last two ran on 2026-11-12. The rule is held the way it can still be
+    shown to bite. Withdraw the record a rule's collector stands on and the
+    rule is waiting again, the gate names it, and nothing passes it.
     """
+    table = readiness.build()
     unproven = readiness.unproven(table)
-    assert unproven, (
-        "no rule is waiting for a tenant, so either every vertical has been "
-        "run or this test stopped measuring"
-    )
+    assert sorted(rule["id"] for rule in unproven) == [
+        "EXO-FORWARD-001",
+        "EXO-FORWARD-002",
+    ]
     assert table["tenant_proven"] + len(unproven) == table["rules"]
+
+
+def test_every_rule_has_been_run_against_a_tenant(table):
+    """And with the registry as it stands, none is waiting."""
+    assert readiness.unproven(table) == []
+    assert table["tenant_proven"] == table["rules"]
 
 
 def test_a_rule_that_never_met_a_refusal_is_refused(manifest):

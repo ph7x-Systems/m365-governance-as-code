@@ -59,7 +59,6 @@ fully exercised.
 
 | Collector | Live state | What is still unproved |
 |---|---|---|
-| `forwarding` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
 | `spfx` | `partial` | the areas that never ran. Some of this slice's areas were observed and others have not been |
 
 **This queue takes precedence over opening a capability.** Not because
