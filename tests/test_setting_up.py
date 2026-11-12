@@ -238,12 +238,12 @@ def test_the_latest_powershell_is_read_from_the_release_tag(monkeypatch):
 
 
 def test_a_person_is_asked_and_the_default_holds(monkeypatch):
-    replies = iter(["", "n", "joaolivio"])
+    replies = iter(["", "n", "contoso"])
     monkeypatch.setattr("builtins.input", lambda prompt="": next(replies))
     asker = setting_up.Asker(interactive=True)
     assert asker.agree("Install?") is True
     assert asker.agree("Register?") is False
-    assert asker.ask("Address? ") == "joaolivio"
+    assert asker.ask("Address? ") == "contoso"
     assert setting_up.interactive() is False
 
 
