@@ -956,3 +956,77 @@ def test_group_owners_that_were_refused_expand_nothing():
     row = _row(scenarios.ownership(documents), "s")
     assert row["administrators_at_least"] == ""
     assert row["standing"] == "not-established"
+
+
+# --- which guests a site has met ---------------------------------------------------
+
+
+def _met(name, ids=(), *, without=0, state="observed"):
+    document = _site(name, None)
+    if state == "observed":
+        facts = {
+            "guests": {"state": "observed", "value": len(ids) + without},
+            "guest_object_ids": {"state": "observed", "value": list(ids)},
+        }
+    else:
+        facts = {"guests": {"state": state, "detail": "refused"}}
+    document["facts"] = {"site_guests": facts}
+    return document
+
+
+def _gid(number):
+    return f"00000000-0000-4000-8000-{number:012d}"
+
+
+def test_a_site_and_a_guest_are_joined_on_the_object_id_and_called_met():
+    inspection = scenarios.external_access(
+        [
+            _site("a", "ExternalUserSharingOnly"),
+            _met("a", [_gid(1).upper(), _gid(9)], without=1),
+            _site("b", "ExternalUserSharingOnly"),
+            _met("b", [_gid(1)]),
+            _guest_tenant(2),
+            _guest(1),
+            _guest(2),
+        ]
+    )
+    assert _row(inspection, "a")["guests_met"] == 3
+    assert _row(inspection, "b")["guests_met"] == 1
+    assert inspection["guests"]["met_by_sites"] == {
+        "distinct_guest_accounts": 2,
+        "also_listed_as_guests": 1,
+        "not_listed_as_guests": 1,
+        "listed_and_met_by_no_site": 1,
+    }
+    said = " ".join(inspection["not_established"])
+    assert "removed from the directory" in said and "type is not Guest" in said
+    assert "can open which site today" in said
+    assert any("HAS MET" in relation for relation in inspection["relations"])
+    assert "is not that account having access" in scenarios.as_text(inspection)
+
+
+def test_a_site_that_refused_its_list_is_not_a_site_that_met_nobody():
+    """THE COUNTER-CHECK. A refused list and an empty list would both show no
+    guest; only one of them was observed."""
+    inspection = scenarios.external_access(
+        [
+            _site("refused", "ExternalUserSharingOnly"),
+            _met("refused", state="permission-denied"),
+            _site("empty", "ExternalUserSharingOnly"),
+            _met("empty"),
+            _site("unread", "ExternalUserSharingOnly"),
+        ]
+    )
+    assert _row(inspection, "refused")["guests_met"] == "[permission-denied]"
+    assert _row(inspection, "empty")["guests_met"] == 0
+    assert _row(inspection, "unread")["guests_met"] == "[not-collected]"
+
+
+def test_without_the_directory_the_two_sides_are_not_compared():
+    inspection = scenarios.external_access(
+        [_site("a", "Disabled"), _met("a", [_gid(1)])]
+    )
+    met = inspection["guests"]["met_by_sites"]
+    assert met["distinct_guest_accounts"] == 1
+    assert met["also_listed_as_guests"] is None
+    assert met["not_listed_as_guests"] is None

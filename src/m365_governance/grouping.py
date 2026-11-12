@@ -39,6 +39,7 @@ GROUPS: tuple[Group, ...] = (
             ("site", "list"): _collect("sites"),
             ("hub", "list"): _collect("hubs"),
             ("site", "admins"): _collect("sites-owners"),
+            ("site", "guests"): _collect("sites-guests"),
             ("owner", "list"): _collect("owners"),
             ("sharing", "get"): _collect("sharing"),
             ("sharing", "list"): _collect("sites-sharing"),

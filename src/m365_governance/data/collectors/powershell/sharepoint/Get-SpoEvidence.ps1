@@ -40,6 +40,7 @@
       HubSites           the sites registered as hubs, and how each is set
       SiteSharingAll     what every enumerated site permits, read site by site
       SiteOwnersAll      who administers every enumerated site, read site by site
+      SiteGuestsAll      which guest accounts each enumerated site has met
       Modernity          how one site is built: template, branding, publishing
                          features, and how many of its pages are modern
       SpfxCatalog        what is in an app catalog. Cheap: one call
@@ -169,7 +170,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites', 'SiteSharingAll', 'SiteOwnersAll')]
+    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites', 'SiteSharingAll', 'SiteOwnersAll', 'SiteGuestsAll')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -242,7 +243,7 @@ $CollectorName = 'spo-collector'
 
 $Modules = Join-Path $PSScriptRoot 'modules'
 foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions',
-        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents', 'BrandCenter', 'Hubs')) {
+        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents', 'BrandCenter', 'Hubs', 'SiteGuests')) {
     Import-Module (Join-Path $Modules "$module.psm1") -Force
 }
 
@@ -648,6 +649,59 @@ switch ($Mode) {
                     -Unavailable ([ordered]@{ enumeration = $note }) `
                     -SourceApi 'PnP.PowerShell / SharePoint Admin')
         }
+    }
+
+    'SiteGuestsAll' {
+        # THE SAME SHAPE AS SiteOwnersAll, AND FOR THE SAME REASON: only the
+        # site holds its own list of users. Each site is opened as the
+        # identity already signed in, no site is dropped, and a site that
+        # will not open or will not answer gets a document saying so. A list
+        # that came back with no guest in it is an observed zero; a list that
+        # did not come back is not.
+        $sites = @(Get-PnPTenantSite)
+        Write-Host "$($sites.Count) sites enumerated by this identity"
+        $note = New-Unavailable -State 'partial' -Detail (
+            "Enumerated $($sites.Count) sites with $(if ($identityKind -eq 'application') { 'an application' } else { 'a delegated' }) identity. Sites " +
+            'this identity cannot see are absent from this run, and their ' +
+            'number is not knowable from here.')
+        $read = 0
+        foreach ($listed in $sites) {
+            $url = [string] $listed.Url
+            $resource = [ordered]@{
+                workload = 'sharepoint'; type = 'site'
+                native_id = $url
+                tenant = (New-TenantIdentity)
+                scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                display_name = [string] $listed.Title
+                url = $url
+            }
+            try {
+                Connect-CollectorSite -Url $url
+                $result = Get-SiteGuestFacts
+            }
+            catch {
+                $state = Resolve-FailureState $_
+                $result = @{
+                    facts       = @{ site_guests = [ordered]@{
+                            guests = New-AbsentFact -State $state -Detail $_.Exception.Message
+                        }
+                    }
+                    unavailable = New-Unavailable -State $state -Detail $_.Exception.Message
+                }
+            }
+            $unavailable = [ordered]@{ enumeration = $note }
+            $completed = @('site_guests')
+            if ($null -ne $result.unavailable) {
+                $unavailable['site_guests'] = $result.unavailable
+                $completed = @()
+            }
+            else { $read++ }
+            Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                    -Resource $resource `
+                    -Facts $result.facts -Requested @('site_guests', 'enumeration') `
+                    -Completed $completed -Unavailable $unavailable)
+        }
+        Write-Host "$read of $($sites.Count) sites returned their list of users"
     }
 
     'SiteOwnersAll' {

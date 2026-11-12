@@ -881,6 +881,45 @@
         "whether a named site administrator is also one of the group's owners was not read: no identity is kept, which is why the inspection reports a range",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused for every site opened",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "sites-guests",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 53,
+        "enumeration": "partial",
+        "sites_that_returned_their_users": 31,
+        "sites_that_refused": 22,
+        "sites_that_have_met_a_guest": 4,
+        "distinct_directory_identifiers_met": 3,
+        "guest_entries_with_no_directory_account": 3
+      },
+      "coverage": "every site the identity enumerated, each opened by its own address; the sites that refused are documents that say so",
+      "result": "The first tenant-wide read of which guests each site has met. THE REFUSAL BRANCH RAN AGAINST A DIRECTORY, and it exposed a defect: SharePoint's own `Access is denied` was being recorded as an absence and is a denial. No login name, display name or mail address is in what was written. COMPARED WITH THE DIRECTORY'S GUESTS READ IN THE SAME SESSION, on the object identifier both carry: none of the accounts the sites have met is listed by the directory as a guest, and the guest the directory lists was met by no site. The inspection reports that as it is and does not decide whether those accounts were removed or are external accounts of another type.",
+      "limitations": [
+        "the two sides of the comparison did not overlap in this directory, so a guest both listed and met has not been observed against a directory: that branch is proved by a test only",
+        "what an account is that a site has met and the directory does not list as a guest was not read",
+        "the sites that refused were recorded under the earlier classification in that run; the corrected one is proved by a test over the same messages",
+        "being in a site's list of users is not having access, and nothing here reads access",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

@@ -847,6 +847,31 @@ SLICES = {
             permissions=(),
         ),
         Slice(
+            "sites-guests",
+            "SiteGuestsAll",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. This is the relation the external
+            # access inspection could not make: which guest account a site has
+            # met, by the directory's own identifier. No rule reads it,
+            # because a guest in a site's list is not a guest with access.
+            consumed_by=(
+                "the list of guests per site an operator enumerates, and the "
+                "external access inspection"
+            ),
+            describes=(
+                "which guest accounts each enumerated site has met, by object "
+                "id and never by name"
+            ),
+            shaped_like="site-guests-two-met",
+            also_shaped_like=("site-guests-list-refused",),
+            writes_many=True,
+            reads=("Get-PnPTenantSite", "Get-PnPUser"),
+            permissions=(),
+        ),
+        Slice(
             "hubs",
             "HubSites",
             needs_site=False,

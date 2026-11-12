@@ -422,7 +422,8 @@
    "reads_collections": [
     "sites-sharing",
     "tenant-sharing",
-    "guests"
+    "guests",
+    "sites-guests"
    ],
    "reaches_a_tenant": false,
    "needs": [
@@ -985,6 +986,39 @@
     "m365g spo site admins --tenant-url <address>",
     "m365g spo site admins --output csv",
     "m365g spo site admins --evidence-out ./evidence"
+   ]
+  },
+  {
+   "command": "m365g spo site guests",
+   "earlier_name": "m365g collect sites-guests",
+   "kind": "enumeration",
+   "service": "spo",
+   "describes": "which guest accounts each enumerated site has met, by object id and never by name",
+   "collection": "sites-guests",
+   "reads": [
+    "Get-PnPTenantSite",
+    "Get-PnPUser"
+   ],
+   "permissions": [
+    "not-established"
+   ],
+   "needs": [
+    "--tenant-url"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
+   "feeds_rules": [],
+   "consumed_by": "the list of guests per site an operator enumerates, and the external access inspection",
+   "live_validation_state": "full",
+   "examples": [
+    "m365g spo site guests --tenant-url <address>",
+    "m365g spo site guests --output csv",
+    "m365g spo site guests --evidence-out ./evidence"
    ]
   },
   {

@@ -58,6 +58,7 @@ def test_a_scenario_entry_says_it_reaches_no_tenant():
         "sites-sharing",
         "tenant-sharing",
         "guests",
+        "sites-guests",
     ]
 
 

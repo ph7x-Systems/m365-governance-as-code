@@ -102,6 +102,7 @@ does, and takes the same `--output`.
 | `m365g spo site list` | `m365g collect sites` |
 | `m365g spo hub list` | `m365g collect hubs` |
 | `m365g spo site admins` | `m365g collect sites-owners` |
+| `m365g spo site guests` | `m365g collect sites-guests` |
 | `m365g spo owner list` | `m365g collect owners` |
 | `m365g spo sharing get` | `m365g collect sharing` |
 | `m365g spo sharing list` | `m365g collect sites-sharing` |

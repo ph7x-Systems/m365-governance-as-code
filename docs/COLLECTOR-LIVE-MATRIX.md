@@ -46,6 +46,7 @@ to exercise.
 | `groups` | ✓ | 23 groups, owners and members read for each, 2026-11-12 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
 | `guests` | ✓ | 1 guest account, 2026-11-11 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
 | `sites-owners` | ✓ | `partial` enumeration, 53 docs: 30 answered, 17 answered nothing, 2026-11-11 | 6 sites refused to open, each a document | none at 53 sites | `SPO-SITE-001/002` | **live-validated** |
+| `sites-guests` | ✓ | `partial` enumeration, 53 docs: 31 returned their list of users, 2026-11-12 | 22 sites refused, each a document | none at 53 sites | **none**, by decision | **live-validated** |
 | `hubs` | ✓ | 2 hubs, every fact observed, 2026-11-11 | — | n.a. | **none**, by decision | **live-validated** |
 | `brand-center` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
 | `tenant-governance` | ✓ | not observed | not observed | n.a. | `ENTRA-ROLE-001/002/003`, `ENTRA-AUTH-001/002/003/004` | **not live-validated** |

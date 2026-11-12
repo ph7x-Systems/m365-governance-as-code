@@ -16,6 +16,19 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g spo site guests`, and the `sites-guests` collection behind it.**
+  Which guest accounts each enumerated site has met, read from the site's own
+  list of users and kept as directory object identifiers only: no login name,
+  display name or mail address is written. A guest with no directory account
+  is counted apart. A site that refuses its list gets a document saying so.
+  Proved against a tenant on 2026-11-12.
+- **The external-access inspection joins guests to sites.** With that
+  collection in the evidence each site shows how many guests it has met, and
+  the inspection compares the accounts the sites have met with the guests the
+  directory lists, on the object identifier both carry. It calls the relation
+  met and never access, and says what an account met by a site and not listed
+  as a guest may be without deciding which.
+
 - **`m365g governance inspect-diff BEFORE AFTER`: what changed between two
   inspections.** Rows that entered the evidence, rows that left it and rows
   whose values differ, column by column. Only the same scenario with the same
@@ -123,6 +136,11 @@ ships in a release of its own.
   counter-checked against the site enumeration of the same session.
 
 ### Fixed
+
+- **SharePoint's own refusal was recorded as an absence.** `Access is denied`
+  (E_ACCESSDENIED) did not match the pattern for a denial and was written as
+  `missing`. It is `permission-denied`. Found on the first tenant-wide read of
+  site users, where sixteen sites answered that way.
 
 - **A token inside a sentence was not removed from a failure message.** Only
   a token alone on its line was. Both are now.

@@ -625,6 +625,18 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-guests-list-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one enumerated site whose list of users was refused, constructed so a refusal is not a site that met no guest",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-guests-two-met.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one site whose list of users holds two directory guests and one guest with no directory account",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-hub-association-restricted.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; one hub whose association is restricted to two principals, constructed to exercise one path",

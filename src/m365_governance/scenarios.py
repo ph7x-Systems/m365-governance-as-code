@@ -283,6 +283,50 @@ def external_access(documents: list[dict]) -> dict:
 
     directory = _guests(documents)
 
+    # WHICH GUESTS EACH SITE HAS MET, by the directory's own identifier. A
+    # site's list of users is joined to the directory's guests on the object
+    # id both carry. Being in the list is not having access, and the join
+    # says which side of it each identifier was found on and nothing more.
+    met_reads, _ = _latest(
+        [
+            d
+            for d in sites
+            if isinstance((d.get("facts") or {}).get("site_guests"), dict)
+        ]
+    )
+    listed = {
+        str((d.get("resource") or {}).get("native_id") or "").lower()
+        for d in directory["_documents"]
+        if (d.get("resource") or {}).get("type") == "user"
+    }
+    met_by: dict[str, int] = {}
+    for row in rows:
+        read = met_reads.get(row["native_id"])
+        count = _fact(read or {}, "site_guests", "guests")
+        ids = _observed(_fact(read or {}, "site_guests", "guest_object_ids"))
+        if read is None:
+            row["guests_met"] = "[not-collected]"
+        elif _observed(count) is None:
+            row["guests_met"] = f"[{_why(count, 'missing')}]"
+        else:
+            row["guests_met"] = _observed(count)
+            for identifier in ids if isinstance(ids, list) else []:
+                key = str(identifier).lower()
+                met_by[key] = met_by.get(key, 0) + 1
+    if met_reads:
+        directory["met_by_sites"] = {
+            "distinct_guest_accounts": len(met_by),
+            "also_listed_as_guests": (
+                len(set(met_by) & listed) if directory["state"] == "observed" else None
+            ),
+            "not_listed_as_guests": (
+                len(set(met_by) - listed) if directory["state"] == "observed" else None
+            ),
+            "listed_and_met_by_no_site": (
+                len(listed - set(met_by)) if directory["state"] == "observed" else None
+            ),
+        }
+
     by_state: dict[str, int] = {}
     for row in rows:
         by_state[row["external_sharing"]] = by_state.get(row["external_sharing"], 0) + 1
@@ -302,6 +346,20 @@ def external_access(documents: list[dict]) -> dict:
         "sites the collecting identity could not enumerate: they are absent "
         "from the evidence and their number is not knowable from it",
     ]
+    if met_reads:
+        not_established[1] = (
+            "which person outside the organisation can open which site today: "
+            "a site's list of users says the site has met an account, an "
+            "entry stays after a permission is removed, and a guest reached "
+            "through a group may have access with no entry of their own"
+        )
+        not_established.insert(
+            2,
+            "what an account is that a site has met and the directory does not "
+            "list as a guest: it may have been removed from the directory, or "
+            "be an external account whose type is not Guest. Neither was read",
+        )
+        used += [met_reads[key] for key in sorted(met_reads)]
     if directory["state"] != "observed":
         not_established.insert(
             0,
@@ -323,9 +381,15 @@ def external_access(documents: list[dict]) -> dict:
         ),
         "relations": [
             "site -> organisation, on the tenant host both documents carry",
-            "guest -> site: NOT JOINED. A guest account existing and a site "
-            "permitting guests are two facts side by side; nothing read here "
-            "connects one to the other",
+            (
+                "guest -> site, on the directory object id a site's list of "
+                "users and the directory both carry: the site HAS MET the "
+                "account, which is not the account having access"
+                if met_reads
+                else "guest -> site: NOT JOINED. A guest account existing and "
+                "a site permitting guests are two facts side by side; nothing "
+                "read here connects one to the other"
+            ),
         ],
         "guests": directory,
         "rows": rows,
@@ -1066,7 +1130,7 @@ SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] 
     "external-access": (
         "which SharePoint sites permit sharing outside the organisation",
         external_access,
-        ("sites-sharing", "tenant-sharing", "guests"),
+        ("sites-sharing", "tenant-sharing", "guests", "sites-guests"),
     ),
     "app-exposure": (
         "which applications hold a credential that has ended or is about to",
@@ -1095,6 +1159,7 @@ COLUMNS = (
     "external_sharing",
     "new_guests",
     "anonymous_links",
+    "guests_met",
     "because",
 )
 
@@ -1163,6 +1228,7 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
         f"{row['organisation_capability']}",
         f"  external sharing {row['external_sharing']} · new guests "
         f"{row['new_guests']} · anonymous links {row['anonymous_links']}",
+        f"  guests met       {row.get('guests_met', '[not-collected]')}",
     ]
 
 
@@ -1215,6 +1281,24 @@ def as_text(inspection: dict) -> str:
             f"pending {directory['invitations_pending']}",
             "  These accounts exist. Which sites any of them can reach was not read.",
         ]
+    met = directory.get("met_by_sites")
+    if met:
+        lines += [
+            "",
+            "Guest accounts the sites have met, by directory object id:",
+            f"  distinct accounts {met['distinct_guest_accounts']}",
+        ]
+        if met["also_listed_as_guests"] is not None:
+            lines += [
+                f"  also listed as guests in the directory "
+                f"{met['also_listed_as_guests']} · not listed as guests "
+                f"{met['not_listed_as_guests']}",
+                f"  listed as guests and met by no site "
+                f"{met['listed_and_met_by_no_site']}",
+            ]
+        lines.append(
+            "  A site having met an account is not that account having access."
+        )
     lines += ["", "Not established by this inspection:"]
     lines += [f"  - {item}" for item in inspection["not_established"]]
     sources = inspection["sources"]
