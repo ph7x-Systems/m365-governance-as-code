@@ -208,7 +208,8 @@ def test_a_read_a_session_does_not_cover_says_so_in_its_help(capsys):
     cli.main(["spo", "site", "list", "--help"])
     assert "active connection" in capsys.readouterr().out
     cli.main(["entra", "ca", "list", "-h"])
-    assert "never prompts" in capsys.readouterr().out
+    shown = capsys.readouterr().out
+    assert "active connection" in shown and "certificate" in shown
 
 
 @pytest.mark.parametrize(

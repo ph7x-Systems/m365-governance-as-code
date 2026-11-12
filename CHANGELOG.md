@@ -16,6 +16,15 @@ ships in a release of its own.
 
 ### Added
 
+- **A Microsoft Graph read signs in as the person, through the registration
+  already in use.** With an application registration and no certificate,
+  `m365g entra guest list` and the other Graph reads ask for a delegated token
+  for the scopes their collector declares and no others; a session kept by
+  `login` answers without asking: proved against a tenant on 2026-11-12, where
+  one kept sign-in served both reads. Until now the engine had no delegated
+  path to Graph and a token had to be obtained outside it. A scope nobody consented
+  to is asked for at the sign-in and is the person's to grant there.
+
 - **`m365g governance inspect ca-coverage`, the fourth composed scenario.**
   Whom each Conditional Access policy names, whom it leaves out, which other
   conditions narrow it, and whether it is enforced, reporting only, or off,
@@ -91,6 +100,9 @@ ships in a release of its own.
   counter-checked against the site enumeration of the same session.
 
 ### Fixed
+
+- **A token inside a sentence was not removed from a failure message.** Only
+  a token alone on its line was. Both are now.
 
 - **The terminal view printed a family of facts as the names of its own keys**,
   `{raw, state, value}`, for every collection whose facts are grouped. It now

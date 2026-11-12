@@ -770,9 +770,9 @@
       ]
     },
     {
-      "observed_at": "2026-11-11",
+      "observed_at": "2026-11-12",
       "acquisition_method": "microsoft-graph",
-      "identity_kind": "delegated: one administrator, signing in interactively and consenting to the scope at that sign-in",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other",
       "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
       "contract_versions": {
         "evidence": "3.1.0"
@@ -795,19 +795,18 @@
         "pages": 1
       },
       "coverage": "the slice's own path: the tenant document and one document per guest account",
-      "result": "The first live read of guest accounts: the filter returned one account and nothing that was not a guest, every fact on it observed, and no name, mail address or user principal name in what was written. The composed external-access inspection then read it beside the site evidence of the same day and reported the account without joining it to any site.",
+      "result": "The first live read of guest accounts: the filter returned one account and nothing that was not a guest, every fact on it observed, and no name, mail address or user principal name in what was written. The composed external-access inspection then read it beside the site evidence of the same day and reported the account without joining it to any site. READ AGAIN ON 2026-11-12 THROUGH THE ENGINE'S OWN DELEGATED PATH: one sign-in kept by `login`, then this read with no further prompt and no token supplied from outside, returning the same population as the first read, whose token had been obtained outside the engine.",
       "limitations": [
         "a population of one: it proves the path and not the range, and neither a pending invitation nor a disabled account was observed",
         "one page: paging is proved against a stand-in only",
         "no refusal was met: the document a refused read writes is proved against a stand-in only",
-        "the token was obtained outside the engine, from the operator's own interactive session, and handed to the collection in memory: the engine has no delegated path to Microsoft Graph of its own yet",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
     },
     {
-      "observed_at": "2026-11-11",
+      "observed_at": "2026-11-12",
       "acquisition_method": "microsoft-graph",
-      "identity_kind": "delegated: one administrator, signing in interactively and consenting to the scope at that sign-in",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other",
       "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
       "contract_versions": {
         "evidence": "3.1.0"
@@ -836,12 +835,11 @@
         }
       },
       "coverage": "the slice's own path: the tenant document and one document per application registration",
-      "result": "The first live read of application registrations: every registration returned both credential lists, and no secret, hint, certificate or thumbprint is in what was written. The composed app-exposure inspection placed every credential relative to the collection time; the branch that reports a credential already ended ran against a directory.",
+      "result": "The first live read of application registrations: every registration returned both credential lists, and no secret, hint, certificate or thumbprint is in what was written. The composed app-exposure inspection placed every credential relative to the collection time; the branch that reports a credential already ended ran against a directory. READ AGAIN ON 2026-11-12 THROUGH THE ENGINE'S OWN DELEGATED PATH: one sign-in kept by `login`, then this read with no further prompt and no token supplied from outside, returning the same population as the first read, whose token had been obtained outside the engine.",
       "limitations": [
         "no credential ended inside the default window, so the `ending` branch has not run against a directory",
         "one page: paging is proved against a stand-in only",
         "no refusal was met, and no registration came back without a credential list",
-        "the token was obtained outside the engine, from the operator's own interactive session, and handed to the collection in memory: the engine has no delegated path to Microsoft Graph of its own yet",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
     }

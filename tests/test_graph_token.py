@@ -243,13 +243,22 @@ def test_a_graph_collect_with_a_certificate_never_asks_for_a_token(
     )
 
 
-def test_a_graph_collect_with_neither_says_both_ways_in(tmp_path, monkeypatch, capsys):
-    """A refusal that named only the environment variable left the caller
-    unaware that the application registration was the other answer."""
-    from m365_governance import cli
+def test_a_graph_collect_with_no_certificate_asks_as_the_person(
+    tmp_path, monkeypatch, capsys
+):
+    """With an application registration and no certificate, a Graph read signs
+    in as a person for the collector's own scopes. A refusal there is the
+    whole answer: nothing falls back to another identity."""
+    from m365_governance import cli, graph_token
 
     monkeypatch.delenv("M365_GOVERNANCE_GRAPH_TOKEN", raising=False)
+    asked = {}
 
+    def delegated(**named):
+        asked.update(named)
+        raise graph_token.Unavailable("the sign-in was not completed")
+
+    monkeypatch.setattr(graph_token, "acquire_delegated", delegated)
     code = cli.main(
         [
             "collect",
@@ -265,8 +274,10 @@ def test_a_graph_collect_with_neither_says_both_ways_in(tmp_path, monkeypatch, c
 
     refusal = capsys.readouterr().err
     assert code == 2
-    assert "M365_GOVERNANCE_GRAPH_TOKEN" in refusal
-    assert "--certificate-path" in refusal
+    assert "the sign-in was not completed" in refusal
+    assert asked["client_id"] == APPLICATION.client_id
+    assert "Policy.Read.All" in asked["scopes"]
+    assert not (tmp_path / "out").exists(), "something was written after a refusal"
 
 
 def test_a_token_already_held_is_spent_rather_than_a_directory_reached(

@@ -52,8 +52,10 @@ on the command line, then a project file, then the active connection.
 
 Every SharePoint collection signs in through PnP.PowerShell and reuses a
 persisted session; `m365g engine capabilities` lists them, and no count is
-kept here to go stale. `conditional-access`, `tenant-governance` and `guests`
-read Microsoft Graph with a token the operator supplies and never prompt. `licensing` signs in through the
+kept here to go stale. The Microsoft Graph reads (`conditional-access`, `tenant-governance`,
+`guests`, `applications`) sign in as the same person through the same
+registration, for the scopes their collector declares, unless a certificate
+or a token in the environment says otherwise. `licensing` signs in through the
 Microsoft Graph PowerShell SDK, whose own persisted context is shared with
 everything else the operator does with that SDK: the collector confines its
 sign-in to its own process, so it neither leaves that context behind nor uses

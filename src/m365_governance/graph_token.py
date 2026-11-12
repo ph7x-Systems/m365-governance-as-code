@@ -30,6 +30,7 @@ its caller spends immediately and nothing keeps.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -196,6 +197,95 @@ def acquire(
     return token
 
 
+#: The delegated script. The same rules as the one above: every input from
+#: the environment, the token and nothing else on standard output, no file.
+DELEGATED_SCRIPT = """
+$ClientId = $env:PH7X_GRAPH_CLIENT_ID
+$Url = $env:PH7X_GRAPH_URL
+$Scopes = @($env:PH7X_GRAPH_SCOPES -split ' ' | Where-Object { $_ })
+$ErrorActionPreference = 'Stop'
+Import-Module PnP.PowerShell -ErrorAction Stop
+if ($env:PH7X_GRAPH_DEVICE_LOGIN -eq '1') {
+    Connect-PnPOnline -Url $Url -DeviceLogin -ClientId $ClientId
+}
+else {
+    Connect-PnPOnline -Url $Url -Interactive -ClientId $ClientId
+}
+Get-PnPAccessToken -ResourceTypeName Graph -Scopes $Scopes
+"""
+
+
+def acquire_delegated(
+    *,
+    client_id: str,
+    tenant_url: str,
+    scopes: tuple[str, ...],
+    device_login: bool = False,
+    timeout: int = 300,
+    run: Runner | None = None,
+) -> str:
+    """One delegated Graph token, as the person who signs in, for these scopes.
+
+    THIS REACHES A DIRECTORY, exactly as `acquire` does, and as a person. It
+    signs in through the same library and the same application registration
+    the SharePoint collectors use, so a session kept by `login` answers
+    without asking and anybody else is asked to sign in.
+
+    ONLY THE SCOPES THE COLLECTOR DECLARES ARE ASKED FOR. They are the ones
+    recorded beside the collector, never a wider set kept for convenience. A
+    scope nobody has consented to makes the directory ask for consent at the
+    sign-in, and that is the person's decision to take there: this function
+    grants nothing and consents to nothing.
+
+    The token is returned to a caller that spends it at once. It is not
+    written, cached or placed in an argument.
+    """
+    if not client_id or not tenant_url:
+        raise Unavailable(
+            "a delegated Graph token needs the application registration and "
+            "the tenant address: --client-id and --tenant-url, a project "
+            "file, or a connection kept by `login`."
+        )
+    if not scopes or "not-established" in scopes:
+        raise Unavailable(
+            "this collector records no Microsoft Graph scope to ask for, and "
+            "a token is never requested for a scope nobody named."
+        )
+    environment = {
+        "PH7X_GRAPH_CLIENT_ID": client_id,
+        "PH7X_GRAPH_URL": tenant_url,
+        "PH7X_GRAPH_SCOPES": " ".join(scopes),
+        "PH7X_GRAPH_DEVICE_LOGIN": "1" if device_login else "",
+    }
+    argv = ["pwsh", "-NoProfile", "-Command", DELEGATED_SCRIPT]
+    runner = run if run is not None else _subprocess(timeout, environment)
+    try:
+        finished = runner(argv)
+    except FileNotFoundError as missing:
+        raise Unavailable("pwsh is not on this machine.") from missing
+    except subprocess.TimeoutExpired as slow:
+        raise Unavailable(
+            f"the sign-in did not finish within {timeout} seconds. Nobody "
+            "completed it in the browser, or the directory did not answer."
+        ) from slow
+
+    token = (finished.stdout.strip().splitlines()[-1:] or [""])[0].strip()
+    if finished.returncode != 0 or not token:
+        detail = (finished.stderr or finished.stdout or "").strip()
+        raise Unavailable(
+            "no delegated token was issued for "
+            + ", ".join(scopes)
+            + ". The sign-in was not completed, or consent to a scope was not "
+            "given.\n\n" + _redacted(detail)
+        )
+    if token.count(".") != 2:
+        raise Unavailable(
+            "PowerShell returned something that is not a bearer token. Nothing "
+            "was spent."
+        )
+    return token
+
+
 def _subprocess(timeout: int, environment: dict[str, str] | None = None) -> Runner:
     """The real runner. Kept behind the parameter so the default is testable
     by substitution rather than by monkey-patching a module attribute."""
@@ -213,6 +303,12 @@ def _subprocess(timeout: int, environment: dict[str, str] | None = None) -> Runn
     return run
 
 
+#: Three base64url segments, the first starting as every JSON header does.
+_TOKEN_SHAPED = re.compile(
+    r"eyJ[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}\.[A-Za-z0-9_-]{5,}"
+)
+
+
 def _redacted(detail: str) -> str:
     """A failure message with anything token-shaped removed.
 
@@ -220,10 +316,12 @@ def _redacted(detail: str) -> str:
     quoted the credential it failed with would publish it in the one place a
     person is most likely to copy.
     """
-    return "\n".join(
-        "<a value that looked like a token was removed from this message>"
-        if part.count(".") == 2 and len(part) > 100
-        else part
+    removed = "<a value that looked like a token was removed from this message>"
+    # A WHOLE LINE THAT IS A TOKEN, AND A TOKEN INSIDE A SENTENCE. The first
+    # rule only caught a token alone on its line; a library that wrote
+    # `failed with <token>` passed it straight through.
+    lines = [
+        removed if line.count(".") == 2 and len(line) > 100 else line
         for line in detail.splitlines()
-        for part in [line]
-    )
+    ]
+    return _TOKEN_SHAPED.sub(removed, "\n".join(lines))

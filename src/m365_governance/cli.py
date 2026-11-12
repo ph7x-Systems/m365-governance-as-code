@@ -1407,6 +1407,12 @@ def _collect_from_graph(args, chosen) -> int:
                 f"for application {getattr(args, 'client_id', '') or '(none)'} "
                 f"in directory {getattr(args, 'tenant_id', '') or '(none)'}"
             )
+        elif getattr(args, "client_id", None) and args.tenant_url:
+            identity = (
+                "a delegated token for "
+                + ", ".join(chosen.permissions)
+                + f", as whoever signs in through application {args.client_id}"
+            )
         else:
             identity = (
                 f"no identity: {graph_slice.TOKEN_VARIABLE} is not set and no "
@@ -1429,7 +1435,29 @@ def _collect_from_graph(args, chosen) -> int:
         # a token spends that one and reaches no directory to get another --
         # and the certificate is what happens when there is none.
         application = _application_from(args)
-        if not application.complete:
+        delegated = (
+            not application.complete
+            and not getattr(args, "certificate_path", None)
+            and bool(getattr(args, "client_id", None))
+            and bool(args.tenant_url)
+        )
+        if delegated:
+            # AS THE PERSON, THROUGH THE REGISTRATION ALREADY IN USE. Without
+            # a certificate and with an application registration, a Graph
+            # read signs in the way a SharePoint read does: a session kept by
+            # `login` answers silently, and anybody else is asked. Only the
+            # scopes this collector declares are requested.
+            try:
+                token = graph_token.acquire_delegated(
+                    client_id=args.client_id,
+                    tenant_url=args.tenant_url,
+                    scopes=tuple(chosen.permissions),
+                    device_login=bool(getattr(args, "device_login", False)),
+                )
+            except graph_token.Unavailable as refusal:
+                print(f"refusing to run: {refusal}", file=sys.stderr)
+                return 2
+        elif not application.complete:
             print(
                 f"collect {args.slice} reads Microsoft Graph and never creates "
                 f"a credential. Either put a token you already hold in "
@@ -1439,11 +1467,12 @@ def _collect_from_graph(args, chosen) -> int:
                 file=sys.stderr,
             )
             return 2
-        try:
-            token = graph_token.acquire(application)
-        except graph_token.Unavailable as refusal:
-            print(f"refusing to run: {refusal}", file=sys.stderr)
-            return 2
+        else:
+            try:
+                token = graph_token.acquire(application)
+            except graph_token.Unavailable as refusal:
+                print(f"refusing to run: {refusal}", file=sys.stderr)
+                return 2
 
     def report(line: str) -> None:
         UI.progress(line)
@@ -3351,8 +3380,8 @@ def _read_help(given: list[str]) -> str | None:
     rules = ", ".join(entry.get("consumed_by") or []) or "none yet"
     if chosen.source == "graph":
         signs_in = (
-            "with a Microsoft Graph token the operator supplies, or a "
-            "certificate; it never prompts"
+            "as the active connection (`login`) for the scope above, or with "
+            "a certificate, or with a token the operator supplies"
         )
     elif chosen.collector.name == collecting.COLLECTOR.name:
         signs_in = "as the active connection (`login`), or with --client-id"

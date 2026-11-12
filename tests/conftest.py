@@ -109,6 +109,25 @@ def _no_test_reads_this_machines_connections(monkeypatch, tmp_path_factory):
 
 
 @pytest.fixture(autouse=True)
+def _no_test_signs_in_for_a_graph_token(monkeypatch):
+    """Refuse to start the real sign-in that mints a Microsoft Graph token.
+
+    The collector guard below watches one process boundary; the token runner
+    is another, and a delegated token opens a browser on the machine running
+    the suite. A test proves this path by handing `acquire` its own runner.
+    """
+    from m365_governance import graph_token
+
+    def refused(timeout, environment=None):
+        raise AssertionError(
+            "a test reached the real Graph sign-in. Pass `run=` to "
+            "graph_token.acquire or acquire_delegated, or patch them."
+        )
+
+    monkeypatch.setattr(graph_token, "_subprocess", refused)
+
+
+@pytest.fixture(autouse=True)
 def _no_test_reaches_a_tenant(monkeypatch, request):
     """Refuse to start the shipped collector from inside the suite."""
     from m365_governance import collecting

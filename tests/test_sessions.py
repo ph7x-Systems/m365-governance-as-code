@@ -197,7 +197,7 @@ def test_without_a_login_every_collection_signs_in_for_itself(machine):
 
 
 @needs_protected_storage
-def test_every_collection_after_one_login_does_not_ask_again(machine):
+def test_every_collection_after_one_login_does_not_ask_again(machine, monkeypatch):
     """One interactive sign-in at login; the collections that follow are silent.
 
     Every slice the engine has is collected once. The twelve that sign in
@@ -205,6 +205,15 @@ def test_every_collection_after_one_login_does_not_ask_again(machine):
     here with the reason, because a gate that hid them would be claiming a
     session covers what it does not (docs/CLI.md).
     """
+    from m365_governance import graph_token
+
+    graph_scopes = []
+
+    def delegated(**named):
+        graph_scopes.append(named["scopes"])
+        raise graph_token.Unavailable("no directory in a test")
+
+    monkeypatch.setattr(graph_token, "acquire_delegated", delegated)
     assert _login(machine).returncode == 0
     for name, chosen in collecting.SLICES.items():
         argv = ["collect", name, "--output", "e"]
@@ -231,7 +240,13 @@ def test_every_collection_after_one_login_does_not_ask_again(machine):
         "a collection decided to keep a sign-in"
     )
 
-    # What the session does not cover, by name, so the count is not a surprise.
+    # A Graph read asks as the same person, for its own collector's scopes
+    # and no others, through the registration the connection holds.
+    assert sorted(graph_scopes) == sorted(
+        tuple(s.permissions) for s in collecting.SLICES.values() if s.source == "graph"
+    )
+
+    # What the SharePoint session itself does not carry, by name.
     uncovered = sorted(
         n
         for n, s in collecting.SLICES.items()
