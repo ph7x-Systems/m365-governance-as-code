@@ -16,6 +16,18 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g entra serviceprincipal list`, and the `service-principals`
+  collection behind it.** Every service principal with whether it is enabled,
+  whether the application behind it belongs to this directory (decided from
+  two identifiers, never from a name) and when its own credentials end. The
+  same rule as applications: nothing that is or belongs to a secret is
+  written. Needs `Application.Read.All`. Proved against a tenant on
+  2026-11-12.
+- **The application exposure inspection joins registrations to service
+  principals** on the application identifier both carry: each registration
+  says whether it can sign in to this directory, and the service principals
+  with no registration here are counted by whose application they are.
+
 - **`m365g spo site guests`, and the `sites-guests` collection behind it.**
   Which guest accounts each enumerated site has met, read from the site's own
   list of users and kept as directory object identifiers only: no login name,

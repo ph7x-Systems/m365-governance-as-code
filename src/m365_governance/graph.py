@@ -137,6 +137,10 @@ NEEDS = {
     ),
     "policies/authorizationPolicy": ("Policy.Read.All", "Global Reader"),
     "applications": ("Application.Read.All", "Global Reader or Directory Readers"),
+    "servicePrincipals": (
+        "Application.Read.All",
+        "Global Reader or Directory Readers",
+    ),
     "users": ("User.Read.All", "Global Reader or Directory Readers"),
     "groups": ("GroupMember.Read.All", "Global Reader or Directory Readers"),
 }

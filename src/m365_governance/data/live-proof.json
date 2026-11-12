@@ -920,6 +920,45 @@
         "being in a site's list of users is not having access, and nothing here reads access",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "service-principals",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 806,
+        "service_principals": 805,
+        "pages": 1,
+        "owned_by_this_directory": 41,
+        "of_another_organisation": 733,
+        "ownership_not_established": 31,
+        "disabled": 11,
+        "kinds_observed": 4
+      },
+      "coverage": "the slice's own path: the tenant document and one document per service principal",
+      "result": "The first live read of service principals. Every branch of ownership ran against a directory: applications of this directory, applications of another organisation, and service principals for which the owning organisation was not returned, which were recorded as not established and not guessed. No secret, hint, certificate or thumbprint is in what was written. COUNTER-CHECKED BY TWO INDEPENDENT ROUTES in the application exposure inspection: the number of service principals the service says belong to this directory equals the number that join to a registration read separately in the same session, on the application identifier both carry. The inspection's three answers about signing in all occurred: a registration with an enabled service principal, one whose service principal is disabled, and one with none.",
+      "limitations": [
+        "one page: the population was below the page size asked for, so paging is proved against a stand-in only",
+        "no refusal was met",
+        "what any service principal was granted was not read: that needs a scope that has not been decided",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

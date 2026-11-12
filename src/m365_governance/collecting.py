@@ -645,6 +645,41 @@ SLICES = {
             permissions=("GroupMember.Read.All",),
         ),
         Slice(
+            "service-principals",
+            "ServicePrincipals",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. The application exposure inspection
+            # joins this to the registrations on the application identifier
+            # both carry, which is how it tells an application of this
+            # directory from one that belongs to somebody else.
+            consumed_by=(
+                "the service principal list an operator enumerates, and the "
+                "application exposure inspection"
+            ),
+            describes=(
+                "the service principals in the directory: whether each is "
+                "enabled, whose application it is, and when its own "
+                "credentials end"
+            ),
+            shaped_like="entra-service-principals-three-listed",
+            also_shaped_like=(
+                "entra-service-principal-of-another-organisation",
+                "entra-service-principals-refused",
+            ),
+            reads=(
+                "GET /v1.0/servicePrincipals"
+                " ($select of eight properties; a credential's hint and a"
+                " certificate's bytes are never kept)",
+            ),
+            permissions=("Application.Read.All",),
+        ),
+        Slice(
             "guests",
             "Guests",
             domain="entra",

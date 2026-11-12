@@ -1030,3 +1030,73 @@ def test_without_the_directory_the_two_sides_are_not_compared():
     assert met["distinct_guest_accounts"] == 1
     assert met["also_listed_as_guests"] is None
     assert met["not_listed_as_guests"] is None
+
+
+def _sp(number, *, app=None, enabled=True, own=True, enabled_state="observed"):
+    return {
+        "resource": {
+            "workload": "entra",
+            "type": "service-principal",
+            "native_id": f"sp-{number}",
+        },
+        "provenance": {"collected_at": "2026-11-12T10:00:00Z"},
+        "coverage": {"completed": ["service_principals"], "unavailable": {}},
+        "facts": {
+            "service_principal": {
+                "app_id": {"state": "observed", "value": app or f"CLIENT-{number}"},
+                "account_enabled": (
+                    {"state": "observed", "value": enabled}
+                    if enabled_state == "observed"
+                    else {"state": enabled_state, "detail": "not returned"}
+                ),
+                "owned_by_this_directory": (
+                    {"state": "observed", "value": own}
+                    if own is not None
+                    else {"state": "missing", "detail": "not known"}
+                ),
+            }
+        },
+    }
+
+
+def test_a_registration_is_joined_to_its_service_principal_on_the_app_id():
+    inspection = scenarios.app_exposure(
+        [
+            _registered(1, []),
+            _sp(1),
+            _registered(2, []),
+            _sp(2, enabled=False),
+            _registered(3, []),
+            _registered(4, []),
+            _sp(4, enabled_state="missing"),
+            _sp(7, own=False),
+            _sp(8, own=False),
+            _sp(9, own=None),
+        ]
+    )
+    shown = {r["native_id"]: r["can_sign_in_here"] for r in inspection["rows"]}
+    assert shown == {
+        "app-1": "yes",
+        "app-2": "no: its service principal is disabled",
+        "app-3": "no: no service principal in this directory",
+        "app-4": "[missing]",
+    }
+    assert inspection["service_principals"] == {
+        "in_the_evidence": 6,
+        "with_a_registration_here": 3,
+        "without_a_registration_here": {
+            "of_this_directory": 0,
+            "of_another_organisation": 2,
+            "not_established": 1,
+        },
+    }
+    assert inspection["sources"]["documents"] == 10
+
+
+def test_without_service_principals_nothing_is_said_about_signing_in():
+    """THE COUNTER-CHECK. No service principal collected is not no service
+    principal existing: every registration would otherwise read as unable to
+    sign in."""
+    inspection = scenarios.app_exposure([_registered(1, [])])
+    assert _exposed(inspection, 1)["can_sign_in_here"] == "[not-collected]"
+    assert inspection["service_principals"] == {"state": "not-collected"}

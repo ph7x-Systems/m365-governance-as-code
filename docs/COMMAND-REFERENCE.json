@@ -239,6 +239,38 @@
    ]
   },
   {
+   "command": "m365g entra serviceprincipal list",
+   "earlier_name": "m365g collect service-principals",
+   "kind": "enumeration",
+   "service": "entra",
+   "describes": "the service principals in the directory: whether each is enabled, whose application it is, and when its own credentials end",
+   "collection": "service-principals",
+   "reads": [
+    "GET /v1.0/servicePrincipals ($select of eight properties; a credential's hint and a certificate's bytes are never kept)"
+   ],
+   "permissions": [
+    "Application.Read.All"
+   ],
+   "needs": [
+    "--tenant-url"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
+   "feeds_rules": [],
+   "consumed_by": "the service principal list an operator enumerates, and the application exposure inspection",
+   "live_validation_state": "full",
+   "examples": [
+    "m365g entra serviceprincipal list --tenant-url <address>",
+    "m365g entra serviceprincipal list --output csv",
+    "m365g entra serviceprincipal list --evidence-out ./evidence"
+   ]
+  },
+  {
    "command": "m365g entra tenant governance get",
    "earlier_name": "m365g collect tenant-governance",
    "kind": "enumeration",
@@ -362,7 +394,8 @@
    "service": "governance",
    "describes": "which applications hold a credential that has ended or is about to",
    "reads_collections": [
-    "applications"
+    "applications",
+    "service-principals"
    ],
    "reaches_a_tenant": false,
    "needs": [

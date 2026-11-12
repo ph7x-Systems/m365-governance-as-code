@@ -300,6 +300,7 @@ def test_the_plan_does_not_promise_what_the_machine_cannot_run():
         "conditional-access",
         "groups",
         "guests",
+        "service-principals",
         "tenant-governance",
     ]
     assert "doctor" in running.describe(steps)

@@ -64,6 +64,7 @@ from . import (
     reporting,
     running,
     scenarios,
+    service_principals,
     sessions,
     setting_up,
     tenant_governance,
@@ -1377,6 +1378,7 @@ GRAPH_SLICES = {
     guests.NAME: guests,
     applications.NAME: applications,
     groups.NAME: groups,
+    service_principals.NAME: service_principals,
 }
 
 

@@ -1,0 +1,104 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-11-12T10:00:00Z",
+    "collector": "graph-service-principals",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Application.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "service_principals"
+    ],
+    "completed": [
+      "service_principals"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "service-principal",
+    "native_id": "00000000-0000-4000-8000-000000000002",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "A vendor's connector"
+  },
+  "facts": {
+    "service_principal": {
+      "app_id": {
+        "state": "observed",
+        "value": "00000000-0000-4000-9000-000000000002",
+        "raw": {
+          "field": "appId",
+          "value": "00000000-0000-4000-9000-000000000002"
+        }
+      },
+      "kind": {
+        "state": "observed",
+        "value": "Application",
+        "raw": {
+          "field": "servicePrincipalType",
+          "value": "Application"
+        }
+      },
+      "account_enabled": {
+        "state": "observed",
+        "value": true,
+        "raw": {
+          "field": "accountEnabled",
+          "value": true
+        }
+      },
+      "owner_organisation_id": {
+        "state": "observed",
+        "value": "f8cdef31-a31e-4b4a-93e4-5f571e91255a",
+        "raw": {
+          "field": "appOwnerOrganizationId",
+          "value": "f8cdef31-a31e-4b4a-93e4-5f571e91255a"
+        }
+      },
+      "owned_by_this_directory": {
+        "state": "observed",
+        "value": false
+      },
+      "secrets": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "passwordCredentials",
+          "value": 0
+        }
+      },
+      "certificates": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "keyCredentials",
+          "value": 0
+        }
+      },
+      "credentials": {
+        "state": "observed",
+        "value": []
+      }
+    }
+  }
+}

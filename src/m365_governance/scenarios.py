@@ -670,6 +670,26 @@ def app_exposure(documents: list[dict], expires_within_days: int = 30) -> dict:
             and isinstance((d.get("facts") or {}).get("application"), dict)
         ]
     )
+    # THE REGISTRATION AND ITS SERVICE PRINCIPAL, on the application
+    # identifier both carry. A registration with no service principal cannot
+    # sign in to this directory; one whose service principal is disabled
+    # cannot either. Neither is concluded when no service principal
+    # collection is in the evidence.
+    principals, _ = _latest(
+        [
+            d
+            for d in documents
+            if (d.get("resource") or {}).get("type") == "service-principal"
+            and isinstance((d.get("facts") or {}).get("service_principal"), dict)
+        ]
+    )
+    by_app: dict[str, dict] = {}
+    for principal in principals.values():
+        app_id = _observed(_fact(principal, "service_principal", "app_id"))
+        if isinstance(app_id, str) and app_id:
+            by_app[app_id.lower()] = principal
+    registered = set()
+
     rows = []
     for key in sorted(applications):
         document = applications[key]
@@ -735,11 +755,50 @@ def app_exposure(documents: list[dict], expires_within_days: int = 30) -> dict:
             else:
                 row["standing"] = "later"
                 row["because"] = "every credential ends after the window"
+        app_id = str(row["app_id"]).lower()
+        registered.add(app_id)
+        if not principals:
+            row["can_sign_in_here"] = "[not-collected]"
+        elif app_id not in by_app:
+            row["can_sign_in_here"] = "no: no service principal in this directory"
+        else:
+            enabled_fact = _fact(by_app[app_id], "service_principal", "account_enabled")
+            enabled = _observed(enabled_fact)
+            row["can_sign_in_here"] = (
+                f"[{_why(enabled_fact, 'missing')}]"
+                if enabled is None
+                else "yes"
+                if enabled
+                else "no: its service principal is disabled"
+            )
         rows.append(row)
 
     by_standing: dict[str, int] = {}
     for row in rows:
         by_standing[row["standing"]] = by_standing.get(row["standing"], 0) + 1
+
+    # SERVICE PRINCIPALS WITH NO REGISTRATION HERE: applications that belong
+    # to somebody else, or to Microsoft. Counted by what the service says
+    # about whose they are, and never listed as a finding: most of a
+    # directory's service principals are Microsoft's own.
+    elsewhere = {
+        "of_this_directory": 0,
+        "of_another_organisation": 0,
+        "not_established": 0,
+    }
+    for app_id, principal in by_app.items():
+        if app_id in registered:
+            continue
+        own = _observed(
+            _fact(principal, "service_principal", "owned_by_this_directory")
+        )
+        elsewhere[
+            "not_established"
+            if own is None
+            else "of_this_directory"
+            if own
+            else "of_another_organisation"
+        ] += 1
 
     return {
         "$schema": SCHEMA,
@@ -759,6 +818,7 @@ def app_exposure(documents: list[dict], expires_within_days: int = 30) -> dict:
             "ending",
             "later",
             "earliest_end",
+            "can_sign_in_here",
             "requested_application_permissions",
             "requested_delegated_permissions",
             "collected_at",
@@ -774,6 +834,15 @@ def app_exposure(documents: list[dict], expires_within_days: int = 30) -> dict:
             "in_the_evidence": len(rows),
             "by_standing": dict(sorted(by_standing.items())),
         },
+        "service_principals": (
+            {
+                "in_the_evidence": len(principals),
+                "with_a_registration_here": len(registered & set(by_app)),
+                "without_a_registration_here": elsewhere,
+            }
+            if principals
+            else {"state": "not-collected"}
+        ),
         "duplicates": duplicated,
         "not_established": [
             "what any application was in fact granted: consent lives on the "
@@ -785,7 +854,10 @@ def app_exposure(documents: list[dict], expires_within_days: int = 30) -> dict:
             "credentials held by service principals rather than by the "
             "registration: a different object, not read",
         ],
-        "sources": _sources([applications[key] for key in sorted(applications)]),
+        "sources": _sources(
+            [applications[key] for key in sorted(applications)]
+            + [principals[key] for key in sorted(principals)]
+        ),
     }
 
 
@@ -1135,7 +1207,7 @@ SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] 
     "app-exposure": (
         "which applications hold a credential that has ended or is about to",
         app_exposure,
-        ("applications",),
+        ("applications", "service-principals"),
     ),
     "ca-coverage": (
         "whom each Conditional Access policy names, leaves out, and whether "
@@ -1195,6 +1267,7 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
             f" · ending {row['ending'] if row['ending'] != '' else '-'}"
             f" · later {row['later'] if row['later'] != '' else '-'}"
             f" · earliest end {row['earliest_end'] or '-'}",
+            f"  can sign in here {row.get('can_sign_in_here', '[not-collected]')}",
             f"  asks for         application "
             f"{row['requested_application_permissions']} · delegated "
             f"{row['requested_delegated_permissions']}  (asked, not granted)",
@@ -1269,6 +1342,18 @@ def as_text(inspection: dict) -> str:
             f"  {len(inspection['duplicates'])} sites were in the evidence more "
             "than once; the latest read of each was used"
         )
+    principals = inspection.get("service_principals") or {}
+    if "in_the_evidence" in principals:
+        without = principals["without_a_registration_here"]
+        lines += [
+            "",
+            f"{principals['in_the_evidence']} service principals in the evidence:",
+            f"  with a registration here {principals['with_a_registration_here']}",
+            f"  without one: of another organisation "
+            f"{without['of_another_organisation']} · of this directory "
+            f"{without['of_this_directory']} · not established "
+            f"{without['not_established']}",
+        ]
     directory = inspection.get("guests") or {}
     if directory.get("state", "not-collected") != "not-collected":
         lines += [

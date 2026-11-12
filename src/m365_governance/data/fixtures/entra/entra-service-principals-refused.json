@@ -1,0 +1,59 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-11-12T10:00:00Z",
+    "collector": "graph-service-principals",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Application.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "service_principals"
+    ],
+    "completed": [],
+    "unavailable": {
+      "service_principals": {
+        "state": "permission-denied",
+        "detail": "authenticated and not permitted to read servicePrincipals?$select=id,appId,displayName,servicePrincipalType,accountEnabled,appOwnerOrganizationId,passwordCredentials,keyCredentials&$top=999. Least privilege for this surface is Application.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Directory Readers. {\"error\": {\"code\": \"Authorization_RequestDenied\", \"message\": \"Insufficient privileges to complete the operation.\"}}"
+      }
+    }
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "tenant",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "contoso.sharepoint.com"
+  },
+  "facts": {
+    "service_principals": {
+      "population": {
+        "state": "observed",
+        "value": "entra-service-principals"
+      },
+      "acquisition_method": {
+        "state": "observed",
+        "value": "enumerated"
+      },
+      "count": {
+        "state": "permission-denied",
+        "detail": "0 service principals were read before the read ended: authenticated and not permitted to read servicePrincipals?$select=id,appId,displayName,servicePrincipalType,accountEnabled,appOwnerOrganizationId,passwordCredentials,keyCredentials&$top=999. Least privilege for this surface is Application.Read.All, and a delegated identity additionally needs a directory role such as Global Reader or Directory Readers. {\"error\": {\"code\": \"Authorization_RequestDenied\", \"message\": \"Insufficient privileges to complete the operation.\"}} That is a lower bound."
+      }
+    }
+  }
+}
