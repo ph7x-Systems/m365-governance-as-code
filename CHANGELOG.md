@@ -33,8 +33,11 @@ ships in a release of its own.
   engine can collect, with the command that runs each collector, what it
   reads, the permissions recorded for it, the rules it feeds, whether it has
   read a directory, and what its proof did not cover, read from the
-  collectors' own declarations and the proof registry. `test` is the dry run:
-  what would be read, without reading it. None of the three reaches a tenant.
+  collectors' own declarations and the proof registry. `test` is a contract
+  test: it holds the collector's packaged fixtures to the evidence contract,
+  names each with its origin, and prints whether a directory has answered the
+  collector on a separate line taken from the proof registry, so a pass is
+  never read as a tenant having been read. None of the three reaches a tenant.
 
 - **`m365g entra serviceprincipal list`, and the `service-principals`
   collection behind it.** Every service principal with whether it is enabled,

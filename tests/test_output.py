@@ -331,3 +331,21 @@ def test_the_command_filters_the_view_and_keeps_every_document(run, tmp_path):
     )
     wrong = run(*OWNERS, "--where", "nmae=Marketing")
     assert wrong.returncode == 2 and "no column is called" in wrong.stderr
+
+
+def test_a_filtered_view_keeps_byte_identical_evidence(run, tmp_path):
+    """THE COUNTER-CHECK. The same read, once with a filter that shows nothing
+    and once without, must keep the same documents, byte for byte."""
+
+    def kept(directory, *extra):
+        out = run(*OWNERS, *extra, "--evidence-out", str(directory))
+        assert out.returncode == 0, out.stderr
+        return {
+            p.name: json.loads(p.read_text(encoding="utf-8"))
+            for p in directory.rglob("*.json")
+            if "manifest" not in p.name and "draft" not in p.name
+        }
+
+    plain = kept(tmp_path / "plain")
+    filtered = kept(tmp_path / "filtered", "--where", "name=Nobody", "--sort", "name")
+    assert plain and plain == filtered

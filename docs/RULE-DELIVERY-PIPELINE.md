@@ -104,6 +104,27 @@ exists to replace.
 gate's own words: `RULE-READY` is IMPLEMENTED, `TENANT-PROVEN` is
 TENANT-OBSERVED, `PRODUCT-PATH` is PRODUCT-OBSERVED.
 
+## Where the tenant gate stands, and on whose authority
+
+`tools/rule-readiness.py` fails the release gate for any rule that has never
+been run against a tenant, and there is no exception list. The authority is
+the change that introduced it on 24 August 2026: its message says the gate is
+red on purpose, and that a list of excused rules was written and removed
+within the hour because that is how an absolute becomes a tolerance.
+
+Two facts sit beside that and do not change it. The gate and the tool exist
+on this line of work only: the published branch carries neither, so `1.0.0b9`
+was released under a gate that did not ask the question, with rules this one
+blocks. And no programme decision records the gate; the change message is its
+whole authority.
+
+So on this line a rule without a live run blocks a release, and that is the
+contract. Releasing with such a rule is not something a gate may be edited to
+allow. It is one of three owner decisions: authorize the run that proves the
+rule, withdraw the rule from the catalogue that ships, or record a decision
+that changes what the gate asks. Until one is taken the gate stays red and
+names the rules.
+
 ## What a stage produces
 
 | Stage | Establishes | Recorded in |

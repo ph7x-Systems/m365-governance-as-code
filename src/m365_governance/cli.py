@@ -2433,6 +2433,69 @@ def _collectors() -> list[dict]:
     return sorted(out, key=lambda c: (str(c["service"]), c["name"]))
 
 
+def _collector_contract_test(chosen: dict) -> int:
+    """Hold one collector's packaged fixtures to the evidence contract.
+
+    A CONTRACT TEST, AND IT SAYS SO IN EVERY LINE THAT COULD BE MISREAD. It
+    validates the fixtures this collector is shaped like against the contract
+    each declares, and renders the view an operator would see. Every fixture
+    it uses is named with its origin from the fixture register, which is
+    `synthetic` for all of them: nothing here came from a tenant, nothing here
+    reaches one, and a pass is a statement about the shape of this collector's
+    evidence and never about a directory.
+
+    WHETHER THE COLLECTOR HAS READ A DIRECTORY is a separate line, taken from
+    the proof registry and printed apart, so that the two are never one
+    result.
+    """
+    root = packaged("fixtures")
+    registered = {
+        entry["path"]: entry
+        for entry in json.loads(
+            (root.parent / "fixture-registry.json").read_text(encoding="utf-8")
+        )["fixtures"]
+    }
+    slice_ = collecting.SLICES[chosen["name"]]
+    names = [slice_.shaped_like, *slice_.also_shaped_like]
+    print(f"CONTRACT TEST  {chosen['name']}  ({chosen['command']})")
+    print("  Fixtures only. No tenant is reached and none was read for this.\n")
+    failed = 0
+    for name in names:
+        found = sorted(root.rglob(f"{name}.json"))
+        if not found:
+            print(f"  ✗ {name}: no packaged fixture of that name")
+            failed += 1
+            continue
+        path = found[0]
+        relative = f"fixtures/{path.relative_to(root).as_posix()}"
+        origin = registered.get(relative, {}).get("origin", "unclassified")
+        document = json.loads(path.read_text(encoding="utf-8"))
+        problems = validate_evidence_document(document, relative)
+        try:
+            presenting.render([document], "text")
+            rendered = True
+        except Exception:  # noqa: BLE001 - any failure to render is the finding
+            rendered = False
+        if problems or not rendered or origin == "unclassified":
+            failed += 1
+            print(f"  ✗ {name}  [{origin}]")
+            for problem in problems[:5]:
+                print(f"      {problem.location}: {problem.message}")
+            if not rendered:
+                print("      the view could not be rendered from it")
+            if origin == "unclassified":
+                print("      it is not in the fixture register")
+        else:
+            print(f"  ✓ {name}  [{origin}]  valid against its contract; view renders")
+    state = chosen["live_validation_state"]
+    print(
+        f"\nCONTRACT       {len(names) - failed} of {len(names)} fixtures hold"
+        f"\nTENANT         {state}: {_VERIFIED.get(state, state)}"
+        "\n               (from the proof registry; this test did not establish it)"
+    )
+    return 1 if failed else 0
+
+
 def _cmd_collector(args) -> int:
     """Discover the collectors. Reads declarations and the proof registry."""
     known = _collectors()
@@ -2466,13 +2529,7 @@ def _cmd_collector(args) -> int:
         )
         return 2
     if args.collector_command == "test":
-        argv = ["collect", chosen["name"], "--dry-run", "--output", "dry-run"]
-        print(
-            f"{COMMAND} collector test reaches no tenant: this is the dry run "
-            f"of `{chosen['command']}`.\n",
-            file=sys.stderr,
-        )
-        return main(argv)
+        return _collector_contract_test(chosen)
     if args.format == "json":
         print(json.dumps(chosen, indent=2, ensure_ascii=False))
         return 0

@@ -186,8 +186,11 @@ row that is gone has left the evidence; it is not said to have been deleted.
 `m365g collector list` shows every collector with the command that runs it
 and whether it has read a directory. `m365g collector describe NAME` adds what
 it reads, the permissions recorded for it, the rules it feeds and what its
-proof did not cover. `m365g collector test NAME` is the dry run: what would be
-read, without reading it. None of the three reaches a tenant.
+proof did not cover. `m365g collector test NAME` is a contract test: it
+holds the collector's packaged fixtures to the evidence contract and names each
+with its origin, which is `synthetic`. Whether a directory has answered the
+collector is printed on a separate line, from the proof registry, and the test
+says it did not establish it. None of the three reaches a tenant.
 
 Three states are reported apart and never added: a collector is
 **contract-tested** when its behaviour is proved against a stand-in service,

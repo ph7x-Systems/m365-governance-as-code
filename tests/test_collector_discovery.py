@@ -59,8 +59,41 @@ def test_the_text_listing_counts_the_two_states_apart_and_adds_nothing(capsys):
     assert "%" not in text and "score" not in text.lower()
 
 
-def test_test_is_a_dry_run_and_reaches_nothing(capsys):
-    code = main(["collector", "test", "hubs"])
-    printed = capsys.readouterr()
-    assert code in (0, 2), printed.err
-    assert "reaches no tenant" in printed.err
+def test_the_contract_test_names_its_fixtures_and_keeps_the_tenant_line_apart(
+    capsys,
+):
+    """A pass here is about the shape of the evidence. It must never read as a
+    directory having answered."""
+    assert main(["collector", "test", "hubs"]) == 0
+    text = capsys.readouterr().out
+    assert "Fixtures only. No tenant is reached" in text
+    assert "[synthetic]" in text and "CONTRACT       2 of 2 fixtures hold" in text
+    assert "TENANT         full" in text
+    assert "this test did not establish it" in text
+    # THE COUNTER-CHECK. A collector no directory has answered passes its
+    # contract test all the same, and the two lines say different things.
+    assert main(["collector", "test", "forwarding"]) == 0
+    text = capsys.readouterr().out
+    assert "fixtures hold" in text
+    assert "TENANT         none: contract-tested only" in text
+
+
+def test_every_collector_passes_its_contract_test(capsys):
+    for name in collecting.SLICES:
+        assert main(["collector", "test", name]) == 0, name
+        capsys.readouterr()
+
+
+def test_a_fixture_that_breaks_its_contract_fails_the_test(capsys, monkeypatch):
+    from m365_governance import cli
+
+    monkeypatch.setattr(
+        cli,
+        "validate_evidence_document",
+        lambda document, location: [
+            type("P", (), {"location": location, "message": "broken on purpose"})()
+        ],
+    )
+    assert main(["collector", "test", "hubs"]) == 1
+    text = capsys.readouterr().out
+    assert "broken on purpose" in text and "0 of 2 fixtures hold" in text
