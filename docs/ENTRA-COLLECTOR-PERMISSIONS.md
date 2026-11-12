@@ -29,7 +29,9 @@ that was not read from the reference says so.
 - **Application exposure** needs `Application.Read.All` and, for what was
   consented, `Directory.Read.All`. The second is the widest read in this table
   and is the one to decide on deliberately.
-- **Ownership** across Teams and groups waits on the group rows above.
+- **Ownership** reads the groups row above: the collector exists and is
+  contract-tested, and has not read a directory because `GroupMember.Read.All`
+  has not been consented.
 
 ## How a decision is asked for
 

@@ -505,9 +505,17 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
             "the people behind an administrator that is a group: no group was "
             "expanded, so a site administered by a group has an unknown number "
             "of administrators",
-            "the owners of the Microsoft 365 group or the team connected to a "
-            "site: a site collection administrator, a group owner and a team "
-            "owner are three different things and only the first was read",
+            (
+                "the owners of the Microsoft 365 group connected to a site are "
+                "shown beside it where they were read, and are not its "
+                "administrators: a site collection administrator, a group "
+                "owner and a team owner are three different things"
+                if joined
+                else "the owners of the Microsoft 365 group or the team "
+                "connected to a site: a site collection administrator, a "
+                "group owner and a team owner are three different things and "
+                "only the first was read"
+            ),
             "whether an administrator is active, reachable or still employed: "
             "an account being named is not a person being responsible",
             "sites the collecting identity could not enumerate or open: the "
