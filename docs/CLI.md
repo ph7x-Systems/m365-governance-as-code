@@ -143,6 +143,57 @@ does, and takes the same `--output`.
 `login`, `status`, `logout`, `connection` and `connect` stay at the top level:
 signing in and asking the tenant come before choosing a service.
 
+## Composed scenarios
+
+`m365g governance inspect SCENARIO --evidence DIRECTORY` answers one question
+from several collections. It reads evidence already collected and reaches no
+tenant, so the same evidence always gives the same answer. It is not an
+assessment: it reaches no outcome, counts nothing as good or bad, and
+publishes no total over unlike things.
+
+| Scenario | Reads | Option |
+|---|---|---|
+| `external-access` | `sites-sharing`, `tenant-sharing`, `guests`, `sites-guests` | |
+| `ownership` | `sites-owners`, `sites`, `groups` | `--minimum-owners N` |
+| `app-exposure` | `applications`, `service-principals` | `--expires-within DAYS` |
+| `ca-coverage` | `conditional-access` | `--policy-id ID` |
+
+What holds for every one of them:
+
+- **No resource is dropped.** A resource in the evidence is a row. Where the
+  fact a scenario needs was not read, the row says `not-established` and why.
+- **A refusal is never an empty answer.** A site that refused is not a closed
+  site, a list that was refused is not an empty list, and a credential list
+  that was not returned is not an application with none.
+- **A relation is made on an identifier, and named.** Each inspection lists the
+  relations it made and the ones it did not. Two facts side by side are not a
+  relation.
+- **A parameter is the operator's and is recorded.** The engine holds no view
+  on how many administrators a site should have or how soon a credential
+  should be renewed.
+- **Time is the evidence's.** A credential is placed relative to when the
+  evidence was collected, never to the clock.
+- **Every inspection says what it did not establish**, and carries the digest
+  of the evidence it read. `--out FILE` keeps it.
+
+`m365g governance inspect-diff BEFORE AFTER` compares two inspections kept
+with `--out`. Only the same scenario with the same parameters is compared. A
+row that is gone has left the evidence; it is not said to have been deleted.
+
+## Discovering what can be collected
+
+`m365g collector list` shows every collector with the command that runs it
+and whether it has read a directory. `m365g collector describe NAME` adds what
+it reads, the permissions recorded for it, the rules it feeds and what its
+proof did not cover. `m365g collector test NAME` is the dry run: what would be
+read, without reading it. None of the three reaches a tenant.
+
+Three states are reported apart and never added: a collector is
+**contract-tested** when its behaviour is proved against a stand-in service,
+and **tenant-verified** when the proof registry holds a record of a real read,
+with what that read did not cover. A command is **published** when a released
+version carries it.
+
 ## Output
 
 `--output` says how a result is shown, and it is the same option on every
