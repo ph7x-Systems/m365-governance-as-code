@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -128,3 +129,38 @@ def test_it_is_not_presented_as_tenant_evidence(described):
         assert provenance.get("tenant", {}).get("host", "").startswith("contoso"), (
             f"{document.name} names something that is not the fabricated tenant"
         )
+
+
+def test_every_file_of_the_reference_bundle_is_tracked():
+    """A bundle whose evidence is ignored passes here and fails in a clean
+    clone, which is where a release is cut from."""
+    inside = subprocess.run(
+        ["git", "rev-parse", "--is-inside-work-tree"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if inside.returncode != 0:
+        pytest.skip("not a git checkout: a wheel or an sdist carries the files")
+    tracked = set(
+        subprocess.run(
+            ["git", "ls-files", str(REFERENCE.relative_to(ROOT))],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
+    )
+    on_disk = {
+        path.relative_to(ROOT).as_posix()
+        for path in REFERENCE.rglob("*")
+        if path.is_file()
+    }
+    assert on_disk <= tracked, sorted(on_disk - tracked)
+    # And only the fictional host: this is the one place the ignore rule for
+    # tenant evidence is lifted.
+    for name in on_disk:
+        text = (ROOT / name).read_text(encoding="utf-8")
+        assert "onmicrosoft" not in text, name
+        for host in set(re.findall(r"[a-z0-9-]+\.sharepoint\.com", text)):
+            assert host.startswith("contoso"), (name, host)
