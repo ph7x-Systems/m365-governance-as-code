@@ -573,6 +573,7 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
     for row in rows:
         by_standing[row["standing"]] = by_standing.get(row["standing"], 0) + 1
     joined = [by_group[g] for g in sorted(set(connected.values())) if g in by_group]
+    expanded = any(row["administrators_at_least"] != "" for row in rows)
 
     return {
         "$schema": SCHEMA,
@@ -615,14 +616,23 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
         },
         "duplicates": duplicated,
         "not_established": [
-            "the people behind an administrator that is a group: no group was "
-            "expanded, so a site administered by a group has an unknown number "
-            "of administrators",
             (
-                "the owners of the Microsoft 365 group connected to a site are "
-                "shown beside it where they were read, and are not its "
-                "administrators: a site collection administrator, a group "
-                "owner and a team owner are three different things"
+                "the people behind an administrator that is a group, except "
+                "where that group is the owners of the Microsoft 365 group the "
+                "site is connected to: those were counted, as a range. Any "
+                "other group was not expanded"
+                if expanded
+                else "the people behind an administrator that is a group: no "
+                "group was expanded, so a site administered by a group has an "
+                "unknown number of administrators"
+            ),
+            (
+                "whether a named administrator is also one of the group's "
+                "owners: no identity is kept, which is why a site administered "
+                "through its group's owners is counted as a range. A group "
+                "owner is an administrator of the site only where the site's "
+                "own administrators name that group's owners; a team owner "
+                "was not read as such"
                 if joined
                 else "the owners of the Microsoft 365 group or the team "
                 "connected to a site: a site collection administrator, a "
@@ -1292,7 +1302,14 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
             ),
             f"  Microsoft 365 group  {row.get('connected_group', '[not-collected]')}"
             + (
-                f" · owners that are users {group_owners}" if group_owners != "" else ""
+                f" · owners that are users {group_owners}"
+                + (
+                    "  (the group's, not this site's answer)"
+                    if row["owners_read"] != "observed"
+                    else ""
+                )
+                if group_owners != ""
+                else ""
             ),
         ]
     return [

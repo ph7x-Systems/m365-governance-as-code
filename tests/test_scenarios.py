@@ -815,6 +815,20 @@ def test_every_way_the_group_join_can_come_up_empty_says_which():
     assert "owners that are users [permission-denied]" in scenarios.as_text(inspection)
 
 
+def test_the_limits_agree_with_what_was_expanded_and_a_refused_site_is_not_answered():
+    plain = scenarios.ownership([_owned("a", named=1, groups=1)])
+    assert any("no group was expanded" in i for i in plain["not_established"])
+    expanded = scenarios.ownership(
+        _group_site("s", named=1, claims=[OWNERS_CLAIM], group_owners=3)
+    )
+    said = " ".join(expanded["not_established"])
+    assert "no group was expanded" not in said and "as a range" in said
+    documents = _group_site("s", named=0, claims=[OWNERS_CLAIM], group_owners=4)
+    documents[0] = _owned("s", state="permission-denied")
+    text = scenarios.as_text(scenarios.ownership(documents))
+    assert "the group's, not this site's answer" in text
+
+
 # --- comparing two inspections ---------------------------------------------------
 
 
