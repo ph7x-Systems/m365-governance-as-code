@@ -16,6 +16,13 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g collector list`, `describe NAME` and `test NAME`.** What this
+  engine can collect, with the command that runs each collector, what it
+  reads, the permissions recorded for it, the rules it feeds, whether it has
+  read a directory, and what its proof did not cover, read from the
+  collectors' own declarations and the proof registry. `test` is the dry run:
+  what would be read, without reading it. None of the three reaches a tenant.
+
 - **`m365g entra serviceprincipal list`, and the `service-principals`
   collection behind it.** Every service principal with whether it is enabled,
   whether the application behind it belongs to this directory (decided from

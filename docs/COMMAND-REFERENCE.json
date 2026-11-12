@@ -13,6 +13,27 @@
  },
  "commands": [
   {
+   "command": "m365g collector describe",
+   "earlier_name": "m365g collector describe",
+   "kind": "command",
+   "service": "engine",
+   "describes": "one collector: what it reads, what it needs, what was proved"
+  },
+  {
+   "command": "m365g collector list",
+   "earlier_name": "m365g collector list",
+   "kind": "command",
+   "service": "engine",
+   "describes": "every collector, with its command, service and state"
+  },
+  {
+   "command": "m365g collector test",
+   "earlier_name": "m365g collector test",
+   "kind": "command",
+   "service": "engine",
+   "describes": "what a collector would read, without reading it (a dry run)"
+  },
+  {
    "command": "m365g connect",
    "earlier_name": "m365g connect",
    "kind": "command",

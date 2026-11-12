@@ -57,10 +57,12 @@ from . import (
     grouping,
     groups,
     guests,
+    live_proof,
     migration,
     migration_graph,
     presentation,
     presenting,
+    reference,
     reporting,
     running,
     scenarios,
@@ -670,6 +672,33 @@ def _build_parser() -> argparse.ArgumentParser:
         help="also write the inspection as JSON here, with the digest of the "
         "evidence it was made from",
     )
+
+    collectors = sub.add_parser(
+        "collector",
+        help="what this engine can collect, and how far each read was proved",
+        description=(
+            "Discover the collectors. Reaches no tenant: it reads what each "
+            "collector declares and what the proof registry records."
+        ),
+    )
+    collector_sub = collectors.add_subparsers(dest="collector_command", required=True)
+    collector_list = collector_sub.add_parser(
+        "list", help="every collector, with its command, service and state"
+    )
+    collector_list.add_argument("--format", choices=("text", "json"), default="text")
+    collector_describe = collector_sub.add_parser(
+        "describe",
+        help="one collector: what it reads, what it needs, what was proved",
+    )
+    collector_describe.add_argument("name", help="a collector name, from `list`")
+    collector_describe.add_argument(
+        "--format", choices=("text", "json"), default="text"
+    )
+    collector_test = collector_sub.add_parser(
+        "test",
+        help="what a collector would read, without reading it (a dry run)",
+    )
+    collector_test.add_argument("name", help="a collector name, from `list`")
 
     comparing = sub.add_parser(
         "inspect-diff",
@@ -2314,6 +2343,130 @@ def _cmd_inspect(args) -> int:
     return 0
 
 
+#: How a live validation state reads to a person. The contract value is shown
+#: beside it, so the word never replaces what it stands for.
+_VERIFIED = {
+    "none": "contract-tested only: it has not read a directory",
+    "negative_only": "a directory refused it: the refusal path is proved",
+    "provider_only": "its transport read a directory; this collector did not",
+    "partial": "read a directory for some of what it covers",
+    "full": "read a directory",
+}
+
+
+def _collectors() -> list[dict]:
+    """Every collector, with the command that runs it and where it stands."""
+    by_name = {c["name"]: c for c in capabilities.manifest(None)["capabilities"]}
+    commands = {
+        entry["collection"]: entry["command"]
+        for entry in reference.build()["commands"]
+        if "collection" in entry
+    }
+    out = []
+    for name, chosen in collecting.SLICES.items():
+        entry = by_name.get(name, {})
+        collector = entry.get("collector", {})
+        state = collector.get("live_validation_state", "none")
+        out.append(
+            {
+                "name": name,
+                "command": commands.get(name, f"{COMMAND} collect {name}"),
+                "service": chosen.domain or entry.get("produces", {}).get("workload"),
+                "source": chosen.source,
+                "describes": chosen.describes,
+                "reads": list(collector.get("reads") or chosen.reads),
+                "permissions": list(collector.get("permissions") or [])
+                or ["not-established"],
+                "needs": [
+                    flag
+                    for flag, wanted in (
+                        ("--site-url", chosen.needs_site),
+                        ("--tenant-url", chosen.needs_tenant),
+                    )
+                    if wanted
+                ],
+                "feeds_rules": list(entry.get("consumed_by") or []),
+                "consumer": chosen.consumed_by,
+                "live_validation_state": state,
+                "tenant_verified": state not in ("none", "negative_only"),
+                "proof_stages": (collector.get("proof") or {}).get("stages", {}),
+                "limitations": [
+                    limit
+                    for record in live_proof.records(name)
+                    for limit in record.get("limitations", [])
+                ],
+            }
+        )
+    return sorted(out, key=lambda c: (str(c["service"]), c["name"]))
+
+
+def _cmd_collector(args) -> int:
+    """Discover the collectors. Reads declarations and the proof registry."""
+    known = _collectors()
+    if args.collector_command == "list":
+        if args.format == "json":
+            print(json.dumps(known, indent=2, ensure_ascii=False))
+            return 0
+        width = max(len(c["command"]) for c in known)
+        service = None
+        for c in known:
+            if c["service"] != service:
+                service = c["service"]
+                print(f"\n{service}")
+            state = c["live_validation_state"]
+            print(f"  {c['command'].ljust(width)}  {_VERIFIED.get(state, state)}")
+        verified = sum(1 for c in known if c["tenant_verified"])
+        print(
+            f"\n{len(known)} collectors: {verified} read a directory, "
+            f"{len(known) - verified} did not. "
+            f"`{COMMAND} collector describe NAME` says what each reads and what "
+            "its proof did not cover."
+        )
+        return 0
+
+    chosen = next((c for c in known if c["name"] == args.name), None)
+    if chosen is None:
+        near = ", ".join(c["name"] for c in known)
+        print(
+            f"{args.name} is not a collector. The collectors are: {near}.",
+            file=sys.stderr,
+        )
+        return 2
+    if args.collector_command == "test":
+        argv = ["collect", chosen["name"], "--dry-run", "--output", "dry-run"]
+        print(
+            f"{COMMAND} collector test reaches no tenant: this is the dry run "
+            f"of `{chosen['command']}`.\n",
+            file=sys.stderr,
+        )
+        return main(argv)
+    if args.format == "json":
+        print(json.dumps(chosen, indent=2, ensure_ascii=False))
+        return 0
+    state = chosen["live_validation_state"]
+    lines = [
+        f"{chosen['name']}  ({chosen['command']})",
+        f"  {chosen['describes']}.",
+        "",
+        f"  Service      {chosen['service']} ({chosen['source']})",
+        f"  Reads        {'; '.join(chosen['reads']) or 'not recorded'}",
+        f"  Permissions  {', '.join(chosen['permissions'])}",
+        f"  Needs        {' '.join(chosen['needs']) or 'the connection only'}",
+        f"  Feeds rules  {', '.join(chosen['feeds_rules']) or 'none'}",
+        f"  Read by      {chosen['consumer']}",
+        f"  State        {state}: {_VERIFIED.get(state, state)}",
+        "  Proof        "
+        + ", ".join(f"{k} {v}" for k, v in chosen["proof_stages"].items()),
+    ]
+    if chosen["limitations"]:
+        lines += ["", "  What its proof did not cover:"]
+        lines += [f"    - {limit}" for limit in dict.fromkeys(chosen["limitations"])]
+    elif not chosen["tenant_verified"]:
+        lines += ["", "  No directory has answered this read."]
+    print("\n".join(lines))
+    return 0
+
+
 def _cmd_inspect_diff(args) -> int:
     """What changed between two inspections. Reads two files and nothing else."""
     loaded = []
@@ -3594,6 +3747,7 @@ _COMMANDS = {
     "diff": _cmd_diff,
     "inspect": _cmd_inspect,
     "inspect-diff": _cmd_inspect_diff,
+    "collector": _cmd_collector,
     "contracts": _cmd_contracts,
     "login": _cmd_login,
     "status": _cmd_status,
