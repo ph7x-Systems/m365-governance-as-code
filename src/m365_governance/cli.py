@@ -2511,9 +2511,11 @@ def _cmd_collector(args) -> int:
                 print(f"\n{service}")
             state = c["live_validation_state"]
             print(f"  {c['command'].ljust(width)}  {_VERIFIED.get(state, state)}")
+        whole = sum(1 for c in known if c["live_validation_state"] == "full")
         verified = sum(1 for c in known if c["tenant_verified"])
         print(
-            f"\n{len(known)} collectors: {verified} read a directory, "
+            f"\n{len(known)} collectors: {whole} read a directory, "
+            f"{verified - whole} read one for part of what they cover, "
             f"{len(known) - verified} did not. "
             f"`{COMMAND} collector describe NAME` says what each reads and what "
             "its proof did not cover."

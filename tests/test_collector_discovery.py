@@ -56,6 +56,7 @@ def test_the_text_listing_counts_the_two_states_apart_and_adds_nothing(capsys):
     assert main(["collector", "list"]) == 0
     text = capsys.readouterr().out
     assert "read a directory," in text and "did not." in text
+    assert "for part of what they cover" in text
     assert "%" not in text and "score" not in text.lower()
 
 
