@@ -10,9 +10,17 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
-Work merged after `1.0.0b8` is recorded here and is not published, not
+Work merged after `1.0.0b10` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
+
+## 1.0.0b10 — 2026-11-12
+
+The command line by service, a session that is kept, composed scenarios, and
+every rule run against a tenant. `m365g` is the command; `m365-governance`
+keeps working and the earlier command names keep their behaviour. Every read
+named below as proved was read from one directory on the dates given, and
+each record in the proof registry says what that read did not cover.
 
 ### Added
 

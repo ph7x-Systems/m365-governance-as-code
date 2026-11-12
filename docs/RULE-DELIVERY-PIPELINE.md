@@ -125,6 +125,10 @@ rule, withdraw the rule from the catalogue that ships, or record a decision
 that changes what the gate asks. Until one is taken the gate stays red and
 names the rules.
 
+The first of the three was taken on 12 November 2026: the owner authorized the
+read, the two forwarding rules were run, and the gate went green without being
+edited.
+
 ## What a stage produces
 
 | Stage | Establishes | Recorded in |
