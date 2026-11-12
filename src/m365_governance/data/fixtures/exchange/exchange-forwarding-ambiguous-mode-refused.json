@@ -1,0 +1,51 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "resource": {
+    "workload": "exchange",
+    "type": "tenant",
+    "native_id": "contoso.onmicrosoft.com",
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com"
+    },
+    "scope": "tenant",
+    "parent": null,
+    "display_name": "contoso.onmicrosoft.com",
+    "url": "https://admin.exchange.microsoft.com"
+  },
+  "provenance": {
+    "collected_at": "2026-08-23T11:00:00Z",
+    "collector": "exo-collector",
+    "collector_version": "0.1.0",
+    "source_system": "Exchange Online",
+    "source_api": "ExchangeOnlineManagement",
+    "identity_kind": "application",
+    "acquisition": "collected",
+    "scopes": [
+      "Exchange.ManageAsApp"
+    ],
+    "tenant": {
+      "id": null,
+      "host": "contoso.onmicrosoft.com",
+      "how": "requested"
+    }
+  },
+  "facts": {
+    "forwarding": {
+      "state": "permission-denied",
+      "detail": "authenticated and not permitted to read Get-HostedOutboundSpamFilterPolicy; Get-RemoteDomain. Least privilege for this surface is Exchange.ManageAsApp."
+    }
+  },
+  "coverage": {
+    "requested": [
+      "forwarding"
+    ],
+    "completed": [],
+    "unavailable": {
+      "forwarding": {
+        "state": "permission-denied",
+        "detail": "authenticated and not permitted to read Get-HostedOutboundSpamFilterPolicy; Get-RemoteDomain. Least privilege for this surface is Exchange.ManageAsApp."
+      }
+    }
+  }
+}

@@ -44,6 +44,17 @@ SCHEMAS = ROOT / "src" / "m365_governance" / "data" / "schemas"
 GENERATED = ROOT / "src" / "m365_governance" / "data" / "generated"
 
 
+#: The compatibility artefact. Not a schema and not a sample: it is a whole
+#: bundle, and what a consumer proves is that it can open THIS one, by digest.
+REFERENCE = (
+    Path(__file__).resolve().parent.parent
+    / "src"
+    / "m365_governance"
+    / "data"
+    / "reference"
+)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", required=True, type=Path)
@@ -209,6 +220,18 @@ def main() -> int:
         print("    engine has fixtures. A bundle with almost no samples lets a")
         print("    consumer pass by exercising nothing.")
         return 1
+
+    # THE ARTEFACT A CONSUMER PROVES IT OPENED, published by the same path as
+    # everything else a consumer vendors.
+    #
+    # A second publishing route would be a second thing to remember, and the
+    # drift gate on the other side republishes this whole directory and
+    # compares it -- so a reference bundle arriving here is compared for free,
+    # and one arriving any other way is a copy nobody checks.
+    reference = out / "reference"
+    if reference.exists():
+        shutil.rmtree(reference)
+    shutil.copytree(REFERENCE, reference)
 
     print(
         f"  ✓ contract {manifest['contract_version']} published to {out}: "

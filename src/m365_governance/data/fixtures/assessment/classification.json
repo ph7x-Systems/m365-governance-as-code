@@ -1,8 +1,8 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.2.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.3.0",
   "canonical": {
     "run_set": {
-      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.3.0",
       "resources": 1,
       "by_class": {
         "unknown": 1
@@ -37,7 +37,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-06T16:55:00Z"
             }
           ]
         }
@@ -460,7 +462,7 @@
       }
     ],
     "versions": {
-      "engine": "1.0.0b9",
+      "engine": "1.0.0b10",
       "rules": {
         "SPO-CLASS-001": "1.0",
         "SPO-CLASS-002": "1.0",
@@ -489,17 +491,17 @@
           "collected"
         ]
       },
-      "assessment_id": "0628b6f6bc9b5fe6aa517905b8de2055ca51338acebad6beaccabc7f0ae1b9f8"
+      "assessment_id": "ba8837337b1c857f90d8e01f6c7d18a967f1a602b940482ebf838ff9956cd1b4"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "fdac47dcefddb0496cf144cfec8b37c41ac5542498d61474b50832ede68b222a",
+        "run_set": "f788b75b283b19ca7788f2d224b035df7393f56e894fcbdb53b3f7846f146582",
         "evidence": "b8674199e754c1a7907064ed00e8e7af0b7856a6dabcf433d0b15b7b1f779433",
-        "versions": "454037ee5082836df77ee0e5227e07aaad0f4fc3bac9187f8391bbaa621b54b2",
+        "versions": "8a4b5eae3f0660ded7daafc0c634bc388996994f22c30b2212d01657abdacf81",
         "manifest": "3ba617f03785ab93b8ca2ea38b1f3f6bb3f5537e70ba39d838025276d69b1f0c"
       },
-      "canonical_hash": "0628b6f6bc9b5fe6aa517905b8de2055ca51338acebad6beaccabc7f0ae1b9f8"
+      "canonical_hash": "ba8837337b1c857f90d8e01f6c7d18a967f1a602b940482ebf838ff9956cd1b4"
     }
   }
 }

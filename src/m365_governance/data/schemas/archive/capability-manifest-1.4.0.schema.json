@@ -1,0 +1,523 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0",
+  "title": "Capability manifest",
+  "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand — and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema",
+    "engine_version",
+    "contract_version",
+    "capabilities",
+    "contracts",
+    "rules",
+    "domains"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0",
+      "description": "The exact contract this document claims, which must be the $id of the schema validating it."
+    },
+    "engine_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The engine that produced this description of itself."
+    },
+    "contract_version": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The version of the published contract bundle. Separate from the engine version because a consumer builds against contracts, not against an implementation, and the two move for different reasons."
+    },
+    "capabilities": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/capability"
+      },
+      "description": "One entry per collection slice: one question this engine can answer about a tenant."
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/domain"
+      },
+      "description": "The evidence coverage matrix: every Microsoft 365 domain this engine claims, the surfaces it has in each, and how far each has been proved against a real tenant."
+    },
+    "contracts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Every contract this engine holds, by its `$id`. A consumer that validates a document it received checks the id against this list rather than against a version it remembers."
+    },
+    "rules": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/rule"
+      },
+      "description": "Every rule, with what it decides and on what authority."
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "describes",
+        "collector",
+        "produces",
+        "consumed_by",
+        "consumer"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The slice as a person names it on the command line."
+        },
+        "describes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What it reads, in a sentence, so a document read a year later explains itself without the engine that wrote it."
+        },
+        "collector": {
+          "$ref": "#/$defs/collector"
+        },
+        "produces": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "workload",
+            "resource_type"
+          ],
+          "description": "The workload and resource type this slice writes evidence about. A rule applies to evidence only when both match, so this is what says which rules can ever read it.",
+          "properties": {
+            "workload": {
+              "type": "string"
+            },
+            "resource_type": {
+              "type": "string"
+            }
+          }
+        },
+        "consumed_by": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The rules that read this slice's evidence, by id. Empty where no rule does, which is a decision and not an omission — see `consumer`."
+        },
+        "consumer": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Who reads this slice's output. Normally the rules. Where no rule does, this names what does instead, and that is the price of the exception: without it, `consumed_by: []` reads as nobody having looked."
+        }
+      }
+    },
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "live_validation",
+        "live_validation_state",
+        "needs_tenant_surface",
+        "permissions",
+        "proof",
+        "reads",
+        "validation"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "powershell",
+            "graph"
+          ],
+          "description": "Which collector answers this slice. It changes what the caller must have installed and how the identity is supplied, and nothing else about the contract. `partial` means some of this slice's coverage areas were observed against a real tenant and others have never run: it is not a weaker `full`, it is a statement that the slice answers more than one question and only some of them have been asked of a directory."
+        },
+        "mode": {
+          "type": "string",
+          "description": "The collector's own name for this slice, which is a different vocabulary from the engine's on purpose: the two are versioned by different things."
+        },
+        "reads": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The Microsoft surface this slice reads, in that surface's own words — a cmdlet, or an HTTP path. It is what answers `what does this product touch` without anybody reading the source."
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "description": "Least privilege, as a source establishes it. `not-established` is a real answer and appears where no source has settled it: an invented permission would be worse than an admitted gap, because somebody would grant it."
+        },
+        "live_validation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "What a run against a real tenant has established, as a person reads it: the state, followed by anything specific to this slice. Rendered from `live_validation_state`, never written beside it."
+        },
+        "needs_tenant_surface": {
+          "type": "boolean",
+          "description": "Whether this collector reads the tenant administration surface as well as a site. It is published because least privilege has to exist in the COMPOSITION and not only in the documentation: an identity that can read sites and not the tenant runs everything here that is false, and a consumer must be able to see which capabilities that leaves them without rather than discovering it as a refusal at run time."
+        },
+        "live_validation_state": {
+          "type": "string",
+          "enum": [
+            "none",
+            "negative-only",
+            "provider-only",
+            "partial",
+            "full"
+          ],
+          "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the path that REPORTS A FINDING was never taken — because the surface was absent or empty, or because nothing in that tenant was in the state the rule looks for. The distinction is what was exercised, not what the surface looked like: a catalog of ten solutions with none of them behind its version proves the read and leaves the finding unproved exactly as an empty one does. `provider-only` means the transport underneath has read a real tenant and this slice's own path has not. `full` means the path that produces this evidence, INCLUDING the branch that reports a finding, was observed against a real tenant."
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "representation_checked",
+            "second_surface",
+            "second_surface_state",
+            "divergence"
+          ],
+          "description": "HOW FAR VALIDATION WENT, which is a different axis from `live_validation_state`. That says what was OBSERVED; this says what was CHECKED about the observation. A real acquisition proves the acquisition path and proves nothing about whether the fields mean what this engine says they mean, and a consumer deciding whether to rest a decision on this evidence needs both answers.",
+          "properties": {
+            "representation_checked": {
+              "type": "string",
+              "description": "What was done to check the evidence against what the product claims the fields mean. Reading the same field twice is not a check: a setting that claims an effect is checked against the effect. Empty means nothing was done, and that is published rather than hidden."
+            },
+            "second_surface": {
+              "type": "string",
+              "description": "The second authoritative surface for this collector's central claim, named. NOT another client reading the same property: a cmdlet wrapping a REST call, a portal rendering a value, and a surface documented as FOLLOWING a setting are consumers of one authority, and their agreement establishes nothing."
+            },
+            "second_surface_state": {
+              "enum": [
+                "compared",
+                "named-not-run",
+                "none-exists",
+                "not-observable-with-current-authority",
+                "not-yet-established"
+              ],
+              "description": "Where the comparison stands. The last three are not interchangeable: `none-exists` is a finding about the vendor's surfaces, `not-observable-with-current-authority` names what is missing, and `not-yet-established` says nobody has looked yet."
+            },
+            "divergence": {
+              "type": "string",
+              "description": "What a comparison found when two surfaces disagreed, and why. A divergence settled by preferring whichever source agreed with the product has not been investigated. Empty where nothing diverged."
+            }
+          }
+        },
+        "proof": {
+          "type": "object",
+          "description": "WHAT A RUN AGAINST A REAL TENANT PROVED, STAGE BY STAGE, because it does not prove one thing. `live_validation_state` says a real read produced real evidence and has never claimed more; a consumer asking whether a capability was proved end to end had no field to read and had to interpret a word, and one presentation layer interpreted `full` as READ FROM A TENANT, END TO END. A layer may explain a contract value and never widen it, so the contract now carries the distinction rather than relying on everyone reading it the narrow way.",
+          "additionalProperties": false,
+          "required": [
+            "stages",
+            "state"
+          ],
+          "properties": {
+            "state": {
+              "enum": [
+                "not-live-tested",
+                "acquisition-attempted",
+                "positive-acquisition-observed",
+                "vertical-path-proven"
+              ],
+              "description": "Where this capability stands, DERIVED from the stages below and never declared beside them. `vertical-path-proven` requires every APPLICABLE stage proven, so a capability that feeds no rule reaches it without pretending an assessment happened, and one that feeds a rule does not reach it by skipping a stage."
+            },
+            "stages": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "acquisition",
+                "assessment",
+                "bundle",
+                "consumer",
+                "evidence"
+              ],
+              "description": "`refused` is a typed refusal, a 403 or a `not-supported`: it proves the FAILURE path and never the positive one, and collapsing it into `not-attempted` would discard a real observation. `not-applicable` is the stage not existing for this capability.",
+              "properties": {
+                "acquisition": {
+                  "enum": [
+                    "proven",
+                    "refused",
+                    "attempted",
+                    "not-attempted",
+                    "not-applicable"
+                  ],
+                  "description": "the Microsoft surface was actually read"
+                },
+                "assessment": {
+                  "enum": [
+                    "proven",
+                    "refused",
+                    "attempted",
+                    "not-attempted",
+                    "not-applicable"
+                  ],
+                  "description": "rules actually consumed that evidence and decided something"
+                },
+                "bundle": {
+                  "enum": [
+                    "proven",
+                    "refused",
+                    "attempted",
+                    "not-attempted",
+                    "not-applicable"
+                  ],
+                  "description": "the canonical artefact was produced from it"
+                },
+                "consumer": {
+                  "enum": [
+                    "proven",
+                    "refused",
+                    "attempted",
+                    "not-attempted",
+                    "not-applicable"
+                  ],
+                  "description": "somebody independent opened that artefact"
+                },
+                "evidence": {
+                  "enum": [
+                    "proven",
+                    "refused",
+                    "attempted",
+                    "not-attempted",
+                    "not-applicable"
+                  ],
+                  "description": "the document this collector promises was produced from that read"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "service",
+        "resource_type",
+        "severity",
+        "basis",
+        "evidence_requirements",
+        "limitations"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "service": {
+          "type": "string",
+          "description": "The workload this rule belongs to. It must match the evidence's `workload` for the rule to apply at all: `tenant` is a type name in every workload, and without this a rule reads another product's evidence."
+        },
+        "resource_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "severity": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "The default severity. Null where a rule declares none, rather than a value chosen here."
+        },
+        "basis": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "type",
+            "rationale",
+            "sources"
+          ],
+          "description": "On what authority this rule decides. AN OUTCOME WITHOUT IT IS AN OPINION WITH A SEVERITY ATTACHED, which is why it travels with every rule rather than living in a document somebody has to find.",
+          "properties": {
+            "type": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Requirement, documented limit, documented guidance or convention. They are not the same claim and a reader is entitled to know which one is being made."
+            },
+            "rationale": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Why this basis supports this rule. For a `convention` it is the whole authority: that type has no sources by design, because the threshold is this engine's rather than a vendor's, and a rule showing an empty source list and nothing else would look unsupported when it is merely honest."
+            },
+            "sources": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "title": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "evidence_requirements": {
+          "type": "array",
+          "items": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "description": "The fact paths this rule reads. What a collection has to have produced for the rule to answer anything but `unknown`."
+        },
+        "limitations": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "passes_without_resolving",
+            "other"
+          ],
+          "description": "What a pass does not establish. THE MOST EXPENSIVE GREEN IS THE ONE THAT DOES NOT SAY WHAT IT LEFT UNRESOLVED, so this is required rather than optional.",
+          "properties": {
+            "passes_without_resolving": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "other": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "surface": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "describes",
+        "live_validation_state",
+        "produces_findings"
+      ],
+      "description": "One acquisition surface inside a domain. It is a capability seen from the domain's side, and carries the same live-validation state that capability publishes: the two cannot disagree because there is one value.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "describes": {
+          "type": "string"
+        },
+        "live_validation_state": {
+          "type": "string",
+          "enum": [
+            "none",
+            "negative-only",
+            "provider-only",
+            "partial",
+            "full"
+          ],
+          "description": "What was OBSERVED, as a value rather than a sentence. `none` is offline tests only. `negative-only` means it ran against a real tenant and the path that REPORTS A FINDING was never taken — because the surface was absent or empty, or because nothing in that tenant was in the state the rule looks for. The distinction is what was exercised, not what the surface looked like: a catalog of ten solutions with none of them behind its version proves the read and leaves the finding unproved exactly as an empty one does. `provider-only` means the transport underneath has read a real tenant and this slice's own path has not. `full` means the path that produces this evidence, INCLUDING the branch that reports a finding, was observed against a real tenant."
+        },
+        "produces_findings": {
+          "type": "boolean"
+        }
+      }
+    },
+    "domain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "title",
+        "question",
+        "acquisition",
+        "surfaces",
+        "decides",
+        "withholds"
+      ],
+      "description": "One Microsoft 365 surface this engine claims to govern, WHETHER OR NOT it can observe it. A catalogue of what exists reads, to somebody who does not already know, as a map of Microsoft 365: the domains carrying no surface are what make this document true rather than flattering.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "question": {
+          "type": "string",
+          "description": "What an organisation wants to know about this surface, written for unstarted domains too: an absence is only legible beside the question it fails to answer."
+        },
+        "acquisition": {
+          "type": "string",
+          "description": "What obtaining evidence here requires, in Microsoft's terms."
+        },
+        "state": {
+          "const": "not-started",
+          "description": "Present ONLY for a domain with no surface at all, and it is not a weaker `none`: `none` means a collector exists and has only run offline, `not-started` means there is no acquisition surface here."
+        },
+        "weakest_surface_state": {
+          "type": "string",
+          "enum": [
+            "none",
+            "negative-only",
+            "provider-only",
+            "partial",
+            "full"
+          ],
+          "description": "The state of the LEAST proved surface in this domain. It is not a score and not an average: a domain holding one proven surface and one unproven one is not half-proven, and this names a particular surface's state rather than computing over several."
+        },
+        "surfaces_by_state": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "description": "How many surfaces are in each state. Coverage reported as the facts it is made of, which is what `D5` requires instead of a grade."
+        },
+        "surfaces": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/surface"
+          }
+        },
+        "decides": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "The rules that can be decided from this domain's evidence. Empty is a real answer: four domains are collected and decide nothing, by decision."
+        },
+        "withholds": {
+          "type": "string",
+          "description": "What this engine refuses to conclude here even when it can observe it, and why. Empty where nothing has been decided yet."
+        }
+      }
+    }
+  }
+}

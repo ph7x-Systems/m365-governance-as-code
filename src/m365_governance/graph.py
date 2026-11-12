@@ -33,6 +33,7 @@ import base64
 import json
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
@@ -120,6 +121,45 @@ class Identity:
         )
 
 
+#: What a refused surface needs, by the start of its path: the least
+#: privileged scope the reference records and a directory role that may read
+#: it for a delegated identity.
+#:
+#: BY SURFACE, BECAUSE ONE SENTENCE FOR EVERY PATH WAS WRONG FOR MOST OF THEM.
+#: The refusal named the Conditional Access scope whatever was asked for, so a
+#: refused read of applications told its operator to request a policy
+#: permission. A surface with no entry is told where the answer is recorded
+#: rather than given somebody else's.
+NEEDS = {
+    "identity/conditionalAccess": (
+        "Policy.Read.All",
+        "Global Reader or Conditional Access Administrator",
+    ),
+    "policies/authorizationPolicy": ("Policy.Read.All", "Global Reader"),
+    "applications": ("Application.Read.All", "Global Reader or Directory Readers"),
+    "servicePrincipals": (
+        "Application.Read.All",
+        "Global Reader or Directory Readers",
+    ),
+    "users": ("User.Read.All", "Global Reader or Directory Readers"),
+    "groups": ("GroupMember.Read.All", "Global Reader or Directory Readers"),
+}
+
+
+def _needs(path: str) -> str:
+    for start, (scope, role) in NEEDS.items():
+        if path.lstrip("/").startswith(start):
+            return (
+                f"Least privilege for this surface is {scope}, and a delegated "
+                f"identity additionally needs a directory role such as {role}."
+            )
+    return (
+        "The least privilege this surface needs is recorded with its collector "
+        "(the Permissions line of the command's --help); a delegated identity "
+        "additionally needs a directory role that may read it."
+    )
+
+
 @dataclass
 class Unavailable:
     """Why an area could not be read. Never an empty tenant."""
@@ -130,7 +170,12 @@ class Unavailable:
     detail: str
 
     @staticmethod
-    def of(status: int, path: str, body: str = "") -> Unavailable:
+    def of(
+        status: int,
+        path: str,
+        body: str = "",
+        headers: dict[str, str] | None = None,
+    ) -> Unavailable:
         """What a status code means about a tenant, which is usually nothing.
 
         THE DISTINCTION THIS EXISTS FOR. `403` and an empty collection produce
@@ -139,7 +184,7 @@ class Unavailable:
         and a rule over the first must answer `unknown` while a rule over the
         second may decide.
         """
-        detail = (body or "").strip()[:400]
+        detail = ((body or "").strip()[:400] + _correlation(headers)).strip()
         if status == 401:
             # NOT `permission-denied`, and the difference is not cosmetic. A
             # `401` says the session is not valid -- expired, issued for another
@@ -161,9 +206,7 @@ class Unavailable:
             return Unavailable(
                 "permission-denied",
                 "authenticated and not permitted to read "
-                f"{path}. Least privilege for this surface is Policy.Read.All, "
-                "and a delegated identity additionally needs a directory role "
-                "such as Global Reader or Conditional Access Administrator. " + detail,
+                f"{path}. {_needs(path)} " + detail,
             )
         if status == 404:
             return Unavailable(
@@ -247,6 +290,27 @@ class GraphReader:
         self.identity = Identity.from_token(token)
         self.source_api = f"Microsoft Graph {version}"
 
+    @staticmethod
+    def _encoded(path: str) -> str:
+        """A path with its query encoded, because OData filters have spaces in.
+
+        `$filter=roleDefinitionId eq '62e9...'` is what Microsoft documents and
+        what a reader writes. It is also not a legal request target, and Python
+        refuses to send it: `URL can't contain control characters ... found at
+        least ' '`. So the slice that reads the directory's Global
+        Administrators could never have collected from any tenant, and no test
+        found it because none of them makes a request.
+
+        Only the query is touched, and `safe` keeps every character OData gives
+        meaning to -- `$`, `=`, `&`, `,`, `'` and the parentheses of a function
+        segment. Encoding those would change the request rather than transport
+        it, which is the failure this is fixing in the other direction.
+        """
+        head, sep, query = path.partition("?")
+        if not sep:
+            return head
+        return head + "?" + urllib.parse.quote(query, safe="$=&,'()/:*")
+
     def read(self, path: str) -> Read:
         """Every item of a collection, following the service's own next links.
 
@@ -254,7 +318,7 @@ class GraphReader:
         built its own page URLs would be deciding how the service paginates,
         and would keep working until the day the service changed its mind.
         """
-        url = f"{self._base}/{path.lstrip('/')}"
+        url = f"{self._base}/{self._encoded(path).lstrip('/')}"
         found: list[dict[str, Any]] = []
         seen: set[str] = set()
 
@@ -292,7 +356,9 @@ class GraphReader:
         Security Defaults is one object, not a list, and wrapping it in a list
         of one keeps every consumer reading a single shape.
         """
-        outcome = self._once(f"{self._base}/{path.lstrip('/')}", path, single=True)
+        outcome = self._once(
+            f"{self._base}/{self._encoded(path).lstrip('/')}", path, single=True
+        )
         if isinstance(outcome, Unavailable):
             return Read(path, [], outcome)
         return Read(path, outcome.items)
@@ -309,9 +375,9 @@ class GraphReader:
                 self._sleep(_retry_after(headers))
                 continue
 
-            return Unavailable.of(status, path, body)
+            return Unavailable.of(status, path, body, headers)
 
-        return Unavailable.of(429, path)
+        return Unavailable.of(429, path, "", headers)
 
 
 def _page(body: str, path: str, single: bool) -> Page | Unavailable:
@@ -338,6 +404,37 @@ def _page(body: str, path: str, single: bool) -> Page | Unavailable:
         )
     items = [x for x in value if isinstance(x, dict)]
     return Page(items, document.get("@odata.nextLink"))
+
+
+#: What Microsoft calls the identifier of a request, in the two header names it
+#: uses. Read case-insensitively because a header name is not case-sensitive and
+#: a client that matched one casing works until the day a proxy changes it.
+CORRELATION = ("request-id", "client-request-id", "x-ms-ags-diagnostic", "date")
+
+
+def _correlation(headers: dict[str, str] | None) -> str:
+    """The identifiers Microsoft support asks for, kept with the refusal.
+
+    A REFUSAL IS EVIDENCE, AND EVIDENCE THAT CANNOT BE TRACED IS AN ANECDOTE.
+    A `403` that a tenant administrator disputes is settled by Microsoft
+    looking the request up, and they look it up by these. Without them the
+    conversation is "our tool says it was denied" against "our portal says the
+    permission is granted", and there is no third thing to consult.
+
+    They are recorded on the refusal rather than in a log, because the log is
+    on the machine that ran the collection and the refusal is what travels into
+    the evidence, the report and the archive somebody opens six months later.
+    """
+    if not headers:
+        return ""
+    found = {}
+    for name, value in headers.items():
+        key = name.strip().lower()
+        if key in CORRELATION and value:
+            found[key] = value
+    if not found:
+        return ""
+    return " [" + ", ".join(f"{k}: {v}" for k, v in sorted(found.items())) + "]"
 
 
 def _retry_after(headers: dict[str, str]) -> float:

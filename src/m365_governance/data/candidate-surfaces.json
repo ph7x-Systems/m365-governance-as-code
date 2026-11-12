@@ -1,0 +1,235 @@
+{
+  "_readme": [
+    "SURFACES THIS ENGINE DOES NOT READ YET, WITH THE AUTHORITY THAT DESCRIBES THEM.",
+    "",
+    "The capability manifest answers `what does this engine collect`. It cannot",
+    "answer `what could it collect, at what cost, and what would still be",
+    "unknowable afterwards` -- and that second question is the one that decides",
+    "what gets built next. Without it the order of work is chosen by whoever",
+    "remembers an endpoint, which is how a product ends up with twenty-one rules",
+    "on one workload and none on the three it also advertises.",
+    "",
+    "A ROW HERE IS A CITATION, NOT AN INTENTION. Every endpoint, API version and",
+    "least privilege below is copied from a first-party page named in `authority`",
+    "and read on the date recorded there. Nothing is remembered, inferred from a",
+    "sibling endpoint, or filled in because it looked obvious: an invented scope",
+    "sends somebody to consent to a permission they did not need, which is the",
+    "opposite of what this product is for.",
+    "",
+    "`limitation` IS THE MOST VALUABLE COLUMN AND THE EASIEST TO SKIP. It records",
+    "what the surface cannot settle even when the call succeeds -- a 200 that",
+    "silently omits a section, a cmdlet that answers differently in a second",
+    "console, a property the vendor stopped honouring, a cloud where the endpoint",
+    "does not exist. A collector written without it produces evidence that is",
+    "wrong in a way no test will catch, because the request worked.",
+    "",
+    "A row leaves this file when the capability manifest starts producing it. The",
+    "two files are never both the owner of the same surface.",
+    "",
+    "`schema_check` IS THE SECOND SURFACE FOR THIS FILE'S OWN CLAIMS. A reference",
+    "page says what an endpoint is for; the service's $metadata says whether it",
+    "exists in the version being claimed. `tools/graph-schema-check.py` reads the",
+    "unauthenticated v1.0 and beta metadata documents and refuses a row whose",
+    "recorded version the schema does not carry -- which is how `beta` gets",
+    "written down as a dependency instead of discovered by a customer."
+  ],
+  "surfaces": [
+    {
+      "id": "entra-authentication-methods-policy",
+      "service": "entra",
+      "area": "authentication",
+      "describes": "which authentication methods the tenant permits, and whether registration is enforced at sign-in",
+      "endpoint": "GET /policies/authenticationMethodsPolicy",
+      "api_version": "v1.0",
+      "least_privilege": "Policy.Read.AuthenticationMethod",
+      "identity": "both",
+      "cost": "single-call",
+      "questions": [
+        "which methods are enabled for the whole tenant, and which are enabled for a subset",
+        "is registration enforcement switched on",
+        "is the tenant still governed by the legacy MFA and SSPR policies"
+      ],
+      "limitation": "policyMigrationState changes what the policy governs -- authentication only, authentication and SSPR, or legacy policies ignored -- so the same document means three different things and a rule that does not read the state is reading a value out of context. Not available in China operated by 21Vianet.",
+      "authority": {
+        "url": "https://learn.microsoft.com/graph/api/authenticationmethodspolicy-get?view=graph-rest-1.0",
+        "read_on": "2026-08-24"
+      },
+      "schema_name": "authenticationMethodsPolicy",
+      "schema_check": {
+        "present_in": [
+          "v1.0",
+          "beta"
+        ],
+        "checked_on": "2026-08-24"
+      }
+    },
+    {
+      "id": "entra-authentication-method-registration",
+      "service": "entra",
+      "area": "authentication",
+      "describes": "which authentication methods each user has actually registered, as opposed to which the tenant permits",
+      "endpoint": "GET /reports/authenticationMethods/userRegistrationDetails",
+      "api_version": "v1.0",
+      "least_privilege": "AuditLog.Read.All",
+      "identity": "both",
+      "cost": "per-user",
+      "questions": [
+        "how many accounts are capable of multifactor authentication rather than merely permitted it",
+        "are the accounts holding privileged roles among them"
+      ],
+      "limitation": "the report excludes disabled users, so an absent account is not an unregistered one. It returns userPrincipalName and userDisplayName, which this engine avoids collecting elsewhere, so a collector reading it takes on an identifier-handling decision the rest of the catalogue does not have. Feature licensing is documented separately from the API.",
+      "authority": {
+        "url": "https://learn.microsoft.com/graph/api/authenticationmethodsroot-list-userregistrationdetails?view=graph-rest-1.0",
+        "read_on": "2026-08-24"
+      },
+      "schema_name": "userRegistrationDetails",
+      "schema_check": {
+        "present_in": [
+          "v1.0",
+          "beta"
+        ],
+        "checked_on": "2026-08-24"
+      }
+    },
+    {
+      "id": "entra-cross-tenant-access-default",
+      "service": "entra",
+      "area": "external-identities",
+      "describes": "what the tenant allows by default with every organisation it has not configured individually",
+      "endpoint": "GET /policies/crossTenantAccessPolicy/default",
+      "api_version": "v1.0",
+      "least_privilege": "Policy.Read.All",
+      "identity": "both",
+      "cost": "single-call",
+      "questions": [
+        "is inbound or outbound collaboration open by default",
+        "is the tenant carrying the service default or a configuration somebody made"
+      ],
+      "limitation": "several of the roles that grant this read return basic properties only and exclude identity synchronization settings. The call returns 200 and the response is incomplete, so a partial read is indistinguishable from a full one unless the collector records which role read it -- exactly the collapse a refusal fixture exists to prevent, arriving as a success rather than a denial.",
+      "authority": {
+        "url": "https://learn.microsoft.com/graph/api/crosstenantaccesspolicyconfigurationdefault-get?view=graph-rest-1.0",
+        "read_on": "2026-08-24"
+      },
+      "schema_name": "crossTenantAccessPolicy",
+      "schema_check": {
+        "present_in": [
+          "v1.0",
+          "beta"
+        ],
+        "checked_on": "2026-08-24"
+      }
+    },
+    {
+      "id": "entra-role-eligibility",
+      "service": "entra",
+      "area": "privileged-access",
+      "describes": "who is eligible to activate a directory role, as distinct from who currently holds one",
+      "endpoint": "GET /roleManagement/directory/roleEligibilityScheduleInstances",
+      "api_version": "v1.0",
+      "least_privilege": "RoleEligibilitySchedule.Read.Directory",
+      "identity": "both",
+      "cost": "single-call",
+      "questions": [
+        "does the count of standing Global Administrators understate who can become one",
+        "is privileged access time-bound or permanent"
+      ],
+      "limitation": "Privileged Identity Management requires Microsoft Entra ID P2 or an EMS E5 licence. In a tenant without it the surface returns nothing, and nothing means `not licensed` as readily as `nobody is eligible` -- so an empty response cannot be reported as an absence of eligibility.",
+      "authority": {
+        "url": "https://learn.microsoft.com/graph/api/rbacapplication-list-roleeligibilityscheduleinstances?view=graph-rest-1.0",
+        "read_on": "2026-08-24"
+      },
+      "schema_name": "roleEligibilityScheduleInstances",
+      "schema_check": {
+        "present_in": [
+          "v1.0",
+          "beta"
+        ],
+        "checked_on": "2026-08-24"
+      }
+    },
+    {
+      "id": "exchange-organization-config",
+      "service": "exchange",
+      "area": "organization",
+      "describes": "the organisation-wide Exchange Online settings, including whether mailbox auditing is switched off for the tenant",
+      "endpoint": "Get-OrganizationConfig",
+      "api_version": "powershell",
+      "least_privilege": "not-established",
+      "identity": "delegated",
+      "cost": "single-call",
+      "questions": [
+        "is mailbox auditing disabled organisation-wide, which makes every per-mailbox audit setting inert"
+      ],
+      "limitation": "Exchange publishes no per-parameter permission table and directs the reader to determine the required permissions in their own organisation; the read-only shape is the View-Only Configuration role. Least privilege here is established per tenant rather than from a page, so this row stays `not-established` until it is measured.",
+      "authority": {
+        "url": "https://learn.microsoft.com/powershell/module/exchangepowershell/get-organizationconfig?view=exchange-ps",
+        "read_on": "2026-08-24"
+      }
+    },
+    {
+      "id": "exchange-unified-audit-ingestion",
+      "service": "exchange",
+      "area": "audit",
+      "describes": "whether the unified audit log is ingesting at all",
+      "endpoint": "Get-AdminAuditLogConfig (UnifiedAuditLogIngestionEnabled)",
+      "api_version": "powershell",
+      "least_privilege": "not-established",
+      "identity": "delegated",
+      "cost": "single-call",
+      "questions": [
+        "is anything being recorded to audit against"
+      ],
+      "limitation": "the same cmdlet exists in Security and Compliance PowerShell, where the property is documented as always False even when auditing is on. Two consoles, one cmdlet name, two answers, and only one of them is about the tenant -- so which console made the call is part of the evidence and not an implementation detail. The Audit Logs role governs turning auditing on or off.",
+      "authority": {
+        "url": "https://learn.microsoft.com/purview/audit-log-enable-disable",
+        "read_on": "2026-08-24"
+      }
+    },
+    {
+      "id": "teams-tenant-federation",
+      "service": "teams",
+      "area": "external-access",
+      "describes": "which outside domains a tenant's users may communicate with",
+      "endpoint": "Get-CsTenantFederationConfiguration",
+      "api_version": "powershell",
+      "least_privilege": "not-established",
+      "identity": "delegated",
+      "cost": "single-call",
+      "questions": [
+        "is federation open to every domain, or to a named list",
+        "may users reach Teams accounts that no organisation manages"
+      ],
+      "limitation": "AllowPublicUsers can no longer be used since Skype consumer interoperability ended on 5 May 2025, so a rule written against that property reads something the service has stopped honouring. The Get page publishes no permission table.",
+      "authority": {
+        "url": "https://learn.microsoft.com/powershell/module/microsoftteams/get-cstenantfederationconfiguration?view=teams-ps",
+        "read_on": "2026-08-24"
+      }
+    },
+    {
+      "id": "licensing-cloud-licensing-assignments",
+      "service": "microsoft-365",
+      "area": "licensing",
+      "describes": "licence assignments as a first-class collection, rather than as a property of each user",
+      "endpoint": "GET /admin/cloudLicensing/assignments",
+      "api_version": "beta",
+      "least_privilege": "CloudLicensing.Read.All",
+      "identity": "application",
+      "cost": "tenant-report",
+      "questions": [
+        "does a second surface agree with the assignment picture built from user properties"
+      ],
+      "limitation": "beta. Microsoft states that APIs under /beta are subject to change and not supported in production applications, so a rule resting on it would carry a dependency the engine cannot honour in a released product. Useful as a comparison surface long before it is useful as a source.",
+      "authority": {
+        "url": "https://learn.microsoft.com/graph/api/cloudlicensing-admincloudlicensing-list-assignments?view=graph-rest-beta",
+        "read_on": "2026-08-24"
+      },
+      "schema_name": "cloudLicensing",
+      "schema_check": {
+        "present_in": [
+          "beta"
+        ],
+        "checked_on": "2026-08-24"
+      }
+    }
+  ]
+}

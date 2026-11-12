@@ -179,7 +179,7 @@ the bound before the results, on stderr so a pipeline reading JSON on stdout is
 unaffected. Where none exist it says nothing at all.
 
 ```console
-$ m365-governance evaluate --evidence ./evidence/sites/
+$ m365g evaluate --evidence ./evidence/sites/
 1 collections produced this evidence, 1 of them incomplete. What follows is
 bounded by what was read:
   sites: partial

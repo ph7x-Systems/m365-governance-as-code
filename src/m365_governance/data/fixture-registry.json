@@ -43,6 +43,108 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/entra/entra-application-secret-ending.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one application whose secret ends two weeks after the collection; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-applications-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document when the read was refused; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-applications-three-registered.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document of an application enumeration, three registrations read; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-migration-in-progress.json",
+      "origin": "synthetic",
+      "purpose": "migration begun, so the policy governs SSPR too",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-migration-state-absent.json",
+      "origin": "synthetic",
+      "purpose": "no migration state returned; the rule must not read that as migrated",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-premigration.json",
+      "origin": "synthetic",
+      "purpose": "the legacy MFA and SSPR policies still respected",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-refused.json",
+      "origin": "synthetic",
+      "purpose": "the surface was refused, and the refusal survives into the facts",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-sms-enabled.json",
+      "origin": "synthetic",
+      "purpose": "SMS on and voice off: the fail side of one method alone",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-states-absent.json",
+      "origin": "synthetic",
+      "purpose": "no telephony configuration returned; absent is not disabled",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-telephony-off.json",
+      "origin": "synthetic",
+      "purpose": "neither telephony method enabled, fully migrated",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authentication-methods-voice-enabled.json",
+      "origin": "synthetic",
+      "purpose": "voice on and SMS off: the fail side of the other method alone",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-closed-defaults-refused.json",
+      "origin": "synthetic",
+      "purpose": "the authorization_policy area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-closed-defaults.json",
+      "origin": "synthetic",
+      "purpose": "the same policy with the documented closed values: email-verified join off, MSOnline PowerShell blocked, guests on the Restricted Guest User template",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-directory-unreadable.json",
+      "origin": "synthetic",
+      "purpose": "the default user role prevented from reading other users, which Microsoft's own reference instructs in capitals not to do",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-guests-as-members.json",
+      "origin": "synthetic",
+      "purpose": "guests granted the full User role template, which Microsoft documents as one of three supported values",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-open-defaults.json",
+      "origin": "synthetic",
+      "purpose": "the tenant's authorization policy on the values Microsoft ships by default, with consent for risky applications additionally enabled",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-authorization-policy-restrained.json",
+      "origin": "synthetic",
+      "purpose": "the same policy with guest invitations, application creation, tenant creation and user consent all narrowed, which is the after state for four rules",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/entra/entra-conditional-access-everyone-no-exclusion.json",
       "origin": "synthetic",
       "purpose": "a policy including every user and excluding nobody: the fail path of CA-RECOVERY-001, where the administrators who would correct a misconfiguration are subject to it",
@@ -79,6 +181,72 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/entra/entra-global-administrators-all-synced-refused.json",
+      "origin": "synthetic",
+      "purpose": "the global_administrators area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-all-synced.json",
+      "origin": "synthetic",
+      "purpose": "three Global Administrator assignments all synchronised from on-premises, so no cloud-only account exists to be an emergency access account",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-healthy.json",
+      "origin": "synthetic",
+      "purpose": "two cloud-only and one synchronised Global Administrator plus a service principal, which is the after state for all three role rules",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-single-account.json",
+      "origin": "synthetic",
+      "purpose": "one Global Administrator assignment, below the two Microsoft asks for so that a locked-out tenant has a way back in",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-global-administrators-too-many.json",
+      "origin": "synthetic",
+      "purpose": "seven Global Administrator assignments, above the fewer-than-five Microsoft publishes and draws an alert card at",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-group-single-owner.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one Microsoft 365 group with one owner; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-groups-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document when the listing was refused; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-groups-three-listed.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document of a group enumeration, three groups read; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-guest-invitation-pending.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one guest account whose invitation was not accepted; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-guests-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document when the read was refused, constructed so a refusal is not a directory with no guests; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-guests-three-accounts.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document of a guest enumeration, three accounts read; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/entra/entra-named-location-trusted-range.json",
       "origin": "synthetic",
       "purpose": "a trusted IP named location, using a documentation range that belongs to nobody",
@@ -88,6 +256,30 @@
       "path": "fixtures/entra/entra-security-defaults-off.json",
       "origin": "synthetic",
       "purpose": "Security Defaults observed as disabled, which is an observation and not a finding",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-service-principal-of-another-organisation.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one service principal whose application belongs to another organisation; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-service-principals-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document when the read was refused; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/entra/entra-service-principals-three-listed.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document of a service principal enumeration; written by the collector over a stand-in service",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/exchange/exchange-forwarding-ambiguous-mode-refused.json",
+      "origin": "synthetic",
+      "purpose": "the forwarding area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
       "may_be_presented_as_tenant_observation": false
     },
     {
@@ -289,6 +481,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-activity-archived-refused.json",
+      "origin": "synthetic",
+      "purpose": "the activity area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-activity-archived.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -328,6 +526,12 @@
       "path": "fixtures/sharepoint/site-agents-with-sources.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-class-group-unlabelled-refused.json",
+      "origin": "synthetic",
+      "purpose": "the classification area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
       "may_be_presented_as_tenant_observation": false
     },
     {
@@ -391,6 +595,12 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-customization-pages-feature-absent-refused.json",
+      "origin": "synthetic",
+      "purpose": "the customization area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-customization-pages-feature-absent.json",
       "origin": "synthetic",
       "purpose": "the Site Pages feature absent and the library refused; constructed so absence and refusal are not conflated",
@@ -433,9 +643,33 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-guests-list-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one enumerated site whose list of users was refused, constructed so a refusal is not a site that met no guest",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-guests-two-met.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one site whose list of users holds two directory guests and one guest with no directory account",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-hub-association-restricted.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one hub whose association is restricted to two principals, constructed to exercise one path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-imported-inventory.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-modern-clean-refused.json",
+      "origin": "synthetic",
+      "purpose": "the web area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
       "may_be_presented_as_tenant_observation": false
     },
     {
@@ -565,6 +799,18 @@
       "may_be_presented_as_tenant_observation": false
     },
     {
+      "path": "fixtures/sharepoint/site-sharing-read-refused.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; one enumerated site whose own sharing read was refused, constructed so a refusal on one site is not a site missing from the list",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/site-spfx-behind-refused.json",
+      "origin": "synthetic",
+      "purpose": "the spfx area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-spfx-behind.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -595,6 +841,12 @@
       "may_be_presented_as_tenant_observation": true
     },
     {
+      "path": "fixtures/sharepoint/site-storage-comfortable-refused.json",
+      "origin": "synthetic",
+      "purpose": "the site area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
       "path": "fixtures/sharepoint/site-storage-comfortable.json",
       "origin": "synthetic",
       "purpose": "example host `contoso.sharepoint.com`; constructed to exercise one path",
@@ -622,6 +874,18 @@
       "path": "fixtures/sharepoint/tenant-brand-center-public-cdn.json",
       "origin": "synthetic",
       "purpose": "a tenant whose brand assets are published across a public CDN origin: two organisation asset libraries, public CDN on, private off, and the two documented consequences of a public origin carried as facts",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/tenant-hubs-two-registered.json",
+      "origin": "synthetic",
+      "purpose": "example host `contoso.sharepoint.com`; the tenant document of a hub enumeration, constructed so a count has a place to live when it is zero",
+      "may_be_presented_as_tenant_observation": false
+    },
+    {
+      "path": "fixtures/sharepoint/tenant-sharing-default-anyone-and-edit-refused.json",
+      "origin": "synthetic",
+      "purpose": "the tenant_sharing area requested and refused, so every rule that reads it is shown a tenant saying no rather than a fact being absent",
       "may_be_presented_as_tenant_observation": false
     },
     {

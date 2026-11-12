@@ -8,9 +8,10 @@
     "itself opportunistically against whatever engine happened to be on",
     "the machine would be reproducible only on that machine."
   ],
-  "contract_version": "1.0.0b9",
+  "contract_version": "1.0.0b10",
   "generated": [
     "Assessment.g.cs",
+    "CapabilityManifest.g.cs",
     "Collection.g.cs",
     "Comparison.g.cs",
     "Connection.g.cs",
@@ -38,6 +39,10 @@
     },
     "https://ph7x.com/schemas/m365-governance/assessment/4.2.0": {
       "digest": "88f3f83869a7b747b248f9ae2ea5df1ce148193d8d72c13a66a517a45ad9fecc",
+      "path": "schemas/archive/assessment-4.2.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/assessment/4.3.0": {
+      "digest": "a10dfa77d9b51c6f28409c18a6edd1acc6bdc29ed97a317787ac4eadb5a89773",
       "path": "schemas/assessment.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/capability-manifest/1.0.0": {
@@ -58,6 +63,10 @@
     },
     "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0": {
       "digest": "ee7165f11b46c461a31142145ec6ef7237d419fc85a85466f6d17a1ea4a92bd3",
+      "path": "schemas/archive/capability-manifest-1.4.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/capability-manifest/1.5.0": {
+      "digest": "be532d0daa1252df6a456a0c4aa3a9e05ead10c10345c7ce11475a7c40b11d0f",
       "path": "schemas/capability-manifest.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/collection/1.0.0": {
@@ -134,6 +143,10 @@
     },
     "https://ph7x.com/schemas/m365-governance/run-set/4.2.0": {
       "digest": "f613d1c0c5a3bbf9acab1797519395dc17cad7579dfca911cfcb2d8e217152f4",
+      "path": "schemas/archive/run-set-4.2.0.schema.json"
+    },
+    "https://ph7x.com/schemas/m365-governance/run-set/4.3.0": {
+      "digest": "a4e2eccd4fcf71c2032e27e5eceae857bb93476460b28156dfbe02425969780e",
       "path": "schemas/run-set.schema.json"
     },
     "https://ph7x.com/schemas/m365-governance/run/2.0.0": {
@@ -157,5 +170,5 @@
       "path": "schemas/run.schema.json"
     }
   },
-  "set_digest": "328de600f322f9eca4b9d6a5a4bcc12a4d3c9365e476d344401daf63643adb80"
+  "set_digest": "ff047c0ea1398b57b3585a1d6128c01b021691dbda7fe5a20ef96808c12fa114"
 }

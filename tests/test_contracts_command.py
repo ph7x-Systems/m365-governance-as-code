@@ -122,20 +122,40 @@ def test_the_written_bundle_matches_the_one_in_this_repository(tmp_path):
 
 @pytest.mark.parametrize("directory", ["schemas", "generated"])
 def test_the_wheel_would_carry_it(directory):
-    """Declared in package-data, recursively.
+    """The files are carried, and this no longer checks HOW.
 
-    `schemas/*.json` matched six files and silently left the four archived
-    contracts out. The release check compares the wheel against the tree; this
-    is the cheaper statement of the same rule, next to the reason.
+    It used to assert the exact globs: `schemas/**/*.json` present,
+    `schemas/*.json` absent -- because the non-recursive form had matched six
+    files and silently left the four archived contracts out, and an installed
+    engine could not read a document declaring one.
+
+    That was the right lesson written in the wrong place. Asserting the
+    remembered strings made this test part of the same positive enumeration it
+    was protecting against: the declaration was later found to name directories
+    only, `data/live-proof.json` never entered a wheel, and this test passed
+    throughout because the two strings it knew about were still there.
+
+    The declaration is now total and `tests/test_distribution.py` holds it
+    there. So this asserts the outcome instead: the files exist and nothing
+    under the declaration can miss them.
     """
-    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    from m365_governance.resources import packaged
+
+    present = sorted(packaged(directory).rglob("*"))
+    assert present, f"{directory}/ is empty in the source tree"
 
     if directory == "schemas":
-        assert '"schemas/**/*.json"' in pyproject
-        assert '"schemas/*.json"' not in pyproject
+        # The four that were silently dropped. Named because they are the
+        # reason this test exists, not because the list is exhaustive.
+        assert any(p.parent.name == "archive" for p in present), (
+            "no archived contract is present, and an engine that cannot read a "
+            "document declaring one refuses it as unknown rather than as valid "
+            "and unsupported"
+        )
     else:
-        assert '"generated/manifest.json"' in pyproject
-        assert '"generated/csharp/*.g.cs"' in pyproject
+        names = {p.name for p in present}
+        assert "manifest.json" in names
+        assert any(n.endswith(".g.cs") for n in names)
 
 
 def test_every_sample_the_bundle_ships_declares_the_current_contract():
@@ -170,3 +190,14 @@ def test_every_sample_the_bundle_ships_declares_the_current_contract():
         f"sample assessments declaring an older contract than {current}: "
         f"{stale}. Run `python tools/examples.py`."
     )
+
+
+def test_the_command_itself_writes_the_bundle_and_says_what_it_wrote(tmp_path, capsys):
+    """In this process, so the command's own lines are measured and not only
+    the function it calls."""
+    import m365_governance.cli as cli
+
+    out = tmp_path / "bundle"
+    assert cli.main(["contracts", "--out", str(out)]) == 0
+    assert (out / "manifest.json").is_file() or any(out.rglob("*.json"))
+    assert "schemas" in capsys.readouterr().out

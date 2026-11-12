@@ -37,6 +37,10 @@
       List               one list: item count and permission inheritance
       UniquePermissions  every list on a site, hidden ones included
       TenantSites        every site this identity can enumerate
+      HubSites           the sites registered as hubs, and how each is set
+      SiteSharingAll     what every enumerated site permits, read site by site
+      SiteOwnersAll      who administers every enumerated site, read site by site
+      SiteGuestsAll      which guest accounts each enumerated site has met
       Modernity          how one site is built: template, branding, publishing
                          features, and how many of its pages are modern
       SpfxCatalog        what is in an app catalog. Cheap: one call
@@ -141,10 +145,14 @@
     enumerates what the identity can enumerate, which for a delegated run is
     not the tenant, and every document it writes says so in its coverage.
 
-    The token is not persisted between runs. -PersistLogin exists and is not
-    used: a collector that leaves a reusable token on disk has widened the
-    blast radius of the machine it runs on, and that is a decision for whoever
-    operates it, not a default.
+    The token is not persisted between runs unless the operator asked: a
+    collector that leaves a reusable token on disk has widened the blast
+    radius of the machine it runs on, and that is a decision for whoever
+    operates it, not a default. -PersistLogin is that decision, it is accepted
+    only in the Connect mode, and `m365g login` is the one caller that passes
+    it. A later delegated run for the same tenant and application registration
+    then signs in from the operating system's protected storage. The Logout
+    mode removes it again.
 
     Group expansion is NOT attempted. A group owner is one principal and may
     be forty people, so the script emits expansion_complete = false and a
@@ -162,7 +170,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)]
-    [ValidateSet('Connect', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter')]
+    [ValidateSet('Connect', 'Logout', 'SiteOwners', 'SiteSharing', 'TenantSharing', 'List', 'UniquePermissions', 'TenantSites', 'Modernity', 'Customization', 'SpfxCatalog', 'SpfxPages', 'Activity', 'Classification', 'Agents', 'BrandCenter', 'HubSites', 'SiteSharingAll', 'SiteOwnersAll', 'SiteGuestsAll')]
     [string] $Mode,
 
     # Not mandatory, because `Connect` writes no evidence and demanding a path
@@ -185,6 +193,12 @@ param(
 
     [Parameter()]
     [switch] $DeviceLogin,
+
+    # KEEP THE DELEGATED SIGN-IN FOR LATER RUNS. The operator's explicit choice
+    # and never a default; refused outside the Connect mode and with a
+    # certificate, which signs in by itself and leaves nothing to keep.
+    [Parameter()]
+    [switch] $PersistLogin,
 
     # APP-ONLY WITH A CERTIFICATE. The other authentication mode, and the one
     # an unattended run needs. Exclusive with -DeviceLogin; see Connection.psm1.
@@ -229,7 +243,7 @@ $CollectorName = 'spo-collector'
 
 $Modules = Join-Path $PSScriptRoot 'modules'
 foreach ($module in @('Evidence', 'Connection', 'Sites', 'Sharing', 'Permissions',
-        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents', 'BrandCenter')) {
+        'Modernity', 'Customization', 'Activity', 'Classification', 'Spfx', 'Agents', 'BrandCenter', 'Hubs', 'SiteGuests')) {
     Import-Module (Join-Path $Modules "$module.psm1") -Force
 }
 
@@ -261,10 +275,28 @@ else { 'interactive' }
 
 $certificatePassword = Read-CertificatePassword -VariableName $CertificatePasswordEnv
 
+if ($PersistLogin -and $Mode -ne 'Connect') {
+    throw "-PersistLogin is accepted in the Connect mode only: a collection never decides to keep a sign-in."
+}
+if (($PersistLogin -or $Mode -eq 'Logout') -and $CertificatePath) {
+    throw 'A certificate signs in by itself: there is no persisted sign-in to keep or to remove.'
+}
+
 $TenantHost = Connect-Collector -Mode $Mode -ClientId $ClientId -SiteUrl $SiteUrl `
-    -TenantUrl $TenantUrl -DeviceLogin:$DeviceLogin `
+    -TenantUrl $TenantUrl -DeviceLogin:$DeviceLogin -PersistLogin:$PersistLogin `
     -CertificatePath $CertificatePath -TenantId $TenantId `
     -CertificatePassword $certificatePassword
+
+# --- log out ------------------------------------------------------------------
+#
+# The sign-in library removes a persisted sign-in only through a connection it
+# holds, so this mode opens one from the stored sign-in and closes it clearing
+# what was kept. It reads nothing from the tenant and writes no evidence.
+if ($Mode -eq 'Logout') {
+    Disconnect-PnPOnline -ClearPersistedLogin
+    Write-Host ('LOGOUT ' + ([ordered]@{ cleared = $true; host = $TenantHost } | ConvertTo-Json -Compress))
+    return
+}
 
 # --- connect only ------------------------------------------------------------
 #
@@ -280,12 +312,27 @@ if ($Mode -eq 'Connect') {
     # proves who you are; one read proves what you may see. Emitted on its own
     # line so that a session which opened and then could not read anything
     # cannot be reported as a working connection.
-    $access = Test-CollectorAuthorization -SiteUrl $SiteUrl
-    Write-Host ('AUTHORIZATION ' + ($access | ConvertTo-Json -Depth 4 -Compress))
+    #
+    # A SIGN-IN THAT IS NOT REPORTED IS NOT KEPT. With -PersistLogin the library
+    # stores the sign-in the moment it opens, before anything below has run. If
+    # this mode then fails, the caller records no session and says nothing was
+    # kept, so the stored sign-in is removed here, through the session that
+    # still holds it, before the failure is passed on. Found on the first live
+    # login on PnP.PowerShell 3.4.1, which signed in and then failed below.
+    try {
+        $access = Test-CollectorAuthorization -SiteUrl $SiteUrl
+        Write-Host ('AUTHORIZATION ' + ($access | ConvertTo-Json -Depth 4 -Compress))
 
-    $facts = Get-ConnectionFacts -TenantHost $TenantHost `
-        -IdentityKind $identityKind -IdentityMethod $identityMethod
-    Write-Host ('CONNECTION ' + ($facts | ConvertTo-Json -Depth 4 -Compress))
+        $facts = Get-ConnectionFacts -TenantHost $TenantHost `
+            -IdentityKind $identityKind -IdentityMethod $identityMethod
+        Write-Host ('CONNECTION ' + ($facts | ConvertTo-Json -Depth 4 -Compress))
+    }
+    catch {
+        if ($PersistLogin) {
+            try { Disconnect-PnPOnline -ClearPersistedLogin } catch { Write-Verbose 'no session to clear' }
+        }
+        throw
+    }
     return
 }
 
@@ -600,6 +647,210 @@ switch ($Mode) {
                     -Facts (Get-SiteInventoryFacts -TenantSite $tenantSite) `
                     -Requested @('site', 'enumeration') -Completed @('site') `
                     -Unavailable ([ordered]@{ enumeration = $note }) `
+                    -SourceApi 'PnP.PowerShell / SharePoint Admin')
+        }
+    }
+
+    'SiteGuestsAll' {
+        # THE SAME SHAPE AS SiteOwnersAll, AND FOR THE SAME REASON: only the
+        # site holds its own list of users. Each site is opened as the
+        # identity already signed in, no site is dropped, and a site that
+        # will not open or will not answer gets a document saying so. A list
+        # that came back with no guest in it is an observed zero; a list that
+        # did not come back is not.
+        $sites = @(Get-PnPTenantSite)
+        Write-Host "$($sites.Count) sites enumerated by this identity"
+        $note = New-Unavailable -State 'partial' -Detail (
+            "Enumerated $($sites.Count) sites with $(if ($identityKind -eq 'application') { 'an application' } else { 'a delegated' }) identity. Sites " +
+            'this identity cannot see are absent from this run, and their ' +
+            'number is not knowable from here.')
+        $read = 0
+        foreach ($listed in $sites) {
+            $url = [string] $listed.Url
+            $resource = [ordered]@{
+                workload = 'sharepoint'; type = 'site'
+                native_id = $url
+                tenant = (New-TenantIdentity)
+                scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                display_name = [string] $listed.Title
+                url = $url
+            }
+            try {
+                Connect-CollectorSite -Url $url
+                $result = Get-SiteGuestFacts
+            }
+            catch {
+                $state = Resolve-FailureState $_
+                $result = @{
+                    facts       = @{ site_guests = [ordered]@{
+                            guests = New-AbsentFact -State $state -Detail $_.Exception.Message
+                        }
+                    }
+                    unavailable = New-Unavailable -State $state -Detail $_.Exception.Message
+                }
+            }
+            $unavailable = [ordered]@{ enumeration = $note }
+            $completed = @('site_guests')
+            if ($null -ne $result.unavailable) {
+                $unavailable['site_guests'] = $result.unavailable
+                $completed = @()
+            }
+            else { $read++ }
+            Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                    -Resource $resource `
+                    -Facts $result.facts -Requested @('site_guests', 'enumeration') `
+                    -Completed $completed -Unavailable $unavailable)
+        }
+        Write-Host "$read of $($sites.Count) sites returned their list of users"
+    }
+
+    'SiteOwnersAll' {
+        # ENUMERATE THROUGH THE ADMINISTRATION SURFACE, THEN OPEN EACH SITE.
+        # Who administers a site is answered by the site and by nothing else,
+        # so each one is opened as the identity already signed in, by the same
+        # method (Connect-CollectorSite takes no identity of its own).
+        #
+        # NO SITE IS DROPPED AND NO REFUSAL IS AN EMPTY LIST. A site that will
+        # not open, or will not say who administers it, gets a document whose
+        # owners fact carries the state. Get-OwnerFacts already refuses to
+        # publish an empty answer as a site with no administrators.
+        $sites = @(Get-PnPTenantSite)
+        Write-Host "$($sites.Count) sites enumerated by this identity"
+        $note = New-Unavailable -State 'partial' -Detail (
+            "Enumerated $($sites.Count) sites with $(if ($identityKind -eq 'application') { 'an application' } else { 'a delegated' }) identity. Sites " +
+            'this identity cannot see are absent from this run, and their ' +
+            'number is not knowable from here.')
+        $read = 0
+        foreach ($listed in $sites) {
+            $url = [string] $listed.Url
+            $resource = [ordered]@{
+                workload = 'sharepoint'; type = 'site'
+                native_id = $url
+                tenant = (New-TenantIdentity)
+                scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                display_name = [string] $listed.Title
+                url = $url
+            }
+            try {
+                Connect-CollectorSite -Url $url
+                $result = Get-OwnerFacts
+            }
+            catch {
+                $state = Resolve-FailureState $_
+                $result = @{
+                    facts       = @{ owners = New-AbsentFact -State $state -Detail $_.Exception.Message }
+                    unavailable = New-Unavailable -State $state -Detail $_.Exception.Message
+                }
+            }
+            $unavailable = [ordered]@{ enumeration = $note }
+            $completed = @('owners')
+            if ($null -ne $result.unavailable) {
+                $unavailable['owners'] = $result.unavailable
+                $completed = @()
+            }
+            else { $read++ }
+            Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                    -Resource $resource `
+                    -Facts $result.facts -Requested @('owners', 'enumeration') `
+                    -Completed $completed -Unavailable $unavailable)
+        }
+        Write-Host "$read of $($sites.Count) sites said who administers them"
+    }
+
+    'SiteSharingAll' {
+        # ENUMERATE, THEN READ EACH SITE BY ITS ADDRESS. The enumeration cannot
+        # carry this: Microsoft documents that a filtered enumeration does not
+        # populate SharingCapability and may return a default, and it was
+        # reproduced here (Sites.psm1). So the enumeration supplies the
+        # addresses and nothing else, and every value comes from the identity
+        # path, one call per site.
+        #
+        # NO SITE IS DROPPED. A site whose own read fails still gets a document,
+        # with the area unavailable and the collector's state for why: a refusal
+        # on one site is a fact about that site, and a list that silently lost
+        # it would read as a tenant with one site fewer.
+        $sites = @(Get-PnPTenantSite)
+        Write-Host "$($sites.Count) sites enumerated by this identity"
+        $note = New-Unavailable -State 'partial' -Detail (
+            "Enumerated $($sites.Count) sites with $(if ($identityKind -eq 'application') { 'an application' } else { 'a delegated' }) identity. Sites " +
+            'this identity cannot see are absent from this run, and their ' +
+            'number is not knowable from here.')
+        $read = 0
+        foreach ($listed in $sites) {
+            $url = [string] $listed.Url
+            $resource = [ordered]@{
+                workload = 'sharepoint'; type = 'site'
+                native_id = $url
+                tenant = (New-TenantIdentity)
+                scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                display_name = [string] $listed.Title
+                url = $url
+            }
+            try {
+                $site = Get-PnPTenantSite -Identity $url
+                Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                        -Resource $resource `
+                        -Facts (Get-SharingFacts -Site $site) `
+                        -Requested @('sharing', 'enumeration') -Completed @('sharing') `
+                        -Unavailable ([ordered]@{ enumeration = $note }) `
+                        -SourceApi 'PnP.PowerShell / SharePoint Admin')
+                $read++
+            }
+            catch {
+                # The fact a rule reads is present and says why it has no
+                # value, so the rule answers `unknown` from the collector's own
+                # state instead of from an absence it would have to interpret.
+                $state = Resolve-FailureState $_
+                $why = New-Unavailable -State $state -Detail $_.Exception.Message
+                $absent = [ordered]@{ sharing = [ordered]@{
+                        capability = New-AbsentFact -State $state -Detail $_.Exception.Message
+                    }
+                }
+                Write-Evidence -Path $OutputPath -Name $url -Evidence (New-Evidence `
+                        -Resource $resource `
+                        -Facts $absent `
+                        -Requested @('sharing', 'enumeration') -Completed @() `
+                        -Unavailable ([ordered]@{ sharing = $why; enumeration = $note }) `
+                        -SourceApi 'PnP.PowerShell / SharePoint Admin')
+            }
+        }
+        Write-Host "$read of $($sites.Count) sites read by their own address"
+    }
+
+    'HubSites' {
+        # THE TENANT FIRST, THEN ONE DOCUMENT PER HUB. A tenant with no hub
+        # would otherwise write nothing, and a run that wrote nothing cannot be
+        # told from a run that read nothing: the tenant document carries the
+        # count, so zero is an observation with a place to live.
+        $hubs = @(Get-PnPHubSite)
+        Write-Host "$($hubs.Count) hub sites registered in this tenant"
+        Write-Evidence -Path $OutputPath -Name $TenantUrl `
+            -Evidence (New-Evidence `
+                -Resource ([ordered]@{
+                    workload = 'sharepoint'; type = 'tenant'
+                    native_id = $TenantHost
+                    tenant = (New-TenantIdentity)
+                    scope = 'tenant'; parent = $null
+                    display_name = $TenantUrl; url = $TenantUrl
+                }) `
+                -Facts (Get-HubPopulationFacts -Count $hubs.Count) `
+                -Requested @('hubs') -Completed @('hubs') `
+                -Unavailable ([ordered]@{}) `
+                -SourceApi 'PnP.PowerShell / SharePoint Admin')
+        foreach ($hub in $hubs) {
+            Write-Evidence -Path $OutputPath -Name ([string] $hub.SiteUrl) `
+                -Evidence (New-Evidence `
+                    -Resource ([ordered]@{
+                        workload = 'sharepoint'; type = 'site'
+                        native_id = [string] $hub.SiteUrl
+                        tenant = (New-TenantIdentity)
+                        scope = 'collection'; parent = [ordered]@{ workload = 'sharepoint'; type = 'tenant'; native_id = $TenantHost }
+                        display_name = [string] $hub.Title
+                        url = [string] $hub.SiteUrl
+                    }) `
+                    -Facts (Get-HubFacts -Hub $hub) `
+                    -Requested @('hub') -Completed @('hub') `
+                    -Unavailable ([ordered]@{}) `
                     -SourceApi 'PnP.PowerShell / SharePoint Admin')
         }
     }

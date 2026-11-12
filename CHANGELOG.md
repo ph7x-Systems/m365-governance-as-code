@@ -10,9 +10,291 @@ Rules carry their own versions, independently of this file. See
 
 ## Unreleased
 
-Work merged after `1.0.0b8` is recorded here and is not published, not
+Work merged after `1.0.0b10` is recorded here and is not published, not
 documented on the site as runnable, and not `tested_with` anything until it
 ships in a release of its own.
+
+## 1.0.0b10 — 2026-11-12
+
+The command line by service, a session that is kept, composed scenarios, and
+every rule run against a tenant. `m365g` is the command; `m365-governance`
+keeps working and the earlier command names keep their behaviour. Every read
+named below as proved was read from one directory on the dates given, and
+each record in the proof registry says what that read did not cover.
+
+### Added
+
+- **`m365g teams team list`.** The teams of the directory, which are the
+  Microsoft 365 groups provisioned as teams: the groups read shown through a
+  filter, and no second call to anything.
+
+- **`--where COLUMN=VALUE` and `--sort COLUMN` on every read.** A view can be
+  narrowed to the resources whose column prints a value, and ordered by a
+  column, with numbers before text. A refusal is found by its state in
+  brackets, such as `--where site_guests.guests=[permission-denied]`, so a
+  filter for a value never matches something that was not observed. A filter
+  chooses what is shown and never what is read or kept, the command says how
+  many resources were left out, and a column nobody has is a refusal instead
+  of an empty view.
+
+- **`m365g collector list`, `describe NAME` and `test NAME`.** What this
+  engine can collect, with the command that runs each collector, what it
+  reads, the permissions recorded for it, the rules it feeds, whether it has
+  read a directory, and what its proof did not cover, read from the
+  collectors' own declarations and the proof registry. `test` is a contract
+  test: it holds the collector's packaged fixtures to the evidence contract,
+  names each with its origin, and prints whether a directory has answered the
+  collector on a separate line taken from the proof registry, so a pass is
+  never read as a tenant having been read. None of the three reaches a tenant.
+
+- **`m365g entra serviceprincipal list`, and the `service-principals`
+  collection behind it.** Every service principal with whether it is enabled,
+  whether the application behind it belongs to this directory (decided from
+  two identifiers, never from a name) and when its own credentials end. The
+  same rule as applications: nothing that is or belongs to a secret is
+  written. Needs `Application.Read.All`. Proved against a tenant on
+  2026-11-12.
+- **The application exposure inspection joins registrations to service
+  principals** on the application identifier both carry: each registration
+  says whether it can sign in to this directory, and the service principals
+  with no registration here are counted by whose application they are.
+
+- **`m365g spo site guests`, and the `sites-guests` collection behind it.**
+  Which guest accounts each enumerated site has met, read from the site's own
+  list of users and kept as directory object identifiers only: no login name,
+  display name or mail address is written. A guest with no directory account
+  is counted apart. A site that refuses its list gets a document saying so.
+  Proved against a tenant on 2026-11-12.
+- **The external-access inspection joins guests to sites.** With that
+  collection in the evidence each site shows how many guests it has met, and
+  the inspection compares the accounts the sites have met with the guests the
+  directory lists, on the object identifier both carry. It calls the relation
+  met and never access, and says what an account met by a site and not listed
+  as a guest may be without deciding which.
+
+- **`m365g governance inspect-diff BEFORE AFTER`: what changed between two
+  inspections.** Rows that entered the evidence, rows that left it and rows
+  whose values differ, column by column. Only the same scenario with the same
+  parameters is compared; anything else is refused, because a threshold that
+  moved is not a change in the tenant. A row that left is reported as having
+  left the evidence, never as a resource that was deleted.
+
+- **`m365g entra group list`, and the `groups` collection behind it.
+  Proved against a tenant on 2026-11-12.** Every Microsoft 365
+  group with how many owners and members it has, by kind: only identifiers are
+  asked for and none is written. Owners that were refused are never a group
+  with no owner. Needs `GroupMember.Read.All`.
+- **The ownership inspection shows a site's Microsoft 365 group beside it.**
+  Where the site enumeration and a group collection are in the evidence, each
+  row says whether the site is connected to a group and how many of that
+  group's owners are users. A group owner is not a site collection
+  administrator, with one exception that is read and not assumed: when the
+  group among a site's administrators is the owners claim of the group the
+  site is connected to, by the same identifier, its owners are the people
+  behind it. They are then counted as a range, at least the larger of the two
+  lists and at most both together, because nothing read says whether a named
+  administrator is also an owner. Proved against a tenant on 2026-11-12.
+
+- **A Microsoft Graph read signs in as the person, through the registration
+  already in use.** With an application registration and no certificate,
+  `m365g entra guest list` and the other Graph reads ask for a delegated token
+  for the scopes their collector declares and no others; a session kept by
+  `login` answers without asking: proved against a tenant on 2026-11-12, where
+  one kept sign-in served both reads. Until now the engine had no delegated
+  path to Graph and a token had to be obtained outside it. A scope nobody consented
+  to is asked for at the sign-in and is the person's to grant there.
+
+- **`m365g governance inspect ca-coverage`, the fourth composed scenario.**
+  Whom each Conditional Access policy names, whom it leaves out, which other
+  conditions narrow it, and whether it is enforced, reporting only, or off,
+  read from the policy's own definition in evidence the existing collector
+  already produces. `--policy-id` shows one. It states that this is the
+  static scope and not who a policy applies to: no group was expanded, a
+  definition is not a sign-in, and policies combine.
+
+- **`m365g entra app list`, and the `applications` collection behind it.
+  Proved against a tenant on 2026-11-11.** One document per
+  application registration: how many secrets and certificates it holds, when
+  each ends, and how many permissions it asks for, by kind. A secret's value,
+  its hint and a certificate's bytes or thumbprint are never written. A
+  credential list the service did not return is `missing`, never empty. Needs
+  `Application.Read.All`.
+- **`m365g governance inspect app-exposure`, the third composed scenario.**
+  Which applications hold a credential that had ended or ends within a window
+  (`--expires-within 30d`). It measures from when the evidence was collected
+  and never from the clock, so the same evidence always gives the same answer.
+  What an application asks for is shown as asked, not granted.
+
+- **`m365g spo site admins`, and the `sites-owners` collection behind it.** Who
+  administers every enumerated site, read by opening each site as the identity
+  already signed in. A site that will not open or will not answer gets a
+  document saying so, and an empty answer is never published as a site with no
+  administrators. Proved against a tenant on 2026-11-11, where some sites
+  refused and some answered nothing.
+- **`m365g governance inspect ownership`, the second composed scenario.** It
+  compares the administrators a site names with a number the operator chooses
+  (`--minimum-owners`, default 2) and reports `meets`, `at-least`, `fewer` or
+  `not-established`. A group is never counted as one person or as none: a
+  site whose named administrators fall short and which also has a group is
+  `not-established`, because the group was not expanded.
+
+- **`m365g entra guest list`, and the `guests` collection behind it.
+  Proved against a tenant on 2026-11-11.** One document per guest
+  account, keyed by the directory's object id, and one for the tenant with how
+  many were read. Six properties are requested and none names a person. A
+  refusal is never an empty directory, a read that stops part of the way keeps
+  what it read and publishes no total, and an account the service returns
+  that is not a guest is not written as one. Needs `User.Read.All`.
+
+- **`docs/COMMAND-REFERENCE.json`, a derived reference of every command.** One
+  entry per command with what it reads, the permissions recorded for it, the
+  rules it feeds, how far it was proved and examples, generated from the
+  capability manifest and the grouping and scenario tables and checked by the
+  release gate. It is what a documentation site reads instead of retyping.
+
+- **`m365g spo sharing list`, and the `sites-sharing` collection behind it.**
+  What every enumerated site permits, read site by site: the enumeration
+  supplies the addresses and every value comes from the site's own read,
+  because a filtered enumeration does not populate the setting. A site whose
+  read is refused still gets a document saying so. Proved against a tenant on
+  2026-11-11.
+- **`m365g governance inspect external-access`, the first composed scenario.**
+  It joins what each site permits to what the organisation permits, over
+  evidence already collected, and reports what is in force for each site and
+  why. It reaches no tenant and no outcome, drops no site, and names what it
+  does not establish: guests, what is in fact shared, and who can reach what.
+  `--out FILE` keeps the inspection with the digest of the evidence it read.
+  When a guest collection is in the evidence it reports the guest accounts by
+  condition (enabled, disabled, invitation accepted or pending) and states that
+  they are joined to no site: a guest existing and a site permitting guests
+  are two facts, and nothing read connects them.
+
+- **`m365g spo hub list`, and the `hubs` collection behind it.** The sites
+  registered as hubs and how each is set: whether joining needs approval,
+  whether association is restricted and to how many principals, whether it has
+  a parent hub. One tenant document carries the count, so a tenant with no hub
+  is an observation and not an empty directory. It feeds no rule, by decision:
+  Microsoft publishes no position on how hubs should be set, and the reader is
+  the operator and the report. Proved against a tenant on 2026-11-11 and
+  counter-checked against the site enumeration of the same session.
+
+### Fixed
+
+- **The Exchange forwarding collector could not write evidence.** It built its
+  envelope without declaring who was collecting, and the envelope refuses to
+  exist without a provenance, so the first run against a directory signed in,
+  read and ended with nothing. It declares it now and closes its session when
+  it is done. `EXO-FORWARD-001` and `EXO-FORWARD-002` were then run against a
+  tenant for the first time, on 2026-11-12, and both decided.
+
+- **SharePoint's own refusal was recorded as an absence.** `Access is denied`
+  (E_ACCESSDENIED) did not match the pattern for a denial and was written as
+  `missing`. It is `permission-denied`. Found on the first tenant-wide read of
+  site users, where sixteen sites answered that way.
+
+- **A token inside a sentence was not removed from a failure message.** Only
+  a token alone on its line was. Both are now.
+
+- **The terminal view printed a family of facts as the names of its own keys**,
+  `{raw, state, value}`, for every collection whose facts are grouped. It now
+  prints one line or column per fact, named `family.fact`, with the value that
+  was observed, and a state in square brackets where nothing was.
+
+- **`login` failed on PnP.PowerShell 3.4.1 after signing in.** The collector
+  read a property the connection object no longer has. The session's scopes
+  and directory are now read from its own token's claims.
+- **A login that failed after the session opened left the sign-in stored**
+  while reporting that nothing was kept. It is now removed before the failure
+  is reported.
+
+### A run can be limited to some collections
+
+`run --only sites,owners` attempts those collections and no others, by the
+names `collect` uses. The plan still lists every collection: the ones left out
+are shown as left out, because what a run did not read is part of what its
+report means.
+
+### Help says where to start, and a failure says why
+
+`m365g --help` opens with the first commands somebody needs and lists the
+commands by group. `--help` on a grouped read says what it reads, the
+permissions it needs, how it signs in, which rules it feeds and whether it has
+been proved against a tenant, from the capability manifest. A collection that
+fails says whether the sign-in was refused or the identity was not permitted to
+read, and what to do next; where the cause is not recognised it shows the
+collector's own last words and guesses nothing.
+
+### A read answers in the terminal, and `--output` means the same everywhere
+
+`m365g spo site list` prints what was read: as text, or as `json`, `csv` or
+`md` with `--output`. The JSON view is the evidence documents themselves.
+`--evidence-out` keeps the evidence; without it what is shown is a view, the
+documents are not kept, and the command says so. `--output` is also accepted
+wherever a command took `--format`. Every earlier spelling still works
+unchanged, `collect --output <directory>` included; `docs/CLI.md` holds the
+table and the precedence.
+
+### Commands are grouped, and every earlier name still works
+
+`m365g spo site list`, `m365g entra ca list`, `m365g rule list`,
+`m365g governance run`: a command is found by its service, then the thing, then
+what to do with it. Each is the earlier command by another name and behaves
+identically; `docs/CLI.md` holds the table. A group named on its own lists what
+it holds.
+
+### A session can be kept, and only because somebody logged in
+
+`m365g login` signs in to one tenant and keeps the session, so the collections
+that follow do not ask again. `status`, `logout` and `connection list`, `use`
+and `remove` manage what was kept. Nothing else changed its behaviour: without
+a login every command still signs in for itself and leaves nothing behind.
+
+**The token is never held by this engine.** It is written by the sign-in
+library into the operating system's protected storage. Where that cannot be
+established, which is Linux with no keyring, `login` refuses rather than let
+the library fall back to an unprotected file, and it checks what is on disk
+after the sign-in as well as before it.
+
+**A session is for one tenant and is not an authorization.** A command aimed at
+another tenant ignores the active connection and says so, and `login` reports
+what the identity may read separately from the fact that it signed in.
+
+**Every SharePoint collection reuses it.** `docs/CLI.md` names the ones that
+do not and why.
+
+### The licensing collection no longer leaves a sign-in behind
+
+The Microsoft Graph PowerShell SDK keeps a delegated sign-in for every later
+session of the same user unless told otherwise, and reuses one that is already
+there. The licensing collector did not tell it otherwise. It now confines its
+sign-in to its own process.
+
+### The command is `m365g`, and nothing else is renamed
+
+`m365-governance` is fifteen characters somebody types dozens of times in a
+session, and an executable does not have to repeat the product's name back at
+whoever is running it. The wheel now installs `m365g` alongside it, resolving to
+the same entry point.
+
+**The old name is a compatibility alias and stays.** Scripts, runbooks and
+consumers that invoke this engine as a subprocess already use it, and breaking
+those buys nothing. Both console scripts are asserted in the suite and in the
+clean-install gate, because the alias is the half that rots: it is exercised on
+machines this project never sees, and its failure mode is a runbook reporting
+`command not found` months later under a green gate.
+
+**`--help` prints the name that was invoked**, rather than one hardcoded name
+for everybody. Usage a reader cannot paste back into the shell they typed it in
+is usage written for somebody else, and the readers it failed for were exactly
+the ones still on the alias.
+
+**Nothing else moved**, and that is the point of the change rather than a
+caveat on it: the distribution is still `m365-governance-as-code`, the Python
+package is still `m365_governance`, the schema `$id`s are unchanged, and the
+`produced_by` string that travels into every migration document still reads
+`m365-governance <version>`. Those identify the product inside artefacts that
+already exist in the world. Proved by producing the canonical bundle twice from
+one evidence file, once under each name: byte for byte identical.
 
 ---
 

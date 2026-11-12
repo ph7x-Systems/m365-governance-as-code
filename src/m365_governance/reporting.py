@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import re
+from dataclasses import dataclass
 
 from . import attention
 from . import identity as identity_module
@@ -173,7 +174,6 @@ def _provenance_lines(run: Run) -> list[str]:
             f"asked for rather than what was observed."
         )
 
-    identity_kind = prov.get("identity_kind")
     # Keyed on acquisition, not on identity. They were one field, so this
     # warning was asking who observed the evidence in order to answer how it
     # got here — and an import that named its collecting identity lost the
@@ -198,15 +198,93 @@ def _provenance_lines(run: Run) -> list[str]:
         stale = _export_gap(prov)
         if stale:
             lines.append(f"- **{stale}**")
-    elif identity_kind == "delegated":
-        lines.append(
-            "- **Identity: delegated.** This run saw what one person sees. "
-            "Nothing here may be read as a tenant-wide statement."
-        )
-    else:
-        scopes = ", ".join(prov.get("scopes", [])) or "none recorded"
-        lines.append(f"- Identity: {identity_kind or '?'}, scopes: {scopes}")
+    # DISCLOSED WHETHER OR NOT THE EVIDENCE WAS IMPORTED. This sat on the
+    # `elif` of the import branch, so imported evidence carried an import
+    # notice and no identity at all -- and imported evidence is exactly where
+    # the identity that produced it is least likely to be known.
+    for disclosure in disclosures([prov]):
+        lines.append(f"- **Identity: {disclosure.label}.** {disclosure.sentence}")
+    scopes = ", ".join(prov.get("scopes", []))
+    if scopes:
+        lines.append(f"- Scopes: {scopes}")
     return lines
+
+
+@dataclass(frozen=True)
+class Disclosure:
+    """What one identity kind means for what a report may be read as."""
+
+    label: str
+    sentence: str
+
+
+#: EVERY IDENTITY KIND, DISCLOSED, AND THE TABLE IS THE ONLY PLACE IT IS
+#: DECIDED.
+#:
+#: Four renderers each carried their own `if delegated` with their own
+#: sentence, written at different times. `delegated` -- the NARROWER authority,
+#: which sees what one person sees -- was disclosed in all four. `application`
+#: -- which reads whatever the tenant granted the application, and is not
+#: limited to any person's view -- was named in one of the four and silently
+#: absent from the other three.
+#:
+#: A broader authority receiving less disclosure than a narrower one is the
+#: defect, and it did not happen because anybody decided it. It happened
+#: because each renderer decided separately, and the one written when only
+#: delegated existed was never revisited.
+#:
+#: So the decision is here and the renderers format it. A kind absent from this
+#: table cannot be quietly skipped: `disclosures` names it anyway, and a test
+#: reads the published enum and fails if this table has fallen behind it.
+IDENTITY = {
+    "delegated": Disclosure(
+        "Delegated",
+        "This assessment reflects what the signed-in identity was permitted "
+        "to read, which is what one person sees. Nothing here may be read as "
+        "a tenant-wide statement.",
+    ),
+    "application": Disclosure(
+        "Application",
+        "This assessment reflects what the configured application was "
+        "permitted to read, by tenant-granted application permissions. Its "
+        "reach is not limited to what any one person can see.",
+    ),
+    "not-established": Disclosure(
+        "Not established",
+        "The evidence does not record which identity produced it, so what "
+        "this assessment was able to reach is not known.",
+    ),
+}
+
+
+def disclosures(provenances: list[dict]) -> list[Disclosure]:
+    """Every identity kind present, each disclosed once.
+
+    ALL OF THEM, AND NOT WHETHER ONE OF THEM IS DELEGATED. The run-set
+    renderers asked `any(kind == "delegated")`, so a set holding one delegated
+    run and nine application ones disclosed the delegated one and said nothing
+    about the nine. A reader concluded the assessment was limited to what one
+    person could see, when most of it was not.
+
+    Evidence carrying no identity is `not-established` and is disclosed as
+    that. Absent is not delegated, and it is not nothing: it is the one case
+    where a reader cannot bound what was reached at all.
+    """
+    kinds = {(p or {}).get("identity_kind") or "not-established" for p in provenances}
+    found = []
+    for kind in sorted(kinds):
+        found.append(
+            IDENTITY.get(
+                kind,
+                Disclosure(
+                    kind,
+                    f"The evidence records an identity of `{kind}`, which this "
+                    "version does not describe. What it was able to reach is "
+                    "not established here.",
+                ),
+            )
+        )
+    return found
 
 
 def _export_gap(prov: dict) -> str:
@@ -461,7 +539,6 @@ def to_html(run: Run) -> str:
             f"{_esc(prov.get('collector_version', ''))}, from "
             f"{_esc(prov.get('source_system', '?'))}.</p>"
         )
-        identity_kind = prov.get("identity_kind")
         if prov.get("acquisition") == "imported":
             source = prov.get("import_source", {})
             exported = ", ".join(
@@ -485,11 +562,10 @@ def to_html(run: Run) -> str:
             gap = _export_gap(prov)
             if gap:
                 parts.append(f'<p class="warn"><strong>{_esc(gap)}</strong></p>')
-        elif identity_kind == "delegated":
+        for disclosure in disclosures([prov]):
             parts.append(
-                '<p class="warn"><strong>Identity: delegated.</strong> This run '
-                "saw what one person sees. Nothing here may be read as a "
-                "tenant-wide statement.</p>"
+                f'<p class="warn"><strong>Identity: {_esc(disclosure.label)}.'
+                f"</strong> {_esc(disclosure.sentence)}</p>"
             )
 
     unavailable = (run.coverage or {}).get("unavailable") or {}
@@ -739,14 +815,8 @@ def many_to_markdown(value: list[Run] | RunSet) -> str:
         )
     lines.append("")
 
-    delegated = any(
-        (run.provenance or {}).get("identity_kind") == "delegated" for run in runs
-    )
-    if delegated:
-        lines.append(
-            "> **Identity: delegated.** These runs saw what one person sees. "
-            "Nothing here may be read as a tenant-wide statement."
-        )
+    for disclosure in disclosures([run.provenance for run in runs]):
+        lines.append(f"> **Identity: {disclosure.label}.** {disclosure.sentence}")
         lines.append("")
 
     lines.append("## Summary")
@@ -896,11 +966,10 @@ def many_to_html(value: list[Run] | RunSet) -> str:
             "expected resources are stored.</p>"
         )
 
-    if any((run.provenance or {}).get("identity_kind") == "delegated" for run in runs):
+    for disclosure in disclosures([run.provenance for run in runs]):
         parts.append(
-            '<p class="warn"><strong>Identity: delegated.</strong> These runs '
-            "saw what one person sees. Nothing here may be read as a tenant-wide "
-            "statement.</p>"
+            f'<p class="warn"><strong>Identity: {_esc(disclosure.label)}.'
+            f"</strong> {_esc(disclosure.sentence)}</p>"
         )
 
     parts.append("<h2>Summary</h2>")

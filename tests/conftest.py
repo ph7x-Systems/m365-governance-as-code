@@ -96,6 +96,58 @@ def site_rule() -> dict:
 # A test that needs the collector patches `_run` for itself, which is what the
 # ones that mean to already do.
 @pytest.fixture(autouse=True)
+def _no_test_reads_this_machines_connections(monkeypatch, tmp_path_factory):
+    """Give every test an empty connection store of its own.
+
+    The store lives in the home of whoever runs the suite. A developer who has
+    logged in has an active connection there, and every command a test invokes
+    in this process would then consult it: the suite passed on a machine that
+    had never logged in and failed on the first one that had. A test that
+    needs a store sets `M365G_HOME` itself, after this.
+    """
+    monkeypatch.setenv("M365G_HOME", str(tmp_path_factory.mktemp("m365g-home")))
+
+
+@pytest.fixture
+def forwarding_never_ran(monkeypatch):
+    """The proof registry with the forwarding records withdrawn.
+
+    EVERY COLLECTOR HAS READ A DIRECTORY NOW, so no collector is left to stand
+    for one that has not. The properties that were held against such a
+    collector are held against this instead: take a collector's records away
+    and it is `none` again, which is the same statement and the stronger
+    proof, because it shows the state is derived and not remembered.
+    """
+    from m365_governance import live_proof
+
+    kept = live_proof._registry()["records"]
+    monkeypatch.setitem(
+        live_proof._registry(),
+        "records",
+        [r for r in kept if r.get("collector") != "forwarding"],
+    )
+
+
+@pytest.fixture(autouse=True)
+def _no_test_signs_in_for_a_graph_token(monkeypatch):
+    """Refuse to start the real sign-in that mints a Microsoft Graph token.
+
+    The collector guard below watches one process boundary; the token runner
+    is another, and a delegated token opens a browser on the machine running
+    the suite. A test proves this path by handing `acquire` its own runner.
+    """
+    from m365_governance import graph_token
+
+    def refused(timeout, environment=None):
+        raise AssertionError(
+            "a test reached the real Graph sign-in. Pass `run=` to "
+            "graph_token.acquire or acquire_delegated, or patch them."
+        )
+
+    monkeypatch.setattr(graph_token, "_subprocess", refused)
+
+
+@pytest.fixture(autouse=True)
 def _no_test_reaches_a_tenant(monkeypatch, request):
     """Refuse to start the shipped collector from inside the suite."""
     from m365_governance import collecting

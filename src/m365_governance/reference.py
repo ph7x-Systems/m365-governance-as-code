@@ -1,0 +1,180 @@
+"""Every command, described from the contracts it is made of.
+
+One derivation for anything that documents the command line: a reference page,
+a search index, a help screen. A command's description, the surface it reads,
+the permissions recorded for it, the rules it feeds and how far it has been
+proved all come from the capability manifest, the grouping table and the
+scenario table. Nothing here is typed in by hand, so a page built from it
+cannot describe a command the engine does not have, or one it had last month.
+
+THIS SAYS WHAT IS IMPLEMENTED IN THE TREE IT RUNS FROM. Whether a command has
+shipped is a fact about a release, and is settled by which release carries
+this file: a consumer documents a command as available only from the copy that
+a published version shipped.
+"""
+
+from __future__ import annotations
+
+from . import capabilities, collecting, grouping, scenarios
+
+SCHEMA = "https://ph7x.com/schemas/m365-governance/command-reference/1.0.0"
+COMMAND = "m365g"
+FORMATS = ["text", "json", "csv", "md"]
+
+
+def _collection(group: str, path: tuple[str, ...], name: str, by_name: dict) -> dict:
+    chosen = collecting.SLICES[name]
+    collector = by_name.get(name, {}).get("collector", {})
+    needs = []
+    if chosen.needs_site:
+        needs.append("--site-url")
+    if chosen.needs_tenant:
+        needs.append("--tenant-url")
+    full = f"{COMMAND} {group} {' '.join(path)}"
+    return {
+        "command": full,
+        "earlier_name": f"{COMMAND} collect {name}",
+        "kind": "enumeration" if chosen.writes_many else "read",
+        "service": group,
+        "describes": chosen.describes,
+        "collection": name,
+        "reads": list(collector.get("reads") or []),
+        "permissions": list(collector.get("permissions") or ["not-established"]),
+        "needs": needs,
+        "output": FORMATS,
+        "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
+        "feeds_rules": list(by_name.get(name, {}).get("consumed_by") or []),
+        "consumed_by": chosen.consumed_by,
+        "live_validation_state": collector.get("live_validation_state", "none"),
+        "examples": [
+            f"{full} {' '.join(f'{flag} <address>' for flag in needs)}".strip(),
+            f"{full} --output csv",
+            f"{full} --evidence-out ./evidence",
+        ],
+    }
+
+
+def _ungrouped(covered: set[str]) -> list[dict]:
+    """Every command the parser has that no group leads to.
+
+    Read from the parser itself, so a command cannot exist without being
+    listed: `login`, `status`, `logout` and the `connection` commands are how
+    a person signs in, and a reference that left them out described a command
+    line nobody could start using.
+    """
+    import argparse
+
+    from . import cli
+
+    parser = cli._build_parser()
+    top = next(
+        action
+        for action in parser._actions
+        if isinstance(action, argparse._SubParsersAction)
+    )
+    says = {choice.dest: choice.help or "" for choice in top._choices_actions}
+    groups = {group.name for group in grouping.GROUPS}
+    found = []
+    for name, command in top.choices.items():
+        if name in groups:
+            continue
+        nested = next(
+            (
+                action
+                for action in command._actions
+                if isinstance(action, argparse._SubParsersAction)
+            ),
+            None,
+        )
+        names = (
+            [
+                (f"{name} {inner}", choice.help or "")
+                for inner, choice in zip(
+                    nested.choices, nested._choices_actions, strict=True
+                )
+            ]
+            if nested
+            else [(name, says.get(name, ""))]
+        )
+        for full, describes in names:
+            if f"{COMMAND} {full}" in covered or any(
+                earlier.startswith(f"{COMMAND} {full} ") for earlier in covered
+            ):
+                continue
+            found.append(
+                {
+                    "command": f"{COMMAND} {full}",
+                    "earlier_name": f"{COMMAND} {full}",
+                    "kind": "command",
+                    "service": "session" if name in SESSION else "engine",
+                    "describes": describes,
+                }
+            )
+    return found
+
+
+#: The commands a person signs in and out with.
+SESSION = ("login", "status", "logout", "connection", "connect")
+
+
+def build() -> dict:
+    """The reference, in a stable order."""
+    by_name = {c["name"]: c for c in capabilities.manifest(None)["capabilities"]}
+    commands = []
+    for group in grouping.GROUPS:
+        for path, flat in group.paths.items():
+            if flat[0] == "collect" and len(flat) == 2:
+                commands.append(_collection(group.name, path, flat[1], by_name))
+            elif flat == ("inspect",):
+                for name, (says, _build, reads) in scenarios.SCENARIOS.items():
+                    full = f"{COMMAND} {group.name} inspect {name}"
+                    commands.append(
+                        {
+                            "command": full,
+                            "earlier_name": f"{COMMAND} inspect {name}",
+                            "kind": "scenario",
+                            "service": group.name,
+                            "describes": says,
+                            "reads_collections": list(reads),
+                            "reaches_a_tenant": False,
+                            "needs": ["--evidence"],
+                            "output": FORMATS,
+                            "evidence": "--out FILE keeps the inspection with the "
+                            "digest of the evidence it read",
+                            "options": (
+                                {
+                                    "ownership": ["--minimum-owners"],
+                                    "app-exposure": ["--expires-within"],
+                                    "ca-coverage": ["--policy-id"],
+                                }.get(name, [])
+                            ),
+                            "examples": [
+                                f"{full} --evidence ./evidence",
+                                f"{full} --evidence ./evidence --output csv",
+                                f"{full} --evidence ./evidence --out {name}.json",
+                            ],
+                        }
+                    )
+            else:
+                commands.append(
+                    {
+                        "command": f"{COMMAND} {group.name} {' '.join(path)}",
+                        "earlier_name": f"{COMMAND} {' '.join(flat)}",
+                        "kind": "command",
+                        "service": group.name,
+                    }
+                )
+    commands += _ungrouped({entry["earlier_name"] for entry in commands})
+    commands.sort(key=lambda entry: entry["command"])
+    return {
+        "$schema": SCHEMA,
+        "_readme": (
+            "Generated by tools/command-reference.py from the capability "
+            "manifest, the grouping table and the scenario table. It describes "
+            "the tree it was generated from and carries no released or "
+            "unreleased field: whether a command has shipped is settled by "
+            "which released version carries this file."
+        ),
+        "groups": {group.name: group.says for group in grouping.GROUPS},
+        "commands": commands,
+    }

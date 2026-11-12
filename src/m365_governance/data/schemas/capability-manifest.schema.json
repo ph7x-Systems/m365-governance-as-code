@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0",
+  "$id": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.5.0",
   "title": "Capability manifest",
   "description": "What this engine can do, in one document a consumer can read without cloning it. WHY IT EXISTS. Every fact in here already lived somewhere: the slice registry knew the collectors, the rule files knew the rules and their basis, the schema registry knew the contracts, and each slice knew what a real tenant had established about it. Nothing joined them, so any consumer wanting the whole picture rebuilt it by hand — and a hand-built copy of a fact this engine owns is a second authority that goes stale in silence. IT IS DERIVED AND NEVER STORED. There is no file in the tree to refresh and no generator to forget: it is computed from the objects it describes at the moment it is asked for, so it cannot drift from them. WHAT IT IS NOT: state, a queue or a roadmap. A capability is here because it is implemented and shipping. Planned work has no entry, and a capability nobody has run against a tenant says exactly that in `live_validation` rather than being left out to look better.",
   "type": "object",
@@ -17,7 +17,7 @@
   "properties": {
     "$schema": {
       "type": "string",
-      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.4.0",
+      "const": "https://ph7x.com/schemas/m365-governance/capability-manifest/1.5.0",
       "description": "The exact contract this document claims, which must be the $id of the schema validating it."
     },
     "engine_version": {
@@ -183,7 +183,8 @@
             "representation_checked",
             "second_surface",
             "second_surface_state",
-            "divergence"
+            "divergence",
+            "limitation"
           ],
           "description": "HOW FAR VALIDATION WENT, which is a different axis from `live_validation_state`. That says what was OBSERVED; this says what was CHECKED about the observation. A real acquisition proves the acquisition path and proves nothing about whether the fields mean what this engine says they mean, and a consumer deciding whether to rest a decision on this evidence needs both answers.",
           "properties": {
@@ -208,6 +209,10 @@
             "divergence": {
               "type": "string",
               "description": "What a comparison found when two surfaces disagreed, and why. A divergence settled by preferring whichever source agreed with the product has not been investigated. Empty where nothing diverged."
+            },
+            "limitation": {
+              "type": "string",
+              "description": "What this surface cannot settle EVEN WHEN THE CALL SUCCEEDS. Not an error and not a refusal: a constraint that survives a 200. A national cloud that does not serve the endpoint, a role that returns the object with a section silently missing, a licence tier below which the response is empty for a reason that is not absence. A consumer cannot infer any of it from the evidence, because the request worked. Empty means none is known, which is a weaker claim than none existing."
             }
           }
         },

@@ -10,10 +10,32 @@ The worst outcome from running it is a report you disagree with.
 
 ## What it can read
 
-Whatever the identity you sign in with can read. Both authentication modes are
-delegated, so a run sees what one person sees, and every report states that on
-its first page. Nothing is sent anywhere: the collector writes a file to your
-disk and the engine reads it locally. There is no service on our side.
+Whatever the identity it authenticated as can read, and there is more than one
+kind of identity. Every report names which one produced the evidence.
+
+<!-- identity-modes:start -->
+
+| Identity | How it authenticates | What it can read |
+|---|---|---|
+| `delegated` | a person signs in, interactively or with a device code | what that one person can see. Nothing a run produces this way is a tenant-wide statement |
+| `application` | a registered application authenticates itself with a certificate | whatever the tenant granted the application. It is bounded by no person's view |
+| `not-established` | the evidence does not record it | unknown. This is the case where what a report could reach cannot be bounded at all |
+
+<!-- identity-modes:end -->
+
+The table above is derived from `identity_kind` in the published `connection`
+contract and checked against it by a test. The paragraphs around it are written
+by people.
+
+**Read-only by design is not least privilege, and the two are often confused.**
+There is no write path, so nothing this tool does can change a tenant — that is
+the first section of this document and it holds for every identity. How much a
+run can READ is a separate question, answered by the identity somebody
+configured. An application with broad read permissions produces a report with
+broad reach, and it is still read-only.
+
+Nothing is sent anywhere: the collector writes a file to your disk and the
+engine reads it locally. There is no service on our side.
 
 ## Evidence files contain tenant data
 

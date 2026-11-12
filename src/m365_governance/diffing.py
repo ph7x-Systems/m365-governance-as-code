@@ -52,6 +52,57 @@ class RuleChange:
             return "removed"
         return "changed"
 
+    @property
+    def movement(self) -> str:
+        """WHICH KIND OF CHANGE, WHICH `kind` DOES NOT SAY.
+
+        `kind` is structural -- a rule appeared, went away, or moved -- and
+        `changed` therefore covers two things a reader must never be handed as
+        one. A tenant that went from `pass` to `fail` has a problem that is now
+        proved. A tenant that went from `pass` to `unknown` has the same
+        configuration it had yesterday and has lost the ability to demonstrate
+        it, usually because a permission was withdrawn or a surface stopped
+        answering. Both leave `pass`, both gate a pipeline, and the work they
+        ask for is not remotely the same: one is fixed in the tenant and the
+        other is fixed in the collection.
+
+        NOT YET IN THE COMPARISON CONTRACT, AND DELIBERATELY SO. The contract
+        is closed at `comparison/3.1.0` -- `additionalProperties: false` -- so
+        emitting this in the JSON is a version bump, which is a slice with a
+        schema, a published digest and a site page in it, not a line added to
+        a diff. It is a translation of two values a consumer already receives,
+        so a consumer needing it today can derive it; the bump is queued so
+        that they stop having to.
+
+        DERIVED, AND DECLARED AS DERIVED. This reads `before.outcome` and
+        `after.outcome` -- two contract values -- and names the movement
+        between them. It explains those values and never widens either: every
+        name here maps back onto the pair it came from, and nothing is
+        reachable from this property that was not already in the run.
+        """
+        if self.before is None:
+            return "rule-added"
+        if self.after is None:
+            return "rule-removed"
+
+        was, now = self.before.outcome, self.after.outcome
+        if was is now:
+            return "rule-changed" if self.rule_version_changed else "unchanged"
+
+        # `unknown` and `invalid-evidence` are both the engine saying it could
+        # not decide. They differ in why, and the run says which; for the
+        # movement they are the same side of the line.
+        undecided = {Outcome.UNKNOWN, Outcome.INVALID_EVIDENCE, Outcome.ERROR}
+        if was in undecided and now not in undecided:
+            return "evidence-gained"
+        if now in undecided and was not in undecided:
+            return "evidence-lost"
+        if now is Outcome.FAIL:
+            return "finding-appeared"
+        if was is Outcome.FAIL:
+            return "finding-resolved"
+        return "outcome-changed"
+
 
 def _describe(used: EvidenceUsed) -> str:
     return used.describe()
@@ -133,6 +184,31 @@ def to_markdown(before: Run, after: Run) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+#: What each movement is, in a sentence, for the person reading the report.
+#:
+#: A TRANSLATION, AND DECLARED AS ONE. Each line explains a pair of contract
+#: values and adds nothing to them: `evidence-lost` says what `pass → unknown`
+#: already meant, in the words somebody acting on it needs.
+MOVEMENT = {
+    "finding-appeared": (
+        "This is a finding that was not there before. It is answered in the tenant."
+    ),
+    "finding-resolved": "A finding that was there before is no longer reported.",
+    "evidence-lost": (
+        "**The evidence degraded.** The tenant may be exactly as it was; what "
+        "changed is that this can no longer be established, usually because a "
+        "permission was withdrawn or a surface stopped answering. It is "
+        "answered in the collection, not in the tenant, and it is not nothing "
+        "having changed."
+    ),
+    "evidence-gained": (
+        "This became decidable. Something that could not be read before was "
+        "read, whichever way it then decided."
+    ),
+    "outcome-changed": "The outcome moved between two decided states.",
+}
+
+
 def _change_lines(change: RuleChange, heading: str = "##") -> list[str]:
     """One rule's movement, rendered.
 
@@ -163,6 +239,13 @@ def _change_lines(change: RuleChange, heading: str = "##") -> list[str]:
         lines.append(f"**{after_r.outcome.value}**, unchanged.")
     else:
         lines.append(f"**{before_r.outcome.value} → {after_r.outcome.value}**")
+        lines.append("")
+        # SAYING WHICH KIND OF MOVEMENT, because two of them leave `pass` and
+        # ask for work in different systems. An operator reading
+        # `pass → unknown` without this has to know that `unknown` means the
+        # collection stopped seeing the tenant rather than the tenant having
+        # got worse, and half of them will read it the other way.
+        lines.append(MOVEMENT.get(change.movement, ""))
     lines.append("")
 
     if change.rule_version_changed:

@@ -1,0 +1,108 @@
+# THE GUESTS INVITE THE GUESTS.
+#
+# `everyone` is the default in every cloud except US Government, so this is not
+# a setting somebody chose badly. It is a setting nobody chose, and its
+# documented meaning is the part that surprises people: the word includes the
+# guests already in the directory.
+
+schema_version: "1.0"
+id: ENTRA-AUTH-001
+version: "1.0"
+title: Guests in this directory can invite further guests
+description: >
+  Guest invitations are open to everyone in the organisation, which Microsoft
+  documents as including the guests. Anybody already invited can invite
+  somebody else, and nobody in the organisation is asked.
+
+service: entra
+resource_type: authorization-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/graph/api/resources/authorizationpolicy
+      title: authorizationPolicy resource type
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/external-id/external-collaboration-settings-configure
+      title: Configure external collaboration settings
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    Microsoft defines the value rather than judging it, and the definition is
+    the finding: `everyone` means "Allow everyone in the organization,
+    including guests, to invite guests." The narrower documented values exist
+    for organisations that want the same collaboration with a boundary --
+    `adminsGuestInvitersAndAllMembers` keeps members inviting and stops guests,
+    and `adminsAndGuestInviters` keeps it with the roles.
+
+    THIS RULE REPORTS THE REACH OF THE SETTING AND DOES NOT SAY IT IS WRONG.
+    An organisation whose work is external collaboration may hold `everyone`
+    deliberately. What it should not do is hold it without knowing that the
+    population who may extend the directory is not the population it employs.
+
+severity:
+  default: medium
+  rationale: >
+    Nothing is exposed by the setting itself: an invited guest still reaches
+    only what somebody shared with them. What grows is the population that can
+    grow the population, without review and without anyone at the organisation
+    being involved. Not high because every individual invitation still comes
+    from somebody who was let in, and not low because the growth compounds.
+  configurable: true
+
+evidence_requirements:
+  - path: authorization_policy.guest_invitations_from
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: authorization_policy.guest_invitations_from
+  value: everyone
+
+outcomes:
+  pass:
+    message: >
+      Guest invitations are limited to a population narrower than everyone, so
+      the guests in this directory cannot invite further guests.
+  fail:
+    message: >
+      Guest invitations are set to `everyone`, which Microsoft documents as
+      including the guests already in the directory. Anybody who was invited
+      can invite somebody else, with no review by the organisation.
+  unknown:
+    message: >
+      Who may invite guests was not read, so whether guests can invite guests
+      is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authorization policy.
+  invalid_evidence:
+    message: >
+      The invitation setting was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  If external collaboration is meant to be open, the narrower documented value
+  `adminsGuestInvitersAndAllMembers` keeps every member of the organisation
+  inviting and stops the guests from doing it. If it is meant to be reviewed,
+  `adminsAndGuestInviters` puts it behind a role that can be assigned to the
+  people who should hold it.
+
+limitations:
+  passes_without_resolving: >
+    WHO MAY INVITE IS NOT WHO WAS INVITED. This reads one setting and says
+    nothing about how many guests exist, who invited them, whether they are
+    still needed, or what they can reach. A tenant that closed this setting
+    yesterday still holds every guest invited before.
+  other:
+    - >
+      Guest access can also be granted through paths this setting does not
+      govern, including access packages, cross-tenant access settings,
+      and the sharing controls of individual workloads. A narrower value here
+      is not a boundary around the whole tenant.
+    - >
+      The role a guest receives, and therefore what they can read of the
+      directory, is a separate setting on the same policy. This rule reads who
+      may invite and not what an invitation grants.

@@ -1,0 +1,108 @@
+# ANYBODY WITH AN ADDRESS IN A DOMAIN YOU OWN CAN BECOME A USER OF IT.
+#
+# The setting is company-wide and applies to every verified domain in the
+# tenant. It is not about invitations and not about guests: it creates members.
+
+schema_version: "1.0"
+id: ENTRA-AUTH-005
+version: "1.0"
+title: Anybody with an email address in a verified domain can join this tenant
+description: >
+  Email-verified joining is on, so a person holding an address in a domain this
+  tenant has verified can create an account in it without anybody in the
+  organisation being asked.
+
+service: entra
+resource_type: authorization-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/graph/api/resources/authorizationpolicy
+      title: authorizationPolicy resource type
+      publisher: Microsoft
+      checked_at: "2026-08-24"
+    - url: https://learn.microsoft.com/entra/identity/users/directory-self-service-signup
+      title: What is self-service sign-up for Microsoft Entra ID?
+      publisher: Microsoft
+      checked_at: "2026-08-24"
+  rationale: >
+    Microsoft defines the value and the definition is the finding:
+    `allowEmailVerifiedUsersToJoinOrganization` "indicates whether a user can
+    join the tenant by email validation", and to join "the user must have an
+    email address in a domain that matches one of the verified domains in the
+    tenant. This setting is applied company-wide for all domains in the
+    tenant."
+
+    THE SETTING CREATES MEMBERS, NOT GUESTS, and that is why it is worth
+    reading separately from the invitation controls. An organisation that
+    restricted who may invite guests has not restricted this: they are two
+    different doors into the same directory.
+
+    Microsoft documents the closed value without recommending either, so this
+    reports the reach of the setting and does not say it is wrong. Schools and
+    organisations that rely on self-service sign-up hold it deliberately.
+
+severity:
+  default: medium
+  rationale: >
+    A member account reaches whatever the default user role reaches, which is
+    more than a guest. Not high because the address still has to be in a domain
+    the organisation verified, and not low because nobody in the organisation
+    is asked and no record of a decision exists.
+  configurable: true
+
+evidence_requirements:
+  - path: authorization_policy.email_verified_users_may_join
+    type: boolean
+    required: true
+
+condition:
+  operator: equals
+  evidence: authorization_policy.email_verified_users_may_join
+  value: true
+
+outcomes:
+  pass:
+    message: >
+      Email-verified joining is off, so an address in a verified domain does
+      not by itself create an account in this tenant.
+  fail:
+    message: >
+      Email-verified joining is on. Anybody holding an address in a domain this
+      tenant has verified can create a member account in it, company-wide,
+      without anybody in the organisation being asked.
+  unknown:
+    message: >
+      Whether email-verified users may join was not read, so whether an address
+      in a verified domain creates an account is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authorization policy.
+  invalid_evidence:
+    message: >
+      The joining setting was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Setting `allowEmailVerifiedUsersToJoinOrganization` to false stops
+  email-verified joining for every domain in the tenant. It is a separate
+  setting from `allowedToSignUpEmailBasedSubscriptions`, which governs
+  self-service subscriptions rather than joining, and Microsoft documents how
+  the two combine.
+
+limitations:
+  passes_without_resolving: >
+    OFF TODAY IS NOT NOBODY. This reads one setting and says nothing about who
+    joined while it was on, whether those accounts are still there, or what
+    they can reach. A tenant that closed this yesterday still holds every
+    member created before.
+  other:
+    - >
+      The setting is company-wide and this rule reads it as such. It cannot say
+      which verified domains exist, and a tenant that verified a domain it no
+      longer controls is a different question this does not ask.
+    - >
+      Joining is one path to an account. Invitations, access packages,
+      cross-tenant access and directory synchronisation are others, and a
+      closed value here is not a boundary around the directory.

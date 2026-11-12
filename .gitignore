@@ -10,7 +10,24 @@ dist/
 evidence/
 *.tenant.json
 
+# ONE EXCEPTION, AND IT IS NOT TENANT EVIDENCE. The reference bundle is built
+# from the packaged fixtures, every host in it is the fictional one, and its
+# digest covers the evidence each run was decided from. The rule above was
+# ignoring those files, so the bundle in a clean clone was not the bundle this
+# engine produces and the clone failed its own gate: found by running the gate
+# in one. The exception is this directory and nothing wider.
+!src/m365_governance/data/reference/runs/*/evidence/
+
 # A binary that changes on every run and tells a reader nothing.
 .coverage
 htmlcov/
 .DS_Store
+
+# Standalone engine builds. Made by tools/build-standalone.sh, never committed.
+/build/
+
+# The local run store. A runtime artefact of `m365g`, written beside the
+# package when a run is started from a checkout. Never committed: it is machine
+# state, and a populated one would carry a tenant.
+src/m365_governance/data/workspace.db
+examples/workspace.db

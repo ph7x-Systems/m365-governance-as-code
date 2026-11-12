@@ -16,7 +16,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import __version__
+from . import COMMAND, __version__
 from .resources import BUNDLED, missing, packaged
 from .validator import validate_rules
 
@@ -317,7 +317,7 @@ def run(root: Path | None = None) -> tuple[list[tuple[str, list[Check]]], bool]:
 def report(root: Path | None = None) -> tuple[str, bool]:
     groups, healthy = run(root)
     where = str(root) if root is not None else "the installed package"
-    lines = [f"m365-governance doctor    reading content from: {where}", ""]
+    lines = [f"{COMMAND} doctor    reading content from: {where}", ""]
     for title, checks in groups:
         lines.append(title)
         lines.extend(check.render() for check in checks)

@@ -75,6 +75,8 @@ def observed(runs: list[Any], documents: list[dict]) -> dict[str, Any]:
                     "unresolved": 0,
                     "acquisition": set(),
                     "population": 0,
+                    "detail": None,
+                    "observed_at": None,
                 },
             )
             entry = unavailable.get(name)
@@ -86,9 +88,26 @@ def observed(runs: list[Any], documents: list[dict]) -> dict[str, Any]:
             if STATES.index(state) > STATES.index(area["state"]):
                 area["state"] = state
 
+            # WHY, IN THE COLLECTOR'S WORDS. A state alone cannot be acted on:
+            # `usage partial` says something is incomplete and never WHAT is
+            # incomplete, and the collector had already written it down one
+            # layer below. It was reaching the evidence and stopping there, so
+            # a consumer rendering this summary could show a status nobody
+            # could do anything about.
+            if entry and entry.get("detail") and not area["detail"]:
+                area["detail"] = str(entry["detail"])
+
             provenance = document.get("provenance") or {}
             if provenance.get("collector"):
                 area["acquisition"].add(str(provenance["collector"]))
+            # THE LATEST, because what a reader wants is how current this is
+            # rather than when it first happened. A bundle opened a year later
+            # describes the tenant of the day it was read, and an area fed by
+            # four documents is as current as the newest of them.
+            when = provenance.get("collected_at")
+            seen = area["observed_at"]
+            if when and (seen is None or str(when) > seen):
+                area["observed_at"] = str(when)
             if state != "not-observed":
                 area["population"] += 1
 

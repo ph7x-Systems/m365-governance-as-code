@@ -1,0 +1,272 @@
+{
+  "$comment": "The command surface published before the CLI was regrouped (owner decision, 2026-11-11). Every name, option and choice here keeps working: tests/test_cli_compatibility.py reads this file. Adding to the CLI never edits it.",
+  "commands": {
+    "assess": {
+      "options": [
+        "--created-at",
+        "--evidence",
+        "--label",
+        "--out",
+        "--profile",
+        "--rules"
+      ],
+      "positionals": [],
+      "choices": {}
+    },
+    "capabilities": {
+      "options": [
+        "--domains",
+        "--format",
+        "--questions",
+        "--rules"
+      ],
+      "positionals": [],
+      "choices": {
+        "format": [
+          "json",
+          "text"
+        ]
+      }
+    },
+    "collect": {
+      "options": [
+        "--certificate-password-env",
+        "--certificate-path",
+        "--client-id",
+        "--count-unique-scopes",
+        "--device-login",
+        "--dry-run",
+        "--output",
+        "--period",
+        "--project",
+        "--site-url",
+        "--tenant-id",
+        "--tenant-url"
+      ],
+      "positionals": [
+        "slice"
+      ],
+      "choices": {
+        "period": [
+          "D180",
+          "D30",
+          "D7",
+          "D90"
+        ]
+      }
+    },
+    "connect": {
+      "options": [
+        "--certificate-password-env",
+        "--certificate-path",
+        "--client-id",
+        "--device-login",
+        "--dry-run",
+        "--format",
+        "--project",
+        "--site-url",
+        "--tenant-id",
+        "--tenant-url"
+      ],
+      "positionals": [],
+      "choices": {
+        "format": [
+          "json",
+          "text"
+        ]
+      }
+    },
+    "contracts": {
+      "options": [
+        "--out"
+      ],
+      "positionals": [],
+      "choices": {}
+    },
+    "diff": {
+      "options": [
+        "--fail-on-regression",
+        "--format"
+      ],
+      "positionals": [
+        "before",
+        "after"
+      ],
+      "choices": {
+        "format": [
+          "json",
+          "markdown"
+        ]
+      }
+    },
+    "doctor": {
+      "options": [
+        "--root"
+      ],
+      "positionals": [],
+      "choices": {}
+    },
+    "evaluate": {
+      "options": [
+        "--bundle",
+        "--evidence",
+        "--fail-on",
+        "--format",
+        "--profile",
+        "--rules"
+      ],
+      "positionals": [],
+      "choices": {
+        "format": [
+          "html",
+          "json",
+          "markdown"
+        ],
+        "fail_on": [
+          "fail",
+          "never",
+          "unresolved"
+        ]
+      }
+    },
+    "explain": {
+      "options": [],
+      "positionals": [
+        "outcome"
+      ],
+      "choices": {}
+    },
+    "list-rules": {
+      "options": [
+        "--rules"
+      ],
+      "positionals": [],
+      "choices": {}
+    },
+    "migration-read": {
+      "options": [
+        "--drive",
+        "--estate",
+        "--folder",
+        "--out",
+        "--read-id",
+        "--taken-at",
+        "--with-permissions",
+        "--with-versions"
+      ],
+      "positionals": [],
+      "choices": {}
+    },
+    "migration-verify": {
+      "options": [
+        "--kind",
+        "--out",
+        "--performed-by",
+        "--report",
+        "--report-format"
+      ],
+      "positionals": [
+        "baseline",
+        "verification"
+      ],
+      "choices": {
+        "report_format": [
+          "html",
+          "markdown"
+        ]
+      }
+    },
+    "report": {
+      "options": [
+        "--format"
+      ],
+      "positionals": [
+        "report"
+      ],
+      "choices": {
+        "format": [
+          "html",
+          "json",
+          "markdown"
+        ]
+      }
+    },
+    "run": {
+      "options": [
+        "--bundle",
+        "--certificate-password-env",
+        "--certificate-path",
+        "--client-id",
+        "--device-login",
+        "--dry-run",
+        "--fail-on",
+        "--format",
+        "--out",
+        "--output",
+        "--profile",
+        "--project",
+        "--rules",
+        "--site-url",
+        "--tenant-id",
+        "--tenant-url"
+      ],
+      "positionals": [],
+      "choices": {
+        "format": [
+          "html",
+          "json",
+          "markdown"
+        ],
+        "fail_on": [
+          "fail",
+          "nothing",
+          "unresolved"
+        ]
+      }
+    },
+    "setup": {
+      "options": [
+        "--certificate-password-env",
+        "--certificate-path",
+        "--client-id",
+        "--force",
+        "--out",
+        "--site-url",
+        "--tenant-id",
+        "--tenant-url"
+      ],
+      "positionals": [],
+      "choices": {}
+    },
+    "show-rule": {
+      "options": [
+        "--rules"
+      ],
+      "positionals": [
+        "rule_id"
+      ],
+      "choices": {}
+    },
+    "stats": {
+      "options": [],
+      "positionals": [
+        "evidence"
+      ],
+      "choices": {}
+    },
+    "validate": {
+      "options": [
+        "--rules"
+      ],
+      "positionals": [],
+      "choices": {}
+    },
+    "verify": {
+      "options": [],
+      "positionals": [
+        "assessment"
+      ],
+      "choices": {}
+    }
+  }
+}

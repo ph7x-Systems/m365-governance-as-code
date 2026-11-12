@@ -2,6 +2,7 @@
   "_readme": "THE PROOF REGISTRY. A collector's live state is DERIVED from these records and is no longer declared beside the collector. Without a record a collector is `none`, whatever anybody believes about it.\n\nThe direction is the whole point: a real execution produces a record, the record is validated, and the state follows. Never a state written first and a record produced to agree with it.\n\nNO TENANT DATA REACHES THIS FILE. No hostname, no tenant identifier, no user principal name, no resource name, and no evidence content. A population is a count or a shape, never a list.",
   "_on_the_digest": "`artifact_digest` proves CONTINUITY with the artefact observed at that moment. It does not permit revalidating an artefact that no longer exists, and every record here carries `artifact_disposition` saying so plainly. A digest whose artefact was deleted under the tenant-data rule is a fingerprint of something nobody can produce again, and claiming more for it would be the same overreach this registry exists to remove.",
   "_on_migration": "`migrated-from-the-collector-live-matrix` records transcribe what was recorded contemporaneously in docs/COLLECTOR-LIVE-MATRIX.md on the dates they carry. They are not fabricated and they are not as strong as a record an execution emitted: the artefact digests are gone, and several fields were never captured. THE SET IS CLOSED. No new record may carry this provenance, so the only way to raise a state from here on is to run.",
+  "_on_quarantine": "QUARANTINED EVIDENCE IS NOT A RECORD, AND IT IS NOT A GAP EITHER. A run writes a draft beside its evidence; promoting that draft into `records` is a separate act performed by a person who can say what ran. One draft is currently held and deliberately unpromoted: a licensing run dated 2026-08-24 with `bundle: proven`, for which no record exists here.\n\nIT IS LABELLED `provenance-not-established` AND IT STAYS THAT WAY. It is not deleted, not registered retroactively, not counted as live proof, and not reconciled by inferring which identity or session produced it - inference is the failure this registry exists to refuse, and it does not become acceptable because the subject is our own history. It is held outside every repository with the raw acquisitions. Only the owner naming the run can move it, and until then the honest state of licensing's `bundle` stage for a live acquisition is the one recorded on the record: `not-attempted`.",
   "records": [
     {
       "artifact_digest": null,
@@ -318,13 +319,13 @@
         }
       },
       "coverage": "two of the four areas this slice covers",
-      "result": "The first positive live acquisition of Licensing, and it establishes exactly that. It does not establish license optimization: the report returned rows and named nobody, so usage cannot be attributed to a person, and dependency was never read at all. THERE WERE ENOUGH NUMBERS HERE TO FABRICATE A SAVING AND NOT ENOUGH EVIDENCE TO SUPPORT A RECOMMENDATION, which is the behaviour that distinguishes the product and is why this record is kept.",
+      "result": "POSITIVE LIVE ACQUISITION OBSERVED, AND NOT UNDER A CLEAN AUTHORIZATION BOUNDARY: the connection step was performed without explicit authorization for it. The facts below stand; the phrase `clean proof` does not apply to them. The first positive live acquisition of Licensing, and it establishes exactly that. It does not establish license optimization: the report returned rows and named nobody, so usage cannot be attributed to a person, and dependency was never read at all. THERE WERE ENOUGH NUMBERS HERE TO FABRICATE A SAVING AND NOT ENOUGH EVIDENCE TO SUPPORT A RECOMMENDATION, which is the behaviour that distinguishes the product and is why this record is kept.",
       "limitations": [
         "the usage report was read and names nobody: attribution is not available while this tenant conceals identifiable information, which is a tenant setting rather than a property of this read",
         "dependency is collected by nothing, so what a capability is required for is unknown rather than absent",
         "one user observed is a population of one and proves the path rather than the range",
         "no conclusion about removing or downgrading a licence follows from any of this, and none is published",
-        "the artefact digest is unrecoverable: the evidence was deleted when the vertical closed, correctly under the tenant-data rule and incorrectly under D69, and this record exists because of that loss"
+        "the artefact digest is unrecoverable: the evidence was deleted when the vertical closed, which the rule against keeping tenant data required and the programme's rule about keeping what a proof names did not allow, and this record exists because of that loss"
       ],
       "stages": {
         "acquisition": "proven",
@@ -349,7 +350,658 @@
         "attribution": "the licensing fact block reached its acquisition",
         "results": "none, which is the expected shape of an observation-only family",
         "evidence": "fixture, not the live acquisition"
+      },
+      "authorization": "not-authorized-for-the-connection-step; the reads were read-only and the observation is preserved sanitized, and neither of those makes the crossing retroactively authorized"
+    },
+    {
+      "observed_at": "2026-08-24",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "application registration, certificate credential",
+      "engine_version": "1.0.0b8",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "tenant-governance",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "proven"
+      },
+      "population": {
+        "areas": {
+          "authorization_policy": "completed",
+          "global_administrators": "completed",
+          "authentication_methods_policy": "completed"
+        },
+        "documents": 3,
+        "rules_concluded": 13,
+        "outcomes": {
+          "pass": 9,
+          "fail": 4,
+          "unknown": 0
+        }
+      },
+      "coverage": "all three areas this slice covers, none refused",
+      "result": "The first positive live acquisition of the directory's own settings, and it exercised the branch that reports a finding: four of the thirteen rules failed and none answered unknown. Reaching it required fixing four faults that only a real directory could show -- the token script bound none of its parameters, the OData filter was never encoded, the one-command path skipped Graph entirely, and no Graph slice recorded a proof. IT ESTABLISHES THAT THE SURFACES WERE READ AND THAT THE RULES DECIDED FROM THEM. It does not establish that the fields mean what this engine says they mean: no representation check was made, and the second surface for privileged access -- eligible assignments under Privileged Identity Management -- was not read, so a count of standing Global Administrators may understate who can become one. THE CONSUMER STAGE WAS THEN PROVED ON THE SAME BUNDLE. Every one of the 56 results arrived carrying its basis, the facts it read with each fact's state, and what a pass does not settle; coverage and provenance arrived on all 27 runs. Eleven results carry no source and every one of them is a convention, which is the honest value rather than a loss in transit.",
+      "limitations": [
+        "no representation check was made: no field's claimed effect was read against the effect",
+        "eligible assignments under Privileged Identity Management were not read, so a count of standing Global Administrators may understate who can become one",
+        "the authentication methods policy publishes what the tenant permits and never what anybody registered or used",
+        "one directory, one moment: nothing here establishes how another tenant's directory answers"
+      ],
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle; coverage and provenance on all 27 runs"
       }
+    },
+    {
+      "observed_at": "2026-08-24",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "application registration, certificate credential",
+      "engine_version": "1.0.0b8",
+      "contract_versions": {
+        "evidence": "3.1.0",
+        "collection": "2.0.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "conditional-access",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "proven"
+      },
+      "population": {
+        "areas": {
+          "conditional_access_policies": "completed",
+          "named_locations": "completed",
+          "security_defaults": "completed"
+        },
+        "documents": 11,
+        "rules_concluded": 30,
+        "outcomes": {
+          "pass": 20,
+          "fail": 6,
+          "not-applicable": 4
+        }
+      },
+      "coverage": "every area this slice covers, none refused",
+      "result": "Collected in the same run and by the same application. Six rules reported findings, so the reporting branch was taken here too. This slice had been published as `provider-only` -- the transport underneath had reached a tenant and its own path had not -- and that was accurate until this run. It establishes acquisition and assessment, and nothing about whether a policy's effect matches what its fields say: that is a representation check and none was made. THE CONSUMER STAGE WAS THEN PROVED ON THE SAME BUNDLE. Every one of the 56 results arrived carrying its basis, the facts it read with each fact's state, and what a pass does not settle; coverage and provenance arrived on all 27 runs. Eleven results carry no source and every one of them is a convention, which is the honest value rather than a loss in transit.",
+      "limitations": [
+        "no representation check was made: whether a policy's effect matches what its fields say was not observed",
+        "report-only and disabled policies are read as configuration and their effect on a sign-in was not observed",
+        "one directory, one moment: nothing here establishes how another tenant's directory answers"
+      ],
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle; coverage and provenance on all 27 runs"
+      }
+    },
+    {
+      "observed_at": "2026-08-24",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "application registration, certificate credential",
+      "engine_version": "1.0.0b8",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle"
+      },
+      "collector": "tenant-sharing",
+      "establishes": "full",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "proven"
+      },
+      "population": {
+        "documents": 1,
+        "rules_concluded": 2,
+        "outcomes": {
+          "fail": 2
+        }
+      },
+      "coverage": "the organisation's sharing settings, complete",
+      "result": "Collected in the same run as the rest and by the same application. Both rules that read it reported a finding, so the branch that reports one was taken. It establishes what the organisation's sharing settings ARE and not what any site does with them: a tenant default is the ceiling a site inherits, and which sites sit under it is a different read.",
+      "limitations": [
+        "no representation check was made: no setting's claimed effect was read against the effect",
+        "a tenant default is not a statement about any site's own sharing",
+        "one directory, one moment"
+      ]
+    },
+    {
+      "observed_at": "2026-08-24",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "application registration, certificate credential",
+      "engine_version": "1.0.0b8",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+      "consumer_proof": {
+        "consumer": "pH7x Systems: a separate desktop consumer, holding the vendored contracts rather than this engine",
+        "consumer_version": "01163de",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:96f822c5dee3e5d25775a57dbfbb7e63bfc6a9413bb1982f09753a80c16f497c",
+        "read": "27 runs opened and none refused; the assessment verifies; all 56 results carry basis, the facts they read with each fact's state, and what a pass does not settle"
+      },
+      "collector": "brand-center",
+      "establishes": "full",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "proven",
+        "consumer": "proven"
+      },
+      "population": {
+        "documents": 1,
+        "rules_concluded": 0
+      },
+      "coverage": "the tenant's brand centre settings, complete",
+      "result": "The first live acquisition of this surface. No rule reads it -- Microsoft publishes no basis for one -- so the consumer of this evidence is a report and any viewer, and that is what reaching the top of the ladder means here.",
+      "limitations": [
+        "no rule reads this evidence, so nothing about the tenant is concluded from it",
+        "no representation check was made",
+        "one directory, one moment"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the run",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:70170300a869968b3f811ebc1cc63af0a248d471c6752cb1dab924e4ed7ae210",
+      "establishes": "full",
+      "collector": "customization",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 1,
+        "facts_observed": 8,
+        "facts_unavailable": 0,
+        "rules_concluded": 1,
+        "outcomes": {
+          "pass": 1,
+          "fail": 0,
+          "unknown": 0
+        }
+      },
+      "coverage": "the slice's own path on one site: every fact it publishes came back observed",
+      "result": "The first recorded live read of the customization surface. The custom script rule read `customization.custom_script_denied` as observed and passed. It establishes that the surface was read and that the rule decided from it.",
+      "limitations": [
+        "one site, and the state it holds is custom script blocked: the branch that reports a site permitting custom script has not run against a directory",
+        "no representation check was made: the setting's effect was not read against the effect",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the run",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:70170300a869968b3f811ebc1cc63af0a248d471c6752cb1dab924e4ed7ae210",
+      "establishes": "full",
+      "collector": "sites",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 53,
+        "enumeration": "partial",
+        "rules_concluded": 1,
+        "outcomes": {
+          "pass": 0,
+          "fail": 0,
+          "unknown": 0,
+          "not-applicable": 53
+        }
+      },
+      "coverage": "the enumeration a delegated identity is given: sites it cannot see are absent and their number is not knowable from the run",
+      "result": "The storage rule read four observed storage facts on every enumerated site and answered not-applicable on all of them, because no site carries a storage limit of its own: each holds the per-site maximum a pooled organisation writes. It establishes that the rule consumes what the enumeration publishes and reaches its applicability decision from observed facts.",
+      "limitations": [
+        "the rule's deciding branches did not run: no enumerated site has a storage limit set, so neither a pass nor a fail was reached against a directory",
+        "a delegated enumeration: it establishes what this identity was shown and never what the tenant contains",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the run",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "bundle_digest": "sha256:70170300a869968b3f811ebc1cc63af0a248d471c6752cb1dab924e4ed7ae210",
+      "establishes": "partial",
+      "collector": "spfx",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "proven",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 1,
+        "catalog_scope": "tenant",
+        "solutions": 10,
+        "rules_concluded": 1,
+        "outcomes": {
+          "pass": 0,
+          "fail": 0,
+          "unknown": 1
+        }
+      },
+      "coverage": "the tenant catalog was read; a site catalog, where an installed version is recorded, was not",
+      "result": "The first positive live read of an app catalog: ten solutions in a tenant catalog. None reports an installed version, because a tenant catalog records installation per site, so the fact the version rule reads came back not-supported and the rule answered unknown. It establishes that the catalog is read and that the rule consumes the fact and refuses to conclude without it.",
+      "limitations": [
+        "the rule did not decide: a comparison of installed and available versions needs a site catalog, which this run did not read",
+        "the branch that reports a solution behind its catalog version has not run against a directory",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the collection",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "hubs",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 3,
+        "hubs": 2,
+        "facts_observed_per_hub": 8,
+        "facts_unavailable": 0
+      },
+      "coverage": "the slice's own path: the tenant document and one document per registered hub",
+      "result": "The first live enumeration of hub sites: two registered, every fact observed on both, and the two differ in whether joining needs approval. COUNTER-CHECKED against a separate enumeration of sites in the same session: every hub identifier a site referenced was a hub this read listed, and none was missing from it.",
+      "limitations": [
+        "a tenant with no hub has not been read: the zero the tenant document exists to carry is proved by a fixture only",
+        "neither hub has a parent hub and both restrict association, so the branches for a parent and for an unrestricted hub have not run against a directory",
+        "one listed hub was referenced by no enumerated site; whether it has no associated site or the delegated enumeration did not show one is not established",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused by the collection",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "sites-sharing",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-attempted",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 53,
+        "enumeration": "partial",
+        "sites_read_by_their_own_address": 53,
+        "sites_refused": 0,
+        "distinct_values_observed": 4
+      },
+      "coverage": "every site the identity enumerated, each read by its own address; sites it cannot see are absent and their number is not knowable from the run",
+      "result": "The first tenant-wide read of what each site permits: one call per enumerated site through the identity path, because a filtered enumeration does not populate the property. All four documented values of the setting were observed across the population. COUNTER-CHECKED twice: the addresses are exactly the ones a separate site enumeration returned in the same session, and the value for one site equals what the single-site collection read for it in an earlier session.",
+      "limitations": [
+        "no site refused its own read, so the document a refusal writes is proved by a fixture only",
+        "throttling was not met at this size; behaviour under it has not been observed",
+        "the sharing rules were not evaluated over this collection in this run, so the assessment stage is unattempted here",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-11",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused for every site opened",
+      "engine_version": "1.0.0b9 development tree, with the session work that is not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "sites-owners",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-attempted",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 53,
+        "enumeration": "partial",
+        "sites_that_named_administrators": 30,
+        "sites_that_answered_nothing": 17,
+        "sites_that_refused": 6
+      },
+      "coverage": "every site the identity enumerated, each opened by its own address as the identity already signed in",
+      "result": "The first tenant-wide read of who administers each site. One sign-in opened every site with no further prompt. THE REFUSAL BRANCH RAN AGAINST A DIRECTORY: six sites refused and each has a document carrying the refusal, and seventeen returned an empty answer that the collector recorded as not established and did not publish as a site with no administrators. COUNTER-CHECKED: the addresses are exactly the ones a separate site enumeration returned, and the named and group administrator counts for one site equal what the single-site collection read for it in an earlier session.",
+      "limitations": [
+        "no group was expanded: a site administered by a group has an unknown number of administrators",
+        "the ownership rules were not evaluated over this collection in this run, so the assessment stage is unattempted here",
+        "throttling was not met at this size",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "establishes": "full",
+      "collector": "guests",
+      "population": {
+        "documents": 2,
+        "guest_accounts": 1,
+        "pages": 1
+      },
+      "coverage": "the slice's own path: the tenant document and one document per guest account",
+      "result": "The first live read of guest accounts: the filter returned one account and nothing that was not a guest, every fact on it observed, and no name, mail address or user principal name in what was written. The composed external-access inspection then read it beside the site evidence of the same day and reported the account without joining it to any site. READ AGAIN ON 2026-11-12 THROUGH THE ENGINE'S OWN DELEGATED PATH: one sign-in kept by `login`, then this read with no further prompt and no token supplied from outside, returning the same population as the first read, whose token had been obtained outside the engine.",
+      "limitations": [
+        "a population of one: it proves the path and not the range, and neither a pending invitation nor a disabled account was observed",
+        "one page: paging is proved against a stand-in only",
+        "no refusal was met: the document a refused read writes is proved against a stand-in only",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "establishes": "full",
+      "collector": "applications",
+      "population": {
+        "documents": 47,
+        "application_registrations": 46,
+        "pages": 1,
+        "credential_lists_returned": 46,
+        "inspection": {
+          "ended": 6,
+          "later": 9,
+          "no-credentials": 31
+        }
+      },
+      "coverage": "the slice's own path: the tenant document and one document per application registration",
+      "result": "The first live read of application registrations: every registration returned both credential lists, and no secret, hint, certificate or thumbprint is in what was written. The composed app-exposure inspection placed every credential relative to the collection time; the branch that reports a credential already ended ran against a directory. READ AGAIN ON 2026-11-12 THROUGH THE ENGINE'S OWN DELEGATED PATH: one sign-in kept by `login`, then this read with no further prompt and no token supplied from outside, returning the same population as the first read, whose token had been obtained outside the engine.",
+      "limitations": [
+        "no credential ended inside the default window, so the `ending` branch has not run against a directory",
+        "one page: paging is proved against a stand-in only",
+        "no refusal was met, and no registration came back without a credential list",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other, and the administrator consented to it at that sign-in",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "groups",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 24,
+        "microsoft_365_groups": 23,
+        "groups_whose_owners_were_read": 23,
+        "groups_whose_members_were_read": 23,
+        "groups_that_are_teams": 8,
+        "groups_with_no_user_owner": 1,
+        "pages": 1
+      },
+      "coverage": "the slice's own path: the tenant document and one document per Microsoft 365 group, with its owners and its members read",
+      "result": "The first live read of Microsoft 365 groups: every group returned its owners and its members, and no identity is in what was written. The branch that reports a group with no owner that is a user ran against a directory. COUNTER-CHECKED ON TWO SURFACES against the site evidence of the same session: every site the enumeration says is connected to a group names a group this read listed, and every listed group has such a site; and for every connected site that said who administers it, the administrator claim on the site itself carries the same group identifier the enumeration gave. No site disagreed. The ownership inspection then expanded that one claim into the group's owners for those sites, as a range.",
+      "limitations": [
+        "no group refused its owners or its members, so the document a refusal writes is proved against a stand-in only",
+        "one page of groups and one page per relationship: paging is proved against a stand-in only",
+        "some connected sites did not say who administers them, so the second surface could not be compared for those",
+        "whether a named site administrator is also one of the group's owners was not read: no identity is kept, which is why the inspection reports a range",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "pnp-powershell",
+      "identity_kind": "delegated: one administrator, interactive sign-in kept by `login` and reused for every site opened",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "sites-guests",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 53,
+        "enumeration": "partial",
+        "sites_that_returned_their_users": 31,
+        "sites_that_refused": 22,
+        "sites_that_have_met_a_guest": 4,
+        "distinct_directory_identifiers_met": 3,
+        "guest_entries_with_no_directory_account": 3
+      },
+      "coverage": "every site the identity enumerated, each opened by its own address; the sites that refused are documents that say so",
+      "result": "The first tenant-wide read of which guests each site has met. THE REFUSAL BRANCH RAN AGAINST A DIRECTORY, and it exposed a defect: SharePoint's own `Access is denied` was being recorded as an absence and is a denial. No login name, display name or mail address is in what was written. COMPARED WITH THE DIRECTORY'S GUESTS READ IN THE SAME SESSION, on the object identifier both carry: none of the accounts the sites have met is listed by the directory as a guest, and the guest the directory lists was met by no site. The inspection reports that as it is and does not decide whether those accounts were removed or are external accounts of another type.",
+      "limitations": [
+        "the two sides of the comparison did not overlap in this directory, so a guest both listed and met has not been observed against a directory: that branch is proved by a test only",
+        "what an account is that a site has met and the directory does not list as a guest was not read",
+        "the sites that refused were recorded under the earlier classification in that run; the corrected one is proved by a test over the same messages",
+        "being in a site's list of users is not having access, and nothing here reads access",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "service-principals",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 806,
+        "service_principals": 805,
+        "pages": 1,
+        "owned_by_this_directory": 41,
+        "of_another_organisation": 733,
+        "ownership_not_established": 31,
+        "disabled": 11,
+        "kinds_observed": 4
+      },
+      "coverage": "the slice's own path: the tenant document and one document per service principal",
+      "result": "The first live read of service principals. Every branch of ownership ran against a directory: applications of this directory, applications of another organisation, and service principals for which the owning organisation was not returned, which were recorded as not established and not guessed. No secret, hint, certificate or thumbprint is in what was written. COUNTER-CHECKED BY TWO INDEPENDENT ROUTES in the application exposure inspection: the number of service principals the service says belong to this directory equals the number that join to a registration read separately in the same session, on the application identifier both carry. The inspection's three answers about signing in all occurred: a registration with an enabled service principal, one whose service principal is disabled, and one with none.",
+      "limitations": [
+        "one page: the population was below the page size asked for, so paging is proved against a stand-in only",
+        "no refusal was met",
+        "what any service principal was granted was not read: that needs a scope that has not been decided",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "exchange-online-powershell",
+      "identity_kind": "delegated: one administrator, signing in interactively for this read; the session is not kept",
+      "engine_version": "1.0.0b9 development tree, with the collector correction this run required",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "forwarding",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "proven",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 1,
+        "outbound_policies": 1,
+        "remote_domains": 1,
+        "areas_read": 2,
+        "areas_named_and_not_read": 1,
+        "rules_concluded": 2,
+        "outcomes": {
+          "pass": 0,
+          "fail": 2,
+          "unknown": 0
+        }
+      },
+      "coverage": "the outbound spam filter policies and the remote domains; mail flow rules are named by the collector as a route it does not read",
+      "result": "The first read of an organisation's automatic forwarding controls, and it took two runs. The first signed in, read, and ended without evidence: the collector built its envelope without ever declaring who was collecting, which no hand-written fixture could show. With that corrected the second run wrote one document with every fact it reads observed. Both forwarding rules then decided from observed facts, and both took the branch that reports a finding.",
+      "limitations": [
+        "mail flow rules, the third route by which mail leaves automatically, are not read: a tenant can forward through one while both of these controls say otherwise",
+        "the branch that passes has not run against a directory: it is proved by fixtures only",
+        "one policy and one remote domain: it proves the path and not the range, and an organisation with several of either has not been read",
+        "the rules were evaluated over the collected document; the whole run to a bundle was not made, so the bundle and consumer stages are unattempted",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

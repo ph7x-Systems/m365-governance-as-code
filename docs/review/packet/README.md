@@ -49,7 +49,7 @@ required == condition ∪ applicability ∪ interp(pass) ∪ interp(fail)
 ```
 
 Evidence declared as required and consumed by none of those is a schema error.
-`m365-governance validate` rejects version 1.0 for exactly that reason. Try it.
+`m365g validate` rejects version 1.0 for exactly that reason. Try it.
 
 ---
 

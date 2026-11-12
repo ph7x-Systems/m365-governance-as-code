@@ -26,16 +26,21 @@ not require the thing that made it.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import os
 import re
 import shutil
 import sys
+import tempfile
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
 from . import (
+    COMMAND,
     __version__,
+    applications,
     assessment,
     bundling,
     canonical,
@@ -47,11 +52,24 @@ from . import (
     connecting,
     explaining,
     graph,
+    graph_slice,
+    graph_token,
+    grouping,
+    groups,
+    guests,
+    live_proof,
     migration,
     migration_graph,
+    presentation,
+    presenting,
+    reference,
     reporting,
     running,
+    scenarios,
+    service_principals,
+    sessions,
     setting_up,
+    tenant_governance,
 )
 from . import doctor as doctor_module
 from . import inspect as inspect_module
@@ -94,15 +112,74 @@ PROFILE_HELP = (
 DOCS = "Documentation: https://ph7x.com/tools/m365-governance-as-code/docs/"
 
 
+#: Every alias the entry points install, so help printed under an alias says the
+#: name that was actually invoked. A person following `--help` output should be
+#: able to paste it back into the same shell, and a hardcoded `prog` breaks that
+#: for exactly the readers the alias exists for.
+ALIASES = frozenset({COMMAND, "m365-governance"})
+
+
+def _invoked_as() -> str:
+    """The name this process was started with, when it is one we install.
+
+    `sys.argv[0]` is whatever the shell resolved: an absolute path, a wrapper,
+    `__main__.py` under `python -m`, or a PyInstaller binary. Only a name this
+    project actually installs is trusted; anything else falls back to the
+    documented command rather than printing a path into a usage line.
+    """
+    name = os.path.basename(sys.argv[0] or "")
+    return name if name in ALIASES else COMMAND
+
+
+def _overview(command: str) -> str:
+    """What `--help` says first: where to start, then the commands by group."""
+    width = max(len(group.name) for group in grouping.GROUPS)
+    groups = "\n".join(
+        f"  {group.name.ljust(width)}  {group.says}" for group in grouping.GROUPS
+    )
+    return f"""Microsoft 365 governance checks that show their work.
+
+Start here
+  {command} engine setup                       this machine, and the app registration
+  {command} login --client-id ID --tenant-url https://TENANT-admin.sharepoint.com
+  {command} status                             which connection is active
+  {command} spo site list                      read, and see it in the terminal
+  {command} spo site list --evidence-out DIR   read, and keep the evidence
+  {command} governance run --site-url URL      from a target to a report
+
+Session
+  login       sign in and keep the session for later commands
+  status      the active connection, from the local record. Reaches no tenant
+  logout      remove a stored session and its record
+  connection  the stored connections: list, use NAME, remove NAME
+  connect     ask the tenant: does this identity sign in, and what may it read
+
+Commands, by group ({command} GROUP lists what a group holds)
+{groups}
+
+Reading and collecting are one act with two outcomes: what is printed is a
+view, and the evidence (the documents with their provenance, which is what
+rules evaluate) is kept only where --evidence-out says.
+
+--output text|json|csv|md chooses how a result is shown. --help works on every
+command. The earlier flat names (collect, list-rules, run, ...) still work."""
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        prog="m365-governance",
-        description="Microsoft 365 governance checks that show their work.",
+        prog=_invoked_as(),
+        usage="%(prog)s [--version] COMMAND ...",
+        description=_overview(_invoked_as()),
         epilog=DOCS,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument("--version", action="version", version=__version__)
-    sub = parser.add_subparsers(dest="command", required=True)
+    # The overview above is the listing: by group, in the order somebody meets
+    # the commands. The parser's own flat listing would repeat every name
+    # after it, so it is not printed; `--help` on any command still is.
+    sub = parser.add_subparsers(
+        dest="command", required=True, metavar="COMMAND", help=argparse.SUPPRESS
+    )
 
     # Wrapped so that every parser created below carries the manual without
     # each of sixteen call sites remembering to. One that forgot would be the
@@ -142,7 +219,37 @@ def _build_parser() -> argparse.ArgumentParser:
         help="an Entra ID app registration. Required: PnP.PowerShell has "
         "shipped no application of its own since 2.12.0",
     )
-    collect.add_argument("--output", type=Path, required=True)
+    collect.add_argument(
+        "--output",
+        type=Path,
+        metavar="FORMAT|DIRECTORY",
+        help="how to show what was read: text (the default), json, csv or md. "
+        "A directory here is the earlier spelling of --evidence-out and still "
+        "works, with the earlier report",
+    )
+    collect.add_argument(
+        "--where",
+        action="append",
+        metavar="COLUMN=VALUE",
+        help="show only the resources whose column prints this value, such as "
+        "sharing.capability=Disabled or hub.requires_join_approval=true. "
+        "Repeat it to require several. A refusal is found by its state in "
+        "brackets: site_guests.guests=[permission-denied]. It chooses what is "
+        "shown, never what is read or kept",
+    )
+    collect.add_argument(
+        "--sort",
+        metavar="COLUMN",
+        help="order the view by this column: numbers first, then text",
+    )
+    collect.add_argument(
+        "--evidence-out",
+        type=Path,
+        metavar="DIRECTORY",
+        help="keep the evidence here: the documents with their provenance, "
+        "which is what rules evaluate. Without it what is shown is a view and "
+        "the evidence is not kept",
+    )
     collect.add_argument(
         "--project",
         type=Path,
@@ -150,6 +257,12 @@ def _build_parser() -> argparse.ArgumentParser:
             f"a project file. Omit to use the nearest {project_file.NAME} "
             f"from here upwards, if there is one"
         ),
+    )
+    collect.add_argument(
+        "--connection",
+        metavar="NAME",
+        help="use this stored connection, from `login`. Omit to use the active "
+        "one, if it is for the tenant this command is aimed at",
     )
     collect.add_argument("--site-url")
     collect.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
@@ -240,6 +353,12 @@ def _build_parser() -> argparse.ArgumentParser:
         help="an Entra ID app registration. Required: PnP.PowerShell has "
         "shipped no application of its own since 2.12.0",
     )
+    connect.add_argument(
+        "--connection",
+        metavar="NAME",
+        help="use this stored connection, from `login`. Omit to use the active "
+        "one, if it is for the tenant this command is aimed at",
+    )
     connect.add_argument("--site-url")
     connect.add_argument(
         "--project",
@@ -287,7 +406,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "--format",
         choices=("text", "json"),
         default="text",
-        help="json for a consumer. Not a contract: a session is not a document",
+        help="json for a consumer: the published `connection` contract",
     )
 
     setup = sub.add_parser(
@@ -344,15 +463,32 @@ def _build_parser() -> argparse.ArgumentParser:
         help=f"a project file. Omit to use the nearest {project_file.NAME} "
         f"from here upwards, if there is one",
     )
+    run_cmd.add_argument(
+        "--connection",
+        metavar="NAME",
+        help="use this stored connection, from `login`. Omit to use the active "
+        "one, if it is for the tenant this command is aimed at",
+    )
     run_cmd.add_argument("--client-id")
     run_cmd.add_argument("--site-url")
     run_cmd.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
     run_cmd.add_argument(
+        "--evidence-out",
         "--output",
+        dest="output",
         type=Path,
         default=Path("./evidence"),
+        metavar="DIRECTORY",
         help="where the evidence is written. Kept: it is what the conclusions "
-        "were decided from, and a report without it cannot be checked",
+        "were decided from, and a report without it cannot be checked. "
+        "--output followed by a format word chooses the report format instead",
+    )
+    run_cmd.add_argument(
+        "--only",
+        action="append",
+        metavar="NAME[,NAME]",
+        help="attempt only these collections, by the names `collect` uses "
+        "(sites, owners, sharing, ...). The plan lists the rest as left out",
     )
     run_cmd.add_argument(
         "--device-login",
@@ -490,6 +626,108 @@ def _build_parser() -> argparse.ArgumentParser:
         "--format", choices=("markdown", "json", "html"), default="markdown"
     )
 
+    inspecting = sub.add_parser(
+        "inspect",
+        help="answer one question from several collections, over collected evidence",
+        description=(
+            "Relate evidence that was already collected. Reaches no tenant, so "
+            "the same evidence gives the same answer. It reports what the "
+            "collections establish together and names what they do not; it is "
+            "not an assessment and reaches no outcome."
+        ),
+        epilog=(
+            "Scenarios:\n"
+            + "\n".join(
+                f"  {name}  {says}. Reads: {', '.join(reads)}"
+                for name, (says, _, reads) in scenarios.SCENARIOS.items()
+            )
+            + "\n\nExample:\n"
+            f"  {COMMAND} spo sharing list --evidence-out ev/sharing\n"
+            f"  {COMMAND} spo tenant sharing get --evidence-out ev/tenant\n"
+            f"  {COMMAND} governance inspect external-access --evidence ev\n\n" + DOCS
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    inspecting.add_argument("scenario", choices=sorted(scenarios.SCENARIOS))
+    inspecting.add_argument(
+        "--evidence",
+        type=Path,
+        required=True,
+        help="a directory of collected evidence, searched recursively",
+    )
+    inspecting.add_argument(
+        "--format", choices=presenting.FORMATS, default="text", dest="format"
+    )
+    inspecting.add_argument(
+        "--expires-within",
+        default="30d",
+        metavar="DAYS",
+        help="app-exposure only: the window after the collection, in days "
+        "(30d). Measured from when the evidence was collected, so the same "
+        "evidence always gives the same answer. Default 30d",
+    )
+    inspecting.add_argument(
+        "--policy-id",
+        metavar="ID",
+        help="ca-coverage only: show one policy, by its identifier",
+    )
+    inspecting.add_argument(
+        "--minimum-owners",
+        type=int,
+        default=2,
+        metavar="N",
+        help="ownership only: the number of administrators to compare each "
+        "site with. Yours to choose; the engine holds no view. Default 2",
+    )
+    inspecting.add_argument(
+        "--out",
+        type=Path,
+        dest="inspection_out",
+        metavar="FILE",
+        help="also write the inspection as JSON here, with the digest of the "
+        "evidence it was made from",
+    )
+
+    collectors = sub.add_parser(
+        "collector",
+        help="what this engine can collect, and how far each read was proved",
+        description=(
+            "Discover the collectors. Reaches no tenant: it reads what each "
+            "collector declares and what the proof registry records."
+        ),
+    )
+    collector_sub = collectors.add_subparsers(dest="collector_command", required=True)
+    collector_list = collector_sub.add_parser(
+        "list", help="every collector, with its command, service and state"
+    )
+    collector_list.add_argument("--format", choices=("text", "json"), default="text")
+    collector_describe = collector_sub.add_parser(
+        "describe",
+        help="one collector: what it reads, what it needs, what was proved",
+    )
+    collector_describe.add_argument("name", help="a collector name, from `list`")
+    collector_describe.add_argument(
+        "--format", choices=("text", "json"), default="text"
+    )
+    collector_test = collector_sub.add_parser(
+        "test",
+        help="what a collector would read, without reading it (a dry run)",
+    )
+    collector_test.add_argument("name", help="a collector name, from `list`")
+
+    comparing = sub.add_parser(
+        "inspect-diff",
+        help="what changed between two inspections of the same question",
+        description=(
+            "Compare two inspections written with `inspect ... --out`. They "
+            "must be the same scenario with the same parameters. Reaches no "
+            "tenant."
+        ),
+    )
+    comparing.add_argument("before", type=Path, help="an inspection, from --out")
+    comparing.add_argument("after", type=Path, help="a later inspection")
+    comparing.add_argument("--format", choices=("text", "json"), default="text")
+
     diff = sub.add_parser(
         "diff", help="what changed between two assessments, and what it does not say"
     )
@@ -559,6 +797,78 @@ def _build_parser() -> argparse.ArgumentParser:
         "other",
     )
 
+    login = sub.add_parser(
+        "login",
+        help="sign in and keep the session for later commands. The only "
+        "command that keeps one",
+        description="Sign in to one tenant and keep the session, so later "
+        "commands do not ask again. The token goes into the operating "
+        "system's protected storage; where that cannot be established, "
+        "nothing is kept and the login is refused. A certificate signs in by "
+        "itself: its connection is recorded and nothing is persisted.",
+    )
+    login.add_argument(
+        "--name", help="what to call this connection. Default: the tenant's name"
+    )
+    login.add_argument("--client-id", help="an Entra ID app registration")
+    login.add_argument("--tenant-url", help="https://<tenant>-admin.sharepoint.com")
+    login.add_argument("--site-url")
+    login.add_argument(
+        "--project",
+        type=Path,
+        default=None,
+        help=(
+            f"a project file. Omit to use the nearest {project_file.NAME} "
+            f"from here upwards, if there is one"
+        ),
+    )
+    login.add_argument(
+        "--device-login", action="store_true", help="sign in with a device code"
+    )
+    login.add_argument("--tenant-id")
+    login.add_argument("--certificate-path", type=Path)
+    login.add_argument("--certificate-password-env", metavar="NAME")
+    login.add_argument(
+        "--dry-run", action="store_true", help="print the command and reach no tenant"
+    )
+    login.add_argument("--format", choices=("text", "json"), default="text")
+
+    status = sub.add_parser(
+        "status",
+        help="which connection later commands will use. Reaches no tenant",
+        description="Read the local record of connections and say which one "
+        "is active. Reaches no tenant, so it says what was recorded at login "
+        "and not whether the session still works: `connect` asks the tenant.",
+    )
+    status.add_argument("--format", choices=("text", "json"), default="text")
+
+    logout = sub.add_parser(
+        "logout",
+        help="remove a stored session and its record",
+    )
+    logout.add_argument(
+        "--name", help="the connection to remove. Default: the active one"
+    )
+    logout.add_argument("--all", action="store_true", help="every stored connection")
+
+    connection = sub.add_parser(
+        "connection",
+        help="the stored connections: list them, choose one, remove one",
+    )
+    connection_sub = connection.add_subparsers(dest="connection_command", required=True)
+    connection_list = connection_sub.add_parser(
+        "list", help="every stored connection. Reaches no tenant"
+    )
+    connection_list.add_argument("--format", choices=("text", "json"), default="text")
+    connection_use = connection_sub.add_parser(
+        "use", help="make a stored connection the active one. Reaches no tenant"
+    )
+    connection_use.add_argument("name", metavar="NAME")
+    connection_remove = connection_sub.add_parser(
+        "remove", help="remove a stored session and its record, as `logout --name`"
+    )
+    connection_remove.add_argument("name", metavar="NAME")
+
     contracts = sub.add_parser(
         "contracts",
         help="write the contract bundle a consumer vendors: schemas, models, "
@@ -567,6 +877,36 @@ def _build_parser() -> argparse.ArgumentParser:
     contracts.add_argument(
         "--out", required=True, type=Path, help="a directory to write into"
     )
+
+    # ONE NAME FOR THE FORMAT, ON EVERY COMMAND THAT HAS ONE. `--format` stays;
+    # `--output` is the same option, so that it is in each command's own help
+    # and not only in the documentation. A command where `--output` already
+    # names a directory keeps that meaning (`_uniform_output` reads a format
+    # word there).
+    def _share_format(command: argparse.ArgumentParser) -> None:
+        for known in list(command._actions):
+            if isinstance(known, argparse._SubParsersAction):
+                for nested in known.choices.values():
+                    _share_format(nested)
+        chosen = next(
+            (a for a in command._actions if "--format" in a.option_strings), None
+        )
+        if chosen is None or "--output" in command._option_string_actions:
+            return
+        chosen.option_strings.append("--output")
+        command._option_string_actions["--output"] = chosen
+
+    for command in list(sub.choices.values()):
+        _share_format(command)
+
+    # THE GROUPS. A complete grouped path never reaches these: `main` rewrites it
+    # to the flat command first (grouping.py). What arrives here is a group
+    # named on its own, asked for help, or followed by something it does not
+    # contain, and each of those is answered with what the group holds.
+    for group in grouping.GROUPS:
+        named = sub.add_parser(group.name, help=group.says, add_help=False)
+        named.add_argument("-h", "--help", action="store_true", dest="group_help")
+        named.add_argument("rest", nargs="*")
 
     return parser
 
@@ -748,6 +1088,101 @@ def _project(args) -> None:
         print(f"{path}: {', '.join(filled)}", file=sys.stderr)
 
 
+def _session(args) -> None:
+    """Fill the identity and the tenant from a stored connection, and say so.
+
+    AFTER THE COMMAND LINE AND THE PROJECT FILE, NEVER BEFORE. A connection
+    fills what neither of them said. It is used only for the tenant it was
+    opened for: a command aimed elsewhere, by an option or by a project file,
+    runs without it and is told why, because a session applied to another
+    tenant's address is the wrong identity reading the wrong organisation.
+
+    Named explicitly (`--connection`), a mismatch is a refusal instead: the
+    caller asked for that connection and silently not using it would run the
+    command as somebody else.
+    """
+    named = getattr(args, "connection", None)
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        raise AmbiguousIdentity(str(problem)) from problem
+    chosen = store.get(named) if named else store.current()
+    if named and chosen is None:
+        raise AmbiguousIdentity(
+            f"no connection named {named}. "
+            f"`{COMMAND} connection list` shows what is stored."
+        )
+    if chosen is None:
+        return
+
+    mismatch = None
+    for address in (getattr(args, "tenant_url", None), getattr(args, "site_url", None)):
+        if address and not chosen.covers(address):
+            mismatch = (
+                f"it is for {chosen.tenant} and this command is aimed at "
+                f"{sessions.tenant_key(address)}"
+            )
+    given = getattr(args, "client_id", None)
+    if given and given.lower() != chosen.client_id.lower():
+        mismatch = "this command names a different application registration"
+    explicit = getattr(args, "certificate_path", None) or getattr(
+        args, "device_login", False
+    )
+    if mismatch is None and explicit and chosen.method == "interactive":
+        mismatch = "this command chose its own sign-in method"
+    if mismatch:
+        if named:
+            raise AmbiguousIdentity(
+                f"connection {chosen.name} cannot be used: {mismatch}."
+            )
+        print(f"connection {chosen.name}: not used, {mismatch}", file=sys.stderr)
+        return
+
+    filled = []
+
+    def fill(destination: str, value) -> None:
+        if value in (None, False) or not hasattr(args, destination):
+            return
+        if getattr(args, destination) in (None, False):
+            setattr(args, destination, value)
+            filled.append(destination)
+
+    fill("client_id", chosen.client_id)
+    fill("tenant_url", chosen.tenant_url)
+    if chosen.method == "device-code":
+        fill("device_login", True)
+    if chosen.method == "certificate":
+        fill(
+            "certificate_path",
+            Path(chosen.certificate_path) if chosen.certificate_path else None,
+        )
+        fill("tenant_id", chosen.tenant_id)
+        fill("certificate_password_env", chosen.certificate_password_env)
+    # ALWAYS, AND ON STDERR, as a project file is announced: an identity that
+    # arrived from somewhere the caller did not type is said out loud.
+    print(
+        f"connection {chosen.name}: "
+        f"{', '.join(sorted(filled)) or 'matches what was given'}",
+        file=sys.stderr,
+    )
+
+
+#: What somebody with nothing configured is told, once, with the two things
+#: they can do about it. The reason an application registration is needed at
+#: all is in the documentation; what a person needs here is the next command.
+_NOT_SIGNED_IN = (
+    "not signed in: there is no active connection, no --client-id, and no "
+    "identity in a project file.\n"
+    "  Sign in once, and later commands use it:\n"
+    "      {command} login --client-id ID "
+    "--tenant-url https://TENANT-admin.sharepoint.com\n"
+    "  No application registration yet? One serves every run:\n"
+    "      {command} engine setup\n"
+    "  It prints the one command that registers it, or registers it on your "
+    f"agreement, and writes the id to {project_file.NAME} so it is not repeated."
+)
+
+
 def _authentication(args) -> None:
     """Two modes, and the caller has to have chosen exactly one.
 
@@ -763,14 +1198,7 @@ def _authentication(args) -> None:
     """
     client_id = getattr(args, "client_id", None)
     if client_id is None:
-        raise AmbiguousIdentity(
-            "no --client-id, and no identity in a project file. Every "
-            "connection needs an Entra ID application registration: "
-            "PnP.PowerShell has shipped no application of its own since "
-            "2.12.0. `m365-governance setup` prints the one command that "
-            f"registers it, and writes the id to {project_file.NAME} so it is "
-            "not repeated."
-        )
+        raise AmbiguousIdentity(_NOT_SIGNED_IN.format(command=COMMAND))
     _application_id(client_id, reaches_a_directory=not getattr(args, "dry_run", False))
 
     certificate = getattr(args, "certificate_path", None)
@@ -809,12 +1237,105 @@ def _authentication(args) -> None:
 
 
 def _cmd_collect(args) -> int:
+    """Read, show what was read, and keep the evidence if asked to.
+
+    TWO SPELLINGS, AND THE EARLIER ONE IS UNCHANGED. `--output <directory>` is
+    how this command was always called: it writes evidence there and prints
+    the collection's own report, exactly as before. Anything else is the newer
+    spelling: what was read is shown on stdout in the format asked for, and
+    the evidence is kept only where `--evidence-out` says.
+
+    THE VIEW IS NOT THE EVIDENCE. It is rendered from the documents the
+    collection wrote and adds nothing to them; the documents carry the
+    provenance and the coverage, and without `--evidence-out` they are not
+    kept, which is said every time.
+    """
+    given, kept = args.output, args.evidence_out
+    as_view = given is not None and str(given) in presenting.FORMATS
+    if given is not None and not as_view:
+        if kept is not None:
+            print(
+                "collect was given a directory twice: --output "
+                f"{given} and --evidence-out {kept}. They mean the same thing; "
+                "pass --evidence-out, and --output for the format.",
+                file=sys.stderr,
+            )
+            return 2
+        return _collect_evidence(args)
+
+    view = str(given) if as_view else "text"
+    if args.dry_run:
+        args.output = kept or Path("<a temporary directory>")
+        return _collect_evidence(args)
+    if kept is not None and kept.is_file():
+        print(f"--evidence-out is a directory, and {kept} is a file.", file=sys.stderr)
+        return 2
+
+    holder = (
+        contextlib.nullcontext(kept)
+        if kept
+        else tempfile.TemporaryDirectory(prefix="m365g-")
+    )
+    with holder as where:
+        args.output = Path(where)
+        started = time.time() - 1
+        # The collection's own report is for a person and goes to stderr here,
+        # so that stdout is the view and nothing else: a consumer asking for
+        # JSON gets JSON.
+        with contextlib.redirect_stdout(sys.stderr):
+            code = _collect_evidence(args)
+        if code == 2:
+            # A refusal read nothing and has already said why. A view of
+            # nothing, and a note about evidence, would bury the one sentence
+            # the caller needs.
+            return code
+        written = (
+            [
+                found
+                for found in _evidence_documents(args.output)
+                if found.stat().st_mtime >= started
+            ]
+            if args.output.is_dir()
+            else []
+        )
+        documents = [json.loads(found.read_text(encoding="utf-8")) for found in written]
+        try:
+            shown = presenting.select(documents, args.where, args.sort)
+        except ValueError as problem:
+            print(f"refusing to filter: {problem}", file=sys.stderr)
+            return 2
+        if documents and not shown and view == "text":
+            # NOT `Nothing was read`. Something was, and none of it matched:
+            # the two sentences are about different things, and the first one
+            # here would tell an operator their tenant was empty.
+            sys.stdout.write("Nothing that was read matches the filter.\n")
+        else:
+            sys.stdout.write(presenting.render(shown, view))
+        if args.where:
+            print(
+                f"{len(shown)} of {len(documents)} resources shown. The filter "
+                "chose what is shown: every resource was read"
+                + (", and the evidence kept holds all of them." if kept else "."),
+                file=sys.stderr,
+            )
+    print(
+        f"evidence kept in {kept}: the documents this view was made from."
+        if kept
+        else "evidence NOT kept: this is a view. --evidence-out DIRECTORY keeps "
+        "what was read, with its provenance.",
+        file=sys.stderr,
+    )
+    return code
+
+
+def _collect_evidence(args) -> int:
     # BEFORE ANYTHING REACHES A TENANT. Which identity a run authenticates as
     # decides what an empty result means, and a command line naming two of
     # them, or half of one, used to be settled by whichever branch the script
     # tested first.
     try:
         _project(args)
+        _session(args)
         _authentication(args)
     except AmbiguousIdentity as refusal:
         print(f"refusing to run: {refusal}", file=sys.stderr)
@@ -831,7 +1352,11 @@ def _cmd_collect(args) -> int:
             return 2
 
     if chosen.needs_site and not args.site_url:
-        print(f"collect {args.slice} needs --site-url", file=sys.stderr)
+        print(
+            f"collect {args.slice} needs --site-url: the site to read, for "
+            f"example --site-url https://TENANT.sharepoint.com/sites/NAME",
+            file=sys.stderr,
+        )
         return 2
     # `--output` IS A DIRECTORY. ALWAYS. FOR EVERY SLICE.
     #
@@ -876,7 +1401,11 @@ def _cmd_collect(args) -> int:
     # only thing distinguishing a working collection from a hung one was the
     # patience of the person waiting.
     def report(line: str) -> None:
-        print(line, flush=True)
+        # TO STDERR, BECAUSE A PIPELINE REDIRECTING STDOUT WANTS THE RESULT.
+        # This was a bare `print`, so a collection's progress landed in
+        # whatever file somebody was capturing, to be found later by a parser
+        # that failed on a line saying which slice was running.
+        UI.progress(line)
 
     outcome = collecting.run_slice(
         args.slice,
@@ -901,6 +1430,20 @@ def _cmd_collect(args) -> int:
     return _report_collection(args, chosen, outcome)
 
 
+#: Every slice this engine collects over Microsoft Graph, by the name on the
+#: command line. A slice reaches this table by being a Graph slice, and the
+#: registry in `collecting` says which those are: a name in one and not the
+#: other is a defect a test reports rather than a silent no-op.
+GRAPH_SLICES = {
+    conditional_access.NAME: conditional_access,
+    tenant_governance.NAME: tenant_governance,
+    guests.NAME: guests,
+    applications.NAME: applications,
+    groups.NAME: groups,
+    service_principals.NAME: service_principals,
+}
+
+
 def _collect_from_graph(args, chosen) -> int:
     """The Graph half of `collect`, which acquires nothing.
 
@@ -918,35 +1461,102 @@ def _collect_from_graph(args, chosen) -> int:
         print(f"refusing to run: {refusal}", file=sys.stderr)
         return 2
 
-    token = os.environ.get(conditional_access.TOKEN_VARIABLE, "")
+    # WHICH GRAPH SLICE, AND NOT THE ONLY ONE ANY MORE. This dispatched to
+    # Conditional Access by name because it was the only Graph collector there
+    # was, and the second one would have silently collected the first. The
+    # module is chosen from the slice the caller asked for, so a third costs a
+    # line here rather than a defect nobody sees until the evidence is wrong.
+    module = GRAPH_SLICES[args.slice]
+
+    token = os.environ.get(graph_slice.TOKEN_VARIABLE, "")
 
     if args.dry_run:
         paths = [
-            *conditional_access.AREAS.values(),
-            *conditional_access.SINGLE.values(),
+            *module.AREAS.values(),
+            *module.SINGLE.values(),
         ]
-        held = "set" if token else "not set"
+        # WHICH IDENTITY, SAID BEFORE THE RUN RATHER THAN AFTER. A dry run
+        # that named only the environment variable left a caller with a
+        # certificate believing the command could not work.
+        if token:
+            identity = f"the token in {graph_slice.TOKEN_VARIABLE}, which is set"
+        elif getattr(args, "certificate_path", None):
+            identity = (
+                f"an application-only token minted from {args.certificate_path} "
+                f"for application {getattr(args, 'client_id', '') or '(none)'} "
+                f"in directory {getattr(args, 'tenant_id', '') or '(none)'}"
+            )
+        elif getattr(args, "client_id", None) and args.tenant_url:
+            identity = (
+                "a delegated token for "
+                + ", ".join(chosen.permissions)
+                + f", as whoever signs in through application {args.client_id}"
+            )
+        else:
+            identity = (
+                f"no identity: {graph_slice.TOKEN_VARIABLE} is not set and no "
+                "--certificate-path was given"
+            )
         print(
             f"collect {args.slice} would read, in one session:\n"
             + "\n".join(f"  GET {path}" for path in paths)
-            + f"\n\nwith the token in {conditional_access.TOKEN_VARIABLE}, "
-            f"which is {held}."
+            + f"\n\nusing {identity}."
         )
         return 0
 
     if not token:
-        print(
-            f"collect {args.slice} reads Microsoft Graph and never acquires a "
-            f"token: it spends one you already hold. Put it in "
-            f"{conditional_access.TOKEN_VARIABLE}.\n\n{conditional_access.HOW}",
-            file=sys.stderr,
+        # THE APPLICATION REGISTRATION THIS ENGINE ALREADY HOLDS.
+        #
+        # Every PowerShell collector authenticates as an application with a
+        # certificate; the Graph half demanded a token pasted in by a person,
+        # so half the engine ran on a schedule and half ran when somebody
+        # remembered. The environment variable stays first -- a caller holding
+        # a token spends that one and reaches no directory to get another --
+        # and the certificate is what happens when there is none.
+        application = _application_from(args)
+        delegated = (
+            not application.complete
+            and not getattr(args, "certificate_path", None)
+            and bool(getattr(args, "client_id", None))
+            and bool(args.tenant_url)
         )
-        return 2
+        if delegated:
+            # AS THE PERSON, THROUGH THE REGISTRATION ALREADY IN USE. Without
+            # a certificate and with an application registration, a Graph
+            # read signs in the way a SharePoint read does: a session kept by
+            # `login` answers silently, and anybody else is asked. Only the
+            # scopes this collector declares are requested.
+            try:
+                token = graph_token.acquire_delegated(
+                    client_id=args.client_id,
+                    tenant_url=args.tenant_url,
+                    scopes=tuple(chosen.permissions),
+                    device_login=bool(getattr(args, "device_login", False)),
+                )
+            except graph_token.Unavailable as refusal:
+                print(f"refusing to run: {refusal}", file=sys.stderr)
+                return 2
+        elif not application.complete:
+            print(
+                f"collect {args.slice} reads Microsoft Graph and never creates "
+                f"a credential. Either put a token you already hold in "
+                f"{graph_slice.TOKEN_VARIABLE}, or give it the application "
+                f"registration the other collectors use: --client-id, "
+                f"--tenant-id and --certificate-path.\n\n{graph_slice.HOW}",
+                file=sys.stderr,
+            )
+            return 2
+        else:
+            try:
+                token = graph_token.acquire(application)
+            except graph_token.Unavailable as refusal:
+                print(f"refusing to run: {refusal}", file=sys.stderr)
+                return 2
 
     def report(line: str) -> None:
-        print(line, flush=True)
+        UI.progress(line)
 
-    outcome = conditional_access.run(
+    outcome = module.run(
         token=token,
         output=args.output,
         tenant_url=args.tenant_url,
@@ -956,6 +1566,80 @@ def _collect_from_graph(args, chosen) -> int:
     if outcome.stderr:
         print(outcome.stderr, file=sys.stderr)
     return _report_collection(args, chosen, outcome)
+
+
+#: One token per `run`, because minting it twice is signing in twice.
+_MINTED: dict[int, str] = {}
+
+
+def _graph_token_for(args) -> str:
+    """A Graph token for this invocation: the one exported, or one minted once.
+
+    THE ENVIRONMENT FIRST, ALWAYS. A caller holding a token spends that one and
+    reaches no directory to get another, which is the difference between using
+    an authorization and requesting a new one.
+    """
+    held = os.environ.get(graph_slice.TOKEN_VARIABLE, "")
+    if held:
+        return held
+    key = id(args)
+    if key not in _MINTED:
+        _MINTED[key] = graph_token.acquire(_application_from(args))
+    return _MINTED[key]
+
+
+def _capabilities_for(args) -> set[str] | None:
+    """Which collectors the selected rules need, or None for all of them.
+
+    THE JOIN IS THE CAPABILITY MANIFEST'S, not a guess from evidence paths. A
+    capability declares which rules consume it, so the collectors a selection
+    needs are the capabilities naming those rules -- the same answer a consumer
+    gets from the published manifest, which is what makes the plan it shows and
+    the run that happens the same thing.
+
+    None where no profile was given: a run with no selection is a run of
+    everything, and narrowing it would quietly change what `run` means.
+    """
+    profile = getattr(args, "profile", None)
+    if profile is None:
+        return None
+
+    try:
+        selected = load_profile(Path(profile)).get("rules")
+    except (DocumentError, OSError):
+        # A profile that cannot be read is refused further down, by the code
+        # that owns that message. Narrowing on a guess here would be worse.
+        return None
+
+    if not selected:
+        # A profile with no `rules` key selects every rule, so it needs every
+        # collector. Reading that as "none" would collect nothing at all.
+        return None
+
+    wanted = set(selected)
+    manifest = capabilities.manifest(getattr(args, "rules", None))
+    return {
+        capability["name"]
+        for capability in manifest["capabilities"]
+        if wanted & set(capability.get("consumed_by") or [])
+    }
+
+
+def _application_from(args) -> graph_token.Application:
+    """The application registration named on the command line, if it is there.
+
+    One reading of these five arguments, shared by the command that mints a
+    token and the planner that decides whether one can be minted. Two readings
+    is how `run` and `collect` came to disagree about whether this machine
+    could reach Microsoft Graph.
+    """
+    return graph_token.Application(
+        client_id=getattr(args, "client_id", "") or "",
+        tenant_id=getattr(args, "tenant_id", "") or "",
+        certificate_path=getattr(args, "certificate_path", "") or "",
+        tenant_url=getattr(args, "tenant_url", "") or "",
+        certificate_password_env=getattr(args, "certificate_password_env", "") or "",
+    )
 
 
 def _report_collection(args, chosen, outcome) -> int:
@@ -974,6 +1658,7 @@ def _report_collection(args, chosen, outcome) -> int:
             f"written to the tenant; a collector has no write path.",
             file=sys.stderr,
         )
+        _explain_failure(outcome)
         _report_manifest(outcome)
         return 1
 
@@ -1016,7 +1701,7 @@ def _report_collection(args, chosen, outcome) -> int:
     # rules that read it is the difference between a report and a wall of
     # `unknown` for facts nobody requested.
     print(
-        f"Evaluate with:  m365-governance evaluate --profile "
+        f"Evaluate with:  {COMMAND} evaluate --profile "
         f"profiles/{chosen.profile}.yaml --evidence {args.output}"
     )
     return 0
@@ -1036,6 +1721,11 @@ def _cmd_connect(args) -> int:
     # who omitted the address is told about the address, not about the identity
     # they also passed.
     _project(args)
+    try:
+        _session(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
     if not args.site_url and not args.tenant_url:
         print(
             "connect needs --tenant-url or --site-url: an address to reach.",
@@ -1061,7 +1751,11 @@ def _cmd_connect(args) -> int:
             return
         shown = connecting.readable(line)
         if shown is not None:
-            print(shown, flush=True)
+            # STILL STDERR, AND THE DEVICE CODE TOO. A code somebody reads off
+            # the screen is the clearest case of something meant for a person
+            # rather than for a pipe, and a run whose stdout is captured must
+            # still show it to whoever is sitting there.
+            UI.progress(shown)
 
     established = connecting.connect(
         client_id=args.client_id,
@@ -1108,19 +1802,48 @@ def _cmd_run(args) -> int:
     """
     try:
         _project(args)
+        _session(args)
         _authentication(args)
     except AmbiguousIdentity as refusal:
         print(f"refusing to run: {refusal}", file=sys.stderr)
         return 2
 
+    only = None
+    if args.only:
+        only = {name.strip() for given in args.only for name in given.split(",")}
+        only.discard("")
+        unknown = sorted(only - set(collecting.SLICES))
+        if unknown:
+            print(
+                f"--only names no collection called {', '.join(unknown)}. "
+                f"The names are: {', '.join(sorted(collecting.SLICES))}",
+                file=sys.stderr,
+            )
+            return 2
+
     steps = running.plan(
         site_url=args.site_url,
         tenant_url=args.tenant_url,
-        has_graph_token=bool(os.environ.get(conditional_access.TOKEN_VARIABLE)),
+        # A TOKEN THIS RUN COULD MINT COUNTS AS A TOKEN IT HAS.
+        #
+        # This asked only whether one was already exported, so `run` skipped
+        # every Graph slice while `collect` -- given the identical arguments --
+        # minted one from the certificate and collected. The operator supplied
+        # everything needed and the one command meant to take a target to a
+        # report silently dropped half the engine, including every rule about
+        # the directory. The plan then said `no token`, which was true and read
+        # as though nothing could be done about it.
+        has_graph_token=bool(os.environ.get(graph_slice.TOKEN_VARIABLE))
+        or _application_from(args).complete,
         # Asked before the plan is printed rather than after it is acted on.
         # The same check runs below before anything reaches a tenant; what
         # changed is that a dry run no longer promises what it would refuse.
         has_powershell=not collecting.preflight(),
+        # WHAT THIS RUN'S SELECTION ACTUALLY NEEDS. Without it a profile naming
+        # one rule still read every surface the target reaches, which is a
+        # request against somebody's directory that they did not make.
+        needed=_capabilities_for(args),
+        only=only,
     )
     doing = running.attempted(steps)
     sys.stderr.write(running.describe(steps))
@@ -1162,18 +1885,43 @@ def _cmd_run(args) -> int:
         # on its own, which is why nothing had ever seen this.
         into = args.output / step.name
         into.mkdir(parents=True, exist_ok=True)
-        outcome = collecting.run_slice(
-            step.name,
-            client_id=args.client_id,
-            output=into,
-            site_url=args.site_url,
-            tenant_url=args.tenant_url,
-            device_login=args.device_login,
-            tenant_id=args.tenant_id,
-            certificate_path=args.certificate_path,
-            certificate_password_env=args.certificate_password_env,
-            on_progress=lambda line: print(f"  {line}", file=sys.stderr, flush=True),
-        )
+        progress = lambda line: print(f"  {line}", file=sys.stderr, flush=True)  # noqa: E731
+        if step.slice.source == "graph":
+            # THE GRAPH SLICES RUN HERE TOO, and until now they could not.
+            #
+            # `run_slice` is the PowerShell path and refuses anything else, so
+            # every Graph slice reaching this line would have been refused --
+            # and before that the planner skipped them, so none ever reached
+            # it. Two halves of one omission, and together they meant the one
+            # command that takes a target to a report never read the directory:
+            # no authorization policy, no privileged roles, no authentication
+            # methods, and thirteen rules that could not appear in a report
+            # somebody ran the official way.
+            try:
+                graph = _graph_token_for(args)
+            except graph_token.Unavailable as refusal:
+                print(f"  {step.name}: {refusal}", file=sys.stderr)
+                continue
+            outcome = GRAPH_SLICES[step.name].run(
+                token=graph,
+                output=into,
+                tenant_url=args.tenant_url,
+                client_id=args.client_id,
+                on_progress=progress,
+            )
+        else:
+            outcome = collecting.run_slice(
+                step.name,
+                client_id=args.client_id,
+                output=into,
+                site_url=args.site_url,
+                tenant_url=args.tenant_url,
+                device_login=args.device_login,
+                tenant_id=args.tenant_id,
+                certificate_path=args.certificate_path,
+                certificate_password_env=args.certificate_password_env,
+                on_progress=progress,
+            )
         # Reported, never fatal. What a collection turned out to be is carried
         # in its own manifest, and a run that stopped at the first refusal
         # would throw away every slice that did work.
@@ -1205,7 +1953,13 @@ def _cmd_run(args) -> int:
     # unwrapping that had never had a reason to exist.
     if args.bundle:
         try:
-            written = bundling.write(args.bundle, runs, documents, args.format)
+            written = bundling.write(
+                args.bundle,
+                runs,
+                documents,
+                args.format,
+                run_set=RunSet(runs, documents=documents).to_dict(),
+            )
         except bundling.BundleError as refusal:
             print(f"refusing to write the bundle: {refusal}", file=sys.stderr)
             return 2
@@ -1219,12 +1973,12 @@ def _cmd_run(args) -> int:
     # Without this the record a run leaves cannot reach the top of the ladder
     # by any route except somebody editing the field the ladder derives from,
     # which is the arrangement the proof registry exists to end.
-    _raise_the_proof_drafts(args.output, runs, bundled=bool(args.bundle))
+    _raise_the_proof_drafts(args.output, runs, bundle=args.bundle)
 
     return _exit_for(runs, args.fail_on)
 
 
-def _raise_the_proof_drafts(output: Path, runs: list[Run], *, bundled: bool) -> None:
+def _raise_the_proof_drafts(output, runs, *, bundle) -> None:
     """Upgrade each slice's draft with what this run can ATTRIBUTE to it.
 
     Two of the five stages are attributable here and one is not, and the
@@ -1254,11 +2008,33 @@ def _raise_the_proof_drafts(output: Path, runs: list[Run], *, bundled: bool) -> 
     from m365_governance import live_proof
 
     evaluated = bool(runs)
+
+    # THE IDENTITY OF WHAT WAS BUNDLED, COMPUTED FROM WHAT WAS BUNDLED.
+    #
+    # `bundle: proven` used to be raised from a boolean -- did this run write a
+    # bundle -- which says an artefact exists and never which one, so nothing
+    # above it could ever be shown to be about the same artefact. The digest is
+    # taken from the directory this run actually produced.
+    # READ FROM THE ARTEFACT, NOT RECOMPUTED BESIDE IT. The bundle declares its
+    # own identity when the producer closes it, and that declaration is what a
+    # consumer will read and repeat. A record computing its own value here
+    # would be a second answer to the same question, and the day the two
+    # disagree the record would say a consumer opened something it did not.
+    digest = ""
+    if bundle is not None:
+        try:
+            manifest = json.loads(
+                (bundle / "manifest.json").read_text(encoding="utf-8")
+            )
+            digest = str(manifest.get("bundle_digest") or "")
+        except (OSError, ValueError):
+            digest = ""
+
     for draft_path in sorted(output.glob("*/**/live-proof-draft.json")):
         try:
             draft = json.loads(draft_path.read_text(encoding="utf-8"))
             raised = live_proof.upgrade_after_a_run(
-                draft, evaluated=evaluated, bundled=bundled
+                draft, evaluated=evaluated, bundled=bool(bundle), artifact_digest=digest
             )
             draft_path.write_text(
                 json.dumps(raised, indent=2, ensure_ascii=False) + "\n",
@@ -1377,7 +2153,7 @@ def _cmd_setup(args) -> int:
             "PowerShell:\n\n"
             f"    {REGISTRATION}\n\n"
             "  It prints the id it registered. Then run this again with it:\n\n"
-            "    m365-governance setup --client-id <id> "
+            f"    {COMMAND} setup --client-id <id> "
             "--tenant-url https://<tenant>-admin.sharepoint.com\n"
         )
         # Not a failure. The environment is sound and the person has been told
@@ -1500,8 +2276,8 @@ def _cmd_setup(args) -> int:
     ):
         return main(["connect", "--project", str(args.out)])
     print("Next:\n")
-    print("  m365-governance connect        # prove the identity can work here")
-    print("  m365-governance run            # collect, assess and report\n")
+    print(f"  {COMMAND} connect        # prove the identity can work here")
+    print(f"  {COMMAND} run            # collect, assess and report\n")
     return 0
 
 
@@ -1514,7 +2290,7 @@ def _project_text(args) -> str:
     one is not reading the manual at that moment.
     """
     lines = [
-        "# Written by `m365-governance setup`. Edit it freely.",
+        f"# Written by `{COMMAND} setup`. Edit it freely.",
         "#",
         "# NO SECRET BELONGS IN THIS FILE. It is committed, copied into tickets",
         "# and pasted into chats. A certificate password is named here by the",
@@ -1545,6 +2321,273 @@ def _cmd_doctor(args) -> int:
     text, healthy = doctor_module.report(args.root.resolve() if args.root else None)
     sys.stdout.write(text)
     return 0 if healthy else 1
+
+
+def _cmd_inspect(args) -> int:
+    """One composed scenario over evidence that was already collected."""
+    if not args.evidence.is_dir():
+        print(
+            f"{args.evidence} is not a directory of evidence. Collect first, "
+            f"with --evidence-out, and point --evidence at where it was kept.",
+            file=sys.stderr,
+        )
+        return 2
+    _says, build, reads = scenarios.SCENARIOS[args.scenario]
+    documents = scenarios.load(args.evidence)
+    if not documents:
+        print(
+            f"no evidence document was found under {args.evidence}. This "
+            f"scenario reads: {', '.join(reads)}.",
+            file=sys.stderr,
+        )
+        return 2
+    options = {}
+    if args.scenario == "app-exposure":
+        found = re.fullmatch(r"(\d+)d?", args.expires_within)
+        if not found or int(found.group(1)) < 1:
+            print(
+                "--expires-within takes a number of days, such as 30d.",
+                file=sys.stderr,
+            )
+            return 2
+        options["expires_within_days"] = int(found.group(1))
+    if args.scenario == "ca-coverage" and args.policy_id:
+        options["policy_id"] = args.policy_id
+    if args.scenario == "ownership":
+        if args.minimum_owners < 1:
+            print("--minimum-owners must be at least 1.", file=sys.stderr)
+            return 2
+        options["minimum_owners"] = args.minimum_owners
+    inspection = build(documents, **options)
+    if args.inspection_out:
+        args.inspection_out.parent.mkdir(parents=True, exist_ok=True)
+        args.inspection_out.write_text(
+            json.dumps(inspection, indent=2, ensure_ascii=False) + "\n",
+            encoding="utf-8",
+        )
+        print(f"inspection written to {args.inspection_out}", file=sys.stderr)
+    if args.format == "json":
+        sys.stdout.write(json.dumps(inspection, indent=2, ensure_ascii=False) + "\n")
+    elif args.format == "text":
+        sys.stdout.write(scenarios.as_text(inspection))
+    else:
+        headers, rows = scenarios.as_table(inspection)
+        sys.stdout.write(presenting.tabulate(headers, rows, args.format))
+    return 0
+
+
+#: How a live validation state reads to a person. The contract value is shown
+#: beside it, so the word never replaces what it stands for.
+_VERIFIED = {
+    "none": "contract-tested only: it has not read a directory",
+    "negative_only": "a directory refused it: the refusal path is proved",
+    "provider_only": "its transport read a directory; this collector did not",
+    "partial": "read a directory for some of what it covers",
+    "full": "read a directory",
+}
+
+
+def _collectors() -> list[dict]:
+    """Every collector, with the command that runs it and where it stands."""
+    by_name = {c["name"]: c for c in capabilities.manifest(None)["capabilities"]}
+    commands = {
+        entry["collection"]: entry["command"]
+        for entry in reference.build()["commands"]
+        if "collection" in entry
+    }
+    out = []
+    for name, chosen in collecting.SLICES.items():
+        entry = by_name.get(name, {})
+        collector = entry.get("collector", {})
+        state = collector.get("live_validation_state", "none")
+        out.append(
+            {
+                "name": name,
+                "command": commands.get(name, f"{COMMAND} collect {name}"),
+                "service": chosen.domain or entry.get("produces", {}).get("workload"),
+                "source": chosen.source,
+                "describes": chosen.describes,
+                "reads": list(collector.get("reads") or chosen.reads),
+                "permissions": list(collector.get("permissions") or [])
+                or ["not-established"],
+                "needs": [
+                    flag
+                    for flag, wanted in (
+                        ("--site-url", chosen.needs_site),
+                        ("--tenant-url", chosen.needs_tenant),
+                    )
+                    if wanted
+                ],
+                "feeds_rules": list(entry.get("consumed_by") or []),
+                "consumer": chosen.consumed_by,
+                "live_validation_state": state,
+                "tenant_verified": state not in ("none", "negative_only"),
+                "proof_stages": (collector.get("proof") or {}).get("stages", {}),
+                "limitations": [
+                    limit
+                    for record in live_proof.records(name)
+                    for limit in record.get("limitations", [])
+                ],
+            }
+        )
+    return sorted(out, key=lambda c: (str(c["service"]), c["name"]))
+
+
+def _collector_contract_test(chosen: dict) -> int:
+    """Hold one collector's packaged fixtures to the evidence contract.
+
+    A CONTRACT TEST, AND IT SAYS SO IN EVERY LINE THAT COULD BE MISREAD. It
+    validates the fixtures this collector is shaped like against the contract
+    each declares, and renders the view an operator would see. Every fixture
+    it uses is named with its origin from the fixture register, which is
+    `synthetic` for all of them: nothing here came from a tenant, nothing here
+    reaches one, and a pass is a statement about the shape of this collector's
+    evidence and never about a directory.
+
+    WHETHER THE COLLECTOR HAS READ A DIRECTORY is a separate line, taken from
+    the proof registry and printed apart, so that the two are never one
+    result.
+    """
+    root = packaged("fixtures")
+    registered = {
+        entry["path"]: entry
+        for entry in json.loads(
+            (root.parent / "fixture-registry.json").read_text(encoding="utf-8")
+        )["fixtures"]
+    }
+    slice_ = collecting.SLICES[chosen["name"]]
+    names = [slice_.shaped_like, *slice_.also_shaped_like]
+    print(f"CONTRACT TEST  {chosen['name']}  ({chosen['command']})")
+    print("  Fixtures only. No tenant is reached and none was read for this.\n")
+    failed = 0
+    for name in names:
+        found = sorted(root.rglob(f"{name}.json"))
+        if not found:
+            print(f"  ✗ {name}: no packaged fixture of that name")
+            failed += 1
+            continue
+        path = found[0]
+        relative = f"fixtures/{path.relative_to(root).as_posix()}"
+        origin = registered.get(relative, {}).get("origin", "unclassified")
+        document = json.loads(path.read_text(encoding="utf-8"))
+        problems = validate_evidence_document(document, relative)
+        try:
+            presenting.render([document], "text")
+            rendered = True
+        except Exception:  # noqa: BLE001 - any failure to render is the finding
+            rendered = False
+        if problems or not rendered or origin == "unclassified":
+            failed += 1
+            print(f"  ✗ {name}  [{origin}]")
+            for problem in problems[:5]:
+                print(f"      {problem.location}: {problem.message}")
+            if not rendered:
+                print("      the view could not be rendered from it")
+            if origin == "unclassified":
+                print("      it is not in the fixture register")
+        else:
+            print(f"  ✓ {name}  [{origin}]  valid against its contract; view renders")
+    state = chosen["live_validation_state"]
+    print(
+        f"\nCONTRACT       {len(names) - failed} of {len(names)} fixtures hold"
+        f"\nTENANT         {state}: {_VERIFIED.get(state, state)}"
+        "\n               (from the proof registry; this test did not establish it)"
+    )
+    return 1 if failed else 0
+
+
+def _cmd_collector(args) -> int:
+    """Discover the collectors. Reads declarations and the proof registry."""
+    known = _collectors()
+    if args.collector_command == "list":
+        if args.format == "json":
+            print(json.dumps(known, indent=2, ensure_ascii=False))
+            return 0
+        width = max(len(c["command"]) for c in known)
+        service = None
+        for c in known:
+            if c["service"] != service:
+                service = c["service"]
+                print(f"\n{service}")
+            state = c["live_validation_state"]
+            print(f"  {c['command'].ljust(width)}  {_VERIFIED.get(state, state)}")
+        whole = sum(1 for c in known if c["live_validation_state"] == "full")
+        verified = sum(1 for c in known if c["tenant_verified"])
+        print(
+            f"\n{len(known)} collectors: {whole} read a directory, "
+            f"{verified - whole} read one for part of what they cover, "
+            f"{len(known) - verified} did not. "
+            f"`{COMMAND} collector describe NAME` says what each reads and what "
+            "its proof did not cover."
+        )
+        return 0
+
+    chosen = next((c for c in known if c["name"] == args.name), None)
+    if chosen is None:
+        near = ", ".join(c["name"] for c in known)
+        print(
+            f"{args.name} is not a collector. The collectors are: {near}.",
+            file=sys.stderr,
+        )
+        return 2
+    if args.collector_command == "test":
+        return _collector_contract_test(chosen)
+    if args.format == "json":
+        print(json.dumps(chosen, indent=2, ensure_ascii=False))
+        return 0
+    state = chosen["live_validation_state"]
+    lines = [
+        f"{chosen['name']}  ({chosen['command']})",
+        f"  {chosen['describes']}.",
+        "",
+        f"  Service      {chosen['service']} ({chosen['source']})",
+        f"  Reads        {'; '.join(chosen['reads']) or 'not recorded'}",
+        f"  Permissions  {', '.join(chosen['permissions'])}",
+        f"  Needs        {' '.join(chosen['needs']) or 'the connection only'}",
+        f"  Feeds rules  {', '.join(chosen['feeds_rules']) or 'none'}",
+        f"  Read by      {chosen['consumer']}",
+        f"  State        {state}: {_VERIFIED.get(state, state)}",
+        "  Proof        "
+        + ", ".join(f"{k} {v}" for k, v in chosen["proof_stages"].items()),
+    ]
+    if chosen["limitations"]:
+        lines += ["", "  What its proof did not cover:"]
+        lines += [f"    - {limit}" for limit in dict.fromkeys(chosen["limitations"])]
+    elif not chosen["tenant_verified"]:
+        lines += ["", "  No directory has answered this read."]
+    print("\n".join(lines))
+    return 0
+
+
+def _cmd_inspect_diff(args) -> int:
+    """What changed between two inspections. Reads two files and nothing else."""
+    loaded = []
+    for path in (args.before, args.after):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as problem:
+            print(
+                f"{path} could not be read as an inspection: {problem}", file=sys.stderr
+            )
+            return 2
+        if not isinstance(data, dict) or "rows" not in data or "scenario" not in data:
+            print(
+                f"{path} is not an inspection. Write one with "
+                f"`{COMMAND} governance inspect <scenario> --out FILE`.",
+                file=sys.stderr,
+            )
+            return 2
+        loaded.append(data)
+    try:
+        result = scenarios.difference(*loaded)
+    except scenarios.NotComparable as refusal:
+        print(f"refusing to compare: {refusal}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        sys.stdout.write(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+    else:
+        sys.stdout.write(scenarios.difference_as_text(result))
+    return 0
 
 
 def _cmd_stats(args) -> int:
@@ -1595,7 +2638,7 @@ def _rule_source(args) -> Source:
     """Where the rules come from, and a refusal that names the real problem.
 
     A `--rules` pointing at a directory that is not there used to arrive at the
-    caller as "the rules do not validate. Run `m365-governance validate`",
+    caller as "the rules do not validate. Run `m365g validate`",
     because a missing directory and a malformed rule both come back as a
     problem from the same function. That sends a person to inspect rules that
     are fine, and the one thing they will not check is the path they just
@@ -1677,9 +2720,7 @@ def _evidence_documents(path: Path) -> list[Path]:
     """
     if path.is_dir():
         return sorted(
-            found
-            for found in path.rglob("*.json")
-            if not found.name.startswith("collection-manifest")
+            found for found in path.rglob("*.json") if collecting.is_evidence(found)
         )
     if not path.exists():
         # Named here rather than left to the loader, because at this point the
@@ -1752,7 +2793,7 @@ def _evaluate_all(args) -> tuple[list[Run], list[dict]]:
     if problems:
         print(
             "refusing to evaluate: the rules do not validate. "
-            "Run `m365-governance validate`.",
+            f"Run `{COMMAND} validate`.",
             file=sys.stderr,
         )
         raise _Refused
@@ -1844,7 +2885,13 @@ def _cmd_evaluate(args) -> int:
     # definition of it, and the one nobody tested wins.
     if getattr(args, "bundle", None):
         try:
-            written = bundling.write(args.bundle, runs, documents, args.format)
+            written = bundling.write(
+                args.bundle,
+                runs,
+                documents,
+                args.format,
+                run_set=RunSet(runs, documents=documents).to_dict(),
+            )
         except bundling.BundleError as refusal:
             print(f"refusing to write the bundle: {refusal}", file=sys.stderr)
             return 2
@@ -2229,6 +3276,548 @@ def _cmd_contracts(args) -> int:
     return 0
 
 
+def _connection_row(found: sessions.Connection, active: str | None) -> dict:
+    return {
+        "name": found.name,
+        "active": found.name == active,
+        "tenant": found.tenant,
+        "tenant_url": found.tenant_url,
+        "tenant_id": found.tenant_id,
+        "client_id": found.client_id,
+        "method": found.method,
+        "identity_kind": found.identity_kind,
+        "identity": found.identity,
+        "persisted": found.persisted,
+        "logged_in_at": found.logged_in_at,
+    }
+
+
+def _describe_connection(row: dict) -> str:
+    kept = (
+        "kept in the operating system's protected storage"
+        if row["persisted"]
+        else "nothing kept: the certificate signs in on every run"
+    )
+    who = row["identity"] or "not reported by the session"
+    return (
+        f"{row['name']}{' (active)' if row['active'] else ''}\n"
+        f"  tenant      {row['tenant']}  ({row['tenant_url']})\n"
+        f"  directory   {row['tenant_id'] or 'not established'}\n"
+        f"  application {row['client_id']}\n"
+        f"  signs in as {row['identity_kind']}, by {row['method']}; who: {who}\n"
+        f"  session     {kept}\n"
+        f"  recorded    {row['logged_in_at']}\n"
+    )
+
+
+def _cmd_login(args) -> int:
+    """Sign in once, and keep the session because the operator asked.
+
+    THE ONLY COMMAND THAT KEEPS ONE. Everything else authenticates for itself
+    and leaves nothing behind, unless a session this command stored is there
+    to be used. Three refusals come before any sign-in: an identity that is
+    ambiguous, a machine that cannot run the collector, and storage that would
+    not protect the token. One check comes after it, because what was believed
+    about storage beforehand is not what is on disk afterwards.
+    """
+    _project(args)
+    if not args.site_url and not args.tenant_url:
+        print(
+            "login needs --tenant-url or --site-url: a tenant to sign in to. "
+            f"For example:\n  {COMMAND} login --client-id ID "
+            "--tenant-url https://TENANT-admin.sharepoint.com",
+            file=sys.stderr,
+        )
+        return 2
+    try:
+        _authentication(args)
+    except AmbiguousIdentity as refusal:
+        print(f"refusing to run: {refusal}", file=sys.stderr)
+        return 2
+    for problem in collecting.preflight():
+        print(problem, file=sys.stderr)
+        return 2
+
+    delegated = not args.certificate_path
+    where = sessions.storage()
+    if delegated and not where.protected and not args.dry_run:
+        print(
+            f"refusing to keep a session: {where.detail}. A sign-in kept here "
+            f"would be written to an unprotected file. Run commands without "
+            f"`login` (each signs in for itself), or use a certificate.",
+            file=sys.stderr,
+        )
+        return 2
+
+    def report(line: str) -> None:
+        if args.format != "text":
+            return
+        shown = connecting.readable(line)
+        if shown is not None:
+            UI.progress(shown)
+
+    established = connecting.connect(
+        client_id=args.client_id,
+        site_url=args.site_url,
+        tenant_url=args.tenant_url,
+        device_login=args.device_login,
+        dry_run=args.dry_run,
+        certificate_path=str(args.certificate_path) if args.certificate_path else None,
+        tenant_id=args.tenant_id,
+        certificate_password_env=args.certificate_password_env,
+        persist_login=delegated,
+        on_progress=None if args.dry_run else report,
+    )
+    if args.dry_run:
+        print(established.output[0])
+        return 0
+
+    address = args.tenant_url or args.site_url
+    if established.reach is not connecting.Reach.ESTABLISHED:
+        # NOTHING IS RECORDED. A connection that did not open is not a
+        # connection, and a record of one would be used by the next command.
+        # AND THE LIBRARY IS TOLD TO KEEP NOTHING. It records the decision to
+        # keep sign-ins before anybody signs in, so a login that was cancelled
+        # or refused would otherwise leave the next ordinary sign-in for this
+        # tenant to be kept without anybody asking. Found on the first live
+        # attempt, which was cancelled.
+        if delegated:
+            sessions.forget_registration(address, args.client_id)
+        if args.format == "json":
+            print(
+                json.dumps(
+                    {
+                        "logged_in": False,
+                        "connection": connecting.document(established),
+                    },
+                    indent=2,
+                )
+            )
+        else:
+            print()
+            sys.stdout.write(connecting.describe(established))
+            print("Not logged in: no session was established, so nothing was kept.")
+        return 1
+
+    exposed = sessions.readable_token_cache() if delegated else None
+    if exposed is not None:
+        cleared, _why = connecting.logout(
+            client_id=args.client_id, tenant_url=address, device_login=args.device_login
+        )
+        print(
+            f"refusing to keep this session: the sign-in was written to {exposed} "
+            f"in plain text. "
+            + (
+                "It has been removed."
+                if cleared
+                else f"It could NOT be removed: delete {exposed}."
+            ),
+            file=sys.stderr,
+        )
+        return 1
+
+    store = sessions.load()
+    record = sessions.Connection(
+        name=args.name or sessions.default_name(address),
+        tenant_url=address,
+        client_id=args.client_id,
+        method=established.method,
+        persisted=delegated,
+        logged_in_at=established.attempted_at,
+        identity_kind=established.identity,
+        identity=None,
+        tenant_id=established.observed_tenant_id
+        or established.resolved_tenant_id
+        or args.tenant_id,
+        certificate_path=str(args.certificate_path) if args.certificate_path else None,
+        certificate_password_env=args.certificate_password_env,
+    )
+    replaced = store.add(record)
+    store.save()
+    row = _connection_row(record, store.active)
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "logged_in": True,
+                    "replaced": replaced,
+                    "storage": where.detail if delegated else None,
+                    "record": row,
+                    "connection": connecting.document(established),
+                },
+                indent=2,
+            )
+        )
+        return 0
+    print()
+    sys.stdout.write(connecting.describe(established))
+    print()
+    print(f"Logged in. Later commands for {record.tenant} use this connection.")
+    sys.stdout.write(_describe_connection(row))
+    if delegated:
+        print(f"  stored in   {where.detail}")
+    for name in replaced:
+        print(
+            f"  replaced    {name}: one identity per tenant and "
+            f"application registration"
+        )
+    print(f"`{COMMAND} logout` removes it.")
+    return 0
+
+
+def _unrecorded(store: sessions.Store) -> list[str]:
+    """Sign-ins the library is set to keep that no connection here accounts for."""
+    known = {(c.tenant, c.client_id.lower()) for c in store.connections if c.persisted}
+    return sorted(
+        {
+            tenant
+            for tenant, client in sessions.kept_registrations()
+            if (tenant, client) not in known
+        }
+    )
+
+
+def _cmd_status(args) -> int:
+    """Which connection later commands will use. Reaches no tenant."""
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        print(str(problem), file=sys.stderr)
+        return 2
+    current = store.current()
+    unrecorded = _unrecorded(store)
+    for tenant in unrecorded if args.format != "json" else []:
+        print(
+            f"note: the sign-in library is set to keep sign-ins for {tenant}, and no "
+            f"connection here records one. `{COMMAND} login` for that tenant records "
+            f"it; `{COMMAND} logout` then removes it.",
+            file=sys.stderr,
+        )
+    if args.format == "json":
+        print(
+            json.dumps(
+                {
+                    "unrecorded": unrecorded,
+                    "logged_in": current is not None,
+                    "active": _connection_row(current, store.active)
+                    if current
+                    else None,
+                    "stored": len(store.connections),
+                    "verified_now": False,
+                },
+                indent=2,
+            )
+        )
+        return 0 if current else 1
+    if current is None:
+        stored = len(store.connections)
+        print(
+            "Logged out: no active connection."
+            + (
+                f" {stored} stored; `{COMMAND} connection use NAME` selects one."
+                if stored
+                else f" `{COMMAND} login` keeps one; without it every command "
+                f"signs in for itself."
+            )
+        )
+        return 1
+    sys.stdout.write(_describe_connection(_connection_row(current, store.active)))
+    print(
+        f"This is the local record, not a check: `{COMMAND} connect` asks the tenant "
+        f"whether the session still signs in and what it may read."
+    )
+    return 0
+
+
+def _remove_connection(store: sessions.Store, found: sessions.Connection) -> bool:
+    """Clear what was persisted for one connection, then drop its record."""
+    if found.persisted:
+        for problem in collecting.preflight():
+            print(problem, file=sys.stderr)
+            return False
+
+        def report(line: str) -> None:
+            shown = connecting.readable(line)
+            if shown is not None:
+                UI.progress(shown)
+
+        cleared, why = connecting.logout(
+            client_id=found.client_id,
+            tenant_url=found.tenant_url,
+            device_login=found.method == "device-code",
+            on_progress=report,
+        )
+        if not cleared:
+            # THE RECORD STAYS. Dropping it would report a logout while the
+            # token is still in storage, usable by anything that signs in for
+            # this tenant and application registration.
+            print(
+                f"{found.name}: the stored sign-in was NOT removed ({'; '.join(why)}). "
+                f"The record is kept so this is not mistaken for a logout.",
+                file=sys.stderr,
+            )
+            return False
+    store.remove(found.name)
+    store.save()
+    print(
+        f"{found.name}: logged out"
+        + (
+            ", stored sign-in removed."
+            if found.persisted
+            else "; a certificate keeps no session, the record is removed."
+        )
+    )
+    return True
+
+
+def _cmd_logout(args) -> int:
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        print(str(problem), file=sys.stderr)
+        return 2
+    if args.all and args.name:
+        print("logout takes --name or --all, not both.", file=sys.stderr)
+        return 2
+    if args.all:
+        targets = list(store.connections)
+    else:
+        found = store.get(args.name) if args.name else store.current()
+        if found is None:
+            print(
+                f"no connection named {args.name}."
+                if args.name
+                else "Already logged out: no active connection.",
+                file=sys.stderr if args.name else sys.stdout,
+            )
+            return 2 if args.name else 0
+        targets = [found]
+    done = [_remove_connection(store, found) for found in targets]
+    return 0 if all(done) else 1
+
+
+def _cmd_connection(args) -> int:
+    try:
+        store = sessions.load()
+    except sessions.SessionError as problem:
+        print(str(problem), file=sys.stderr)
+        return 2
+    if args.connection_command == "list":
+        rows = [_connection_row(c, store.active) for c in store.connections]
+        if args.format == "json":
+            print(json.dumps(rows, indent=2))
+        elif not rows:
+            print(f"No stored connections. `{COMMAND} login` keeps one.")
+        else:
+            for row in rows:
+                sys.stdout.write(_describe_connection(row))
+        return 0
+    try:
+        if args.connection_command == "use":
+            chosen = store.use(args.name)
+            store.save()
+            print(f"{chosen.name} is the active connection, for {chosen.tenant}.")
+            return 0
+        found = store.get(args.name)
+        if found is None:
+            raise sessions.SessionError(f"no connection named {args.name}")
+    except sessions.SessionError as problem:
+        print(
+            f"{problem}. `{COMMAND} connection list` shows what is stored.",
+            file=sys.stderr,
+        )
+        return 2
+    return 0 if _remove_connection(store, found) else 1
+
+
+def _read_help(given: list[str]) -> str | None:
+    """Help for a grouped read, when that is what was asked for.
+
+    `m365g spo owner list --help` is answered here rather than by the flat
+    command's parser, because what a person needs before reading is not a list
+    of sixteen collections: it is what THIS one reads, what it needs to be
+    allowed to, and which rules use it. All of it comes from the capability
+    manifest, which is derived from the collectors themselves.
+    """
+    if not given or given[0] not in grouping.BY_NAME:
+        return None
+    if not {"-h", "--help"} & set(given):
+        return None
+    group = grouping.BY_NAME[given[0]]
+    words = [word for word in given[1:] if word not in ("-h", "--help")]
+    for path, flat in group.paths.items():
+        if (
+            tuple(words[: len(path)]) == path
+            and flat[0] == "collect"
+            and len(flat) == 2
+        ):
+            break
+    else:
+        return None
+    chosen = collecting.SLICES[flat[1]]
+    entry = next(
+        (
+            c
+            for c in capabilities.manifest(None)["capabilities"]
+            if c["name"] == flat[1]
+        ),
+        {},
+    )
+    collector = entry.get("collector", {})
+    permissions = collector.get("permissions") or ["not-established"]
+    name = f"{_invoked_as()} {group.name} {' '.join(path)}"
+    address = "--site-url SITE" if chosen.needs_site else ""
+    if chosen.needs_tenant:
+        address = f"{address} --tenant-url ADMIN".strip()
+    example = f"{name} {address}".strip()
+    rules = ", ".join(entry.get("consumed_by") or []) or "none yet"
+    if chosen.source == "graph":
+        signs_in = (
+            "as the active connection (`login`) for the scope above, or with "
+            "a certificate, or with a token the operator supplies"
+        )
+    elif chosen.collector.name == collecting.COLLECTOR.name:
+        signs_in = "as the active connection (`login`), or with --client-id"
+    else:
+        signs_in = (
+            "for itself on every delegated run: a kept session is not reused "
+            "by this read"
+        )
+    return "\n".join(
+        [
+            f"{name}",
+            f"  {chosen.describes}.",
+            "",
+            f"  Reads        {', '.join(collector.get('reads') or ['not recorded'])}",
+            f"  Permissions  {', '.join(permissions)}",
+            f"  Needs        {address or 'no address beyond the connection'}",
+            f"  Signs in     {signs_in}",
+            f"  Feeds rules  {rules}",
+            f"  Proved live  {collector.get('live_validation_state', 'not recorded')}",
+            "",
+            "Examples",
+            f"  {example}",
+            f"  {example} --output csv",
+            f"  {example} --evidence-out ./evidence",
+            "",
+            "What is printed is a view. --evidence-out keeps the evidence, which",
+            "is what rules evaluate. `not-established` under Permissions means",
+            "no least-privilege set has been proved for this read, not that it",
+            "needs none.",
+            "",
+            f"Every option: {_invoked_as()} collect {flat[1]} --help",
+            "(the same command)",
+            "",
+            DOCS,
+        ]
+    )
+
+
+#: What to do about a sign-in that was refused, by the reason this engine gives it.
+_NEXT_STEP = {
+    connecting.Reason.CONSENT_REQUIRED: "An administrator has to consent to the "
+    "application's permissions in Microsoft Entra; then run this again.",
+    connecting.Reason.APPLICATION_NOT_IN_DIRECTORY: "--client-id names an "
+    "application this directory does not have. Use the id of an app "
+    "registration in the tenant being read.",
+    connecting.Reason.DIRECTORY_NOT_FOUND: "The directory was not found. Check "
+    "the tenant address or --tenant-id.",
+    connecting.Reason.BLOCKED_BY_POLICY: "A sign-in policy refused this "
+    "sign-in (Conditional Access, or Security Defaults). The sign-in log in "
+    "Microsoft Entra names the policy.",
+    connecting.Reason.CERTIFICATE_REJECTED: "The certificate was not accepted. "
+    "Check that its public key is on the app registration and that the "
+    "password variable holds the right password.",
+    connecting.Reason.ADDRESS_NOT_RESOLVED: "The address did not resolve. Check "
+    "the tenant name in the URL.",
+}
+
+_NOT_PERMITTED = re.compile(
+    r"access.{0,3}denied|\b403\b|forbidden|unauthorized|insufficient privileges"
+    r"|not have permission|Authorization_RequestDenied",
+    re.IGNORECASE,
+)
+
+
+def _explain_failure(outcome) -> None:
+    """Say why a collection failed, where this engine can tell, and what to do.
+
+    AUTHENTICATION AND AUTHORIZATION ARE KEPT APART HERE TOO. An identity that
+    could not sign in and one that signed in and was not allowed to read send
+    a person to different places, and one message for both sends them to the
+    wrong one half the time. Where the cause is not recognised nothing is
+    guessed: the collector's own last words are shown as they arrived.
+    """
+    text = "\n".join(part for part in (outcome.stderr, outcome.stdout) if part)
+    lines = [
+        connecting.ANSI.sub("", line) for line in text.splitlines() if line.strip()
+    ]
+    # Only the directory's own error codes classify here. Whether the address
+    # resolved is not this function's question: a collection got further than
+    # that, so the absence of a code is `not classified` and never an address.
+    reason = connecting._reason(
+        connecting.Reach.REFUSED, {"resolved_tenant_id": "not-asked"}, lines
+    )
+    if reason in _NEXT_STEP:
+        print(f"  why: the sign-in was refused ({reason}).", file=sys.stderr)
+        print(f"  next: {_NEXT_STEP[reason]}", file=sys.stderr)
+    elif _NOT_PERMITTED.search(text):
+        print(
+            "  why: the identity signed in and was NOT permitted to read this. "
+            "That is authorization, not authentication.",
+            file=sys.stderr,
+        )
+        print(
+            f"  next: `{COMMAND} connect` says what this identity may read; "
+            f"--help on the grouped command names the permissions it needs.",
+            file=sys.stderr,
+        )
+    elif lines:
+        print(f"  the collector's last words: {lines[-1][:300]}", file=sys.stderr)
+
+
+def _what_can_be_read() -> str:
+    """Every read, by group, for somebody who asked to collect and not what."""
+    lines = ["Say what to read. Each of these reads one thing:", ""]
+    for group in grouping.GROUPS:
+        reads = [
+            (path, flat[1])
+            for path, flat in group.paths.items()
+            if flat[0] == "collect" and len(flat) == 2
+        ]
+        for path, name in reads:
+            command = f"{_invoked_as()} {group.name} {' '.join(path)}"
+            lines.append(f"  {command.ljust(36)}  {collecting.SLICES[name].describes}")
+    lines += ["", "Add --help to any of them for what it needs."]
+    return "\n".join(lines)
+
+
+def _cmd_group(args) -> int:
+    """Say what a group contains. Reaches nothing and decides nothing."""
+    group = grouping.BY_NAME[args.command]
+    parser = _build_parser()
+    action = next(
+        a for a in parser._actions if isinstance(a, argparse._SubParsersAction)
+    )
+    said = {choice.dest: choice.help or "" for choice in action._choices_actions}
+
+    def describe(flat: tuple[str, ...]) -> str:
+        if flat[0] == "collect" and len(flat) == 2:
+            return collecting.SLICES[flat[1]].describes
+        return said.get(flat[0], "")
+
+    text = grouping.listing(group, _invoked_as(), describe)
+    asked = list(args.rest)
+    if not asked:
+        print(f"{text}\n\n{DOCS}")
+        return 0
+    print(
+        f"{_invoked_as()} {group.name} has no `{' '.join(asked)}`.\n\n{text}",
+        file=sys.stderr,
+    )
+    return 2
+
+
 _COMMANDS = {
     "list-rules": _cmd_list_rules,
     "show-rule": _cmd_show_rule,
@@ -2248,7 +3837,15 @@ _COMMANDS = {
     "migration-verify": _cmd_migration_verify,
     "report": _cmd_report,
     "diff": _cmd_diff,
+    "inspect": _cmd_inspect,
+    "inspect-diff": _cmd_inspect_diff,
+    "collector": _cmd_collector,
     "contracts": _cmd_contracts,
+    "login": _cmd_login,
+    "status": _cmd_status,
+    "logout": _cmd_logout,
+    "connection": _cmd_connection,
+    **{group.name: _cmd_group for group in grouping.GROUPS},
 }
 
 
@@ -2277,9 +3874,115 @@ def _readable_output() -> None:
             reconfigure(encoding="utf-8", errors="replace")
 
 
+#: THE ENGINE'S ONE VOICE. Created here rather than passed down, because a
+#: parameter threaded through forty commands is a parameter somebody forgets,
+#: and the forgotten one writes to stdout. Tests substitute the streams.
+UI = presentation.Presentation()
+
+
+#: What `--output` may say as a format, across the commands.
+_OUTPUT_WORDS = {"text", "json", "csv", "md", "markdown", "html"}
+
+
+def _format_option(parser: argparse.ArgumentParser, argv: list[str]):
+    """The command's `--format` option and whether it takes a directory too."""
+    subs = argparse._SubParsersAction
+    action = next(a for a in parser._actions if isinstance(a, subs))
+    sub = action.choices.get(argv[0])
+    if sub is None:
+        return None, False
+    if argv[0] == "connection" and len(argv) > 1:
+        nested = next((a for a in sub._actions if isinstance(a, subs)), None)
+        sub = (nested.choices.get(argv[1]) if nested else None) or sub
+    fmt = next((a for a in sub._actions if "--format" in a.option_strings), None)
+    directory = any("--output" in a.option_strings for a in sub._actions)
+    return fmt, directory
+
+
+def _uniform_output(parser: argparse.ArgumentParser, argv: list[str]) -> list[str]:
+    """Let `--output FORMAT` mean the same thing on every command.
+
+    Commands that already chose a format with `--format` keep it; `--output`
+    is the same option under the name every command shares, and `md` is
+    `markdown` where that is what the command calls it. On `run`, `--output`
+    was always the evidence directory: a format word is read as a format, any
+    other value is still the directory, and `--evidence-out` is its new name.
+    `collect` reads both spellings itself.
+    """
+    if not argv or argv[0] == "collect":
+        return argv
+    fmt, has_directory = _format_option(parser, argv)
+    if fmt is None and not has_directory:
+        return argv
+    said_format = any(w == "--format" or w.startswith("--format=") for w in argv)
+    out: list[str] = []
+    index = 0
+    while index < len(argv):
+        word = argv[index]
+        name, _, attached = word.partition("=")
+        joined = "=" in word
+        value = attached if joined else None
+        if not joined and index + 1 < len(argv):
+            value = argv[index + 1]
+        step = 1 if joined else 2
+        if name == "--evidence-out" and has_directory and value is not None:
+            out += ["--output", value]
+            index += step
+            continue
+        as_format = value in _OUTPUT_WORDS or not has_directory
+        if name == "--output" and fmt is not None and value is not None and as_format:
+            if said_format:
+                raise _Refused(
+                    f"{argv[0]} was given a format twice: --format and "
+                    f"--output {value}. They are one option; pass one."
+                )
+            choices = {str(c) for c in (fmt.choices or [])}
+            if value == "md" and "markdown" in choices:
+                value = "markdown"
+            out += ["--format", value]
+            index += step
+            continue
+        out.append(word)
+        index += 1
+    return out
+
+
 def main(argv: list[str] | None = None) -> int:
     _readable_output()
-    args = _build_parser().parse_args(argv)
+    # A grouped path is the flat command by another name (grouping.py).
+    given = list(sys.argv[1:] if argv is None else argv)
+    read_help = _read_help(given)
+    if read_help is not None:
+        print(read_help)
+        return 0
+    parser = _build_parser()
+    if not given:
+        # Nothing was asked. The overview is the answer, not a usage error.
+        parser.print_help()
+        return 0
+    flat = grouping.regroup(given)
+    if flat[:1] == ["collect"] and (len(flat) == 1 or flat[1].startswith("-")):
+        if {"-h", "--help"} & set(flat):
+            # ASKED FOR HELP, AND ANSWERED WITH IT. `collect --help` exited 0
+            # in every earlier version and a script that checks for it kept
+            # working; the list of reads is the help, on stdout, and asking
+            # for it is not a mistake.
+            print(_what_can_be_read())
+            return 0
+        print(_what_can_be_read(), file=sys.stderr)
+        return 2
+    if flat != given and flat[0] != "collect":
+        # A mistake made under a grouped name is reported under that name.
+        subs = argparse._SubParsersAction
+        action = next(a for a in parser._actions if isinstance(a, subs))
+        path = given[: len(given) - len(flat) + 1]
+        action.choices[flat[0]].prog = f"{_invoked_as()} {' '.join(path)}"
+    try:
+        given = _uniform_output(parser, grouping.regroup(given))
+    except _Refused as refusal:
+        print(f"{refusal}", file=sys.stderr)
+        return 2
+    args = parser.parse_args(given)
     try:
         return _COMMANDS[args.command](args)
     except DuplicateResource as exc:

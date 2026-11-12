@@ -1,0 +1,113 @@
+# A TENANT WITH ONE GLOBAL ADMINISTRATOR HAS NO WAY BACK IN.
+#
+# The other rule in this pair reads the ceiling Microsoft published. This reads
+# the floor, and the floor is the one that turns into an outage: every recovery
+# procedure Microsoft documents begins with an account that is not the one that
+# failed.
+
+schema_version: "1.0"
+id: ENTRA-ROLE-002
+version: "1.0"
+title: Fewer than two accounts hold the Global Administrator role
+description: >
+  This tenant has fewer than two assignments of the Global Administrator role.
+  Microsoft recommends two accounts permanently holding it for the case where
+  normal administrator access cannot be used.
+
+service: entra
+resource_type: privileged-role-summary
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/role-based-access-control/security-emergency-access
+      title: Manage emergency access accounts in Microsoft Entra ID
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+    - url: https://learn.microsoft.com/entra/identity/role-based-access-control/best-practices
+      title: Best practices for Microsoft Entra roles
+      publisher: Microsoft
+      checked_at: "2026-08-23"
+  rationale: >
+    The same sentence appears across Microsoft's identity documentation, from
+    the best-practice page to the Privileged Identity Management deployment
+    plan: "Microsoft recommends that organizations have two cloud-only
+    emergency access accounts permanently assigned the Global Administrator
+    role... The accounts are limited to emergency or 'break glass' scenarios
+    where normal accounts can't be used or all other administrators are
+    accidentally locked out."
+
+    Two is not a preference here; it is the smallest number at which the
+    recommendation can be met at all. A tenant with one assignment cannot hold
+    an emergency account that is not also its working administrator, so the
+    account that recovers from the failure is the account the failure happened
+    to.
+
+severity:
+  default: high
+  rationale: >
+    Rated above the count rule because the consequence lands on recovery
+    itself. Too many administrators is a standing exposure an organisation can
+    reduce at its own pace; too few is an outage whose length is decided by
+    Microsoft support rather than by anybody in the organisation. Not critical
+    because nothing is exposed and no data is lost.
+  configurable: true
+
+evidence_requirements:
+  - path: global_administrators.assignments
+    type: number
+    required: true
+
+condition:
+  operator: less-than
+  evidence: global_administrators.assignments
+  value: 2
+
+outcomes:
+  pass:
+    message: >
+      At least two accounts hold the Global Administrator role, so the tenant
+      can hold the emergency access accounts Microsoft recommends.
+  fail:
+    message: >
+      Fewer than two accounts hold the Global Administrator role. There is no
+      second account to sign in with if the first cannot be used, and
+      Microsoft's documented answer to that situation is two accounts held for
+      exactly it.
+  unknown:
+    message: >
+      How many accounts hold the Global Administrator role was not read, so
+      whether a second one exists is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource does not summarise privileged role assignments.
+  invalid_evidence:
+    message: >
+      The assignment count was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Create the emergency access accounts under Microsoft's documented guidance
+  for them: cloud-only, not assigned to a named individual, with credentials
+  held where the organisation can reach them during an outage, and monitored so
+  that any sign-in raises an alert.
+
+limitations:
+  passes_without_resolving: >
+    TWO ASSIGNMENTS IS NOT AN EMERGENCY ACCESS ACCOUNT. This rule counts
+    assignments and cannot read whether either is held for emergencies, whether
+    anybody knows its credentials, whether it is excluded from the Conditional
+    Access policy that would block it, or whether it has ever been tested. A
+    tenant whose two Global Administrators are two people in the same building
+    passes this rule and is not covered.
+  other:
+    - >
+      Eligible assignments under Privileged Identity Management are not
+      counted, and this is the direction where that matters least: an eligible
+      assignment that has to be elevated is not the account you reach for when
+      elevating is what is broken. Microsoft's own guidance is that emergency
+      access accounts are permanently assigned, which is what this counts.
+    - >
+      A service principal assignment counts here. It is a real way back into a
+      tenant and is deliberately not excluded, but it is not a person and
+      cannot follow a break-glass procedure.

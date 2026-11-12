@@ -1,0 +1,84 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-11-12T10:00:00Z",
+    "collector": "graph-groups",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "GroupMember.Read.All"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "groups"
+    ],
+    "completed": [
+      "groups"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "group",
+    "native_id": "00000000-0000-4000-8000-000000000002",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "collection",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Projects"
+  },
+  "facts": {
+    "group": {
+      "created_at": {
+        "state": "observed",
+        "value": "2025-02-01T09:00:00Z",
+        "raw": {
+          "field": "createdDateTime",
+          "value": "2025-02-01T09:00:00Z"
+        }
+      },
+      "visibility": {
+        "state": "observed",
+        "value": "Private",
+        "raw": {
+          "field": "visibility",
+          "value": "Private"
+        }
+      },
+      "is_team": {
+        "state": "observed",
+        "value": false
+      },
+      "owners": {
+        "state": "observed",
+        "value": 1
+      },
+      "user_owners": {
+        "state": "observed",
+        "value": 1
+      },
+      "members": {
+        "state": "observed",
+        "value": 2
+      },
+      "user_members": {
+        "state": "observed",
+        "value": 2
+      }
+    }
+  }
+}

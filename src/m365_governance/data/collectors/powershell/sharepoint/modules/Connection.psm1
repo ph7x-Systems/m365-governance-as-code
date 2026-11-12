@@ -20,7 +20,7 @@ $ErrorActionPreference = 'Stop'
 # tests that it does: `TenantSharing` was once added to the collector's switch
 # and not to this list, which made the mode demand a -SiteUrl its own slice
 # never passes. It would have failed on the first tenant run and on no test.
-$script:AdminModes = @('TenantSites', 'SiteSharing', 'TenantSharing', 'BrandCenter')
+$script:AdminModes = @('TenantSites', 'SiteSharing', 'TenantSharing', 'BrandCenter', 'HubSites', 'SiteSharingAll', 'SiteOwnersAll', 'SiteGuestsAll')
 
 function Get-TenantHost {
     <#
@@ -160,6 +160,9 @@ function Connect-Collector {
         [Parameter()] [string] $SiteUrl,
         [Parameter()] [string] $TenantUrl,
         [Parameter()] [switch] $DeviceLogin,
+        # Keep the delegated sign-in in the operating system's protected
+        # storage. Passed by `login` alone; see Get-SpoEvidence.ps1.
+        [Parameter()] [switch] $PersistLogin,
         # APP-ONLY, AND IT IS A DIFFERENT IDENTITY RATHER THAN A DIFFERENT
         # PROMPT. Interactive and device login are both delegated: the run sees
         # what one person sees. A certificate authenticates the APPLICATION,
@@ -179,9 +182,9 @@ function Connect-Collector {
     # centre. It is a reachability check rather than a slice, so it has no
     # opinion about which endpoint the caller intends to collect from -- and
     # refusing it for the wrong one would answer a question nobody asked.
-    if ($Mode -eq 'Connect') {
+    if ($Mode -in @('Connect', 'Logout')) {
         $connectUrl = if ($TenantUrl) { $TenantUrl } else { $SiteUrl }
-        if (-not $connectUrl) { throw 'Mode Connect needs -TenantUrl or -SiteUrl.' }
+        if (-not $connectUrl) { throw "Mode $Mode needs -TenantUrl or -SiteUrl." }
     }
     else {
         $connectUrl = if ($script:AdminModes -contains $Mode) { $TenantUrl } else { $SiteUrl }
@@ -207,6 +210,19 @@ function Connect-Collector {
     # was guarded and the ten that write evidence were not.
     Assert-AddressIsResolvable -Url $connectUrl -CertificatePath $CertificatePath
 
+    # KEPT FOR THE MODES THAT VISIT EVERY SITE. A tenant-wide read of something
+    # only a site answers has to open that site, and it must open it as the
+    # same identity, by the same method, that opened the first connection.
+    # Holding the choice here means the second connection cannot make a
+    # different one.
+    $script:Reconnect = @{
+        ClientId            = $ClientId
+        DeviceLogin         = [bool] $DeviceLogin
+        CertificatePath     = $CertificatePath
+        TenantId            = $TenantId
+        CertificatePassword = $CertificatePassword
+    }
+
     if ($CertificatePath) {
         if (-not $TenantId) { throw '-CertificatePath needs -TenantId.' }
         if (-not (Test-Path -LiteralPath $CertificatePath)) {
@@ -226,13 +242,52 @@ function Connect-Collector {
         Connect-PnPOnline @parameters
     }
     elseif ($DeviceLogin) {
-        Connect-PnPOnline -Url $connectUrl -DeviceLogin -ClientId $ClientId
+        Connect-PnPOnline -Url $connectUrl -DeviceLogin -ClientId $ClientId -PersistLogin:$PersistLogin
     }
     else {
-        Connect-PnPOnline -Url $connectUrl -Interactive -ClientId $ClientId
+        Connect-PnPOnline -Url $connectUrl -Interactive -ClientId $ClientId -PersistLogin:$PersistLogin
     }
 
     return Get-TenantHost -Url $connectUrl
+}
+
+function Connect-CollectorSite {
+    <#
+        .SYNOPSIS
+        Opens one more site as the identity that is already signed in.
+
+        .DESCRIPTION
+        For the modes that read, site by site, something the administration
+        surface does not carry. The identity, the method and the application
+        are the ones Connect-Collector used and are not parameters here, so a
+        caller cannot open a site as anybody else. Nothing is persisted: a
+        collection never decides to keep a sign-in.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory = $true)] [string] $Url)
+
+    if (-not $script:Reconnect) {
+        throw 'Connect-CollectorSite needs a connection opened by Connect-Collector first.'
+    }
+    $with = $script:Reconnect
+    if ($with.CertificatePath) {
+        $parameters = @{
+            Url             = $Url
+            ClientId        = $with.ClientId
+            Tenant          = $with.TenantId
+            CertificatePath = $with.CertificatePath
+        }
+        if ($with.CertificatePassword) {
+            $parameters['CertificatePassword'] = $with.CertificatePassword
+        }
+        Connect-PnPOnline @parameters
+    }
+    elseif ($with.DeviceLogin) {
+        Connect-PnPOnline -Url $Url -DeviceLogin -ClientId $with.ClientId
+    }
+    else {
+        Connect-PnPOnline -Url $Url -Interactive -ClientId $with.ClientId
+    }
 }
 
 function Resolve-TenantAddress {
@@ -297,13 +352,10 @@ function Get-ConnectionFacts {
         and none may ever be: a command that printed a credential would put one
         into a terminal, a log and whatever captured that log.
 
-        THE DIRECTORY IDENTITY IS NOT HERE EITHER, and that is the honest
-        answer rather than an omission. `tenant.id` is null throughout this
-        engine because no collection path for it is proven on a real tenant.
-        A documented candidate exists -- Get-PnPTenantId -TenantUrl -- and it
-        is recorded in docs/COLLECTION-PATH-AUDIT.md as needs-tenant-validation.
-        Until a run settles it, a host is an address and nothing establishes
-        which directory it belongs to.
+        THE DIRECTORY THE SESSION OPERATES IN is the `tid` claim of the
+        session's own token, and it is a statement about this sign-in only.
+        The evidence documents' `tenant.id` is a separate field with its own
+        collection path (docs/COLLECTION-PATH-AUDIT.md) and is not set here.
     #>
     [CmdletBinding()]
     param(
@@ -326,6 +378,32 @@ function Get-ConnectionFacts {
 
     $connection = Get-PnPConnection
 
+    # WHAT THE SESSION WAS GRANTED AND WHERE, read from the claims of its own
+    # SharePoint token. The connection object carried a Scopes property once
+    # and has none in PnP.PowerShell 3.4.1: reading it under strict mode ended
+    # the first live login on that version. Three claims are read by name --
+    # `scp`, `roles`, `tid` -- and the token itself is never written, returned
+    # or logged. When the token cannot be decoded both stay unestablished,
+    # which is a true answer and never a reason to fail a sign-in that worked.
+    $scopes = @()
+    $observedTenantId = $null
+    try {
+        $token = Get-PnPAccessToken -ResourceTypeName SharePoint -Decoded -ErrorAction Stop
+        $claims = @($token.Claims)
+        $delegated = @($claims | Where-Object { $_.Type -eq 'scp' } |
+                ForEach-Object { ([string] $_.Value) -split ' ' })
+        $application = @($claims | Where-Object { $_.Type -eq 'roles' } |
+                ForEach-Object { [string] $_.Value })
+        $scopes = @(@($delegated) + @($application) | Where-Object { $_ } | Sort-Object -Unique)
+        $tid = @($claims | Where-Object { $_.Type -eq 'tid' } | Select-Object -First 1)
+        if ($tid.Count -gt 0 -and $tid[0].Value) { $observedTenantId = [string] $tid[0].Value }
+    }
+    catch {
+        $scopes = @()
+        $observedTenantId = $null
+    }
+    $token = $null
+
     # Interactive and device sign-in are both delegated: the session sees what
     # one person sees. Recording the flow separately from the identity kind
     # keeps two different questions apart.
@@ -337,12 +415,13 @@ function Get-ConnectionFacts {
         identity_kind    = $IdentityKind
         identity_method  = $IdentityMethod
         connection_type  = [string] $connection.ConnectionType
-        scopes           = @($connection.Scopes)
-        # WHICH DIRECTORY THIS SESSION IS OPERATING IN, and null until something
-        # reads it from the session itself. Deliberately NOT the value that
-        # resolving the address returns: that one is authoritative about the
-        # address and says nothing about who signed in.
-        observed_tenant_id = $null
+        scopes           = @($scopes)
+        # WHICH DIRECTORY THIS SESSION IS OPERATING IN: the `tid` claim of the
+        # session's own token, and null when that could not be read.
+        # Deliberately NOT the value that resolving the address returns: that
+        # one is authoritative about the address and says nothing about who
+        # signed in.
+        observed_tenant_id = $observedTenantId
     }
 }
 
@@ -397,4 +476,4 @@ function Test-CollectorAuthorization {
     }
 }
 
-Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization, Assert-AddressIsResolvable
+Export-ModuleMember -Function Read-CertificatePassword, Connect-Collector, Connect-CollectorSite, Get-TenantHost, Get-ConnectionFacts, Resolve-TenantAddress, Test-CollectorAuthorization, Assert-AddressIsResolvable

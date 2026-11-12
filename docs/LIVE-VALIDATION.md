@@ -3,8 +3,34 @@
 **What it means for a capability in this engine to be called live-validated,
 and what it does not mean.**
 
+## This is one of two axes, and they are not degrees of each other
+
+A capability is described by two states that come from the same records and
+answer different questions. Reading one as the other is how something gets
+called proved when half of what the word could mean was never attempted.
+
+| Axis | The question | Vocabulary | Where |
+|---|---|---|---|
+| **Live validation** | how well was the ACQUISITION validated against Microsoft 365? | `none`, `negative-only`, `provider-only`, `partial`, `full` | this document |
+| **Product path assurance** | how far has this capability been proved THROUGH THIS PRODUCT? | `not-live-tested`, `acquisition-attempted`, `positive-acquisition-observed`, `vertical-path-proven` | the stages in `live_proof.py` |
+
+Neither derives from the other, and a capability can sit high on one and low on
+the other in both directions. A collector whose acquisition was compared
+against a second authoritative surface, with its divergences investigated, is
+strong on the first axis and may still have nobody who has ever opened its
+bundle. A slice whose evidence, assessment and bundle all ran from one
+unremarkable read is high on the second and may never have had its
+representation checked against what its fields are claimed to mean.
+
+**The word `proof` alone means neither.** `data/live-proof.json` is the
+register of what ran; both states are derived from it, and neither is it.
+
+The five steps further down this page belong to **live validation**. The five
+stages `acquisition → evidence → assessment → bundle → consumer` belong to
+**product path assurance**. They are different fives.
+
 The per-capability state is published in the capability manifest and by
-`m365-governance capabilities`. This document defines the vocabulary those
+`m365g capabilities`. This document defines the vocabulary those
 values come from. **It is not a log of anybody's runs**: which tenant was read,
 when, and by whom is an operator's own record and does not belong in a source
 tree.

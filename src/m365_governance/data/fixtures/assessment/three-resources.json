@@ -1,8 +1,8 @@
 {
-  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.2.0",
+  "$schema": "https://ph7x.com/schemas/m365-governance/assessment/4.3.0",
   "canonical": {
     "run_set": {
-      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.2.0",
+      "$schema": "https://ph7x.com/schemas/m365-governance/run-set/4.3.0",
       "resources": 3,
       "by_class": {
         "content": 1,
@@ -38,7 +38,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-08T18:00:00Z"
             },
             {
               "area": "enumeration",
@@ -48,7 +50,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": "Agents are files, so this is what the running identity can see in this site collection. A site with no agents and a site this identity cannot open return the same empty result.",
+              "observed_at": "2026-08-08T18:00:00Z"
             },
             {
               "area": "items",
@@ -58,7 +62,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-05T14:02:11Z"
             },
             {
               "area": "permissions",
@@ -68,7 +74,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-05T14:02:11Z"
             },
             {
               "area": "spfx",
@@ -78,7 +86,9 @@
               "acquisition": [
                 "spo-collector"
               ],
-              "population": 1
+              "population": 1,
+              "detail": null,
+              "observed_at": "2026-08-06T16:00:00Z"
             }
           ]
         }
@@ -923,7 +933,7 @@
       }
     ],
     "versions": {
-      "engine": "1.0.0b9",
+      "engine": "1.0.0b10",
       "rules": {
         "SPO-LIST-001": "2.0",
         "SPO-LIST-002": "1.0",
@@ -953,17 +963,17 @@
           "collected"
         ]
       },
-      "assessment_id": "794b7bfe440b931e0dcee867f2cfda468836c7b2430b9f7b6e4969d58d7f7a1c"
+      "assessment_id": "c8c07a75c0656780a27be8ed46f4949eee736a4c5459fa36fb41ef222731df6b"
     },
     "hashes": {
       "algorithm": "sha256",
       "canonical_parts": {
-        "run_set": "34c653145ba33c3fd2a3aefb8fdc264c6a49fff4bd4a8d2cd0fc3e064633ff7d",
+        "run_set": "11854c199ddec6681fd6185e18986213e8802b115d7c552259460d658ba17cd1",
         "evidence": "325b0e5371017a74c19e5d9f82ab748b36be59f72a6f2589841c90754434f70d",
-        "versions": "5f73f0e6ec6a10d57c0bb12a87da2d8697348bf26b321eb87fc06acfdfbaba49",
+        "versions": "54e45b37c7192920503c3aa3532921973c8ef99a3460e6c771e29bb415a5ff5b",
         "manifest": "49ad1f98ad541bca0880e3b46274feb0fbb2c3a1a90770fc09c7d520472c4608"
       },
-      "canonical_hash": "794b7bfe440b931e0dcee867f2cfda468836c7b2430b9f7b6e4969d58d7f7a1c"
+      "canonical_hash": "c8c07a75c0656780a27be8ed46f4949eee736a4c5459fa36fb41ef222731df6b"
     }
   }
 }

@@ -7,7 +7,8 @@
 - Source: SharePoint Online via PnP.PowerShell / CSOM
 - Rules: shipped with this version
 - **Tenant: `contoso.sharepoint.com`, as requested.** The address this collection was pointed at. Nothing read the directory the session was operating in, so this is what was asked for rather than what was observed.
-- Identity: application, scopes: Sites.Read.All
+- **Identity: Application.** This assessment reflects what the configured application was permitted to read, by tenant-granted application permissions. Its reach is not limited to what any one person can see.
+- Scopes: Sites.Read.All
 
 ## Attention
 

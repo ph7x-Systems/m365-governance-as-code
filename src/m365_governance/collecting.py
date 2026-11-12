@@ -223,6 +223,20 @@ class Slice:
     #: What was found when two surfaces disagreed, and why. A divergence that
     #: was resolved by preferring the agreeable answer is not investigated.
     divergence: str = ""
+
+    #: WHAT THIS SURFACE CANNOT SETTLE EVEN WHEN THE CALL SUCCEEDS.
+    #:
+    #: Not an error and not a refusal: a constraint that survives a 200. A
+    #: cloud where the endpoint does not exist, a role that returns the object
+    #: with a section silently missing, a licence tier below which the response
+    #: is empty for a reason that is not absence. None of it is visible to the
+    #: collector at runtime, so it is declared or it is lost.
+    #:
+    #: The candidate register carried this column from its first row and the
+    #: manifest had nowhere to put it, which meant a surface acquired its known
+    #: limitations while it was a candidate and lost them the day a collector
+    #: was written for it -- the exact moment they start to matter.
+    limitation: str = ""
     #: Whether a tenant address, when given, CHANGES WHAT THIS SLICE READS.
     #:
     #: `needs_tenant` says the slice cannot run without one. This says it can
@@ -564,6 +578,215 @@ SLICES = {
             permissions=("Policy.Read.All",),
         ),
         Slice(
+            "applications",
+            "Applications",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. Microsoft documents how long a
+            # credential may live and publishes no single position a rule
+            # could hold every tenant to, so this feeds the operator listing
+            # applications and the composed scenario about credentials that
+            # are ending, and no rule yet.
+            consumed_by=(
+                "the application list an operator enumerates, and the "
+                "application exposure inspection"
+            ),
+            describes=(
+                "the application registrations in the directory, when each "
+                "credential ends, and what each asks for"
+            ),
+            shaped_like="entra-applications-three-registered",
+            also_shaped_like=(
+                "entra-application-secret-ending",
+                "entra-applications-refused",
+            ),
+            reads=(
+                "GET /v1.0/applications"
+                " ($select of eight properties; a credential's hint and a"
+                " certificate's bytes are never kept)",
+            ),
+            permissions=("Application.Read.All",),
+        ),
+        Slice(
+            "groups",
+            "Groups",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. This is the list of who answers for
+            # a group-connected site and for a team, which the ownership
+            # inspection joins to the site by the group's identifier.
+            consumed_by=(
+                "the group list an operator enumerates, and the ownership inspection"
+            ),
+            describes=(
+                "the Microsoft 365 groups in the directory, and how many "
+                "owners and members each has, by kind and never by name"
+            ),
+            shaped_like="entra-groups-three-listed",
+            also_shaped_like=(
+                "entra-group-single-owner",
+                "entra-groups-refused",
+            ),
+            reads=(
+                "GET /v1.0/groups ($filter to Microsoft 365 groups)",
+                "GET /v1.0/groups/{id}/owners ($select=id)",
+                "GET /v1.0/groups/{id}/members ($select=id)",
+            ),
+            permissions=("GroupMember.Read.All",),
+        ),
+        Slice(
+            "service-principals",
+            "ServicePrincipals",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. The application exposure inspection
+            # joins this to the registrations on the application identifier
+            # both carry, which is how it tells an application of this
+            # directory from one that belongs to somebody else.
+            consumed_by=(
+                "the service principal list an operator enumerates, and the "
+                "application exposure inspection"
+            ),
+            describes=(
+                "the service principals in the directory: whether each is "
+                "enabled, whose application it is, and when its own "
+                "credentials end"
+            ),
+            shaped_like="entra-service-principals-three-listed",
+            also_shaped_like=(
+                "entra-service-principal-of-another-organisation",
+                "entra-service-principals-refused",
+            ),
+            reads=(
+                "GET /v1.0/servicePrincipals"
+                " ($select of eight properties; a credential's hint and a"
+                " certificate's bytes are never kept)",
+            ),
+            permissions=("Application.Read.All",),
+        ),
+        Slice(
+            "guests",
+            "Guests",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER (charter, collector expansion of
+            # 2026-11-11). Microsoft publishes no position on how many guests
+            # a directory should hold, so there is no rule to write. The
+            # operator listing guests is the consumer, and the composed
+            # scenario about access from outside the organisation after them.
+            consumed_by=(
+                "the guest list an operator enumerates, and the external "
+                "access inspection"
+            ),
+            describes=(
+                "the guest accounts in the directory, by object id and never by name"
+            ),
+            shaped_like="entra-guests-three-accounts",
+            also_shaped_like=(
+                "entra-guest-invitation-pending",
+                "entra-guests-refused",
+            ),
+            reads=(
+                "GET /v1.0/users?$filter=userType eq 'Guest'"
+                " ($select of six properties, none of which names a person)",
+            ),
+            permissions=("User.Read.All",),
+        ),
+        Slice(
+            "tenant-governance",
+            "TenantGovernance",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=True,
+            consumed_by="governance rules",
+            describes=(
+                "what every user in a tenant may do without asking, and how "
+                "many accounts hold the role that may do anything"
+            ),
+            # THIS SLICE EXISTS BECAUSE OF AN ARITHMETIC NOBODY LIKED. The
+            # catalogue was twenty-one SharePoint rules and five others, and
+            # Microsoft documents no less about the rest of Microsoft 365 --
+            # the rest was simply not being collected. Two surfaces, seven
+            # rules, and not one of them is about a site.
+            shaped_like="entra-authorization-policy-open-defaults",
+            also_shaped_like=(
+                "entra-authorization-policy-restrained",
+                "entra-global-administrators-too-many",
+                "entra-global-administrators-single-account",
+                "entra-global-administrators-all-synced",
+                "entra-global-administrators-healthy",
+                # THE THIRD SURFACE. Which methods a tenant permits, and which
+                # policy is deciding that at all -- three rules, and the shapes
+                # they decide on are the ones where a method is on alone, where
+                # neither is, and where the state did not arrive.
+                "entra-authentication-methods-sms-enabled",
+                "entra-authentication-methods-voice-enabled",
+                "entra-authentication-methods-telephony-off",
+                "entra-authentication-methods-premigration",
+                "entra-authentication-methods-states-absent",
+            ),
+            reads=(
+                "GET /v1.0/policies/authorizationPolicy",
+                "GET /v1.0/policies/authenticationMethodsPolicy"
+                " (the method configurations are expanded by the service, so"
+                " this is one read and not one per method)",
+                "GET /v1.0/roleManagement/directory/roleAssignments"
+                " ($filter on the Global Administrator template, $select only)",
+                "GET /v1.0/users/{id}?$select=id,onPremisesSyncEnabled"
+                " (once per principal, so that no display name is ever received)",
+            ),
+            permissions=(
+                "Policy.Read.All",
+                "RoleManagement.Read.Directory",
+                "Policy.Read.AuthenticationMethod",
+            ),
+            # WHAT THE READ CANNOT SEE, said where a reader meets the slice
+            # rather than only inside the rules. Eligible assignments under
+            # Privileged Identity Management are another surface with another
+            # licence behind it, and a tenant using PIM well shows one
+            # permanent Global Administrator here and holds eight more.
+            second_surface=(
+                "roleManagement/directory/roleEligibilityScheduleInstances, for "
+                "the assignments Privileged Identity Management holds as "
+                "eligible rather than active"
+            ),
+            limitation=(
+                "the authentication methods policy publishes what a tenant "
+                "permits and never what anybody registered or used. A method "
+                "disabled here can still be the only one a user holds, and a "
+                "method enabled here can have nobody on it: registration is a "
+                "separate surface with a separate permission and this does not "
+                "read it. The policy can also target a method at named groups, "
+                "so a tenant-wide state is not a statement about who is in "
+                "scope"
+            ),
+            second_surface_state="not-yet-established",
+        ),
+        Slice(
             "forwarding",
             "Forwarding",
             domain="exchange",
@@ -633,6 +856,77 @@ SLICES = {
             permissions=("Sites.FullControl.All",),
         ),
         Slice(
+            "sites-sharing",
+            "SiteSharingAll",
+            needs_site=False,
+            needs_tenant=True,
+            profile="sharing",
+            describes="what every enumerated site permits, read site by site",
+            shaped_like="site-sharing-anyone-default-anyone",
+            also_shaped_like=("site-sharing-read-refused",),
+            writes_many=True,
+            reads=("Get-PnPTenantSite", "Get-PnPTenantSite -Identity"),
+            permissions=(),
+        ),
+        Slice(
+            "sites-owners",
+            "SiteOwnersAll",
+            needs_site=False,
+            needs_tenant=True,
+            profile="ownership",
+            describes="who administers every enumerated site, read site by site",
+            shaped_like="site-named-and-group-admins",
+            also_shaped_like=("site-owners-unreadable-by-application",),
+            writes_many=True,
+            reads=("Get-PnPTenantSite", "Get-PnPSiteCollectionAdmin"),
+            permissions=(),
+        ),
+        Slice(
+            "sites-guests",
+            "SiteGuestsAll",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. This is the relation the external
+            # access inspection could not make: which guest account a site has
+            # met, by the directory's own identifier. No rule reads it,
+            # because a guest in a site's list is not a guest with access.
+            consumed_by=(
+                "the list of guests per site an operator enumerates, and the "
+                "external access inspection"
+            ),
+            describes=(
+                "which guest accounts each enumerated site has met, by object "
+                "id and never by name"
+            ),
+            shaped_like="site-guests-two-met",
+            also_shaped_like=("site-guests-list-refused",),
+            writes_many=True,
+            reads=("Get-PnPTenantSite", "Get-PnPUser"),
+            permissions=(),
+        ),
+        Slice(
+            "hubs",
+            "HubSites",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            produces_findings=False,
+            # AN ENUMERATION IS A READER (charter, collector expansion of
+            # 2026-11-11). Microsoft documents what a hub is and how to plan
+            # one and publishes no position on how many there should be or how
+            # each should be set, so there is no rule to write. The operator
+            # listing hubs is the consumer, and the report after them.
+            consumed_by="the hub list an operator enumerates, and a report",
+            describes="the sites registered as hubs, and how each is set",
+            shaped_like="tenant-hubs-two-registered",
+            also_shaped_like=("site-hub-association-restricted",),
+            writes_many=True,
+            reads=("Get-PnPHubSite",),
+            permissions=(),
+        ),
+        Slice(
             "customization",
             "Customization",
             needs_site=True,
@@ -677,7 +971,25 @@ SLICES = {
                 "the setting that claims reports will not name anybody was "
                 "checked against a report, which returned rows and named nobody"
             ),
-            second_surface_state="none-exists",
+            # `none-exists` was wrong, and the capability map found it: assignment
+            # is also published as a collection of its own, independent of the
+            # user properties this slice reads. It is beta, so it is named and
+            # not yet compared -- but `no second surface exists` and `the second
+            # surface is not one a released product may depend on` are different
+            # sentences, and only the second one is true.
+            second_surface=(
+                "admin/cloudLicensing/assignments, which publishes licence "
+                "assignment as a collection rather than as a property of each "
+                "user, and is available in beta only"
+            ),
+            second_surface_state="named-not-run",
+            limitation=(
+                "admin/reportSettings is served by the global service only: not "
+                "by US Government L4, US Government L5 (DOD) or China operated "
+                "by 21Vianet. In those clouds the concealment setting cannot be "
+                "read at all, so whether a usage figure is identifiable stays "
+                "unknown and no collector can close it"
+            ),
             domain="licensing",
             script="licensing/Get-LicensingEvidence.ps1",
             tenant_parameter="-TenantHost",
@@ -700,7 +1012,7 @@ SLICES = {
             reads=(
                 "Get-MgSubscribedSku",
                 "Get-MgUser -Property assignedLicenses",
-                "GET /beta/admin/reportSettings",
+                "GET /v1.0/admin/reportSettings",
                 "GET /v1.0/reports/getOffice365ActiveUserDetail",
             ),
             permissions=(
@@ -973,11 +1285,11 @@ def run_slice(
     # and not that what came back was read correctly. A collector that wrote
     # its own verdict would be the claim produced by the thing it is a claim
     # about, which is the arrangement the registry was built to end.
-    _write_proof_draft(outcome, name=name, output=output)
+    write_proof_draft(outcome, name=name, output=output)
     return outcome
 
 
-def _write_proof_draft(outcome: Outcome, *, name: str, output: Path) -> Path | None:
+def write_proof_draft(outcome: Outcome, *, name: str, output: Path) -> Path | None:
     """The sanitized record this run supports, written where the run wrote.
 
     Failure here never fails a collection. The evidence is the point of the
@@ -1285,6 +1597,23 @@ def _artefact(path: Path, parsed: dict | None, directory: Path) -> dict[str, Any
     }
 
 
+#: Files a collector writes BESIDE its evidence, which are not evidence.
+#:
+#: ONE LIST, READ BY EVERYTHING THAT WALKS AN OUTPUT DIRECTORY. There were two
+#: copies of this rule -- one here and one in the command line -- and only the
+#: first knew about the second name. `run` therefore wrote a live-proof draft
+#: into the evidence folder and then refused its own output: "the evidence does
+#: not match the schema. This is a defect in the collector". It was a defect in
+#: the list, and the one-command path was broken for every slice that records a
+#: proof.
+NOT_EVIDENCE = ("collection-manifest", "live-proof-draft")
+
+
+def is_evidence(path: Path) -> bool:
+    """Whether a `.json` under an output directory is a document to evaluate."""
+    return not path.name.startswith(NOT_EVIDENCE)
+
+
 def _union_coverage(documents: list[tuple[Path, dict | None]]) -> dict[str, Any]:
     """The artefacts' coverage, unioned by area name and never counted.
 
@@ -1391,16 +1720,12 @@ def _collection_directory(output: Path) -> Path:
 
 
 def _files(output: Path) -> list[Path]:
-    """The evidence under a path. Manifests are not evidence and never count.
+    """The evidence under a path. A collector's own bookkeeping never counts.
 
     Without this exclusion a second collection into one directory would read
     the first one's manifest as a document it had just written, digest it as
     evidence, and report it as having no coverage.
     """
     if output.is_dir():
-        return sorted(
-            path
-            for path in output.rglob("*.json")
-            if not path.name.startswith("collection-manifest")
-        )
+        return sorted(path for path in output.rglob("*.json") if is_evidence(path))
     return [output] if output.exists() else []

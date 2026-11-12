@@ -32,16 +32,18 @@ def registry():
 # ---------------------------------------------------------------------------
 
 
-def test_a_collector_without_a_record_is_none(monkeypatch):
+def test_a_collector_without_a_record_is_none(forwarding_never_ran):
     """The absence of a record is the answer, not a gap to be filled in later.
 
-    `customization` is the live case and it is why this registry exists: the
-    collector's own source says a defect was found by provoking the state in a
-    directory, and no record of that run survives. The state is `none`, and it
-    stays `none` until something runs and leaves a record.
+    `customization` was the live case and it is why this registry exists: the
+    collector's own source said a defect was found by provoking the state in a
+    directory, and no record of that run survived. It stayed `none` until a run
+    on 2026-11-11 left a record, and `forwarding` on 2026-11-12. The property
+    is held with its records withdrawn: a collection
+    was attempted and failed, and a failure is not an acquisition.
     """
-    assert live_proof.established_state("customization") == "none"
-    assert SLICES["customization"].live is Live.NONE
+    assert live_proof.established_state("forwarding") == "none"
+    assert SLICES["forwarding"].live is Live.NONE
 
 
 def test_removing_the_proof_removes_the_claim(monkeypatch):
@@ -232,7 +234,7 @@ def test_a_run_leaves_a_record_that_carries_no_tenant():
     assert draft["provenance"] == live_proof.EMITTED
 
 
-def test_a_run_does_not_write_its_own_verdict():
+def test_a_run_does_not_write_its_own_verdict(forwarding_never_ran):
     """A successful call is not a proved interpretation, and it may not say so.
 
     `establishes` is left empty on purpose. A run proves an acquisition; it
@@ -242,11 +244,11 @@ def test_a_run_does_not_write_its_own_verdict():
     this registry was built to remove.
     """
     draft = live_proof.draft_from_run(
-        _FakeOutcome(), collector="customization", acquisition_method="pnp-powershell"
+        _FakeOutcome(), collector="forwarding", acquisition_method="pnp-powershell"
     )
 
     assert draft["establishes"] is None
-    assert live_proof.established_state("customization") == "none"
+    assert live_proof.established_state("forwarding") == "none"
 
 
 def test_a_collection_writes_its_draft_beside_the_evidence(tmp_path, monkeypatch):
@@ -263,7 +265,7 @@ def test_a_collection_writes_its_draft_beside_the_evidence(tmp_path, monkeypatch
     """
     from m365_governance import collecting
 
-    written = collecting._write_proof_draft(
+    written = collecting.write_proof_draft(
         _FakeOutcome(), name="customization", output=tmp_path
     )
 
@@ -288,7 +290,7 @@ def test_the_draft_does_not_land_inside_the_package(tmp_path):
     """
     from m365_governance import collecting
 
-    written = collecting._write_proof_draft(
+    written = collecting.write_proof_draft(
         _FakeOutcome(), name="customization", output=tmp_path
     )
 
@@ -344,7 +346,22 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     """
     grouped = live_proof.population()
 
-    assert grouped["vertical-path-proven"] == [], (
+    # TWO REACHED THE TOP ON 2026-08-24, and this is the docstring's own
+    # prediction arriving: the number moved because a record moved it. One run
+    # by one application collected both from a real directory, the command line
+    # carried it to a bundle, and a program in another repository -- holding
+    # the contracts rather than the engine that wrote them -- opened all 27
+    # runs and lost nothing on the way.
+    #
+    # The list is named rather than counted. A count would let a third join it
+    # without anybody deciding to; a name has to be typed by somebody who read
+    # the record.
+    assert grouped["vertical-path-proven"] == [
+        "brand-center",
+        "conditional-access",
+        "tenant-governance",
+        "tenant-sharing",
+    ], (
         "a capability reached the top of the ladder; if a run proved it, this "
         "test is what tells the next person to check the record rather than "
         "the claim"
@@ -352,11 +369,25 @@ def test_nothing_is_vertical_path_proven_yet_and_the_product_says_so():
     # `brand-center` joins it the day it is registered, and it is registered
     # before it has ever run. That is the right order: a capability declares
     # what it reads before anybody points it at a directory.
-    assert grouped["not-live-tested"] == ["brand-center", "customization", "forwarding"]
-    assert set(grouped["acquisition-attempted"]) == {"conditional-access", "spfx"}
+    # `tenant-governance` AND `conditional-access` LEFT THESE LISTS ON
+    # 2026-08-24, and the record is what moved them. Both were collected from a
+    # real directory in one run by one application: three areas and eleven
+    # documents, thirteen and thirty rules concluding, and the branch that
+    # reports a finding taken in both. Neither reached the top -- no consumer
+    # has opened the bundle -- so the assertion above still holds.
+    # `brand-center` left on 2026-08-24 by running. `forwarding` is still here
+    # and that is a result rather than a gap: the run reached it and the
+    # collection FAILED, and a failure is not an acquisition. `customization`
+    # and `spfx` left on 2026-11-11 by running: one kept delegated session
+    # collected both from a real tenant and their rules consumed the evidence.
+    # `forwarding` left on 2026-11-12 by running, and nothing is left here.
+    assert grouped["not-live-tested"] == []
+    assert grouped["acquisition-attempted"] == []
 
 
-def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment():
+def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment(
+    monkeypatch,
+):
     """`not-applicable` is a stage not existing, not a stage skipped.
 
     `agents` and `licensing` feed no rule by a recorded decision, so demanding
@@ -369,17 +400,31 @@ def test_a_capability_with_no_rules_can_reach_the_top_without_an_assessment():
 
     # And the reverse: a collector that DOES feed a rule may not reach the top
     # by leaving its assessment unattempted.
+    kept = live_proof._registry()["records"]
+    monkeypatch.setitem(
+        live_proof._registry(),
+        "records",
+        [r for r in kept if r.get("provenance") == live_proof.MIGRATED],
+    )
     assert live_proof.stages("sites")["assessment"] == "not-attempted"
     assert live_proof.proof_state("sites") == "positive-acquisition-observed"
 
 
-def test_a_refusal_proves_the_failure_path_and_never_the_acquisition():
+def test_a_refusal_proves_the_failure_path_and_never_the_acquisition(monkeypatch):
     """`spfx` was refused with a 403, which is a real observation.
 
     Collapsing it into `not-attempted` would discard it; promoting it to an
     acquisition would claim a read that never happened. It is its own state,
     and it leaves the capability on the second rung rather than the third.
+    Held against the refusal record alone: a later run read a catalog, and
+    that record is what moved the capability, not this one.
     """
+    kept = live_proof._registry()["records"]
+    monkeypatch.setitem(
+        live_proof._registry(),
+        "records",
+        [r for r in kept if r.get("provenance") == live_proof.MIGRATED],
+    )
     assert live_proof.stages("spfx")["acquisition"] == "refused"
     assert live_proof.proof_state("spfx") == "acquisition-attempted"
 
@@ -395,7 +440,7 @@ def test_a_collection_records_only_what_a_collection_did(tmp_path):
     """
     from m365_governance import collecting
 
-    written = collecting._write_proof_draft(
+    written = collecting.write_proof_draft(
         _FakeOutcome(), name="customization", output=tmp_path
     )
     stages = json.loads(written.read_text())["stages"]
@@ -462,11 +507,23 @@ def test_a_run_raises_only_the_stage_it_can_attribute():
         _FakeOutcome(), collector="customization", acquisition_method="pnp-powershell"
     )
 
-    raised = live_proof.upgrade_after_a_run(draft, evaluated=True, bundled=True)
+    raised = live_proof.upgrade_after_a_run(
+        draft, evaluated=True, bundled=True, artifact_digest="sha256:aaaa"
+    )
 
     assert raised["stages"]["assessment"] == "attempted"
     assert raised["stages"]["bundle"] == "proven"
+    assert raised["bundle_digest"] == "sha256:aaaa"
     assert raised["stages"]["consumer"] == "not-attempted"
+
+    # AND BUNDLING WITHOUT BEING ABLE TO SAY WHAT WAS BUNDLED RAISES NOTHING.
+    # `bundle: proven` with no identity leaves the stage above it unable ever
+    # to show it is about the same artefact, so the honest record is that
+    # something happened and nothing about it can be pointed at.
+    anonymous = live_proof.upgrade_after_a_run(draft, evaluated=True, bundled=True)
+
+    assert anonymous["stages"]["bundle"] == "not-attempted"
+    assert not anonymous.get("bundle_digest")
 
 
 def test_a_capability_with_no_rules_records_no_assessment_to_attempt():
@@ -578,3 +635,396 @@ def test_running_the_pipeline_offline_did_not_raise_the_live_stages(registry):
     assert licensing["stages"]["bundle"] == "not-attempted"
     assert licensing["stages"]["consumer"] == "not-attempted"
     assert "SETTLED LESS THAN THE CLAIM" in licensing["contradiction"]
+
+
+# ---------------------------------------------------------------------------
+# a stage is never promoted, in either direction
+# ---------------------------------------------------------------------------
+
+
+def _register(monkeypatch, stages, **extra):
+    """One collector with one record, so a claim can be made and examined."""
+    from m365_governance import live_proof
+
+    record = {
+        "collector": "tenant-governance",
+        "provenance": live_proof.EMITTED,
+        "establishes": "full",
+        "stages": stages,
+        **extra,
+    }
+    monkeypatch.setattr(live_proof, "records", lambda name: [record])
+
+
+def test_a_later_stage_proven_never_raises_an_earlier_one(monkeypatch):
+    """THE INFERENCE THAT WOULD MAKE THE HEADLINE NUMBER A CLAIM.
+
+    A consumer opening a bundle strongly suggests a bundle exists, and that is
+    exactly the reasoning that must not be in the code. The number this product
+    is answerable for is derived from these stages; the moment one of them is
+    filled in by what probably happened, the number stops being derived.
+
+    The engine has made the convenient inference twice already, both times in
+    presentation, and both times it read as certainty nobody had recorded.
+    """
+    from m365_governance import live_proof
+
+    _register(
+        monkeypatch,
+        {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "proven",
+            "bundle": "not-attempted",
+            "consumer": "proven",
+        },
+    )
+
+    by_stage = live_proof.stages("tenant-governance")
+
+    assert by_stage["bundle"] == "not-attempted", (
+        "a proven consumer raised the bundle it must have opened"
+    )
+    assert live_proof.proof_state("tenant-governance") != "vertical-path-proven"
+
+
+def test_an_impossible_record_is_reported_rather_than_quietly_weakening_a_state(
+    monkeypatch,
+):
+    """Refusing to promote is only half of it.
+
+    The contradiction used to lower the capability's state and say nothing, so
+    the register held a sentence describing something that cannot happen and
+    nobody was told. A weaker answer is not a correct one, and a register that
+    absorbs its own contradictions is a second authority nobody is auditing.
+    """
+    from m365_governance import live_proof
+
+    _register(
+        monkeypatch,
+        {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "proven",
+            "bundle": "not-attempted",
+            "consumer": "proven",
+        },
+    )
+
+    problems = live_proof.incoherent("tenant-governance")
+
+    assert problems, "an impossible record passed without a word"
+    assert "consumer" in problems[0] and "bundle" in problems[0]
+
+
+def test_a_stage_that_does_not_exist_is_walked_through_and_never_treated_as_a_gap(
+    monkeypatch,
+):
+    """`not-applicable` is a statement that the stage does not exist for this
+    capability, not a stage that was skipped. A collector feeding no rule has
+    no assessment to prove, and a bundle above it stands on the evidence
+    instead -- the chain goes through the hole rather than breaking at it."""
+    from m365_governance import live_proof
+
+    # The consumer claim carries its proof, because that rule now exists and
+    # this record would otherwise be incoherent for a different reason than
+    # the one under test.
+    _register(
+        monkeypatch,
+        {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "not-applicable",
+            "bundle": "proven",
+            "consumer": "proven",
+        },
+        consumer_proof={
+            "consumer": "a-separate-consumer",
+            "consumer_version": "1.4.0",
+            "independence": "separate-consumer",
+            "observed_at": "2026-08-24",
+            "artifact_digest": "sha256:aaaa",
+        },
+        bundle_digest="sha256:aaaa",
+    )
+
+    assert live_proof.incoherent("tenant-governance") == []
+    assert live_proof.proof_state("tenant-governance") == "vertical-path-proven"
+
+
+def test_the_top_of_the_ladder_needs_every_applicable_stage_and_not_most_of_them(
+    monkeypatch,
+):
+    from m365_governance import live_proof
+
+    for missing in ("evidence", "assessment", "bundle", "consumer"):
+        stages = dict.fromkeys(live_proof.STAGES, "proven")
+        stages[missing] = "not-attempted"
+        _register(monkeypatch, stages)
+
+        assert live_proof.proof_state("tenant-governance") != "vertical-path-proven", (
+            f"the ladder was topped with `{missing}` never reached"
+        )
+
+
+def test_no_record_in_the_shipped_register_claims_something_impossible():
+    """The gate over the data, run against the data that ships.
+
+    This is what stops the number moving because somebody edited a file. A
+    record is a claim about what happened, and a claim that contradicts the
+    pipeline is caught here rather than in six months by whoever is asked to
+    reproduce it.
+    """
+    from m365_governance import live_proof
+    from m365_governance.collecting import SLICES
+
+    problems = [
+        problem for name in sorted(SLICES) for problem in live_proof.incoherent(name)
+    ]
+
+    assert problems == [], "\n".join(problems)
+
+
+# ---------------------------------------------------------------------------
+# consumer is the stage written from outside, so it names its author
+# ---------------------------------------------------------------------------
+
+
+def _claiming(monkeypatch, consumer_proof, *, produced="sha256:aaaa", **stages):
+    """One record claiming a proven consumer, so the claim can be examined."""
+    from m365_governance import live_proof
+
+    record = {
+        "collector": "customization",
+        "provenance": live_proof.EMITTED,
+        "establishes": "full",
+        "bundle_digest": produced,
+        "stages": {
+            "acquisition": "proven",
+            "evidence": "proven",
+            "assessment": "proven",
+            "bundle": "proven",
+            "consumer": "proven",
+            **stages,
+        },
+    }
+    if consumer_proof is not None:
+        record["consumer_proof"] = consumer_proof
+    monkeypatch.setattr(live_proof, "records", lambda name: [record])
+
+
+def _proof(**over):
+    base = {
+        "consumer": "a-separate-consumer",
+        "consumer_version": "1.4.0",
+        "independence": "separate-consumer",
+        "observed_at": "2026-08-24",
+        "artifact_digest": "sha256:aaaa",
+    }
+    base.update(over)
+    return base
+
+
+def test_a_proven_consumer_with_no_proof_is_a_claim_nobody_can_check(monkeypatch):
+    """THE ONE STAGE NO RUN CAN RAISE.
+
+    `upgrade_after_a_run` moves `assessment` and `bundle` and deliberately
+    never touches `consumer`, because somebody independent opening the artefact
+    is the stage a program certifying it would be certifying itself. So the
+    claim arrives as a sentence written from outside, and a sentence with no
+    author stops answering "by whom?" the moment its writer moves on.
+    """
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, None)
+
+    problems = live_proof.incoherent("customization")
+
+    assert problems, "a proven consumer passed with nothing behind it"
+    assert "consumer_proof" in problems[0]
+
+
+def test_every_field_the_claim_needs_is_required_one_by_one(monkeypatch):
+    """Five fields, and each is missing a different answer.
+
+    Not a shape copied from somewhere: each is the answer to a question
+    somebody asks of a two-year-old record, and `proven` without it stops being
+    checkable rather than becoming merely terse.
+    """
+    from m365_governance import live_proof
+
+    for field in live_proof.CONSUMER_PROOF:
+        _claiming(monkeypatch, _proof(**{field: ""}))
+
+        problems = live_proof.incoherent("customization")
+
+        assert any(field in problem for problem in problems), (
+            f"`consumer_proof` without `{field}` was accepted"
+        )
+
+
+def test_the_digest_must_be_the_artefact_whose_bundle_stage_was_proven(
+    monkeypatch,
+):
+    """THE PROPERTY THAT KEEPS THE PROOF ATTACHED TO ITS OBJECT.
+
+    A record can hold a bundle stage proven for one artefact and a consumer
+    proof mentioning another. Read together they say a consumer opened THIS
+    capability's bundle, and nothing compared the two. It is the same shape as
+    a rule reading a fact from the wrong resource, and it is caught the same
+    way: by comparing the identifiers rather than trusting they were about the
+    same thing.
+    """
+    from m365_governance import live_proof
+
+    _claiming(
+        monkeypatch, _proof(artifact_digest="sha256:bbbb"), produced="sha256:aaaa"
+    )
+
+    problems = live_proof.incoherent("customization")
+
+    assert any("does not establish anything about another" in p for p in problems)
+
+
+def test_a_consumer_proof_about_an_artefact_the_record_never_names(monkeypatch):
+    """A record whose bundle produced nothing identifiable cannot support a
+    claim about what somebody opened. The two cannot be shown to be the same
+    artefact, and unshown is not the same as shown."""
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, _proof(), produced=None)
+
+    problems = live_proof.incoherent("customization")
+
+    assert any("cannot be shown to be the same one" in p for p in problems)
+
+
+def test_independence_is_two_claims_and_not_two_degrees_of_one(monkeypatch):
+    """`separate-consumer` is what this product can establish about itself: a
+    different program, outside the producing process, opened the artefact and
+    read it correctly.
+
+    `external` is a claim about an ORGANISATION, and nothing here can produce
+    one. The vocabulary is closed so that a word invented today cannot let a
+    claim about a separate process be read later as a claim about a separate
+    organisation.
+    """
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, _proof(independence="audited"))
+
+    problems = live_proof.incoherent("customization")
+
+    assert any("separate organisation" in p for p in problems)
+
+    _claiming(monkeypatch, _proof(independence="separate-consumer"))
+    assert live_proof.incoherent("customization") == []
+
+
+def test_a_complete_claim_reaches_the_top_of_the_ladder(monkeypatch):
+    """The whole point of the gate is that a real claim passes it."""
+    from m365_governance import live_proof
+
+    _claiming(monkeypatch, _proof())
+
+    assert live_proof.incoherent("customization") == []
+    assert live_proof.proof_state("customization") == "vertical-path-proven"
+
+
+# ---------------------------------------------------------------------------
+# two axes, one register
+# ---------------------------------------------------------------------------
+
+
+def test_the_two_axes_do_not_derive_from_each_other(monkeypatch):
+    """Live Validation and Product Path Assurance answer different questions.
+
+    One asks how well the ACQUISITION was validated against Microsoft 365; the
+    other asks how far the capability was proved THROUGH THIS PRODUCT. A
+    capability can sit high on one and low on the other in both directions, and
+    a reader taking one for the other is how something gets described as proved
+    when half of what the word could mean was never attempted.
+    """
+    from m365_governance import live_proof
+
+    # Strong acquisition, nobody has opened a bundle.
+    _claiming(monkeypatch, None, bundle="not-attempted", consumer="not-attempted")
+    assert live_proof.established_state("customization") == "full"
+    assert live_proof.proof_state("customization") == "positive-acquisition-observed"
+
+    # The whole path walked, from an acquisition that established less.
+    from m365_governance import live_proof as lp
+
+    record = {
+        "collector": "customization",
+        "provenance": lp.EMITTED,
+        "establishes": "negative_only",
+        "artifact_digest": "sha256:aaaa",
+        "consumer_proof": _proof(),
+        "stages": dict.fromkeys(lp.STAGES, "proven"),
+    }
+    monkeypatch.setattr(lp, "records", lambda name: [record])
+
+    assert lp.established_state("customization") == "negative_only"
+    assert lp.proof_state("customization") == "vertical-path-proven"
+
+
+def test_the_terminal_never_reports_a_state_the_stages_do_not_support():
+    """A PRESENTATION LAYER MAY EXPLAIN A CONTRACT VALUE AND NEVER WIDEN IT.
+
+    This programme has already made this mistake once, in the other direction:
+    a site rendered `full` as "read from a tenant, end to end", a sentence
+    wider than the value ever meant. The terminal was making it too. Every
+    capability printed `live   live-validated` -- one word, which reads as
+    proved against a tenant -- while the manifest beside it carried five
+    stages of which three were usually `not-attempted`.
+
+    So the human-readable output now prints the ladder state and the stage
+    strip together, and this pins the property that matters: a capability
+    whose acquisition was never attempted cannot appear anywhere in that line
+    as having been proven.
+    """
+    from m365_governance import capabilities
+
+    document = capabilities.manifest()
+    text = capabilities.describe(document)
+
+    for capability in document["capabilities"]:
+        proof = capability["collector"]["proof"]
+        if proof["state"] != "not-live-tested":
+            continue
+        lines = text.splitlines()
+        start = lines.index(f"  {capability['name']}")
+        block = "\n".join(lines[start : start + 7])
+        assert "not-live-tested" in block, (
+            f"{capability['name']} has not been run against a directory and "
+            "its line does not say so"
+        )
+        assert proof["stages"]["acquisition"] != "proven"
+
+
+def test_the_zero_is_printed_and_is_not_something_a_reader_has_to_derive():
+    """`vertical-path-proven` counts the capabilities proved along the whole
+    path. A product whose own tooling reported coverage without reporting that
+    number would be doing the thing it exists to replace."""
+    from m365_governance import capabilities
+
+    text = capabilities.describe(capabilities.manifest())
+
+    assert "Proof ladder" in text
+    assert "vertical-path-proven" in text
+    ladder = text.split("Proof ladder", 1)[1]
+    # THE RUNG IS PRINTED WHATEVER IS ON IT, which is the property, and the
+    # zero was only the case that made it worth asserting: an absent line reads
+    # as an absent question. It now carries two, so the assertion is that the
+    # line exists and states a number rather than that the number is nought.
+    rung = next(
+        (
+            line.strip()
+            for line in ladder.splitlines()
+            if line.strip().startswith("vertical-path-proven")
+        ),
+        None,
+    )
+    assert rung is not None, "the rung is not printed at all"
+    assert rung.split()[-1].isdigit(), f"the rung states no number: {rung!r}"

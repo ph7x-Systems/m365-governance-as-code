@@ -502,3 +502,19 @@ def test_every_matrix_answer_lands_in_exactly_one_state():
         outcome = Unavailable.of(status, POLICIES)
         assert outcome.state == state
         assert outcome.detail.strip()
+
+
+def test_a_refusal_names_the_permission_of_the_surface_that_refused():
+    """One sentence for every path sent an operator refused applications to
+    request the Conditional Access scope."""
+    from m365_governance.graph import Unavailable
+
+    apps = Unavailable.of(403, "applications?$select=id").detail
+    assert "Application.Read.All" in apps and "Policy.Read.All" not in apps
+    users = Unavailable.of(403, "users?$filter=userType eq 'Guest'").detail
+    assert "User.Read.All" in users and "Policy.Read.All" not in users
+    assert (
+        "Policy.Read.All" in Unavailable.of(403, "policies/authorizationPolicy").detail
+    )
+    other = Unavailable.of(403, "security/secureScores").detail
+    assert "Policy.Read.All" not in other and "--help" in other

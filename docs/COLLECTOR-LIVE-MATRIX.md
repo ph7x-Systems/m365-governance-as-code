@@ -38,35 +38,35 @@ to exercise.
 | `permissions` | ✓ | `completed`, 17 docs | — | n.a. | `SPO-LIST-001/002/003`, `SPO-SITE-003` | **live-validated** |
 | `agents` | ✓ | 0 agents, 2026-08-10 | — | n.a. | **none**, by decision | **live-validated** |
 | `tenant-sharing` | ✓ | 3 properties, 2026-08-08 | — | n.a. | `SPO-SHARE-003`, `SPO-SHARE-004` | **live-validated** |
-| `spfx` | ✓ | not observed | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **negative path validated** |
+| `spfx` | ✓ | a tenant catalog of 10 solutions, 2026-11-11; no site catalog | `403 Forbidden`, 2026-08-08 | n.a. | `SPO-SPFX-001` | **partially live-validated** |
 | `conditional-access` | ✓ | 10 policies, 1 location, defaults — **read by the provider, not by the slice** | `403` without `Policy.Read.All` | none at 10 items | `CA-STATE-001`, `CA-SCOPE-001`, `CA-RECOVERY-001` | **provider live-validated, slice not live-validated** |
-| `customization` | ✓ | not observed | not observed | n.a. | `SPO-SCRIPT-001` | **not live-validated** |
+| `customization` | ✓ | `completed`, 1 doc, every fact observed, 2026-11-11 | — | n.a. | `SPO-SCRIPT-001` | **live-validated** |
+| `sites-sharing` | ✓ | `partial` enumeration, 53 docs, each site read by its own address, 2026-11-11 | — | none at 53 sites | `SPO-SHARE-001/002/005` | **live-validated** |
+| `applications` | ✓ | 46 registrations, every credential list returned, 2026-11-11 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
+| `groups` | ✓ | 23 groups, owners and members read for each, 2026-11-12 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
+| `service-principals` | ✓ | 805 service principals, every ownership branch observed, 2026-11-12 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
+| `guests` | ✓ | 1 guest account, 2026-11-11 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
+| `sites-owners` | ✓ | `partial` enumeration, 53 docs: 30 answered, 17 answered nothing, 2026-11-11 | 6 sites refused to open, each a document | none at 53 sites | `SPO-SITE-001/002` | **live-validated** |
+| `sites-guests` | ✓ | `partial` enumeration, 53 docs: 31 returned their list of users, 2026-11-12 | 22 sites refused, each a document | none at 53 sites | **none**, by decision | **live-validated** |
+| `hubs` | ✓ | 2 hubs, every fact observed, 2026-11-11 | — | n.a. | **none**, by decision | **live-validated** |
 | `brand-center` | ✓ | not observed | not observed | n.a. | **none**, by decision | **not live-validated** |
-| `forwarding` | ✓ | not observed | not observed | n.a. | `EXO-FORWARD-001`, `EXO-FORWARD-002` | **not live-validated** |
+| `tenant-governance` | ✓ | not observed | not observed | n.a. | `ENTRA-ROLE-001/002/003`, `ENTRA-AUTH-001/002/003/004` | **not live-validated** |
+| `forwarding` | ✓ | 1 outbound policy and 1 remote domain, every fact it reads observed, 2026-11-12; both rules decided | not observed | n.a. | `EXO-FORWARD-001`, `EXO-FORWARD-002` | **live-validated** |
 | `licensing` | ✓ | assignment, report identifiability and one usage report, 2026-08-22 — the report returned rows and named nobody | Graph modules absent → `not-supported` naming them; a concealed report is a positive read, not a refusal | one reporting window | **none**, by decision | **partially live-validated** |
 
-### One row is under investigation, and it is recorded rather than resolved
+### The row that was under investigation was settled by running it
 
-`customization` reads `not observed` in both live columns, and the collector
-that fills it carries a comment saying the opposite: the `DenyAddAndCustomizePages`
-enum defect was **found by provoking the state in a tenant**, and the specific
-thing it describes — a site that PERMITS custom script collected as denying it,
-while every hand-written fixture used real booleans and agreed with the code —
-is not derivable offline. Both cannot be true.
+`customization` read `not observed` in both live columns while the collector
+that fills it carried a comment saying a defect had been found by provoking the
+state in a tenant. No record of that run survives, and a comment is evidence of
+intent and not the record, so the row stayed `not live-validated`.
 
-The row stays `not live-validated`, and this is not indecision. `Live` is
-defined as an observation that crossed the complete product boundary and was
-**recorded** here; a claim written in a source comment is evidence of intent
-and is not the record. What can be established today is narrower than either
-sentence: a run happened, nothing recorded what it covered, and no state can be
-raised on the strength of a comment about it.
-
-**What settles it is the run, not the adjudication.** The experiment is named:
-execute `customization` against the development tenant, record what each of its
-areas returned, and set the state from that. Until then the queue in
-`PRODUCT-STATE.md` is correct to list this collector first, and it would be
-correct for a second reason if the comment is right — a live run that leaves no
-record is a proof this repository cannot spend.
+**What settled it was the run, not the adjudication.** On 2026-11-11 the slice
+was collected from a real tenant through a kept delegated session: one site,
+every fact it publishes observed, and `SPO-SCRIPT-001` passing on a site where
+custom script is blocked. The record is in `data/live-proof.json`. The earlier
+run remains unrecorded and establishes nothing; the branch it described, a site
+that permits custom script, has still not been recorded against a directory.
 
 **The gap that allowed it is closed.** Nothing read this document until
 `tests/test_live_matrix.py` existed, so a row could disagree with the manifest
@@ -84,9 +84,9 @@ publishes no normative position on how many agents an organisation should have,
 and `consumed_by` names the report instead.
 
 **If it fails, what becomes `unknown`?** The rules in its row. `SPO-SPFX-001`
-is the live case: `spfx` has never returned data from this tenant, so that rule
-has never been evaluated against real evidence and would answer `unknown` for
-every site if run today.
+is the live case: on 2026-11-11 `spfx` returned a tenant catalog, which records
+no installed version, so the rule consumed real evidence and answered `unknown`.
+It has not yet decided against a directory.
 
 ## What the evaluations produced, which is the other half of the proof
 
@@ -107,9 +107,9 @@ working rather than failing: a rule that cannot decide from what was read says
 so instead of passing. A run that had returned green everywhere would be the
 result worth distrusting.
 
-**Ten of eleven now have a positive live read.** `spfx` has only the negative
-path, refused by the tenant in August with `403 Forbidden`, and that refusal is
-itself a valid row.
+**All eleven now have a positive live read.** `spfx` was refused by one tenant
+in August with `403 Forbidden`, which stays a valid row, and read a tenant
+catalog from another in November.
 
 Before this file existed, five collectors had never been read from a tenant at
 all and nobody could say which five.
@@ -202,12 +202,13 @@ The only gap that spans every collector. Eleven sites and ten policies produced
 no next link, so the client's paging is proved offline and unproved live. It
 does not block shipping; it stays unproved until a tenant large enough exists.
 
-### 3. `spfx` has no positive path
+### 3. `spfx` has read a tenant catalog and never a site catalog
 
-**Not a defect in the collector.** The tenant refused the API permission in
-August, so the surface has never returned data here. It is correctly
-`needs-tenant-validation`, and `SPO-SPFX-001` is the one rule in the product
-whose supporting collector has never returned real evidence.
+**Not a defect in the collector.** One tenant refused the API permission in
+August; another returned its tenant catalog in November. A tenant catalog
+records installation per site, so `SPO-SPFX-001` consumed that evidence and
+answered `unknown`. The comparison it exists to make needs a site catalog,
+which no recorded run has read.
 
 ### 4. The `conditional-access` slice has not itself been run against a tenant
 

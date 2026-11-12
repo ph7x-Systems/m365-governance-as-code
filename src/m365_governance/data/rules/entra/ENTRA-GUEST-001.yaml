@@ -1,0 +1,104 @@
+# A GUEST WITH THE MEMBER ROLE IS NOT A GUEST.
+#
+# Microsoft supports exactly three templates here, and the widest of them is
+# the same role a member of the organisation holds.
+
+schema_version: "1.0"
+id: ENTRA-GUEST-001
+version: "1.0"
+title: Guests are granted the same directory role as members
+description: >
+  The role granted to guests is the User template, which is the role a member
+  of the organisation holds. A guest invited into this directory reads it on
+  the same terms as somebody employed by the organisation.
+
+service: entra
+resource_type: authorization-policy
+
+basis:
+  # NOT A `documented-limit`, and the distinction is the point. That type is
+  # for a bound with a number and a unit -- a hundred thousand items, fifty
+  # thousand scopes -- and dressing a closed enumeration as one would be this
+  # engine inventing a shape Microsoft did not publish. What Microsoft
+  # publishes here is the set of supported values, which is guidance about what
+  # may be chosen and not a boundary that anything crosses.
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/graph/api/resources/authorizationpolicy
+      title: authorizationPolicy resource type
+      publisher: Microsoft
+      checked_at: "2026-08-24"
+  rationale: >
+    Microsoft publishes a closed set: `guestUserRoleId` "represents role
+    templateId for the role that should be granted to guests" and "currently
+    following roles are supported: User, Guest User, and Restricted Guest
+    User". Three values, and the identifiers are Microsoft's.
+
+    THE FINDING IS WHICH OF THE THREE. `User` is not a guest role that happens
+    to be permissive; it is the member role. A directory holding it has decided
+    that being invited and being employed grant the same read of the
+    organisation, and most organisations that hold it have not decided that --
+    they inherited it.
+
+severity:
+  default: high
+  rationale: >
+    What a guest may read of the directory is decided here, and the widest
+    value erases the distinction the rest of the tenant's controls assume. High
+    rather than medium because the other two values exist precisely to make
+    that distinction and are one setting away.
+  configurable: true
+
+evidence_requirements:
+  - path: authorization_policy.guest_role_template_id
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: authorization_policy.guest_role_template_id
+  value: a0b1b346-4d3e-4e8b-98f8-753987be4970
+
+outcomes:
+  pass:
+    message: >
+      Guests are granted a role narrower than the member role, so being invited
+      and being employed do not read this directory on the same terms.
+  fail:
+    message: >
+      Guests are granted the User role template, which is the role a member of
+      the organisation holds. An invited guest reads this directory on the same
+      terms as somebody employed by the organisation.
+  unknown:
+    message: >
+      The role granted to guests was not read, so what an invitation grants is
+      not known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authorization policy.
+  invalid_evidence:
+    message: >
+      The guest role template was returned in a form this rule cannot evaluate.
+      The collector output does not match the evidence schema.
+
+remediation: >
+  Microsoft supports two narrower templates. `Guest User`
+  (10dae51f-b6af-4016-8d66-8c2a99b929b3) is the default for most tenants;
+  `Restricted Guest User` (2af84b1e-32c8-42b7-82bc-daa82404023b) narrows the
+  directory read further. Which is right depends on what external
+  collaboration this organisation does, and both are one setting away.
+
+limitations:
+  passes_without_resolving: >
+    THE ROLE IS NOT THE ACCESS. This reads what a guest is granted in the
+    directory and says nothing about what any guest can reach in SharePoint,
+    Teams or anywhere a resource was shared with them. A narrow role here does
+    not narrow a sharing link.
+  other:
+    - >
+      The value is tenant-wide and applies to guests as a population. A guest
+      who was additionally assigned a directory role holds that role regardless
+      of this setting, and this rule does not read role assignments.
+    - >
+      Guests can also arrive through paths this setting governs but does not
+      bound, including access packages and cross-tenant access settings.

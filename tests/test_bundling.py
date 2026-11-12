@@ -211,7 +211,19 @@ def test_evidence_that_already_exists_produces_the_same_folder(
     runs, documents = _runs(
         tmp_path, ("list-over-limit.json", "site-class-not-read.json")
     )
-    through_the_writer = bundling.write(tmp_path / "by-writer", runs, documents)
+    # THE SAME INPUTS, INCLUDING THE RUN SET. The command hands the writer a
+    # tenant-scale view -- a consumer opening a bundle needs it to show a
+    # service that collected evidence and concluded nothing -- so a writer call
+    # without one is not the same call, and the folders would differ for a
+    # reason that has nothing to do with reimplementing the arrangement.
+    from m365_governance.results import RunSet
+
+    through_the_writer = bundling.write(
+        tmp_path / "by-writer",
+        runs,
+        documents,
+        run_set=RunSet(runs, documents=documents).to_dict(),
+    )
 
     def tree(root: Path) -> dict[str, bytes]:
         return {

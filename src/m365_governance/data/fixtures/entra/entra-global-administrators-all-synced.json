@@ -1,0 +1,107 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-23T09:00:00Z",
+    "collector": "graph-tenant-governance",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All",
+      "RoleManagement.Read.Directory"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "authorization_policy",
+      "global_administrators"
+    ],
+    "completed": [
+      "global_administrators",
+      "authorization_policy"
+    ],
+    "unavailable": {}
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "privileged-role-summary",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    },
+    "display_name": "Global Administrator assignments"
+  },
+  "facts": {
+    "global_administrators": {
+      "assignments": {
+        "state": "observed",
+        "value": 3,
+        "raw": {
+          "field": "roleAssignments (count)",
+          "value": 3
+        }
+      },
+      "user_assignments": {
+        "state": "observed",
+        "value": 3,
+        "raw": {
+          "field": "principals answering in users (count)",
+          "value": 3
+        }
+      },
+      "service_principal_assignments": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "principals not answering in users (count)",
+          "value": 0
+        }
+      },
+      "synced_from_on_premises": {
+        "state": "observed",
+        "value": 3,
+        "raw": {
+          "field": "onPremisesSyncEnabled true (count)",
+          "value": 3
+        }
+      },
+      "cloud_only": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "onPremisesSyncEnabled returned and not true (count)",
+          "value": 0
+        }
+      },
+      "principals_not_established": {
+        "state": "observed",
+        "value": 0,
+        "raw": {
+          "field": "onPremisesSyncEnabled not returned (count)",
+          "value": 0
+        }
+      },
+      "role_definition_id": {
+        "state": "observed",
+        "value": "62e90394-69f5-4237-9190-012177145e10",
+        "raw": {
+          "field": "roleDefinitionId",
+          "value": "62e90394-69f5-4237-9190-012177145e10"
+        }
+      }
+    }
+  }
+}

@@ -46,6 +46,27 @@ triggers nothing, and leaves a tag with no release behind it. A tag can also be
 moved, and a workflow that published on tag pushes would happily upload a
 second artefact for a version that already exists.
 
+## What the release of 1.0.0b10 had to settle first
+
+Measured on 12 November 2026 by installing the published `1.0.0b9`, upgrading
+it to a wheel built from this line, running both command names from outside
+any checkout, and uninstalling.
+
+- **The version had to move, and it moved with the release.** While the tree
+  still called itself `1.0.0b9`, `pip install --upgrade` over the published
+  release changed nothing and the new commands did not arrive. The version is
+  carried into the reference bundle, so moving it changed that bundle's
+  digest; the bundle was regenerated in the same change and its new digest is
+  in `data/reference/manifest.json`.
+- **The tenant gate had to be green, and is.** The last two rules without a
+  live run were run on 12 November 2026. See *Where the tenant gate stands* in
+  `docs/RULE-DELIVERY-PIPELINE.md`.
+- **What was verified and holds:** after the upgrade both `m365g` and
+  `m365-governance` are installed and run; the earlier command names and
+  `collect --help` behave as they did; the packaged fixtures, rules and
+  schemas are found from outside a checkout; and uninstalling leaves no
+  command and no package file behind.
+
 ## What the workflow checks before uploading
 
 Both exist because a version number on PyPI is spent the moment it is used,

@@ -7,7 +7,8 @@
         "Classification",
         "ConditionalAccess",
         "Customization",
-        "Forwarding"
+        "Forwarding",
+        "TenantGovernance"
       ],
       "compass": [],
       "complete": false,
@@ -43,7 +44,8 @@
         "Classification",
         "ConditionalAccess",
         "Customization",
-        "Forwarding"
+        "Forwarding",
+        "TenantGovernance"
       ],
       "compass": [
         "sharepoint/detect-group-connected-sites"
@@ -95,6 +97,7 @@
         "ConditionalAccess",
         "Customization",
         "Forwarding",
+        "TenantGovernance",
         "TenantSites",
         "UniquePermissions"
       ],
@@ -153,7 +156,8 @@
         "ConditionalAccess",
         "Customization",
         "Forwarding",
-        "Modernity"
+        "Modernity",
+        "TenantGovernance"
       ],
       "compass": [],
       "complete": false,
@@ -196,7 +200,8 @@
         "Classification",
         "ConditionalAccess",
         "Customization",
-        "Forwarding"
+        "Forwarding",
+        "TenantGovernance"
       ],
       "compass": [],
       "complete": false,
@@ -231,6 +236,8 @@
         "Customization",
         "Forwarding",
         "SiteSharing",
+        "SiteSharingAll",
+        "TenantGovernance",
         "TenantSharing"
       ],
       "compass": [
@@ -294,6 +301,8 @@
         "Customization",
         "Forwarding",
         "SiteOwners",
+        "SiteOwnersAll",
+        "TenantGovernance",
         "TenantSites",
         "UniquePermissions"
       ],
@@ -350,7 +359,8 @@
         "ConditionalAccess",
         "Customization",
         "Forwarding",
-        "SpfxCatalog"
+        "SpfxCatalog",
+        "TenantGovernance"
       ],
       "compass": [],
       "complete": false,

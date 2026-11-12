@@ -853,3 +853,49 @@ def _fact_nodes(node, name=""):
             return
         for key, value in node.items():
             yield from _fact_nodes(value, key)
+
+
+def test_sharepoints_own_refusal_is_a_denial_and_not_an_absence():
+    """`Access is denied`, with the verb, was recorded as `missing`."""
+    module = (COLLECTOR.parent / "modules" / "Evidence.psm1").read_text(
+        encoding="utf-8"
+    )
+    body = module.split("function Resolve-FailureState", 1)[1].split("\n}\n", 1)[0]
+    pattern = re.search(r"-match '([^']+)'\)\s*\{\s*return 'permission-denied'", body)
+    assert pattern, "the permission-denied pattern moved"
+    denied = re.compile(pattern.group(1), re.IGNORECASE)
+    for message in (
+        "Access is denied. (Exception from HRESULT: 0x80070005 (E_ACCESSDENIED))",
+        "Access denied. You do not have permission to perform this action.",
+        "Attempted to perform an unauthorized operation.",
+        "The remote server returned an error: (403) Forbidden.",
+    ):
+        assert denied.search(message), message
+    for message in ("The file does not exist.", "List not found", "timed out"):
+        assert not denied.search(message), message
+
+
+def test_the_exchange_collector_says_who_is_collecting_before_it_builds_evidence():
+    """It built an envelope without a provenance and the first live run ended
+    on that. No fixture could show it: fixtures carry a provenance already."""
+    script = (
+        COLLECTORS / "powershell" / "exchange" / "Get-ExchangeEvidence.ps1"
+    ).read_text(encoding="utf-8")
+    assert "Initialize-Evidence -CollectorName 'exo-collector'" in script
+    assert script.index("Initialize-Evidence -CollectorName") < script.index(
+        "New-Evidence"
+    )
+    assert "Disconnect-ExchangeOnline" in script.split("finally {", 1)[1]
+
+
+def test_every_collector_script_initialises_evidence_before_building_it():
+    """The same omission, looked for everywhere a collector builds evidence."""
+    for script in (COLLECTORS / "powershell").glob("*/Get-*Evidence.ps1"):
+        text = script.read_text(encoding="utf-8")
+        if "New-Evidence" not in text:
+            continue
+        assert "Initialize-Evidence" in text, script.name
+        code = text.split("#>", 1)[-1]
+        assert code.index("Initialize-Evidence") < code.index("New-Evidence"), (
+            script.name
+        )

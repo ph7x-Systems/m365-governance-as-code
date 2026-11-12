@@ -1,0 +1,106 @@
+# THE TENANT IS STILL GOVERNED BY POLICIES NOBODY MAY EDIT.
+#
+# A deprecation whose date has already passed, read from the one field that
+# says which policy is actually in force.
+
+schema_version: "1.0"
+id: ENTRA-METHOD-003
+version: "1.0"
+title: Authentication methods are still governed by the legacy MFA and SSPR policies
+description: >
+  The authentication methods policy reports that migration has not begun, so
+  the legacy multifactor authentication and self-service password reset
+  policies are still respected -- policies in which Microsoft stopped allowing
+  authentication methods to be managed on 30 September 2025.
+
+service: entra
+resource_type: authentication-methods-policy
+
+basis:
+  type: documented-guidance
+  sources:
+    - url: https://learn.microsoft.com/entra/identity/authentication/concept-authentication-methods-manage
+      title: Manage authentication methods for Microsoft Entra ID
+      publisher: Microsoft
+      checked_at: "2026-08-24"
+  rationale: >
+    Microsoft publishes what each migration state means. In `premigration` the
+    authentication methods policy "is used only for authentication" and "legacy
+    policy settings are respected"; only in `migrationComplete` are the legacy
+    policies ignored.
+
+    THE DATE IS THE POINT. Microsoft announced the deprecation in March 2023
+    and set an end: "Beginning September 30, 2025, authentication methods can't
+    be managed in these legacy MFA and SSPR policies." A tenant reporting
+    `premigration` today is having its methods decided by policies that can no
+    longer be administered, which is a governance state rather than a
+    preference -- the settings are in force and out of reach at the same time.
+
+    This reports the state Microsoft publishes. It does not rank the methods
+    inside either policy, because which policy is in force is a prior question
+    to what it says.
+
+severity:
+  default: medium
+  rationale: >
+    The tenant keeps working: the legacy settings are respected, so nothing is
+    broken today. Not low, because every change to an authentication method
+    from here has to go through the migration first, and the organisation
+    usually discovers that during an incident. Not high, because no access is
+    open that was not open before.
+  configurable: true
+
+evidence_requirements:
+  - path: authentication_methods_policy.policy_migration_state
+    type: string
+    required: true
+
+condition:
+  operator: equals
+  evidence: authentication_methods_policy.policy_migration_state
+  value: premigration
+
+outcomes:
+  pass:
+    message: >
+      Migration away from the legacy MFA and SSPR policies has begun or
+      completed, so the authentication methods policy governs more than
+      authentication alone.
+  fail:
+    message: >
+      The tenant reports `premigration`: the legacy MFA and SSPR policies are
+      still respected, and Microsoft stopped allowing authentication methods to
+      be managed in them on 30 September 2025.
+  unknown:
+    message: >
+      The migration state was not read, so which policy governs authentication
+      methods in this tenant is not known. This is not a pass.
+  not_applicable:
+    message: >
+      This resource is not the tenant's authentication methods policy.
+  invalid_evidence:
+    message: >
+      The migration state was returned in a form this rule cannot evaluate. The
+      collector output does not match the evidence schema.
+
+remediation: >
+  Microsoft publishes both an automated migration guide in the Entra admin
+  centre and a manual path with three states, so the move can be made in steps
+  and reversed. The intermediate state -- migration in progress -- applies the
+  authentication methods policy to sign-in and password reset while the legacy
+  settings are still respected, which is what makes the change safe to stage.
+
+limitations:
+  passes_without_resolving: >
+    A pass says which policy is in force. It says nothing about what that
+    policy permits: a fully migrated tenant can still have every weak method
+    enabled, and this rule would pass.
+  other:
+    - >
+      Security questions remain manageable only in the legacy SSPR policy, so
+      even a completed migration leaves one setting behind. A pass here is not
+      a claim that the legacy policies are empty.
+    - >
+      The number of methods required to reset a password, and the SSPR
+      administrator policy, are documented as remaining active after migration.
+      Neither is read here.

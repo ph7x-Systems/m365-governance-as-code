@@ -245,6 +245,225 @@ def proof_state(collector: str) -> str:
     return "positive-acquisition-observed"
 
 
+# ---------------------------------------------------------------------------
+# two axes, one register
+# ---------------------------------------------------------------------------
+#
+# THE RECORDS BELOW FEED TWO DIFFERENT QUESTIONS, AND THEY ARE NOT THE SAME
+# QUESTION. One register is right -- a single run establishes facts on both --
+# but reading one axis as the other is how a capability gets described as
+# proved when half of what that word could mean was never attempted.
+#
+#     Live Validation        how well the ACQUISITION was validated against
+#                            Microsoft 365. Derived by `established_state`,
+#                            published as `live_validation_state`, and its
+#                            vocabulary is `ESTABLISHES` below: none,
+#                            negative-only, provider-only, partial, full.
+#                            `docs/LIVE-VALIDATION.md` owns what those mean.
+#
+#     Product Path Assurance how far that capability has been proved THROUGH
+#                            THIS PRODUCT. Derived by `proof_state`, published
+#                            as `proof.state`, and its vocabulary is `LADDER`:
+#                            not-live-tested, acquisition-attempted,
+#                            positive-acquisition-observed,
+#                            vertical-path-proven.
+#
+# NEITHER DERIVES FROM THE OTHER, and a capability can sit high on one and low
+# on the other in both directions. A collector whose acquisition was compared
+# against a second authoritative surface and whose divergences were
+# investigated is strong on the first axis and still has nobody who has opened
+# its bundle. A slice whose evidence, assessment and bundle all ran from one
+# unremarkable read is high on the second and has never had its representation
+# checked against what the fields are claimed to mean.
+#
+# The word `proof` on its own means neither, and this module uses it for the
+# REGISTER -- the records -- rather than for either conclusion drawn from them.
+
+#: Stages that cannot be proven on their own, and what each one stands on.
+#:
+#: A DEPENDENCY, NOT A PREFERENCE. Nothing can open a bundle that was never
+#: produced; no bundle can hold an assessment that never ran; no assessment can
+#: read evidence that was never written. These are facts about the pipeline,
+#: and a record claiming otherwise is describing something that did not happen.
+STANDS_ON = {
+    "evidence": "acquisition",
+    "assessment": "evidence",
+    "bundle": "evidence",
+    "consumer": "bundle",
+}
+
+
+#: What a `consumer: proven` claim has to carry, and why each field is there.
+#:
+#: THE STAGE THIS SOFTWARE CANNOT RAISE. `upgrade_after_a_run` moves
+#: `assessment` and `bundle` and deliberately never touches `consumer`:
+#: somebody independent opening the artefact is the one stage a program
+#: certifying it would be certifying itself. So the claim is written from
+#: outside, and a claim written from outside has to say who wrote it.
+#:
+#: DELIBERATELY FIVE FIELDS. A taxonomy invented before there is a second
+#: consumer would be a shape guessed rather than observed. These are the ones
+#: without which `proven` cannot answer a question somebody will ask.
+CONSUMER_PROOF = (
+    # WHICH consumer, by whatever name it calls itself. `consumer: proven`
+    # with no name is a sentence that stops answering "by whom?" the moment
+    # the person who wrote it has moved on.
+    #
+    # NOT AN ENUMERATION, AND NOT BY OVERSIGHT. This engine defines the SHAPE
+    # of the claim and never who is allowed to make it: a list of permitted
+    # consumers here would put one product's roster inside another's contract,
+    # and a consumer this repository has never heard of makes the same claim
+    # on the same terms.
+    "consumer",
+    # A consumer is a moving product. The version that opened it is the
+    # version the claim is about, and a later one may not.
+    "consumer_version",
+    # WHAT KIND of independence, because two very different claims fit the
+    # same word and only one of them is ours to make.
+    "independence",
+    # WHEN, so that a claim can be aged rather than believed indefinitely.
+    "observed_at",
+    # WHICH ARTEFACT, by digest. Without it a proof that the consumer opened
+    # bundle B can be read as proving the capability derived from bundle A.
+    "artifact_digest",
+)
+
+#: How independent the consumer was, and the two are not degrees of one thing.
+#:
+#: `separate-consumer` is what this product can establish about itself: a
+#: different program, run outside the process that produced the artefact,
+#: opened it and read it correctly. It proves the artefact is consumable and
+#: that the producer did not certify itself.
+#:
+#: `external` is a claim about an ORGANISATION rather than a process, and
+#: nothing in this repository can produce it. It exists here so that the day
+#: somebody can, the earlier records do not silently acquire a meaning nobody
+#: gave them: a value written now says exactly what was true now.
+INDEPENDENCE = ("separate-consumer", "external")
+
+
+def incoherent(collector: str) -> list[str]:
+    """Stages claimed as proven that nothing underneath them supports.
+
+    THE TEMPTATION THIS REFUSES IS PROMOTION, AND IT COMES FROM BOTH ENDS.
+
+    Upward: `consumer` proven must never raise `bundle`, because the whole
+    number this product is answerable for is derived from these stages and an
+    inference is exactly where a derived number starts being a claim. Nothing
+    here promotes; `stages()` takes the strongest thing a record ACTUALLY says
+    and defaults to `not-attempted`.
+
+    Downward is the hole this closes. A record could always say `consumer:
+    proven` beside `bundle: not-attempted`, and it was accepted in silence: the
+    contradiction quietly lowered the capability's state rather than being
+    reported, so the register held a sentence describing something impossible
+    and nobody was told. A weaker answer is not the same as a correct one, and
+    a register that absorbs its own contradictions is the second authority this
+    programme spends its effort removing.
+
+    `not-applicable` is not a gap. A stage that does not exist for a capability
+    cannot be the thing a later stage failed to stand on: what it stands on is
+    whatever the missing stage itself stood on, so the chain is walked through
+    it rather than broken by it.
+    """
+    by_stage = stages(collector)
+    broken = []
+    for stage, beneath in STANDS_ON.items():
+        if by_stage.get(stage) != "proven":
+            continue
+        while by_stage.get(beneath) == "not-applicable":
+            beneath = STANDS_ON.get(beneath, "")
+            if not beneath:
+                break
+        if beneath and by_stage.get(beneath) != "proven":
+            broken.append(
+                f"{collector}: `{stage}` is recorded as proven while "
+                f"`{beneath}` is `{by_stage.get(beneath)}`. Nothing can prove "
+                f"a stage that stands on one that was never reached."
+            )
+
+    for record in records(collector):
+        if (record.get("stages") or {}).get("bundle") != "proven":
+            continue
+        if not record.get("bundle_digest"):
+            broken.append(
+                f"{collector}: `bundle` is recorded as proven and the record "
+                "does not say which bundle was produced. A stage above it can "
+                "never be shown to be about the same one."
+            )
+
+    broken.extend(_consumer_problems(collector))
+    return broken
+
+
+def _consumer_problems(collector: str) -> list[str]:
+    """Whether a `consumer: proven` claim carries the proof it needs.
+
+    THIS IS THE ONE STAGE WRITTEN FROM OUTSIDE, so it is the one stage whose
+    record has to identify its author. Every other stage is raised by a run
+    this engine performed and can be traced through the run's own outcome; a
+    consumer claim arrives as a sentence, and a sentence with no author stops
+    answering "by whom?" the moment the person who wrote it moves on.
+
+    AND THE DIGEST HAS TO BE THE RIGHT ARTEFACT'S. A record may hold a bundle
+    stage proven for one artefact and a consumer proof mentioning another; read
+    together they say a consumer opened THIS capability's bundle, and nothing
+    checked that. It is the same shape as a rule reading a fact from the wrong
+    resource, and it is caught the same way: by comparing the two identifiers
+    rather than trusting that they were about the same thing.
+    """
+    problems = []
+    for record in records(collector):
+        stages_here = record.get("stages") or {}
+        if stages_here.get("consumer") != "proven":
+            continue
+
+        proof = record.get("consumer_proof")
+        if not isinstance(proof, dict):
+            problems.append(
+                f"{collector}: `consumer` is recorded as proven with no "
+                "`consumer_proof`. This is the stage no run can raise, so a "
+                "claim with no author is a claim nobody can check."
+            )
+            continue
+
+        for field in CONSUMER_PROOF:
+            if not proof.get(field):
+                problems.append(
+                    f"{collector}: `consumer_proof` does not say `{field}`."
+                )
+
+        independence = proof.get("independence")
+        if independence and independence not in INDEPENDENCE:
+            problems.append(
+                f"{collector}: `consumer_proof.independence` is "
+                f"`{independence}`, which is not one of {list(INDEPENDENCE)}. "
+                "A word invented here would let a claim about a separate "
+                "process be read as a claim about a separate organisation."
+            )
+
+        opened = proof.get("artifact_digest")
+        # AGAINST THE BUNDLE, NEVER AGAINST THE EVIDENCE. This compared with
+        # `artifact_digest`, which is the collected evidence: a consumer
+        # opening a bundle would have been asked to match the digest of
+        # something it never sees. The defect surfaced the first time the rule
+        # was pointed at a real record.
+        produced = record.get("bundle_digest")
+        if opened and produced and opened != produced:
+            problems.append(
+                f"{collector}: the consumer opened `{opened}` and the bundle "
+                f"this record proves is `{produced}`. A proof about one "
+                "artefact does not establish anything about another."
+            )
+        elif opened and not produced:
+            problems.append(
+                f"{collector}: `consumer_proof` names an artefact and the "
+                "record does not say which bundle its bundle stage produced, "
+                "so the two cannot be shown to be the same one."
+            )
+    return problems
+
+
 def population() -> dict[str, list[str]]:
     """Every capability, grouped by where it stands. The site renders this.
 
@@ -272,7 +491,13 @@ def SLICE_FEEDS_RULES(collector: str) -> bool:
     return bool(chosen and chosen.produces_findings)
 
 
-def upgrade_after_a_run(draft: dict, *, evaluated: bool, bundled: bool) -> dict:
+def upgrade_after_a_run(
+    draft: dict,
+    *,
+    evaluated: bool,
+    bundled: bool,
+    artifact_digest: str = "",
+) -> dict:
     """What `run` may add to a `collect` record, from what it can attribute.
 
     `assessment` reaches `attempted` and never `proven`. A rule decides about a
@@ -289,6 +514,25 @@ def upgrade_after_a_run(draft: dict, *, evaluated: bool, bundled: bool) -> dict:
     stages = dict(draft.get("stages") or {})
     if evaluated and stages.get("assessment") == "not-attempted":
         stages["assessment"] = "attempted"
-    if bundled:
+
+    raised = {**draft, "stages": stages}
+    # `bundle: proven` SAYS AN ARTEFACT WAS PRODUCED AND NOT WHICH ONE, and
+    # a stage above it -- somebody opening a bundle -- can then never be
+    # shown to be about the same artefact. Two true sentences that cannot
+    # be tied to one object establish nothing together.
+    #
+    # So the stage is raised only WITH the identity. A run that bundled and
+    # could not say what it bundled leaves the stage unattempted, which is
+    # the honest record: something happened and nothing about it can be
+    # pointed at.
+    if bundled and artifact_digest:
         stages["bundle"] = "proven"
-    return {**draft, "stages": stages}
+        # `bundle_digest` AND NOT `artifact_digest`, WHICH IS A DIFFERENT
+        # ARTEFACT. A record's `artifact_digest` is the collected EVIDENCE --
+        # the register says so: it "proves CONTINUITY with the artefact
+        # observed at that moment", and it is deleted under the tenant-data
+        # rule. The bundle is what an assessment was written into and what a
+        # consumer opens. Putting both in one field would say a consumer
+        # opened the evidence, which nothing has ever done.
+        raised["bundle_digest"] = artifact_digest
+    return raised

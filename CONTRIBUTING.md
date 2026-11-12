@@ -16,7 +16,7 @@ pip install -e . && pip install -r requirements-dev.txt
 ```
 
 That one script is the gate. It runs nine steps: dependencies, `ruff check`,
-`ruff format --check`, `m365-governance validate`, the schemas, `pytest`,
+`ruff format --check`, `m365g validate`, the schemas, `pytest`,
 coverage, `tools/examples.py --check`, and an evaluation of every fixture.
 
 Run it before pushing. This list used to name four of the nine, so a pull
@@ -28,7 +28,7 @@ The individual steps, when one of them is what you are working on:
 ```bash
 ruff check src tools tests
 ruff format --check src tools tests
-m365-governance validate     # every rule, every layer
+m365g validate     # every rule, every layer
 pytest                       # the suite
 python tools/examples.py --check
 coverage run -m pytest && coverage report

@@ -255,7 +255,9 @@ def test_html_keeps_what_a_pass_does_not_establish_visible():
 
 def test_html_carries_the_delegated_warning_at_the_top():
     html = to_html(_run_for("site-delegated-identity"))
-    warning = html.index("Identity: delegated")
+    from m365_governance.reporting import IDENTITY
+
+    warning = html.index(f"Identity: {IDENTITY['delegated'].label}")
     first_card = html.index('class="card')
     assert warning < first_card
 

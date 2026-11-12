@@ -1,0 +1,54 @@
+{
+  "$schema": "https://ph7x.com/schemas/m365-governance/evidence/3.1.0",
+  "provenance": {
+    "collected_at": "2026-08-24T10:00:00Z",
+    "collector": "graph-tenant-governance",
+    "collector_version": "1.0.0",
+    "source_system": "Microsoft Entra ID",
+    "source_api": "Microsoft Graph v1.0",
+    "identity_kind": "application",
+    "scopes": [
+      "Policy.Read.All",
+      "RoleManagement.Read.Directory"
+    ],
+    "acquisition": "collected",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    }
+  },
+  "coverage": {
+    "requested": [
+      "authentication_methods_policy"
+    ],
+    "completed": [],
+    "unavailable": {
+      "authentication_methods_policy": {
+        "state": "permission-denied",
+        "detail": "authenticated and not permitted to read policies/authenticationMethodsPolicy. Least privilege for this surface is Policy.Read.AuthenticationMethod, and a delegated identity additionally needs a directory role such as Global Reader or Authentication Policy Administrator."
+      }
+    }
+  },
+  "resource": {
+    "workload": "entra",
+    "type": "authentication-methods-policy",
+    "native_id": "contoso.sharepoint.com",
+    "tenant": {
+      "id": "c0ffee00-0000-4000-8000-000000000001",
+      "host": "contoso.sharepoint.com"
+    },
+    "scope": "tenant",
+    "display_name": "Authentication methods policy",
+    "parent": {
+      "workload": "entra",
+      "type": "tenant",
+      "native_id": "contoso.sharepoint.com"
+    }
+  },
+  "facts": {
+    "authentication_methods_policy": {
+      "state": "permission-denied",
+      "detail": "authenticated and not permitted to read policies/authenticationMethodsPolicy. Least privilege for this surface is Policy.Read.AuthenticationMethod, and a delegated identity additionally needs a directory role such as Global Reader or Authentication Policy Administrator."
+    }
+  }
+}

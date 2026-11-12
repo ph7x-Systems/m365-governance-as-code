@@ -93,7 +93,12 @@ function Resolve-FailureState {
     param([System.Management.Automation.ErrorRecord] $ErrorRecord)
 
     $message = $ErrorRecord.Exception.Message
-    if ($message -match 'Access denied|Unauthorized|403|does not have permission') {
+    # `Access is denied`, WITH THE VERB, IS HOW SHAREPOINT ITSELF SAYS IT. The
+    # pattern matched `Access denied` only, so the commonest refusal a site
+    # gives -- E_ACCESSDENIED, 0x80070005 -- was recorded as `missing`: a
+    # denial laundered into an absence, by the function written to stop that.
+    # Found on the first tenant-wide read of site users.
+    if ($message -match 'Access (is )?denied|E_ACCESSDENIED|0x80070005|Unauthorized|403|does not have permission') {
         return 'permission-denied'
     }
     if ($message -match 'not found|404|does not exist') { return 'missing' }

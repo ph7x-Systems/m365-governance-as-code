@@ -57,7 +57,10 @@ step "A clean environment, from nothing"
 ENV_DIR="$(mktemp -d)"
 python3 -m venv "$ENV_DIR/env"
 PIP="$ENV_DIR/env/bin/pip"
-CLI="$ENV_DIR/env/bin/m365-governance"
+# The documented command. The alias is asserted separately below, after the
+# install: what a stranger is told to type is what this gate must run.
+CLI="$ENV_DIR/env/bin/m365g"
+ALIAS="$ENV_DIR/env/bin/m365-governance"
 "$PIP" install --quiet --upgrade pip
 echo "  ✓ $("$ENV_DIR/env/bin/python" --version)"
 
@@ -126,11 +129,18 @@ if not decided:
 print(f"  ✓ {len(results)} results, {len(decided)} decided")
 '
 
+step "Both console scripts are installed"
+for entry in "$CLI" "$ALIAS"; do
+  [[ -x "$entry" ]] || { red "  ✗ missing console script: $entry"; exit 1; }
+done
+"$ALIAS" --version >/dev/null || { red "  ✗ the compatibility alias does not run"; exit 1; }
+echo "  ✓ m365g and m365-governance"
+
 step "Every command a reader is given actually runs"
 for command in "list-rules" "explain unknown" "validate"; do
   # shellcheck disable=SC2086
   if ! "$CLI" $command >/dev/null 2>&1; then
-    red "  ✗ \`m365-governance $command\` fails on a clean installation"
+    red "  ✗ \`m365g $command\` fails on a clean installation"
     exit 1
   fi
 done

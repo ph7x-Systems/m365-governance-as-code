@@ -30,7 +30,23 @@ import subprocess
 import sys
 import tempfile
 
-CONSOLE = "m365-governance"
+CONSOLE = "m365g"
+
+
+def _tree_version() -> str:
+    """The version this checkout would install, read from its packaging.
+
+    The packaging metadata is the authority: it is what `pip` enforces, and a
+    walk comparing against anything else would be comparing two guesses."""
+    import pathlib
+    import re
+
+    root = pathlib.Path(__file__).resolve().parent.parent
+    text = (root / "pyproject.toml").read_text(encoding="utf-8")
+    found = re.search(r'^version\s*=\s*"([^"]+)"', text, re.M)
+    return found.group(1) if found else ""
+
+
 GUID = "11111111-2222-3333-4444-555555555555"
 TENANT = "https://contoso-admin.sharepoint.com"
 
@@ -96,10 +112,38 @@ def main() -> int:
         f"  {platform.system()} {platform.release()}, python {sys.version.split()[0]}"
     )
     print(f"  {resolved}")
-    print(f"  {run('--version', expect=0).strip()}")
+    said_version = run("--version", expect=0).strip()
+    print(f"  {said_version}")
+
+    # AND IT HAS TO BE THIS TREE. Printing which executable was walked was half
+    # the fix: the line was there, correct, and read as a pass while the walk
+    # proved a release from before the change it was meant to check. Three rules
+    # added on one afternoon were never in the artefact this reported green.
+    #
+    # The walk still goes through PATH, because that is what a reader has. What
+    # changed is that a PATH copy older than the checkout stops the walk instead
+    # of quietly standing in for it.
+    tree = _tree_version()
+    if tree and tree not in said_version:
+        raise Failed(
+            f"the console script on PATH is {said_version.split()[-1]} and this "
+            f"checkout is {tree}. The walk would prove a build that does not "
+            f"contain the change being checked. Reinstall it -- "
+            f"`pip install -e .` in this repository -- and run the walk again."
+        )
 
     said = run("doctor", expect=0)
     expect_in(said, "packaged content", "doctor names what shipped")
+
+    # THE COMMAND THAT PUBLISHES WHAT THIS ENGINE CLAIMS, run against the
+    # artefact somebody installed rather than against a checkout. It read a
+    # register that was in no wheel and raised FileNotFoundError for every
+    # installed engine, and this journey did not walk past it, so nothing said
+    # so. A reader reaching for `capabilities` on a fresh install met a
+    # traceback where the product's own account of itself should have been.
+    catalogue = run("capabilities", expect=0)
+    expect_in(catalogue, "Capabilities", "capabilities names what is collected")
+    expect_in(catalogue, "Rules", "capabilities names the catalogue it carries")
     # The remedy is a command where a command exists, and a link where one does
     # not. Naming what is missing is half a diagnosis.
     if "PowerShell 7" in said and "not found" in said:

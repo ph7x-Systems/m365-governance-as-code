@@ -12,14 +12,14 @@ to point at it.
 
 | Domain | Rules | Collector | Profiles | Fixtures | Tests | Knowledge | Guide | Analysis | Compass | Complete |
 |---|---|---|---|---|---|---|---|---|---|---|
-| **Activity** (`ACTIVITY`) | 1 | 5 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
-| **Classification** (`CLASS`) | 4 | 4 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
-| **Custom script** (`SCRIPT`) | 1 | 4 | 1 | 3 | 1 | — | — | — | — | **no** |
-| **Modernity** (`MODERN`) | 3 | 5 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
-| **Permissions** (`LIST`) | 3 | 6 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
-| **SPFx** (`SPFX`) | 1 | 5 | 2 | 2 | 1 | 1 | 1 | 1 | — | **no** |
-| **Sharing** (`SHARE`) | 5 | 6 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
-| **Sites and storage** (`SITE`) | 3 | 7 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
+| **Activity** (`ACTIVITY`) | 1 | 6 | 2 | 2 | 1 | 1 | 2 | — | — | **no** |
+| **Classification** (`CLASS`) | 4 | 5 | 2 | 8 | 4 | 3 | 3 | — | 1 | yes |
+| **Custom script** (`SCRIPT`) | 1 | 5 | 1 | 3 | 1 | — | — | — | — | **no** |
+| **Modernity** (`MODERN`) | 3 | 6 | 2 | 4 | 3 | 3 | 1 | — | — | **no** |
+| **Permissions** (`LIST`) | 3 | 7 | 2 | 14 | 3 | 3 | 4 | — | 1 | yes |
+| **SPFx** (`SPFX`) | 1 | 6 | 2 | 2 | 1 | 1 | 1 | 1 | — | **no** |
+| **Sharing** (`SHARE`) | 5 | 8 | 3 | 11 | 5 | 4 | 3 | — | 4 | yes |
+| **Sites and storage** (`SITE`) | 3 | 9 | 3 | 10 | 3 | 3 | 3 | — | 1 | yes |
 
 **21 rules across 8 domains.** 4 complete, 4 not.
 
@@ -59,10 +59,7 @@ fully exercised.
 
 | Collector | Live state | What is still unproved |
 |---|---|---|
-| `customization` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
-| `forwarding` | `none` | everything. Offline tests only, so the collector behaves as somebody believed the API behaves |
-| `spfx` | `negative_only` | the branch that reports something. Only the empty or absent surface was seen |
-| `conditional-access` | `provider_only` | this slice's own path. The transport underneath it read a tenant; the slice did not |
+| `spfx` | `partial` | the areas that never ran. Some of this slice's areas were observed and others have not been |
 
 **This queue takes precedence over opening a capability.** Not because
 it is more valuable, but because it is a debt already incurred: the

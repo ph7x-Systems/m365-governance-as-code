@@ -50,7 +50,7 @@ command -v "$PY" >/dev/null || MISSING+=("python3")
 for m in ruff pytest coverage jsonschema yaml; do
   "$PY" -c "import $m" 2>/dev/null || MISSING+=("python -m $m: pip install -r requirements-dev.txt")
 done
-command -v m365-governance >/dev/null || MISSING+=("the console script: pip install -e .")
+command -v m365g >/dev/null || MISSING+=("the console script: pip install -e .")
 if [[ $INSTALL_GATES -eq 1 ]]; then
   "$PY" -c "import build" 2>/dev/null || MISSING+=("the build module: pip install build")
   command -v pwsh >/dev/null || MISSING+=("PowerShell: brew install --cask powershell, or apt install powershell")
@@ -83,8 +83,8 @@ ruff format --check src tools tests
 # No --rules: the packaged set is what an installed copy uses, so it is what
 # gets validated. Passing the checkout's directory here is how the examples
 # came to record an absolute local path in a public repository.
-step "m365-governance validate"
-m365-governance validate
+step "m365g validate"
+m365g validate
 
 # ── 3. the schemas are themselves valid ──────────────────────────────────────
 step "Schemas are valid JSON Schema"
@@ -137,7 +137,7 @@ step "Every fixture evaluates"
 FIXTURES=0
 for f in src/m365_governance/data/fixtures/{sharepoint,entra}/*.json; do
   note "$(basename "$(dirname "$f")")/$(basename "$f")"
-  m365-governance evaluate --evidence "$f" --format json > /dev/null
+  m365g evaluate --evidence "$f" --format json > /dev/null
   FIXTURES=$((FIXTURES + 1))
 done
 echo "  ✓ $FIXTURES fixtures evaluated"
@@ -181,8 +181,49 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
   # The coverage matrix is derived, never maintained. This is what stops it
   # rotting: a rule, collector, fixture or article added without regenerating
   # fails here rather than leaving a document that quietly says otherwise.
+  # THE ARTEFACT A CONSUMER PROVES IT CAN OPEN. Its digest is what a consumer
+  # proof points at, so a release that changed it without saying so would
+  # invalidate every proof naming the old one, silently.
+  step "Reference bundle is what this engine produces"
+  "$PY" tools/reference-bundle.py --check
+
   step "Product coverage matrix is current"
   "$PY" tools/coverage.py --check
+
+  # ONE RULE AT A TIME, because the catalogue is about to grow and a catalogue
+  # grows in the direction of whatever nobody measures. The matrix above says
+  # how much of Microsoft 365 the product reaches; this says whether a rule
+  # that exists is finished -- basis, source, evidence, the boundary of a pass,
+  # and having been SEEN reaching every outcome it can reach.
+  #
+  # A RULE THAT HAS NEVER BEEN RUN AGAINST A TENANT FAILS THIS STEP, and there
+  # is no exception list. The change that introduced the step says so and says
+  # why: a list of rules excused from it existed for about an hour and was
+  # removed, because that is how an absolute becomes a tolerance. This comment
+  # said the opposite until it was read beside the tool it describes. Product
+  # path readiness is the one that is reported and never enforced, because it
+  # depends on work outside the rule.
+  step "Every rule is RULE-READY, and the table is current"
+  "$PY" tools/rule-readiness.py --check
+
+  # WHAT IS COLLECTED, AND WHAT IS NOT. The map is generated from the capability
+  # manifest and the candidate register, so a stale one is a document that
+  # describes a product two commits ago while looking current.
+  step "The capability map is current"
+  "$PY" tools/capability-map.py --check
+
+  # EVERY COMMAND, DESCRIBED FROM THE CONTRACTS IT IS MADE OF. A documentation
+  # site reads this file instead of retyping it, so a stale one publishes a
+  # command line that no longer exists.
+  step "The command reference is current"
+  "$PY" tools/command-reference.py --check
+
+  # The register's Graph claims, put to the service's own schema. Anonymous, no
+  # tenant, no identity. Offline it reports `not established` and fails rather
+  # than passing quietly, because a check that could not run must never leave a
+  # row looking verified.
+  step "Every recorded Graph surface exists in the version claimed for it"
+  "$PY" tools/graph-schema-check.py --check
 
   # What can be observed against what is observed. Regenerated so the gap is
   # measured on every release rather than remembered from the last time
@@ -253,32 +294,46 @@ if [[ $INSTALL_GATES -eq 1 ]]; then
 
   step "The wheel carries the product"
   "$PY" - "$TMP" <<'PY'
-import collections, glob, pathlib, sys, zipfile
-names = zipfile.ZipFile(glob.glob(f"{sys.argv[1]}/dist/*.whl")[0]).namelist()
-found = collections.Counter(
-    n.split("/")[2] for n in names
-    if n.startswith("m365_governance/data/") and n.count("/") > 2)
-missing = [d for d in ("rules", "profiles", "schemas", "collectors", "fixtures")
-           if not found.get(d)]
-print("  " + str(dict(found)))
-if missing:
-    sys.exit(f"  ✗ the wheel is missing {missing}: the package does not contain the product")
+import glob, pathlib, sys, zipfile
 
-# Counting directories is not enough. A glob that named only *.ps1 left every
-# .psm1 out, and the count above still said `collectors: 1` while the collector
-# could not import a single one of its own modules. Compare against the tree.
+# THE TREE, NOT A LIST OF DIRECTORIES SOMEBODY REMEMBERED.
+#
+# This counted five names -- rules, profiles, schemas, collectors, fixtures --
+# and compared the tree only for PowerShell, because a glob naming .ps1 had
+# once left every .psm1 out. The lesson was applied to the directory where it
+# hurt and never generalised, so `data/live-proof.json` was introduced,
+# shipped in no wheel, and `m365-governance capabilities` raised
+# FileNotFoundError on every installed engine while this step printed a tick.
+#
+# A positive enumeration of an open set is a list somebody has to remember to
+# extend. So the set is walked and the EXCLUSIONS are declared, with their
+# reasons, in tests/test_distribution.py.
+names = set(zipfile.ZipFile(glob.glob(f"{sys.argv[1]}/dist/*.whl")[0]).namelist())
 data = pathlib.Path("src/m365_governance/data")
-on_disk = {str(p.relative_to(data.parent.parent))
-           for p in (data / "collectors").rglob("*")
-           if p.suffix in {".ps1", ".psm1"}}
-absent = sorted(on_disk - set(names))
+
+on_disk = {
+    str(path.relative_to(data.parent.parent))
+    for path in data.rglob("*")
+    if path.is_file()
+    and "__pycache__" not in path.parts
+    and path.suffix != ".pyc"
+}
+absent = sorted(on_disk - names)
+print(f"  {len(on_disk)} product files under data/, {len(absent)} missing")
 if absent:
-    sys.exit(f"  ✗ PowerShell files not carried by the wheel: {absent}")
+    sys.exit(
+        "  ✗ the wheel does not carry: "
+        + ", ".join(absent[:10])
+        + (f" (and {len(absent) - 10} more)" if len(absent) > 10 else "")
+    )
+
+# The other direction. A wheel carrying this machine's bytecode cache is a
+# wheel whose contents depend on who built it.
+stowaways = sorted(n for n in names if "__pycache__" in n or n.endswith(".pyc"))
+if stowaways:
+    sys.exit(f"  ✗ the wheel carries build leftovers: {stowaways[:5]}")
 PY
 
-  # ── 10. a clean installation is the reference environment ──────────────────
-  # `cd` out of the checkout is the whole point. Run from the repository and
-  # these steps prove nothing at all.
   step "Install into an empty environment and run from outside any checkout"
   note "creating an empty virtual environment"
   "$PY" -m venv "$TMP/env"
@@ -287,11 +342,37 @@ PY
   mkdir -p "$TMP/empty"
   (
     cd "$TMP/empty"
-    G="$TMP/env/bin/m365-governance"
+    # BOTH ENTRY POINTS EXIST, AND THE DOCUMENTED ONE IS THE ONE EXERCISED.
+    #
+    # `m365g` is the command the README, the help and the site tell a person to
+    # type; `m365-governance` is the compatibility alias for scripts written
+    # before it. An alias that stops being installed breaks them silently, so
+    # its presence is asserted here rather than assumed from a line in
+    # pyproject.toml that nothing reads back.
+    for entry in m365g m365-governance; do
+      [[ -x "$TMP/env/bin/$entry" ]] || {
+        echo "  ✗ the wheel installs no \`$entry\` console script"
+        exit 1
+      }
+    done
+    "$TMP/env/bin/m365-governance" --version > /dev/null
+    note "both console scripts installed; the alias answers"
+    G="$TMP/env/bin/m365g"
     note "doctor"
     "$G" doctor > doctor.txt
     note "list-rules"
     "$G" list-rules > /dev/null
+    # EVERY COMMAND THAT MAKES A PRODUCT CLAIM RUNS HERE.
+    #
+    # This ran doctor, list-rules, validate, evaluate and a dry-run collect,
+    # and `capabilities` -- the command publishing what this engine can observe
+    # and how far each capability has been proven -- was not among them. It
+    # raised FileNotFoundError on every installed engine for as long as the
+    # register it reads was missing from the wheel, and nothing here noticed:
+    # a command nobody runs is a file nobody misses.
+    note "capabilities"
+    "$G" capabilities > /dev/null
+    "$G" capabilities --format json > /dev/null
     note "validate"
     "$G" validate > /dev/null
     FIXTURE=$("$TMP/env/bin/python" -c \
@@ -377,6 +458,6 @@ fi
 
 echo
 green "════════════════════════════════════════════════════"
-green " m365-governance passes the release contract."
+green " m365g passes the release contract."
 green "════════════════════════════════════════════════════"
 [[ $INSTALL_GATES -eq 1 ]] || red " (without the wheel and clean-install gates, which were skipped)"

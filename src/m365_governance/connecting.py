@@ -314,6 +314,7 @@ def connect(
     certificate_path: str | None = None,
     tenant_id: str | None = None,
     certificate_password_env: str | None = None,
+    persist_login: bool = False,
     on_progress: Callable[[str], None] | None = None,
     engine: Callable[..., tuple[int, str, str, bool]] | None = None,
 ) -> Connection:
@@ -340,6 +341,10 @@ def connect(
         argv += ["-TenantUrl", tenant_url]
     if device_login:
         argv.append("-DeviceLogin")
+    if persist_login:
+        # ONLY `login` PASSES THIS. Keeping a sign-in is the operator's
+        # decision and no other command may make it for them (docs/CLI.md).
+        argv.append("-PersistLogin")
     # APP-ONLY, AND IT REACHES THE COLLECTOR. These were accepted on the command
     # line, validated against each other, and then dropped: `connect` signed in
     # as a person while the caller had asked for the application. The one
@@ -478,15 +483,33 @@ def _because(
     if cancelled:
         reasons.append("the caller stopped the sign-in")
     if reach is Reach.ESTABLISHED:
-        reasons.append(f"a delegated session opened against {established.get('url')}")
-        scopes = established.get("scopes") or []
+        # THE KIND THE SESSION ACTUALLY WAS. This said `delegated` for every
+        # connection, and a certificate connection reported `identity
+        # application` four lines above it. The two halves of one screen
+        # disagreed about what had signed in -- and the wrong half was the one
+        # headed `Because:`, which is where a reader goes when they doubt the
+        # other.
+        kind = established.get("identity_kind") or "not-established"
+        article = "an" if kind[:1] in "aeiou" else "a"
+        opened = (
+            "a session" if kind == "not-established" else f"{article} {kind} session"
+        )
+        reasons.append(f"{opened} opened against {established.get('url')}")
+        # THE SAME FILTER THE RECORD USES, so the count and the list cannot
+        # disagree. It said `1 scopes granted` beside `scopes none reported`,
+        # because this counted a null the other had dropped.
+        scopes = [
+            s for s in (established.get("scopes") or []) if isinstance(s, str) and s
+        ]
         reasons.append(
             f"{len(scopes)} scopes granted" if scopes else "no scopes were reported"
         )
         reasons.append(
-            "the directory identity was not read: no collection path for it is "
-            "proven on a tenant, so this says which address answered and not "
-            "which organisation it belongs to"
+            "the session's own token names the directory it operated in"
+            if established.get("observed_tenant_id")
+            else "the directory identity was not read: the session did not "
+            "report it, so this says which address answered and not which "
+            "organisation it belongs to"
         )
     else:
         if returncode != 0 and not cancelled:
@@ -507,6 +530,55 @@ def _because(
         ]
         reasons.extend(named[:2] if named else spoken[-3:])
     return reasons
+
+
+#: What the collector prints when a persisted sign-in has been removed.
+LOGGED_OUT = re.compile(r"^LOGOUT (\{.*\})\s*$")
+
+
+def logout(
+    *,
+    client_id: str,
+    tenant_url: str,
+    device_login: bool = False,
+    on_progress: Callable[[str], None] | None = None,
+    engine: Callable[..., tuple[int, str, str, bool]] | None = None,
+) -> tuple[bool, list[str]]:
+    """Remove a persisted sign-in. Returns whether it was cleared, and why not.
+
+    The sign-in library clears a persisted sign-in only through a connection it
+    holds, so this opens one from what was stored and closes it clearing it.
+    When the stored sign-in has expired or been revoked the library asks the
+    person to sign in again before it can clear anything, which is why the
+    output is passed on as it arrives.
+    """
+    argv = [
+        "pwsh",
+        "-NoProfile",
+        "-File",
+        str(COLLECTOR),
+        "-Mode",
+        "Logout",
+        "-ClientId",
+        client_id,
+        "-TenantUrl",
+        tenant_url,
+    ]
+    if device_login:
+        argv.append("-DeviceLogin")
+    run = engine or _run
+    returncode, out, err, cancelled = run(argv, on_progress)
+    lines = [ANSI.sub("", line) for line in out.splitlines()]
+    if (
+        not cancelled
+        and returncode == 0
+        and _one(lines, LOGGED_OUT).get("cleared") is True
+    ):
+        return True, []
+    if cancelled:
+        return False, ["cancelled before the stored sign-in was removed"]
+    reason = [ANSI.sub("", line) for line in err.splitlines() if line.strip()][-3:]
+    return False, reason or ["the collector ended without confirming the removal"]
 
 
 def document(connection: Connection) -> dict[str, Any]:
@@ -562,7 +634,18 @@ def document(connection: Connection) -> dict[str, Any]:
             "client_id": session.get("client_id", ""),
             "identity_kind": session.get("identity_kind", "not-established"),
             "connection_type": session.get("connection_type", ""),
-            "scopes": list(session.get("scopes") or []),
+            # ONLY THE ONES THAT ARE STRINGS, and the reason is a real run.
+            # A certificate connection came back with a scope list holding a
+            # null, and `describe` joined it straight into a sentence: the CLI
+            # authenticated against a real tenant, established the session, and
+            # then died with a TypeError while printing what it had achieved.
+            # Nothing was wrong with the connection.
+            #
+            # Dropping it here rather than guarding the render keeps the record
+            # and the sentence agreeing, since both read this field.
+            "scopes": [
+                s for s in (session.get("scopes") or []) if isinstance(s, str) and s
+            ],
             # NEVER `resolved_tenant_id`. That one is a lookup anybody can
             # perform without reaching this tenant, and copying it here would
             # make a public resolution indistinguishable from an observation, in
@@ -618,15 +701,28 @@ def describe(connection: Connection) -> str:
             f"  client id  {connection.established.get('client_id')}",
             f"  connection {connection.established.get('connection_type')}",
         ]
-        scopes = connection.established.get("scopes") or []
+        scopes = [s for s in (connection.established.get("scopes") or []) if s]
         if scopes:
             out.append(f"  scopes     {', '.join(sorted(scopes))}")
-        out += [
-            "",
-            "  WHICH DIRECTORY THIS SESSION OPERATED IN IS NOT ESTABLISHED, and",
-            "  the resolved id above does not stand in for it: that one is a",
-            "  lookup anybody can perform without reaching this tenant.",
-        ]
+        else:
+            # An application connection reports none, and that is not a finding
+            # about the grant: it is what the transport said. Saying so beats an
+            # absent line, which reads as a section nobody filled in.
+            out.append("  scopes     none reported by the connection")
+        if connection.observed_tenant_id:
+            out += [
+                "",
+                "  `observed` is the directory this session operated in, read from",
+                "  the session's own token. The resolved id above is a different",
+                "  fact: a lookup anybody can perform without reaching this tenant.",
+            ]
+        else:
+            out += [
+                "",
+                "  WHICH DIRECTORY THIS SESSION OPERATED IN IS NOT ESTABLISHED, and",
+                "  the resolved id above does not stand in for it: that one is a",
+                "  lookup anybody can perform without reaching this tenant.",
+            ]
     else:
         out.append("  none. Nothing was collected and nothing was written.")
 

@@ -1075,3 +1075,328 @@ def test_a_remote_domain_block_does_not_reach_what_an_admin_configured(
     from conftest import rule
 
     assert evaluate_rule(rule("EXO-FORWARD-002"), evidence(fixture)).outcome is outcome
+
+
+# ---------------------------------------------------------------------------
+# the directory's own settings: seven rules, and not one of them about a site
+# ---------------------------------------------------------------------------
+#
+# WHY THIS BLOCK EXISTS, WRITTEN WHERE IT IS PROVED. This catalogue reached
+# twenty-six rules of which twenty-one were SharePoint, and the cause was never
+# that Microsoft documents less about the rest of Microsoft 365. It was that
+# the rest was not collected. These read two Graph surfaces that decide what
+# every user in a tenant may do and how many accounts may do anything at all.
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-global-administrators-too-many", Outcome.FAIL),
+        ("entra-global-administrators-healthy", Outcome.PASS),
+        ("entra-global-administrators-single-account", Outcome.PASS),
+    ],
+)
+def test_five_or_more_global_administrators_is_microsofts_own_number(fixture, outcome):
+    """`ENTRA-ROLE-001`, and the reason it is a `documented-limit` and not a
+    convention.
+
+    Almost nothing in identity governance has a published threshold. This does:
+    "Microsoft recommends that you assign the Global Administrator role to
+    fewer than five people", and the Microsoft Entra overview draws an alert
+    card at the same five. A number this engine chose would make a pass mean
+    nothing; this number is the one the vendor's own product acts on.
+
+    The single-account fixture passes here on purpose. Being below the ceiling
+    is what this rule reads, and being below the floor is a different finding
+    with a different identifier -- one rule, one claim.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-ROLE-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-global-administrators-single-account", Outcome.FAIL),
+        ("entra-global-administrators-healthy", Outcome.PASS),
+        ("entra-global-administrators-too-many", Outcome.PASS),
+    ],
+)
+def test_a_tenant_with_one_global_administrator_has_no_way_back(fixture, outcome):
+    """`ENTRA-ROLE-002`, the floor beneath `ENTRA-ROLE-001`'s ceiling.
+
+    The two rules read the same number and disagree about which direction is
+    the finding, which is exactly why they are two rules. A tenant of seven
+    administrators is over-exposed and can still recover; a tenant of one is
+    lean and cannot. Microsoft asks for two accounts permanently holding the
+    role "where normal accounts can't be used or all other administrators are
+    accidentally locked out", and two is the smallest number at which that
+    recommendation can be met at all.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-ROLE-002"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-global-administrators-all-synced", Outcome.FAIL),
+        ("entra-global-administrators-healthy", Outcome.PASS),
+    ],
+)
+def test_every_administrator_synced_from_on_premises_shares_one_dependency(
+    fixture, outcome
+):
+    """`ENTRA-ROLE-003`, and the applicability that keeps nothing from becoming a
+    finding.
+
+    Microsoft's recommendation names the origin as well as the role: "two
+    cloud-only emergency access accounts permanently assigned the Global
+    Administrator role". An account synchronised from on-premises inherits the
+    availability of the directory it came from, and that directory being
+    unreachable is one of the scenarios the account exists for.
+
+    Zero cloud-only out of zero users is not the same sentence as zero out of
+    three, so the rule only asks where a user assignment was actually observed.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-ROLE-003"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-open-defaults", Outcome.FAIL),
+        ("entra-authorization-policy-restrained", Outcome.PASS),
+    ],
+)
+def test_everyone_includes_the_guests_who_were_already_invited(fixture, outcome):
+    """`ENTRA-AUTH-001`. Microsoft defines the value, and the definition is the
+    finding: `everyone` means "Allow everyone in the organization, including
+    guests, to invite guests". It is also the default outside US Government, so
+    this is a setting nobody chose rather than one somebody chose badly.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-open-defaults", Outcome.FAIL),
+        ("entra-authorization-policy-restrained", Outcome.PASS),
+    ],
+)
+def test_consent_to_risky_apps_is_microsofts_recommendation_not_ours(fixture, outcome):
+    """`ENTRA-AUTH-002`, whose position is written into the API reference itself.
+
+    "We recommend keeping allowUserConsentForRiskyApps as `false`. Default
+    value is `false`." Both halves matter: the position is Microsoft's, so a
+    finding is not this engine's opinion about consent; and `false` is the
+    default, so `true` is a value somebody set deliberately and the remediation
+    starts with finding out why.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-002"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-directory-unreadable", Outcome.FAIL),
+        ("entra-authorization-policy-open-defaults", Outcome.PASS),
+        ("entra-authorization-policy-restrained", Outcome.PASS),
+    ],
+)
+def test_a_finding_that_fires_because_somebody_tightened_something(fixture, outcome):
+    """`ENTRA-AUTH-003`, and it is the only rule here whose finding points the other
+    way.
+
+    Microsoft's reference for `allowedToReadOtherUsers` says "**DO NOT SET THIS
+    VALUE TO `false`**" -- capitals theirs. The setting looks like data
+    minimisation and is not: it breaks every feature across Microsoft 365 that
+    resolves a person, and hides the directory from nobody who holds a token.
+
+    THE RULE IS HERE FOR A REASON BEYOND ITS OWN FINDING. A catalogue whose
+    every rule says "turn something off" teaches an organisation that
+    tightening is always safe, and the first time that is wrong it is wrong in
+    a way nobody is looking for. The restrained fixture passes both this and
+    the rules about open defaults, which is the point: tightened and correct
+    are not the same axis.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-003"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-open-defaults", Outcome.FAIL),
+        ("entra-authorization-policy-restrained", Outcome.PASS),
+    ],
+)
+def test_a_user_created_tenant_is_a_directory_nobody_here_governs(fixture, outcome):
+    """`ENTRA-AUTH-004`. What makes this a rule rather than a preference is where the
+    created directory sits: not a resource this organisation can audit or apply
+    policy to, but a peer, created with an organisational identity, invisible
+    from the tenant that identity belongs to. Microsoft's reference records
+    that restricting it leaves the Tenant Creator role working, so the
+    remediation removes nobody's job.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-004"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-open-defaults", Outcome.FAIL),
+        ("entra-authorization-policy-closed-defaults", Outcome.PASS),
+        ("entra-global-administrators-healthy", Outcome.UNKNOWN),
+    ],
+)
+def test_an_address_in_a_verified_domain_is_a_second_door(fixture, outcome):
+    """`ENTRA-AUTH-005`. The setting creates MEMBERS, not guests, and that is
+    why it is read separately from the invitation controls: an organisation
+    that restricted who may invite has not restricted this. Microsoft states it
+    is company-wide across every verified domain, so the reach of the finding
+    is the whole directory rather than one domain somebody remembers.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-005"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-open-defaults", Outcome.FAIL),
+        ("entra-authorization-policy-closed-defaults", Outcome.PASS),
+        ("entra-global-administrators-healthy", Outcome.UNKNOWN),
+    ],
+)
+def test_the_legacy_endpoint_is_the_finding_not_the_module(fixture, outcome):
+    """`ENTRA-AUTH-006`. Microsoft's own sentence is what makes this worth
+    checking: blocking the module "also disables user-based access to the
+    legacy service endpoint" and "doesn't affect Microsoft Entra Connect or
+    Microsoft Graph". The first half is the exposure and the second half is why
+    closing it is usually available.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-AUTH-006"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authorization-policy-guests-as-members", Outcome.FAIL),
+        ("entra-authorization-policy-open-defaults", Outcome.PASS),
+        ("entra-authorization-policy-closed-defaults", Outcome.PASS),
+        ("entra-global-administrators-healthy", Outcome.UNKNOWN),
+    ],
+)
+def test_a_guest_holding_the_member_role_is_not_a_guest(fixture, outcome):
+    """`ENTRA-GUEST-001`. Microsoft publishes a closed set of three templates,
+    and the finding is which of the three. `User` is not a permissive guest
+    role: it is the member role, and a directory holding it has decided that
+    being invited and being employed read the organisation on the same terms.
+    Most tenants holding it did not decide that -- they inherited it.
+
+    The default, `Guest User`, passes here. A pass is not a statement that the
+    guest reach is right; it is a statement that it is narrower than a
+    member's.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-GUEST-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authentication-methods-sms-enabled", Outcome.FAIL),
+        ("entra-authentication-methods-premigration", Outcome.FAIL),
+        ("entra-authentication-methods-voice-enabled", Outcome.PASS),
+        ("entra-authentication-methods-telephony-off", Outcome.PASS),
+        ("entra-authentication-methods-states-absent", Outcome.UNKNOWN),
+        ("entra-authentication-methods-refused", Outcome.UNKNOWN),
+    ],
+)
+def test_sms_is_a_method_with_a_published_end_date(fixture, outcome):
+    """`ENTRA-METHOD-001`. Not a preference between methods.
+
+    Microsoft has put a date on this one: telecom delivery it provides for SMS
+    and voice is retired from 1 February 2027, and "SMS and voice are no longer
+    positioned as secure authentication methods". A tenant reading `enabled`
+    here is reading a value whose meaning expires, which is exactly the case
+    this engine's source hierarchy says an announced change is a source of a
+    rule rather than an afterthought to one.
+
+    THE VOICE FIXTURE PASSES HERE, and that pairing is the point of splitting
+    the two: a tenant with voice on and SMS off is a real configuration, and a
+    single rule reporting `one of them is on` would have hidden which.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-METHOD-001"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authentication-methods-voice-enabled", Outcome.FAIL),
+        ("entra-authentication-methods-premigration", Outcome.FAIL),
+        ("entra-authentication-methods-sms-enabled", Outcome.PASS),
+        ("entra-authentication-methods-telephony-off", Outcome.PASS),
+        ("entra-authentication-methods-states-absent", Outcome.UNKNOWN),
+        ("entra-authentication-methods-refused", Outcome.UNKNOWN),
+    ],
+)
+def test_voice_is_the_other_half_and_answers_separately(fixture, outcome):
+    """`ENTRA-METHOD-002`. The mirror of the rule above, and it has to be.
+
+    `states-absent` is the fixture that matters most: the configurations did
+    not arrive, and Microsoft documents them as expanded automatically on this
+    read. So their absence is a response this engine did not understand, and
+    writing `disabled` would have turned a collector's bad day into a clean
+    result on the read that decides whether a second factor can be intercepted.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-METHOD-002"), evidence(fixture)).outcome is outcome
+
+
+@pytest.mark.parametrize(
+    "fixture,outcome",
+    [
+        ("entra-authentication-methods-premigration", Outcome.FAIL),
+        ("entra-authentication-methods-migration-in-progress", Outcome.PASS),
+        ("entra-authentication-methods-telephony-off", Outcome.PASS),
+        ("entra-authentication-methods-migration-state-absent", Outcome.UNKNOWN),
+        ("entra-authentication-methods-refused", Outcome.UNKNOWN),
+    ],
+)
+def test_which_policy_governs_is_a_prior_question_to_what_it_says(fixture, outcome):
+    """`ENTRA-METHOD-003`. A deprecation whose date has already passed.
+
+    Microsoft stopped allowing authentication methods to be managed in the
+    legacy MFA and SSPR policies on 30 September 2025, and in `premigration`
+    those legacy settings are still what the tenant is governed by. The
+    settings are in force and out of reach at the same time.
+
+    `migration-in-progress` passes. The intermediate state applies the
+    authentication methods policy to sign-in and password reset while the
+    legacy settings are still respected, which is what makes the change safe to
+    stage -- so it is a tenant that has started, not one that has not.
+    """
+    from conftest import rule
+
+    assert evaluate_rule(rule("ENTRA-METHOD-003"), evidence(fixture)).outcome is outcome

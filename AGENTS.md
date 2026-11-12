@@ -196,6 +196,42 @@ this, and reaching for authorization to do them is its own mistake.
 This engine acquires no credential, writes nothing to a tenant, and transmits
 no tenant evidence anywhere. See `docs/TRUST-MODEL.md`.
 
+### Containing a crossing of that line is not a reason to stop the work
+
+> **Crossing an authorization boundary is an incident. Containing the incident
+> is mandatory. Repeating the crossing is forbidden without authorization.
+> Continuing unrelated reversible work is not.**
+
+**The rule above was broken here, and the more common failure is the one that
+came after it**: the execution was contained, and everything else stopped with
+it — including work that required touching nothing.
+
+Three things are separated and handled separately: **the process incident**,
+**the state of the machine**, and **whether what was observed is technically
+valid**. They do not have one answer.
+
+**Containment is a record.** Identity kind, target, method, time, scopes,
+whether a session persists, what was read, what was written locally, whether
+anything external changed. Fields that cannot be established say so; a field
+reconstructed to look complete is the same failure inside the document about
+that failure.
+
+**It never includes a new action against the thing that was touched.** Closing a
+session is itself an authenticated operation, needs its own authorization, and
+running it to tidy the record repeats the cause.
+
+**The observation is kept, qualified, and outside this repository.** No tenant
+evidence enters this tree — a sanitized record does, and it carries the crossing
+on itself rather than beside it: `data/live-proof.json` states both
+`live-proven` and `not-authorized-for-the-connection-step` on the same record,
+because that pair is the truth and either half alone is not. A valid reading is
+not made invalid by the manner of its taking; it also never becomes clean proof,
+never authorizes the next read, and never discharges the authorized acquisition
+still required.
+
+**Then the reversible work continues.** Defects the run exposed, contract
+corrections, sanitized fixtures, documentation. Only the act itself stops.
+
 ### Evidence is ranked, and the ranking is not a formality
 
 Observed runtime or test; then a machine-readable schema or contract; then
@@ -329,6 +365,18 @@ external evidence, quoted as it arrived because changing the text destroys what
 it proves, and localized product content, which this repository does not carry.
 Enforced by `tools/language-check.sh`, inside the gate.
 
+## How a rule family is built
+
+**Microsoft docs → API surface → endpoint observed → collector, evidence and
+rule → tenant acquisition → CLI on the same tenant → bundle → consumer →
+derived site refresh.** No stage is skipped, no stage is stopped at for an
+intermediate report, and the site is never edited by hand to announce a rule.
+
+Graph Explorer proves the API; the command line proves the product. Neither
+substitutes for the other, and the whole contract -- what each stage
+establishes, where it is recorded, and the three states that are never added
+together -- is `docs/RULE-DELIVERY-PIPELINE.md`.
+
 ## The gate
 
 ```bash
@@ -355,3 +403,13 @@ built next, in what order, or why. That is not a property of the software.
 Microsoft 365 surfaces this engine claims and how far each has been proved,
 including the ones it cannot observe at all. It publishes state, never
 sequence, and it carries no priority, blocker, estimate or date.
+
+## Design-review consumers
+
+The Site's isolated browser specification consumes Engine-owned synthetic
+reference artefacts. `src/m365_governance/data/reference/reference.json` owns
+the reference's purpose; a consumer must preserve that declaration and source
+provenance. A navigable mock does not change collector semantics, canonical
+bundles, live-proof state or published availability. Delivery strategy and
+execution priority remain in the existing private programme owner, not this
+public repository.
