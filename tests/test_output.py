@@ -243,3 +243,91 @@ def test_output_is_in_the_help_of_every_command_that_has_a_format():
     )
     for name in with_format:
         assert "--output" in action.choices[name].format_help(), name
+
+
+# --- narrowing and ordering a view --------------------------------------------
+
+
+def _doc(name, **facts):
+    return {
+        "resource": {"type": "site", "display_name": name, "native_id": name},
+        "provenance": {"collected_at": "2026-11-12T10:00:00Z"},
+        "coverage": {"completed": [], "unavailable": {}},
+        "facts": {
+            "sharing": {
+                key: (
+                    {"state": "observed", "value": value}
+                    if not isinstance(value, dict)
+                    else value
+                )
+                for key, value in facts.items()
+            }
+        },
+    }
+
+
+DOCS = [
+    _doc("b", capability="Disabled", guests=10),
+    _doc("a", capability="ExternalUserSharingOnly", guests=2),
+    _doc("c", capability={"state": "permission-denied", "detail": "no"}, guests=1),
+]
+
+
+def _names(documents):
+    return [d["resource"]["display_name"] for d in documents]
+
+
+def test_a_filter_matches_what_the_view_prints_and_returns_whole_documents():
+    shown = presenting.select(DOCS, ["sharing.capability=disabled"])
+    assert _names(shown) == ["b"]
+    assert shown[0] is DOCS[0], "a filtered document was altered or copied"
+    both = presenting.select(DOCS, ["sharing.capability=Disabled", "name=b"])
+    assert _names(both) == ["b"]
+    assert presenting.select(DOCS, ["sharing.capability=Nothing"]) == []
+
+
+def test_a_value_never_matches_something_that_was_not_observed():
+    """THE COUNTER-CHECK. A refused site must not be found by asking for a
+    value, and must be findable by asking for the refusal."""
+    for value in ("Disabled", "", "null", "permission-denied"):
+        assert "c" not in _names(
+            presenting.select(DOCS, [f"sharing.capability={value}"])
+        )
+    refused = presenting.select(DOCS, ["sharing.capability=[permission-denied]"])
+    assert _names(refused) == ["c"]
+
+
+def test_a_column_nobody_has_is_refused_and_not_an_empty_view():
+    with pytest.raises(presenting.NoSuchColumn, match="sharing.capability"):
+        presenting.select(DOCS, ["sharing.capabilty=Disabled"])
+    with pytest.raises(presenting.NoSuchColumn):
+        presenting.select(DOCS, sort="nothing")
+    with pytest.raises(ValueError, match="column=value"):
+        presenting.select(DOCS, ["sharing.capability"])
+
+
+def test_numbers_sort_as_numbers_and_a_state_among_them_does_not_break_it():
+    assert _names(presenting.select(DOCS, sort="sharing.guests")) == ["c", "a", "b"]
+    mixed = [*DOCS, _doc("d", capability="Disabled", guests={"state": "missing"})]
+    assert _names(presenting.select(mixed, sort="sharing.guests")) == [
+        "c",
+        "a",
+        "b",
+        "d",
+    ]
+    assert _names(presenting.select(DOCS, sort="name")) == ["a", "b", "c"]
+
+
+def test_the_command_filters_the_view_and_keeps_every_document(run, tmp_path):
+    kept = tmp_path / "kept"
+    out = run(*OWNERS, "--where", "name=Nobody", "--evidence-out", str(kept))
+    assert out.returncode == 0, out.stderr
+    assert "Nothing was read." not in out.stdout
+    assert "Nothing that was read matches the filter." in out.stdout
+    assert "0 of 1 resources shown" in out.stderr
+    assert "holds all of them" in out.stderr
+    assert [p for p in kept.rglob("*.json") if "manifest" not in p.name], (
+        "the filter removed evidence"
+    )
+    wrong = run(*OWNERS, "--where", "nmae=Marketing")
+    assert wrong.returncode == 2 and "no column is called" in wrong.stderr

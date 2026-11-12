@@ -16,6 +16,15 @@ ships in a release of its own.
 
 ### Added
 
+- **`--where COLUMN=VALUE` and `--sort COLUMN` on every read.** A view can be
+  narrowed to the resources whose column prints a value, and ordered by a
+  column, with numbers before text. A refusal is found by its state in
+  brackets, such as `--where site_guests.guests=[permission-denied]`, so a
+  filter for a value never matches something that was not observed. A filter
+  chooses what is shown and never what is read or kept, the command says how
+  many resources were left out, and a column nobody has is a refusal instead
+  of an empty view.
+
 - **`m365g collector list`, `describe NAME` and `test NAME`.** What this
   engine can collect, with the command that runs each collector, what it
   reads, the permissions recorded for it, the rules it feeds, whether it has

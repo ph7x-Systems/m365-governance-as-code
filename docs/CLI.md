@@ -206,6 +206,12 @@ has them.
   with stable leading columns (`resource_type`, `name`, `url`, `native_id`,
   `tenant`, `collected_at`, `completed`, `unavailable`) followed by one column
   per fact, named `family.fact`: the path a rule uses for the same fact.
+- **A view can be narrowed and ordered.** `--where column=value` shows the
+  resources whose column prints that value, and `--sort column` orders them.
+  The filter compares what the view prints, so a refusal is found as
+  `--where site_guests.guests=[permission-denied]`. It never changes what was
+  read or what `--evidence-out` keeps, and the command says how many resources
+  it left out. A column nobody has is refused.
 - **A view is not the evidence.** It is rendered from the documents the
   collection wrote and adds nothing to them. An observed fact is shown as what was observed.
   Any other state is shown as the state itself in square brackets, such as

@@ -228,6 +228,21 @@ def _build_parser() -> argparse.ArgumentParser:
         "works, with the earlier report",
     )
     collect.add_argument(
+        "--where",
+        action="append",
+        metavar="COLUMN=VALUE",
+        help="show only the resources whose column prints this value, such as "
+        "sharing.capability=Disabled or hub.requires_join_approval=true. "
+        "Repeat it to require several. A refusal is found by its state in "
+        "brackets: site_guests.guests=[permission-denied]. It chooses what is "
+        "shown, never what is read or kept",
+    )
+    collect.add_argument(
+        "--sort",
+        metavar="COLUMN",
+        help="order the view by this column: numbers first, then text",
+    )
+    collect.add_argument(
         "--evidence-out",
         type=Path,
         metavar="DIRECTORY",
@@ -1284,7 +1299,25 @@ def _cmd_collect(args) -> int:
             else []
         )
         documents = [json.loads(found.read_text(encoding="utf-8")) for found in written]
-        sys.stdout.write(presenting.render(documents, view))
+        try:
+            shown = presenting.select(documents, args.where, args.sort)
+        except ValueError as problem:
+            print(f"refusing to filter: {problem}", file=sys.stderr)
+            return 2
+        if documents and not shown and view == "text":
+            # NOT `Nothing was read`. Something was, and none of it matched:
+            # the two sentences are about different things, and the first one
+            # here would tell an operator their tenant was empty.
+            sys.stdout.write("Nothing that was read matches the filter.\n")
+        else:
+            sys.stdout.write(presenting.render(shown, view))
+        if args.where:
+            print(
+                f"{len(shown)} of {len(documents)} resources shown. The filter "
+                "chose what is shown: every resource was read"
+                + (", and the evidence kept holds all of them." if kept else "."),
+                file=sys.stderr,
+            )
     print(
         f"evidence kept in {kept}: the documents this view was made from."
         if kept

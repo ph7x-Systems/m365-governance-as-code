@@ -186,6 +186,74 @@ def _text(documents: list[dict]) -> str:
     return "\n".join(lines)
 
 
+class NoSuchColumn(ValueError):
+    """A filter or a sort named something no document in the view has."""
+
+
+def _row(document: dict) -> dict[str, str]:
+    headers, rows = table([document])
+    return dict(zip(headers, rows[0], strict=True))
+
+
+def select(
+    documents: list[dict], where: list[str] | None = None, sort: str | None = None
+) -> list[dict]:
+    """The documents a person asked to see, in the order they asked for.
+
+    A FILTER CHOOSES WHAT IS SHOWN AND NEVER WHAT WAS READ. The documents are
+    returned whole and untouched; the ones that do not match are simply not in
+    the view, and the caller says how many were left out. Evidence kept with
+    `--evidence-out` is every document, whatever the view showed.
+
+    A CONDITION IS `column=value`, compared with what the view prints in that
+    column, without regard to case: `sharing.capability=Disabled`,
+    `name=Finance`, `site_guests.guests=[permission-denied]`. The last form is
+    how a refusal is found, and it is why a state is printed in brackets: a
+    filter for a value can never match something that was not observed.
+
+    A column nobody has is a refusal, not an empty view: a mistyped name would
+    otherwise answer that nothing matched.
+    """
+    where = where or []
+    if not documents or (not where and not sort):
+        return list(documents)
+    known = set(table(documents)[0])
+    conditions = []
+    for condition in where:
+        name, equals, value = condition.partition("=")
+        if not equals or not name.strip():
+            raise ValueError(
+                f"`{condition}` is not a condition. Write column=value, such as "
+                "sharing.capability=Disabled."
+            )
+        conditions.append((name.strip(), value.strip().casefold()))
+    for name in [name for name, _ in conditions] + ([sort] if sort else []):
+        if name not in known:
+            raise NoSuchColumn(
+                f"no column is called `{name}`. The columns of this view are: "
+                + ", ".join(sorted(known))
+            )
+    rows = [(document, _row(document)) for document in documents]
+    kept = [
+        (document, row)
+        for document, row in rows
+        if all(row.get(name, "").casefold() == value for name, value in conditions)
+    ]
+    if sort:
+
+        def key(pair: tuple[dict, dict[str, str]]) -> tuple:
+            text = pair[1].get(sort, "")
+            try:
+                # Numbers before text, each in its own order, so that a column
+                # of counts with one `[permission-denied]` in it still sorts.
+                return (0, float(text), "")
+            except ValueError:
+                return (1, 0.0, text.casefold())
+
+        kept.sort(key=key)
+    return [document for document, _ in kept]
+
+
 def tabulate(headers: list[str], rows: list[list[str]], view: str) -> str:
     """Headers and rows as CSV or as a Markdown table. One writer for both
     the evidence views and the composed scenarios, so they cannot drift."""
