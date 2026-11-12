@@ -877,6 +877,108 @@ def ca_coverage(documents: list[dict], policy_id: str | None = None) -> dict:
     }
 
 
+class NotComparable(Exception):
+    """Two inspections that do not answer the same question."""
+
+
+def difference(before: dict, after: dict) -> dict:
+    """What changed between two inspections of the same question.
+
+    ONLY LIKE WITH LIKE. Two inspections are compared when they are the same
+    scenario with the same parameters; a threshold that moved between them
+    would show every row changing for a reason that is not in the tenant, so
+    that is refused and not reported as change.
+
+    A ROW THAT IS GONE IS NOT A RESOURCE THAT WAS DELETED. It is a resource
+    that is not in the later evidence: removed, or no longer shown to the
+    identity that collected, or not collected that time. The comparison says
+    it left the evidence and says no more.
+    """
+    for name in ("scenario", "parameters"):
+        if before.get(name) != after.get(name):
+            raise NotComparable(
+                f"the two inspections differ in {name}: "
+                f"{before.get(name)!r} and {after.get(name)!r}. Comparing them "
+                "would report the difference in the question as a change in "
+                "the tenant."
+            )
+    columns = [
+        c
+        for c in (after.get("columns") or list(COLUMNS))
+        if c not in ("name", "url", "because")
+    ]
+    earlier = {row["native_id"]: row for row in before.get("rows", [])}
+    later = {row["native_id"]: row for row in after.get("rows", [])}
+
+    def shown(row: dict) -> dict:
+        return {"native_id": row["native_id"], "name": row.get("name") or ""}
+
+    changed = []
+    for key in sorted(set(earlier) & set(later)):
+        moved = {
+            column: {
+                "before": earlier[key].get(column),
+                "after": later[key].get(column),
+            }
+            for column in columns
+            if earlier[key].get(column) != later[key].get(column)
+        }
+        if moved:
+            changed.append({**shown(later[key]), "changed": moved})
+    return {
+        "$schema": SCHEMA,
+        "scenario": after.get("scenario"),
+        "comparison": True,
+        "parameters": after.get("parameters"),
+        "question": after.get("question"),
+        "before": before.get("sources"),
+        "after": after.get("sources"),
+        "same_evidence": (before.get("sources") or {}).get("digest")
+        == (after.get("sources") or {}).get("digest"),
+        "entered": [shown(later[key]) for key in sorted(set(later) - set(earlier))],
+        "left": [shown(earlier[key]) for key in sorted(set(earlier) - set(later))],
+        "changed": changed,
+        "unchanged": len(set(earlier) & set(later)) - len(changed),
+        "not_established": [
+            "why a row left: it is not in the later evidence, which is not "
+            "the same as the resource no longer existing",
+            "what happened between the two collections: two readings are two "
+            "moments, and a value that changed and changed back is not seen",
+            "when anything changed: only that it differs between the two "
+            "collection times recorded above",
+        ],
+    }
+
+
+def difference_as_text(result: dict) -> str:
+    lines = [f"What changed: {result['question']}", ""]
+    for label, sources in (("before", result["before"]), ("after", result["after"])):
+        sources = sources or {}
+        lines.append(
+            f"  {label:<7}{sources.get('documents', 0)} documents, collected "
+            f"{sources.get('collected_from')} to {sources.get('collected_to')}"
+        )
+    if result["same_evidence"]:
+        lines += ["", "Both were made from the same evidence: nothing can differ."]
+    lines.append("")
+    for title, key in (
+        ("Entered the evidence", "entered"),
+        ("Left the evidence", "left"),
+    ):
+        lines.append(f"{title}: {len(result[key])}")
+        lines += [f"  {row['name'] or row['native_id']}" for row in result[key]]
+    lines.append(f"Changed: {len(result['changed'])}")
+    for row in result["changed"]:
+        lines.append(f"  {row['name'] or row['native_id']}")
+        for column, moved in row["changed"].items():
+            lines.append(f"    {column}: {moved['before']} -> {moved['after']}")
+    lines.append(f"Unchanged: {result['unchanged']}")
+    lines += ["", "Not established by this comparison:"]
+    lines += [f"  - {item}" for item in result["not_established"]]
+    lines.append("")
+    return "\n".join(lines)
+
+
 #: Scenario name -> (what it answers, the function, the collections it reads).
 SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] = {
     "external-access": (

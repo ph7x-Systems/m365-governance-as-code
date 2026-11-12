@@ -91,6 +91,7 @@ GROUPS: tuple[Group, ...] = (
             ("report",): ("report",),
             ("diff",): ("diff",),
             ("inspect",): ("inspect",),
+            ("inspect-diff",): ("inspect-diff",),
         },
     ),
     Group(

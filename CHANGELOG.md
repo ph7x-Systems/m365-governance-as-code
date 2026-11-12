@@ -16,6 +16,13 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g governance inspect-diff BEFORE AFTER`: what changed between two
+  inspections.** Rows that entered the evidence, rows that left it and rows
+  whose values differ, column by column. Only the same scenario with the same
+  parameters is compared; anything else is refused, because a threshold that
+  moved is not a change in the tenant. A row that left is reported as having
+  left the evidence, never as a resource that was deleted.
+
 - **`m365g entra group list`, and the `groups` collection behind it.
   Contract-tested; not yet run against a directory.** Every Microsoft 365
   group with how many owners and members it has, by kind: only identifiers are

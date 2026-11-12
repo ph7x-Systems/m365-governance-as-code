@@ -96,6 +96,7 @@ HOW_TO_RUN = {
     "diff": ["--help"],
     # Relates evidence already on disk; it has no way to reach a directory.
     "inspect": ["--help"],
+    "inspect-diff": ["--help"],
     "migration-verify": ["--help"],
     # The local record of connections. Reading, choosing and listing reach no
     # tenant; `connection remove` is `logout` by another name and is exercised

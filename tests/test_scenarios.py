@@ -811,3 +811,77 @@ def test_every_way_the_group_join_can_come_up_empty_says_which():
         "Unlisted": ("[not-collected]", ""),
     }
     assert "owners that are users [permission-denied]" in scenarios.as_text(inspection)
+
+
+# --- comparing two inspections ---------------------------------------------------
+
+
+def test_what_entered_left_and_changed_is_reported_row_by_row():
+    before = scenarios.external_access(
+        [
+            _tenant("ExternalUserAndGuestSharing"),
+            _site("stays", "Disabled"),
+            _site("opens", "Disabled"),
+            _site("goes", "Disabled"),
+        ]
+    )
+    after = scenarios.external_access(
+        [
+            _tenant("ExternalUserAndGuestSharing"),
+            _site("stays", "Disabled"),
+            _site("opens", "ExternalUserSharingOnly", at="2026-11-12T10:00:00Z"),
+            _site("comes", "Disabled"),
+        ]
+    )
+    result = scenarios.difference(before, after)
+    assert [r["name"] for r in result["entered"]] == ["Comes"]
+    assert [r["name"] for r in result["left"]] == ["Goes"]
+    assert result["unchanged"] == 1
+    (opened,) = result["changed"]
+    assert opened["name"] == "Opens"
+    assert opened["changed"]["external_sharing"] == {
+        "before": "not-permitted",
+        "after": "permitted",
+    }
+    assert "because" not in opened["changed"]
+    text = scenarios.difference_as_text(result)
+    assert "external_sharing: not-permitted -> permitted" in text
+    assert "deleted" not in text.lower().replace("not the same as", "")
+
+
+def test_a_question_that_moved_is_not_a_tenant_that_changed():
+    """THE COUNTER-CHECK. The same evidence under two thresholds differs in
+    every row for a reason that is not in the tenant."""
+    documents = [_owned("a", named=2)]
+    two = scenarios.ownership(documents, minimum_owners=2)
+    three = scenarios.ownership(documents, minimum_owners=3)
+    with pytest.raises(scenarios.NotComparable, match="parameters"):
+        scenarios.difference(two, three)
+    with pytest.raises(scenarios.NotComparable, match="scenario"):
+        scenarios.difference(two, scenarios.external_access([_site("a", "Disabled")]))
+
+
+def test_the_same_evidence_twice_has_nothing_to_report_and_says_why():
+    inspection = scenarios.ownership([_owned("a", named=2)])
+    result = scenarios.difference(inspection, inspection)
+    assert result["same_evidence"] is True
+    assert (result["entered"], result["left"], result["changed"]) == ([], [], [])
+    assert "same evidence" in scenarios.difference_as_text(result)
+
+
+def test_the_comparison_command_reads_two_files_and_refuses_what_is_not_one(
+    tmp_path, capsys
+):
+    first = tmp_path / "a.json"
+    second = tmp_path / "b.json"
+    first.write_text(json.dumps(scenarios.ownership([_owned("a", named=1)])))
+    second.write_text(json.dumps(scenarios.ownership([_owned("a", named=2)])))
+    assert main(["governance", "inspect-diff", str(first), str(second)]) == 0
+    assert "standing: fewer -> meets" in capsys.readouterr().out
+    other = tmp_path / "c.json"
+    other.write_text(json.dumps(scenarios.ownership([_owned("a", named=2)], 3)))
+    assert main(["inspect-diff", str(first), str(other)]) == 2
+    assert "refusing to compare" in capsys.readouterr().err
+    junk = tmp_path / "d.json"
+    junk.write_text("{}")
+    assert main(["inspect-diff", str(first), str(junk)]) == 2

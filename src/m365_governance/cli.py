@@ -670,6 +670,19 @@ def _build_parser() -> argparse.ArgumentParser:
         "evidence it was made from",
     )
 
+    comparing = sub.add_parser(
+        "inspect-diff",
+        help="what changed between two inspections of the same question",
+        description=(
+            "Compare two inspections written with `inspect ... --out`. They "
+            "must be the same scenario with the same parameters. Reaches no "
+            "tenant."
+        ),
+    )
+    comparing.add_argument("before", type=Path, help="an inspection, from --out")
+    comparing.add_argument("after", type=Path, help="a later inspection")
+    comparing.add_argument("--format", choices=("text", "json"), default="text")
+
     diff = sub.add_parser(
         "diff", help="what changed between two assessments, and what it does not say"
     )
@@ -2299,6 +2312,37 @@ def _cmd_inspect(args) -> int:
     return 0
 
 
+def _cmd_inspect_diff(args) -> int:
+    """What changed between two inspections. Reads two files and nothing else."""
+    loaded = []
+    for path in (args.before, args.after):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as problem:
+            print(
+                f"{path} could not be read as an inspection: {problem}", file=sys.stderr
+            )
+            return 2
+        if not isinstance(data, dict) or "rows" not in data or "scenario" not in data:
+            print(
+                f"{path} is not an inspection. Write one with "
+                f"`{COMMAND} governance inspect <scenario> --out FILE`.",
+                file=sys.stderr,
+            )
+            return 2
+        loaded.append(data)
+    try:
+        result = scenarios.difference(*loaded)
+    except scenarios.NotComparable as refusal:
+        print(f"refusing to compare: {refusal}", file=sys.stderr)
+        return 2
+    if args.format == "json":
+        sys.stdout.write(json.dumps(result, indent=2, ensure_ascii=False) + "\n")
+    else:
+        sys.stdout.write(scenarios.difference_as_text(result))
+    return 0
+
+
 def _cmd_stats(args) -> int:
     sys.stdout.write(inspect_module.stats(args.evidence))
     return 0
@@ -3547,6 +3591,7 @@ _COMMANDS = {
     "report": _cmd_report,
     "diff": _cmd_diff,
     "inspect": _cmd_inspect,
+    "inspect-diff": _cmd_inspect_diff,
     "contracts": _cmd_contracts,
     "login": _cmd_login,
     "status": _cmd_status,

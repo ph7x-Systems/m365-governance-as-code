@@ -446,6 +446,12 @@
    ]
   },
   {
+   "command": "m365g governance inspect-diff",
+   "earlier_name": "m365g inspect-diff",
+   "kind": "command",
+   "service": "governance"
+  },
+  {
    "command": "m365g governance report",
    "earlier_name": "m365g report",
    "kind": "command",
