@@ -740,3 +740,74 @@ def test_the_packaged_policy_fixtures_are_read_as_they_are(capsys):
     assert inspection["rows"][0]["in_force"] in ("enforced", "report-only")
     assert len(inspection["duplicates"]) == 1
     assert inspection["policies"]["read_refused"] is True
+
+
+def _listed(name, group_id=None):
+    document = _site(name, None)
+    document["facts"] = {
+        "site": {
+            "group_id": {
+                "state": "observed",
+                "value": group_id or "00000000-0000-0000-0000-000000000000",
+            }
+        }
+    }
+    return document
+
+
+def _m365_group(identifier, user_owners=None, state="observed"):
+    fact = (
+        {"state": "observed", "value": user_owners}
+        if state == "observed"
+        else {"state": state, "detail": "refused"}
+    )
+    return {
+        "resource": {"workload": "entra", "type": "group", "native_id": identifier},
+        "provenance": {"collected_at": "2026-11-12T10:00:00Z"},
+        "coverage": {"completed": ["groups"], "unavailable": {}},
+        "facts": {"group": {"user_owners": fact}},
+    }
+
+
+def test_a_groups_owners_are_shown_beside_a_sites_and_never_counted_as_them():
+    """THE COUNTER-CHECK. The site names one administrator and a group; its
+    Microsoft 365 group has three owners. Adding them would call the site
+    sufficient, and a group owner is not a site collection administrator."""
+    inspection = scenarios.ownership(
+        [
+            _owned("team", named=1, groups=1),
+            _listed("team", "AAAA-1"),
+            _m365_group("aaaa-1", 3),
+        ]
+    )
+    row = _row(inspection, "team")
+    assert row["standing"] == "not-established"
+    assert row["connected_group"] == "connected" and row["group_user_owners"] == 3
+    assert inspection["sources"]["documents"] == 2
+    assert any("not counted as them" in r for r in inspection["relations"])
+
+
+def test_every_way_the_group_join_can_come_up_empty_says_which():
+    inspection = scenarios.ownership(
+        [
+            _owned("plain", named=2),
+            _listed("plain"),
+            _owned("unread", named=2),
+            _listed("unread", "g-unread"),
+            _owned("refused", named=2),
+            _listed("refused", "g-refused"),
+            _m365_group("g-refused", state="permission-denied"),
+            _owned("unlisted", named=2),
+        ]
+    )
+    shown = {
+        r["name"]: (r["connected_group"], r["group_user_owners"])
+        for r in inspection["rows"]
+    }
+    assert shown == {
+        "Plain": ("none", ""),
+        "Unread": ("connected", "[not-collected]"),
+        "Refused": ("connected", "[permission-denied]"),
+        "Unlisted": ("[not-collected]", ""),
+    }
+    assert "owners that are users [permission-denied]" in scenarios.as_text(inspection)

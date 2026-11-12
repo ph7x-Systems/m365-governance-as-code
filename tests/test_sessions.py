@@ -256,6 +256,7 @@ def test_every_collection_after_one_login_does_not_ask_again(machine, monkeypatc
         "applications",
         "conditional-access",
         "forwarding",
+        "groups",
         "guests",
         "licensing",
         "tenant-governance",

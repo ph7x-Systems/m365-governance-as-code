@@ -107,6 +107,40 @@
    ]
   },
   {
+   "command": "m365g entra group list",
+   "earlier_name": "m365g collect groups",
+   "kind": "enumeration",
+   "service": "entra",
+   "describes": "the Microsoft 365 groups in the directory, and how many owners and members each has, by kind and never by name",
+   "collection": "groups",
+   "reads": [
+    "GET /v1.0/groups ($filter to Microsoft 365 groups)",
+    "GET /v1.0/groups/{id}/owners ($select=id)",
+    "GET /v1.0/groups/{id}/members ($select=id)"
+   ],
+   "permissions": [
+    "GroupMember.Read.All"
+   ],
+   "needs": [
+    "--tenant-url"
+   ],
+   "output": [
+    "text",
+    "json",
+    "csv",
+    "md"
+   ],
+   "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
+   "feeds_rules": [],
+   "consumed_by": "the group list an operator enumerates, and the ownership inspection",
+   "live_validation_state": "none",
+   "examples": [
+    "m365g entra group list --tenant-url <address>",
+    "m365g entra group list --output csv",
+    "m365g entra group list --evidence-out ./evidence"
+   ]
+  },
+  {
    "command": "m365g entra guest list",
    "earlier_name": "m365g collect guests",
    "kind": "enumeration",
@@ -387,7 +421,9 @@
    "service": "governance",
    "describes": "which SharePoint sites name enough administrators, and which cannot say",
    "reads_collections": [
-    "sites-owners"
+    "sites-owners",
+    "sites",
+    "groups"
    ],
    "reaches_a_tenant": false,
    "needs": [

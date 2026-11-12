@@ -55,6 +55,7 @@ from . import (
     graph_slice,
     graph_token,
     grouping,
+    groups,
     guests,
     migration,
     migration_graph,
@@ -1362,6 +1363,7 @@ GRAPH_SLICES = {
     tenant_governance.NAME: tenant_governance,
     guests.NAME: guests,
     applications.NAME: applications,
+    groups.NAME: groups,
 }
 
 

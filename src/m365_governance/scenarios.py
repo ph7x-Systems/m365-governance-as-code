@@ -361,6 +361,31 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
     with_read = [
         d for d in sites if isinstance((d.get("facts") or {}).get("owners"), dict)
     ]
+
+    # THE GROUP A SITE IS CONNECTED TO, by the identifier the site enumeration
+    # publishes, and the group's own document by the same identifier. An empty
+    # identifier is SharePoint's way of saying the site has no group.
+    nothing = "00000000-0000-0000-0000-000000000000"
+    connected: dict[str, str] = {}
+    for document in sites:
+        identifier = _observed(_fact(document, "site", "group_id"))
+        if isinstance(identifier, str) and identifier and identifier != nothing:
+            key = str((document.get("resource") or {}).get("native_id") or "")
+            connected[key] = identifier.lower()
+    found, _ = _latest(
+        [
+            d
+            for d in documents
+            if (d.get("resource") or {}).get("type") == "group"
+            and isinstance((d.get("facts") or {}).get("group"), dict)
+        ]
+    )
+    by_group = {key.lower(): value for key, value in found.items()}
+    enumerated = {
+        str((d.get("resource") or {}).get("native_id") or "")
+        for d in sites
+        if _fact(d, "site", "group_id") is not None
+    }
     chosen, duplicated = _latest(with_read)
     for document in sites:
         key = str((document.get("resource") or {}).get("native_id") or "")
@@ -416,11 +441,31 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
             else:
                 row["standing"] = "fewer"
                 row["because"] = f"{named} named administrators and no group"
+        # THE CONNECTED GROUP'S OWNERS, BESIDE AND NEVER INSTEAD. A group owner
+        # is not a site collection administrator: the standing above is about
+        # the second and is not changed by the first. A reader sees both.
+        if key not in enumerated:
+            row["connected_group"] = "[not-collected]"
+            row["group_user_owners"] = ""
+        elif key not in connected:
+            row["connected_group"] = "none"
+            row["group_user_owners"] = ""
+        elif connected[key] not in by_group:
+            row["connected_group"] = "connected"
+            row["group_user_owners"] = "[not-collected]"
+        else:
+            owners_fact = _fact(by_group[connected[key]], "group", "user_owners")
+            counted = _observed(owners_fact)
+            row["connected_group"] = "connected"
+            row["group_user_owners"] = (
+                counted if counted is not None else f"[{_why(owners_fact, 'missing')}]"
+            )
         rows.append(row)
 
     by_standing: dict[str, int] = {}
     for row in rows:
         by_standing[row["standing"]] = by_standing.get(row["standing"], 0) + 1
+    joined = [by_group[g] for g in sorted(set(connected.values())) if g in by_group]
 
     return {
         "$schema": SCHEMA,
@@ -438,10 +483,15 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
             "named_administrators",
             "group_administrators",
             "standing",
+            "connected_group",
+            "group_user_owners",
             "because",
         ],
         "relations": [
             "site -> its site collection administrators, read from the site itself",
+            "site -> its Microsoft 365 group, on the group identifier the site "
+            "enumeration publishes; the group's owners are shown beside the "
+            "site's administrators and are not counted as them",
             "group administrator -> its members: NOT JOINED. A group was not "
             "expanded into people",
         ],
@@ -463,7 +513,7 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
             "sites the collecting identity could not enumerate or open: the "
             "first are absent from the evidence, the second are rows that say so",
         ],
-        "sources": _sources([chosen[key] for key in sorted(chosen)]),
+        "sources": _sources([chosen[key] for key in sorted(chosen)] + joined),
     }
 
 
@@ -848,7 +898,7 @@ SCENARIOS: dict[str, tuple[str, Callable[[list[dict]], dict], tuple[str, ...]]] 
     "ownership": (
         "which SharePoint sites name enough administrators, and which cannot say",
         ownership,
-        ("sites-owners",),
+        ("sites-owners", "sites", "groups"),
     ),
 }
 
@@ -903,11 +953,16 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
     if inspection["scenario"] == "ownership":
         named = row["named_administrators"]
         groups = row["group_administrators"]
+        group_owners = row.get("group_user_owners", "")
         return [
             f"  standing         {row['standing']}  ({row['because']})",
             f"  administrators   read: {row['owners_read']} · named "
             f"{'-' if named == '' else named} · groups "
             f"{'-' if groups == '' else groups}",
+            f"  Microsoft 365 group  {row.get('connected_group', '[not-collected]')}"
+            + (
+                f" · owners that are users {group_owners}" if group_owners != "" else ""
+            ),
         ]
     return [
         f"  in force         {row['in_force']}  ({row['because']})",

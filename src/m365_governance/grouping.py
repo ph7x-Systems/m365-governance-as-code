@@ -60,6 +60,7 @@ GROUPS: tuple[Group, ...] = (
             ("ca", "list"): _collect("conditional-access"),
             ("guest", "list"): _collect("guests"),
             ("app", "list"): _collect("applications"),
+            ("group", "list"): _collect("groups"),
             ("tenant", "governance", "get"): _collect("tenant-governance"),
             ("license", "list"): _collect("licensing"),
         },

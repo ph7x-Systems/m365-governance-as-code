@@ -17,7 +17,7 @@ that was not read from the reference says so.
 | Applications: `GET /applications`, with `passwordCredentials` and `keyCredentials` | `Application.Read.All` | both | Directory Readers or Global Reader read standard properties; a member with default permissions is also listed | administrator | none needed |
 | Service principals: `GET /servicePrincipals` | not yet established: next measurement is the `serviceprincipal-list` reference. Its owners relationship takes `Application.Read.All` | — | — | — | — |
 | Delegated grants: `GET /oauth2PermissionGrants` | `Directory.Read.All`, which is the least the reference offers and is broad | both | Global Reader or Directory Readers | administrator | none: no narrower read scope is documented |
-| Groups and memberships | not yet established: next measurement is the `group-list` and `group-list-members` references | — | — | — | — |
+| Microsoft 365 groups, their owners and members: `GET /groups`, `/groups/{id}/owners`, `/groups/{id}/members` | `GroupMember.Read.All`, the least for owners and one that also lists groups and reads memberships. `GroupMember.ReadBasic.All` is less for members alone and does not read owners. The reference lists a write scope as the least for `GET /groups`, which this engine does not ask for | both | a member with default permissions, or Directory Readers | administrator | `Directory.Read.All`, wider and not needed |
 | Role assignments | not yet established: next measurement is the `rbacapplication-list-roleassignments` reference | — | — | — | — |
 | Conditional Access policies | `Policy.Read.All`, already used by the `conditional-access` collector | application in the recorded run | recorded with that collector | administrator | — |
 

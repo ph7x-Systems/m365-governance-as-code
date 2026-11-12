@@ -16,6 +16,17 @@ ships in a release of its own.
 
 ### Added
 
+- **`m365g entra group list`, and the `groups` collection behind it.
+  Contract-tested; not yet run against a directory.** Every Microsoft 365
+  group with how many owners and members it has, by kind: only identifiers are
+  asked for and none is written. Owners that were refused are never a group
+  with no owner. Needs `GroupMember.Read.All`.
+- **The ownership inspection shows a site's Microsoft 365 group beside it.**
+  Where the site enumeration and a group collection are in the evidence, each
+  row says whether the site is connected to a group and how many of that
+  group's owners are users. The standing is not changed by it: a group owner
+  is not a site collection administrator.
+
 - **A Microsoft Graph read signs in as the person, through the registration
   already in use.** With an application registration and no certificate,
   `m365g entra guest list` and the other Graph reads ask for a delegated token

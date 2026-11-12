@@ -298,6 +298,7 @@ def test_the_plan_does_not_promise_what_the_machine_cannot_run():
     assert [step.name for step in running.attempted(steps)] == [
         "applications",
         "conditional-access",
+        "groups",
         "guests",
         "tenant-governance",
     ]

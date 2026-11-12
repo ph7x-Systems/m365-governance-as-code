@@ -53,7 +53,7 @@ on the command line, then a project file, then the active connection.
 Every SharePoint collection signs in through PnP.PowerShell and reuses a
 persisted session; `m365g engine capabilities` lists them, and no count is
 kept here to go stale. The Microsoft Graph reads (`conditional-access`, `tenant-governance`,
-`guests`, `applications`) sign in as the same person through the same
+`guests`, `applications`, `groups`) sign in as the same person through the same
 registration, for the scopes their collector declares, unless a certificate
 or a token in the environment says otherwise. `licensing` signs in through the
 Microsoft Graph PowerShell SDK, whose own persisted context is shared with
@@ -98,6 +98,7 @@ does, and takes the same `--output`.
 |---|---|
 | `m365g entra guest list` | `m365g collect guests` |
 | `m365g entra app list` | `m365g collect applications` |
+| `m365g entra group list` | `m365g collect groups` |
 | `m365g spo site list` | `m365g collect sites` |
 | `m365g spo hub list` | `m365g collect hubs` |
 | `m365g spo site admins` | `m365g collect sites-owners` |

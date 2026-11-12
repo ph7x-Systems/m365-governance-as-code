@@ -613,6 +613,38 @@ SLICES = {
             permissions=("Application.Read.All",),
         ),
         Slice(
+            "groups",
+            "Groups",
+            domain="entra",
+            source="graph",
+            needs_site=False,
+            needs_tenant=True,
+            profile="default",
+            writes_many=True,
+            produces_findings=False,
+            # AN ENUMERATION IS A READER. This is the list of who answers for
+            # a group-connected site and for a team, which the ownership
+            # inspection joins to the site by the group's identifier.
+            consumed_by=(
+                "the group list an operator enumerates, and the ownership inspection"
+            ),
+            describes=(
+                "the Microsoft 365 groups in the directory, and how many "
+                "owners and members each has, by kind and never by name"
+            ),
+            shaped_like="entra-groups-three-listed",
+            also_shaped_like=(
+                "entra-group-single-owner",
+                "entra-groups-refused",
+            ),
+            reads=(
+                "GET /v1.0/groups ($filter to Microsoft 365 groups)",
+                "GET /v1.0/groups/{id}/owners ($select=id)",
+                "GET /v1.0/groups/{id}/members ($select=id)",
+            ),
+            permissions=("GroupMember.Read.All",),
+        ),
+        Slice(
             "guests",
             "Guests",
             domain="entra",
