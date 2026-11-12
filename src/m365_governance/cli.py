@@ -3960,6 +3960,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     flat = grouping.regroup(given)
     if flat[:1] == ["collect"] and (len(flat) == 1 or flat[1].startswith("-")):
+        if {"-h", "--help"} & set(flat):
+            # ASKED FOR HELP, AND ANSWERED WITH IT. `collect --help` exited 0
+            # in every earlier version and a script that checks for it kept
+            # working; the list of reads is the help, on stdout, and asking
+            # for it is not a mistake.
+            print(_what_can_be_read())
+            return 0
         print(_what_can_be_read(), file=sys.stderr)
         return 2
     if flat != given and flat[0] != "collect":

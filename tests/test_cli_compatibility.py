@@ -127,3 +127,17 @@ def test_a_refusal_is_still_exit_two(tmp_path, capsys, monkeypatch):
     monkeypatch.setenv("M365G_HOME", str(tmp_path / "home"))
     assert cli.main(["collect", "sites", "--output", str(tmp_path / "e")]) == 2
     assert "refusing to run" in capsys.readouterr().err
+
+
+def test_asking_collect_for_help_is_not_an_error(capsys):
+    """`collect --help` exited 0 in every earlier version. Found by installing
+    the published release, upgrading to this tree and running the old name."""
+    from m365_governance import cli
+
+    for argv in (["collect", "--help"], ["collect", "-h"]):
+        assert cli.main(argv) == 0, argv
+        printed = capsys.readouterr()
+        assert "Each of these reads one thing" in printed.out
+        assert printed.err == ""
+    assert cli.main(["collect"]) == 2
+    assert "Each of these reads one thing" in capsys.readouterr().err
