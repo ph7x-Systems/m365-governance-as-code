@@ -43,7 +43,7 @@ to exercise.
 | `customization` | ✓ | `completed`, 1 doc, every fact observed, 2026-11-11 | — | n.a. | `SPO-SCRIPT-001` | **live-validated** |
 | `sites-sharing` | ✓ | `partial` enumeration, 53 docs, each site read by its own address, 2026-11-11 | — | none at 53 sites | `SPO-SHARE-001/002/005` | **live-validated** |
 | `applications` | ✓ | 46 registrations, every credential list returned, 2026-11-11 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
-| `groups` | ✓ | not observed | not observed | paging proved against a stand-in only | **none**, by decision | **not live-validated** |
+| `groups` | ✓ | 23 groups, owners and members read for each, 2026-11-12 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
 | `guests` | ✓ | 1 guest account, 2026-11-11 | not observed | one page; paging proved against a stand-in only | **none**, by decision | **live-validated** |
 | `sites-owners` | ✓ | `partial` enumeration, 53 docs: 30 answered, 17 answered nothing, 2026-11-11 | 6 sites refused to open, each a document | none at 53 sites | `SPO-SITE-001/002` | **live-validated** |
 | `hubs` | ✓ | 2 hubs, every fact observed, 2026-11-11 | — | n.a. | **none**, by decision | **live-validated** |

@@ -133,7 +133,7 @@
    "evidence": "--evidence-out DIRECTORY keeps the evidence behind the view",
    "feeds_rules": [],
    "consumed_by": "the group list an operator enumerates, and the ownership inspection",
-   "live_validation_state": "none",
+   "live_validation_state": "full",
    "examples": [
     "m365g entra group list --tenant-url <address>",
     "m365g entra group list --output csv",

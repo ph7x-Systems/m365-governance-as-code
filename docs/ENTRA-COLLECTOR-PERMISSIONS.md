@@ -29,9 +29,9 @@ that was not read from the reference says so.
 - **Application exposure** needs `Application.Read.All` and, for what was
   consented, `Directory.Read.All`. The second is the widest read in this table
   and is the one to decide on deliberately.
-- **Ownership** reads the groups row above: the collector exists and is
-  contract-tested, and has not read a directory because `GroupMember.Read.All`
-  has not been consented.
+- **Ownership** reads the groups row above: the collector exists and read one
+  directory on 12 November 2026, after its owner consented to
+  `GroupMember.Read.All` at an interactive sign-in for that purpose.
 
 ## How a decision is asked for
 

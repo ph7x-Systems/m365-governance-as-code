@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -441,9 +442,8 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
             else:
                 row["standing"] = "fewer"
                 row["because"] = f"{named} named administrators and no group"
-        # THE CONNECTED GROUP'S OWNERS, BESIDE AND NEVER INSTEAD. A group owner
-        # is not a site collection administrator: the standing above is about
-        # the second and is not changed by the first. A reader sees both.
+        # THE CONNECTED GROUP'S OWNERS, BESIDE THE SITE'S ADMINISTRATORS.
+        group_owners = None
         if key not in enumerated:
             row["connected_group"] = "[not-collected]"
             row["group_user_owners"] = ""
@@ -455,11 +455,54 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
             row["group_user_owners"] = "[not-collected]"
         else:
             owners_fact = _fact(by_group[connected[key]], "group", "user_owners")
-            counted = _observed(owners_fact)
+            group_owners = _observed(owners_fact)
             row["connected_group"] = "connected"
             row["group_user_owners"] = (
-                counted if counted is not None else f"[{_why(owners_fact, 'missing')}]"
+                group_owners
+                if group_owners is not None
+                else f"[{_why(owners_fact, 'missing')}]"
             )
+
+        # ONE GROUP CAN BE EXPANDED, AND ONLY ONE. When every group among the
+        # site's administrators is the owners claim of the group the site is
+        # connected to -- the same identifier, read from two surfaces -- the
+        # people behind it are that group's owners, and they were counted. A
+        # named administrator may also be one of those owners and no identity
+        # was kept to tell, so the result is a range and never a sum: at least
+        # the larger of the two, at most both together.
+        row["administrators_at_least"] = ""
+        row["administrators_at_most"] = ""
+        if (
+            isinstance(owners, dict)
+            and owners.get("state") == "observed"
+            and isinstance(group_owners, int)
+            and row["group_administrators"]
+            and _only_the_owners_of(owners.get("groups") or [], connected[key])
+        ):
+            named = row["named_administrators"]
+            low, high = max(named, group_owners), named + group_owners
+            row["administrators_at_least"], row["administrators_at_most"] = low, high
+            if low >= minimum_owners:
+                row["standing"] = "meets" if low == high else "at-least"
+                row["because"] = (
+                    f"{named} named administrators and the {group_owners} user "
+                    "owners of its Microsoft 365 group, which is the group "
+                    "that administers it"
+                )
+            elif high < minimum_owners:
+                row["standing"] = "fewer"
+                row["because"] = (
+                    f"{named} named administrators and the {group_owners} user "
+                    "owners of its Microsoft 365 group: at most "
+                    f"{high} people"
+                )
+            else:
+                row["standing"] = NOT_ESTABLISHED
+                row["because"] = (
+                    f"between {low} and {high} people: {named} named and "
+                    f"{group_owners} group owners, and whether they are the "
+                    "same people was not read"
+                )
         rows.append(row)
 
     by_standing: dict[str, int] = {}
@@ -483,6 +526,8 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
             "named_administrators",
             "group_administrators",
             "standing",
+            "administrators_at_least",
+            "administrators_at_most",
             "connected_group",
             "group_user_owners",
             "because",
@@ -490,8 +535,12 @@ def ownership(documents: list[dict], minimum_owners: int = 2) -> dict:
         "relations": [
             "site -> its site collection administrators, read from the site itself",
             "site -> its Microsoft 365 group, on the group identifier the site "
-            "enumeration publishes; the group's owners are shown beside the "
-            "site's administrators and are not counted as them",
+            "enumeration publishes",
+            "site administrator that is a group -> that group's owners, only "
+            "when the administrator is the owners claim of the connected "
+            "group, by the same identifier; the people are then counted as a "
+            "range, because nothing read says whether a named administrator "
+            "is also an owner",
             "group administrator -> its members: NOT JOINED. A group was not "
             "expanded into people",
         ],
@@ -885,6 +934,31 @@ def ca_coverage(documents: list[dict], policy_id: str | None = None) -> dict:
     }
 
 
+_GUID = re.compile(
+    r"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", re.IGNORECASE
+)
+
+
+def _only_the_owners_of(group_administrators: list, group_id: str) -> bool:
+    """Whether every group among a site's administrators is the owners claim
+    of this one Microsoft 365 group.
+
+    SharePoint names the owners of a group as a claim carrying the group's
+    identifier followed by `_o`; the same identifier with no suffix is its
+    members. Anything else -- another group, the members claim, a security
+    group, a principal with no identifier -- is a group this cannot expand,
+    and one of those is enough to leave the site as it was.
+    """
+    if not group_administrators:
+        return False
+    for entry in group_administrators:
+        claim = str((entry or {}).get("principal_id") or "").lower()
+        found = _GUID.findall(claim)
+        if found != [group_id.lower()] or not claim.endswith(f"{group_id.lower()}_o"):
+            return False
+    return True
+
+
 class NotComparable(Exception):
     """Two inspections that do not answer the same question."""
 
@@ -1069,6 +1143,15 @@ def _row_lines(inspection: dict, row: dict) -> list[str]:
             f"  administrators   read: {row['owners_read']} · named "
             f"{'-' if named == '' else named} · groups "
             f"{'-' if groups == '' else groups}",
+            *(
+                [
+                    f"  people           at least "
+                    f"{row['administrators_at_least']}, at most "
+                    f"{row['administrators_at_most']}"
+                ]
+                if row.get("administrators_at_least", "") != ""
+                else []
+            ),
             f"  Microsoft 365 group  {row.get('connected_group', '[not-collected]')}"
             + (
                 f" · owners that are users {group_owners}" if group_owners != "" else ""

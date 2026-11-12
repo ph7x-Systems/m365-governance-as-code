@@ -25,8 +25,9 @@ Source: `GET /groups` filtered to Microsoft 365 groups, then
 v1.0. Least privilege as the reference records it: `GroupMember.Read.All`,
 which lists groups and reads owners and memberships. Checked 12 November 2026.
 
-Contract-tested against a stand-in transport. It has not read a directory,
-and the proof registry holds no record of it.
+Contract-tested against a stand-in transport, and read from a directory
+once, on 12 November 2026: the proof registry holds that record and what it
+did not cover.
 """
 
 from __future__ import annotations

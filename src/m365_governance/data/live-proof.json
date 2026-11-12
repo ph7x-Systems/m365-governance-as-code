@@ -842,6 +842,45 @@
         "no refusal was met, and no registration came back without a credential list",
         "one directory, one moment: nothing here establishes how another tenant answers"
       ]
+    },
+    {
+      "observed_at": "2026-11-12",
+      "acquisition_method": "microsoft-graph",
+      "identity_kind": "delegated: one administrator, through a session kept by `login`; the engine asked for the collector's own scope and no other, and the administrator consented to it at that sign-in",
+      "engine_version": "1.0.0b9 development tree, with collectors that are not yet released",
+      "contract_versions": {
+        "evidence": "3.1.0"
+      },
+      "artifact_digest": null,
+      "artifact_disposition": "held by the operator; not committed",
+      "provenance": "emitted-by-a-run",
+      "establishes": "full",
+      "collector": "groups",
+      "stages": {
+        "acquisition": "proven",
+        "evidence": "proven",
+        "assessment": "not-applicable",
+        "bundle": "not-attempted",
+        "consumer": "not-attempted"
+      },
+      "population": {
+        "documents": 24,
+        "microsoft_365_groups": 23,
+        "groups_whose_owners_were_read": 23,
+        "groups_whose_members_were_read": 23,
+        "groups_that_are_teams": 8,
+        "groups_with_no_user_owner": 1,
+        "pages": 1
+      },
+      "coverage": "the slice's own path: the tenant document and one document per Microsoft 365 group, with its owners and its members read",
+      "result": "The first live read of Microsoft 365 groups: every group returned its owners and its members, and no identity is in what was written. The branch that reports a group with no owner that is a user ran against a directory. COUNTER-CHECKED ON TWO SURFACES against the site evidence of the same session: every site the enumeration says is connected to a group names a group this read listed, and every listed group has such a site; and for every connected site that said who administers it, the administrator claim on the site itself carries the same group identifier the enumeration gave. No site disagreed. The ownership inspection then expanded that one claim into the group's owners for those sites, as a range.",
+      "limitations": [
+        "no group refused its owners or its members, so the document a refusal writes is proved against a stand-in only",
+        "one page of groups and one page per relationship: paging is proved against a stand-in only",
+        "some connected sites did not say who administers them, so the second surface could not be compared for those",
+        "whether a named site administrator is also one of the group's owners was not read: no identity is kept, which is why the inspection reports a range",
+        "one directory, one moment: nothing here establishes how another tenant answers"
+      ]
     }
   ],
   "_on_stages": "A RUN PROVES SEVERAL DIFFERENT THINGS AND THEY ARE NOT ONE THING. `acquisition` is the Microsoft surface actually read; `evidence` is the document produced from it; `assessment` is rules consuming that evidence; `bundle` is the canonical artefact; `consumer` is somebody independent opening it.\n\n`bundle` and `consumer` read `not-attempted` on every migrated record because the matrix they were transcribed from does not mention either. That is not a gap to be filled in from memory. Nobody wrote it down, so nothing is proved, and the ladder says so rather than rounding up.\n\n`not-applicable` is the stage not existing here: a collector that feeds no rule has no assessment to prove, and demanding one would make the top of the ladder unreachable for a capability that is complete."

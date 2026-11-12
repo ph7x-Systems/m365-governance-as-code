@@ -12,7 +12,7 @@ is derived from the capability manifest and the candidate half from
 | --- | --- | --- | --- | --- | --- | --- |
 | Microsoft Entra ID | `applications` | v1.0 | Application.Read.All | `tenant` | 0 | full |
 | Microsoft Entra ID | `conditional-access` | v1.0 | Policy.Read.All | `conditional-access-policy` | 3 | full |
-| Microsoft Entra ID | `groups` | v1.0 | GroupMember.Read.All | `tenant` | 0 | none |
+| Microsoft Entra ID | `groups` | v1.0 | GroupMember.Read.All | `tenant` | 0 | full |
 | Microsoft Entra ID | `guests` | v1.0 | User.Read.All | `tenant` | 0 | full |
 | Microsoft Entra ID | `tenant-governance` | v1.0 | Policy.Read.All, RoleManagement.Read.Directory, Policy.Read.AuthenticationMethod | `authorization-policy` | 13 | full |
 | Exchange Online | `forwarding` | powershell | Exchange.ManageAsApp | `tenant` | 2 | none |
@@ -58,7 +58,7 @@ Second surface: none named (`not-yet-established`).
 
 Second surface: none named (`not-yet-established`).
 
-**`groups`** — Microsoft Entra ID, v1.0, proof `not-live-tested`
+**`groups`** — Microsoft Entra ID, v1.0, proof `positive-acquisition-observed`
 
 - `GET /v1.0/groups ($filter to Microsoft 365 groups)`
 - `GET /v1.0/groups/{id}/owners ($select=id)`

@@ -157,4 +157,4 @@ def test_the_command_the_slice_and_the_pending_verification_agree():
     chosen = collecting.SLICES["groups"]
     assert chosen.source == "graph"
     assert chosen.permissions == ("GroupMember.Read.All",)
-    assert live_proof.records("groups") == []
+    assert live_proof.established_state("groups") == "full"

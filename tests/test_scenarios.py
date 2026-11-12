@@ -781,10 +781,12 @@ def test_a_groups_owners_are_shown_beside_a_sites_and_never_counted_as_them():
         ]
     )
     row = _row(inspection, "team")
+    # The site's group administrator is `g0`, which is not the owners claim of
+    # the connected group, so nothing is expanded and nothing is added.
     assert row["standing"] == "not-established"
+    assert row["administrators_at_least"] == ""
     assert row["connected_group"] == "connected" and row["group_user_owners"] == 3
     assert inspection["sources"]["documents"] == 2
-    assert any("not counted as them" in r for r in inspection["relations"])
 
 
 def test_every_way_the_group_join_can_come_up_empty_says_which():
@@ -885,3 +887,72 @@ def test_the_comparison_command_reads_two_files_and_refuses_what_is_not_one(
     junk = tmp_path / "d.json"
     junk.write_text("{}")
     assert main(["inspect-diff", str(first), str(junk)]) == 2
+
+
+GROUP = "11111111-2222-4333-8444-555555555555"
+
+
+def _group_site(name, *, named, claims, group_owners):
+    owned = _owned(name, named=named, groups=len(claims))
+    owned["facts"]["owners"]["groups"] = [{"principal_id": c} for c in claims]
+    return [owned, _listed(name, GROUP.upper()), _m365_group(GROUP, group_owners)]
+
+
+OWNERS_CLAIM = f"c:0o.c|federateddirectoryclaimprovider|{GROUP}_o"
+MEMBERS_CLAIM = f"c:0o.c|federateddirectoryclaimprovider|{GROUP}"
+
+
+def test_the_owners_claim_of_the_connected_group_is_expanded_into_a_range():
+    def standing(named, group_owners, minimum=2):
+        documents = _group_site(
+            "s", named=named, claims=[OWNERS_CLAIM], group_owners=group_owners
+        )
+        row = _row(scenarios.ownership(documents, minimum_owners=minimum), "s")
+        return (
+            row["standing"],
+            row["administrators_at_least"],
+            row["administrators_at_most"],
+        )
+
+    assert standing(0, 3) == ("meets", 3, 3)
+    assert standing(1, 3) == ("at-least", 3, 4)
+    assert standing(0, 1) == ("fewer", 1, 1)
+    # One named and one owner may be one person or two: nothing read says.
+    assert standing(1, 1) == ("not-established", 1, 2)
+    assert standing(0, 0) == ("fewer", 0, 0)
+
+
+def test_a_range_is_never_a_sum():
+    """THE COUNTER-CHECK. Adding the two lists would report three people for
+    a site whose one named administrator is also one of its two group owners."""
+    inspection = scenarios.ownership(
+        _group_site("s", named=1, claims=[OWNERS_CLAIM], group_owners=2), 3
+    )
+    row = _row(inspection, "s")
+    assert (row["administrators_at_least"], row["administrators_at_most"]) == (2, 3)
+    assert row["standing"] == "not-established"
+    assert "same people" in row["because"]
+
+
+def test_nothing_but_the_owners_claim_of_that_one_group_is_expanded():
+    other = "99999999-2222-4333-8444-555555555555"
+    for claims in (
+        [MEMBERS_CLAIM],
+        [f"c:0o.c|federateddirectoryclaimprovider|{other}_o"],
+        [OWNERS_CLAIM, "c:0t.c|tenant|some-security-group"],
+        ["Everyone except external users"],
+    ):
+        inspection = scenarios.ownership(
+            _group_site("s", named=1, claims=claims, group_owners=5)
+        )
+        row = _row(inspection, "s")
+        assert row["administrators_at_least"] == "", claims
+        assert row["standing"] == "not-established", claims
+
+
+def test_group_owners_that_were_refused_expand_nothing():
+    documents = _group_site("s", named=1, claims=[OWNERS_CLAIM], group_owners=0)
+    documents[2] = _m365_group(GROUP, state="permission-denied")
+    row = _row(scenarios.ownership(documents), "s")
+    assert row["administrators_at_least"] == ""
+    assert row["standing"] == "not-established"
